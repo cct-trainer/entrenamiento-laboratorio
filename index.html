@@ -847,6 +847,7 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .nutr-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 14px; padding: 22px 24px; }
 .nutr-card-title { font-size: 13px; font-weight: 800; color: #1a2a4a; margin-bottom: 18px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
 .nutr-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.nutr-field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px; }
 .nutr-field { display: flex; flex-direction: column; gap: 5px; }
 .nutr-field label { font-size: 10px; font-weight: 700; color: #888; letter-spacing: 1.5px; text-transform: uppercase; }
 .nutr-field input, .nutr-field select { border: 1px solid #e0e0e0; border-radius: 8px; padding: 9px 12px; font-size: 13px; font-weight: 600; color: #222; font-family: inherit; background: #fafafa; transition: border-color 0.15s; }
@@ -12563,7 +12564,8 @@ function renderNutricion(alumnoId) {
   const objetivo = alumno.objetivo || 'Sin objetivo';
   const mediciones = alumno.mediciones || [];
   const ultimaMed = mediciones.length ? [...mediciones].sort((a,b)=>a.fecha<b.fecha?1:-1)[0] : null;
-  const pesoActual = ultimaMed?.peso || '';
+  const pesoActual    = ultimaMed?.peso    || '';
+  const alturaActual  = ultimaMed?.altura  || '';
   const plan = alumno.nutricion || {};
 
   // Filtrar suplementos por objetivo
@@ -12593,17 +12595,21 @@ function renderNutricion(alumnoId) {
       <div class="nutr-card">
         <div class="nutr-card-title">Planificación de Macronutrientes</div>
         <div class="nutr-obj-tag">${objetivo}</div>
-        <div class="nutr-field-row">
+        <div class="nutr-field-row-3">
           <div class="nutr-field">
             <label>Peso corporal (kg)</label>
-            <input type="number" id="nutr-peso" value="${plan.peso || pesoActual}" placeholder="Ej: 70" min="30" max="200" step="0.5" oninput="calcularMacrosNutricion()">
+            <input type="number" id="nutr-peso" value="${plan.peso || pesoActual}" placeholder="Ej: 75" min="30" max="300" step="0.5" oninput="calcularMacrosNutricion()">
+          </div>
+          <div class="nutr-field">
+            <label>Altura (cm)</label>
+            <input type="number" id="nutr-altura" value="${plan.altura || alturaActual}" placeholder="Ej: 175" min="100" max="230" step="1" oninput="calcularMacrosNutricion()">
           </div>
           <div class="nutr-field">
             <label>Nivel de actividad</label>
             <select id="nutr-actividad" onchange="calcularMacrosNutricion()">
               <option value="sedentario" ${(plan.actividad||'moderado')==='sedentario'?'selected':''}>Sedentario (escritorio)</option>
-              <option value="moderado"   ${(plan.actividad||'moderado')==='moderado'?'selected':''}>Moderado (3–4x/semana)</option>
-              <option value="activo"     ${(plan.actividad||'moderado')==='activo'?'selected':''}>Activo (5–6x/semana)</option>
+              <option value="moderado"   ${(plan.actividad||'moderado')==='moderado'?'selected':''}>Moderado (3–4x/sem)</option>
+              <option value="activo"     ${(plan.actividad||'moderado')==='activo'?'selected':''}>Activo (5–6x/sem)</option>
               <option value="muy_activo" ${(plan.actividad||'moderado')==='muy_activo'?'selected':''}>Muy activo (2x/día)</option>
             </select>
           </div>
@@ -12682,15 +12688,40 @@ function renderNutricion(alumnoId) {
 function calcularMacrosNutricion() {
   const peso = parseFloat(document.getElementById('nutr-peso')?.value) || 0;
   if (!peso) return;
+  const altura     = parseFloat(document.getElementById('nutr-altura')?.value) || 0;
   const actividad  = document.getElementById('nutr-actividad')?.value  || 'moderado';
   const ajuste     = document.getElementById('nutr-ajuste')?.value     || 'mantenimiento';
   const protFactor = parseFloat(document.getElementById('nutr-prot-factor')?.value) || 2.0;
 
-  const factorAct = { sedentario:28, moderado:33, activo:38, muy_activo:43 };
   const ajusteCal = { deficit_alto:-500, deficit:-300, mantenimiento:0, superavit:250, superavit_alto:400 };
 
-  const tdee     = peso * (factorAct[actividad] || 33);
-  const calorias = Math.round(tdee + (ajusteCal[ajuste] || 0));
+  // Mifflin-St Jeor si hay altura disponible
+  let tdee;
+  if (altura > 0) {
+    const al    = currentAlumnoId ? getAlumnos().find(a => a.id === currentAlumnoId) : null;
+    const sexo  = al?.sexo || '';
+    const edad  = (al?.nacimiento && typeof calcularEdad === 'function') ? calcularEdad(al.nacimiento) : null;
+    const actFacMSJ = { sedentario:1.2, moderado:1.55, activo:1.725, muy_activo:1.9 };
+    if (edad) {
+      const tmb = sexo === 'Femenino'
+        ? (10 * peso) + (6.25 * altura) - (5 * edad) - 161
+        : (10 * peso) + (6.25 * altura) - (5 * edad) + 5;
+      tdee = Math.round(tmb * (actFacMSJ[actividad] || 1.55));
+    } else {
+      // Sin edad: usar Harris-Benedict simplificado solo con peso y altura
+      const tmb = sexo === 'Femenino'
+        ? 447.6 + (9.25 * peso) + (3.10 * altura)
+        : 88.36 + (13.40 * peso) + (4.80 * altura);
+      tdee = Math.round(tmb * (actFacMSJ[actividad] || 1.55));
+    }
+  } else {
+    // Fallback sin altura: factor por kg
+    const factorAct = { sedentario:28, moderado:33, activo:38, muy_activo:43 };
+    tdee = Math.round(peso * (factorAct[actividad] || 33));
+  }
+
+  const tdeeAjustado = tdee;
+  const calorias = Math.round(tdeeAjustado + (ajusteCal[ajuste] || 0));
   const protG    = Math.round(peso * protFactor);
   const grasaG   = Math.round(peso * 0.9);
   const protCal  = protG * 4;
@@ -12721,6 +12752,7 @@ function calcularMacrosNutricion() {
 function guardarPlanNutricion() {
   if (!currentAlumnoId) return;
   const peso      = document.getElementById('nutr-peso')?.value || '';
+  const altura    = document.getElementById('nutr-altura')?.value || '';
   const actividad = document.getElementById('nutr-actividad')?.value || 'moderado';
   const ajuste    = document.getElementById('nutr-ajuste')?.value || 'mantenimiento';
   const protFactor= document.getElementById('nutr-prot-factor')?.value || '2.0';
@@ -12736,7 +12768,7 @@ function guardarPlanNutricion() {
   const alumnos = getAlumnos();
   const idx = alumnos.findIndex(a => a.id === currentAlumnoId);
   if (idx === -1) return;
-  alumnos[idx].nutricion = { peso, actividad, ajuste, protFactor, notas, calorias:kcal, proteinas:prot, carbos:carb, grasas:grasa, pctProt, pctCarb, pctGrasa };
+  alumnos[idx].nutricion = { peso, altura, actividad, ajuste, protFactor, notas, calorias:kcal, proteinas:prot, carbos:carb, grasas:grasa, pctProt, pctCarb, pctGrasa };
   saveAlumnos(alumnos);
   toast('Plan nutricional guardado ✓');
 }
