@@ -9814,7 +9814,8 @@ function renderPlanMes() {
   container.innerHTML = planSemanasArray.map((sem, semIdx) => {
     const isEd = semIdx === planSemEditando;
     const label = _semFechaLabel(semIdx);
-    const diasHtml = Array.from({length:7}, (_,i) => i).map(i => {
+    // Helper: render a single plan-day card for slot index i
+    const renderCard = (i) => {
       const diaNom = _diaNombreReal(semIdx, i);
       const sesiones = sem.dias[i] || [];
       const tiene = sesiones.length > 0;
@@ -9840,7 +9841,51 @@ function renderPlanMes() {
         + '</div>'
         + '<div class="plan-dia-body">'+(tiene ? minis : '<div class="plan-dia-empty">+ Agregar sesion</div>')+'</div>'
         + '</div>';
-    }).join('');
+    };
+
+    // Empty placeholder cell for days outside the plan range
+    const emptyCell = '<div style="border:1px dashed #e0e0e0;border-radius:12px;background:#f8f9fb;min-height:80px;"></div>';
+
+    // Fixed LUN→DOM header labels
+    const _HDR_DIAS = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+    const headerRow = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:4px;">'
+      + _HDR_DIAS.map(d => '<div style="text-align:center;font-size:9px;font-weight:800;letter-spacing:1px;color:#aaa;padding:2px 0;">'+d+'</div>').join('')
+      + '</div>';
+
+    // Build calendar-aligned grid rows
+    let gridHTML;
+    if (!sem.fechaInicio) {
+      // No start date: fall back to plain 0–6 order
+      gridHTML = '<div class="run-dias-grid mes-dias-grid">'
+        + Array.from({length:7}, (_,i) => renderCard(i)).join('')
+        + '</div>';
+    } else {
+      const fi  = new Date(sem.fechaInicio + 'T12:00:00');
+      const dow = fi.getDay();                      // JS: 0=Dom 1=Lun … 6=Sáb
+      const colFI = dow === 0 ? 6 : dow - 1;       // Mon=0 … Sun=6
+
+      if (colFI === 0) {
+        // Plan starts on Monday → one row, no empty cells needed
+        gridHTML = '<div class="run-dias-grid mes-dias-grid">'
+          + Array.from({length:7}, (_,i) => renderCard(i)).join('')
+          + '</div>';
+      } else {
+        // Row 1: colFI empty cells + plan slots 0 … (6-colFI)
+        const slotsRow1 = 7 - colFI;
+        const row1 = Array(colFI).fill(emptyCell).concat(
+          Array.from({length: slotsRow1}, (_,k) => renderCard(k))
+        ).join('');
+
+        // Row 2: plan slots (7-colFI) … 6 + trailing empty cells
+        const row2 = Array.from({length: colFI}, (_,k) => renderCard(slotsRow1 + k)).concat(
+          Array(slotsRow1).fill(emptyCell)
+        ).join('');
+
+        gridHTML = '<div class="run-dias-grid mes-dias-grid" style="margin-bottom:8px;">' + row1 + '</div>'
+                 + '<div class="run-dias-grid mes-dias-grid">'                              + row2 + '</div>';
+      }
+    }
+
     return '<div class="mes-semana-bloque'+(isEd?' mes-semana-editando':'')+'" id="mes-sem-bloque-'+semIdx+'">'
       + '<div class="mes-semana-header">'
         + '<div class="mes-semana-titulo-txt">SEMANA '+sem.semana+(label ? ' &nbsp;&middot;&nbsp; '+label : '')+'</div>'
@@ -9849,7 +9894,8 @@ function renderPlanMes() {
           + (planSemanasArray.length > 1 ? '<button class="mes-btn-accion mes-btn-danger" onclick="eliminarSemana('+semIdx+')">Eliminar</button>' : '')
         + '</div>'
       + '</div>'
-      + '<div class="run-dias-grid mes-dias-grid">'+diasHtml+'</div>'
+      + headerRow
+      + gridHTML
     + '</div>';
   }).join('')
   + '<div class="mes-agregar-zona"><button class="mes-btn-agregar" onclick="agregarSemana()">&#65291; Agregar semana</button></div>';
