@@ -869,8 +869,10 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .nutr-bar-seg { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
 .nutr-btn-calc { width: 100%; background: #1a2a4a; color: #E8C96A; border: none; border-radius: 8px; padding: 11px; font-size: 12px; font-weight: 700; cursor: pointer; margin-top: 14px; letter-spacing: 0.5px; font-family: inherit; transition: background 0.15s; }
 .nutr-btn-calc:hover { background: #253d6b; }
-.nutr-btn-save { width: 100%; background: #f5f5f5; color: #555; border: 1px solid #e0e0e0; border-radius: 8px; padding: 9px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 8px; font-family: inherit; transition: all 0.15s; }
+.nutr-btn-save  { width: 100%; background: #f5f5f5; color: #555; border: 1px solid #e0e0e0; border-radius: 8px; padding: 9px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 8px; font-family: inherit; transition: all 0.15s; }
 .nutr-btn-save:hover { background: #e8e8e8; }
+.nutr-btn-clear { width: 100%; background: none; color: #bbb; border: none; padding: 6px; font-size: 11px; cursor: pointer; font-family: inherit; transition: color 0.15s; }
+.nutr-btn-clear:hover { color: #e53e3e; }
 .nutr-notas-area { width: 100%; border: 1px solid #e0e0e0; border-radius: 8px; padding: 9px 12px; font-size: 12px; color: #333; font-family: inherit; margin-top: 12px; resize: vertical; min-height: 64px; box-sizing: border-box; }
 .nutr-notas-area:focus { outline: none; border-color: #C9A84C; }
 .nutr-obj-tag { display: inline-block; background: #f0f4ff; color: #1a2a4a; border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 700; margin-bottom: 14px; border: 1px solid #d6e0ff; }
@@ -12665,6 +12667,7 @@ function renderNutricion(alumnoId) {
         <textarea class="nutr-notas-area" id="nutr-notas" placeholder="Notas nutricionales del alumno (intolerancias, preferencias, contexto...)...">${plan.notas||''}</textarea>
         <button class="nutr-btn-calc" onclick="calcularMacrosNutricion()">Calcular macros</button>
         <button class="nutr-btn-save" onclick="guardarPlanNutricion()">Guardar plan</button>
+        <button class="nutr-btn-clear" onclick="limpiarPlanNutricion()">Limpiar plan guardado</button>
         <div class="nutr-disclaimer">Valores estimados. Ajustar según respuesta individual y contexto clínico.</div>
       </div>
       <!-- SUPLEMENTOS -->
@@ -12771,6 +12774,18 @@ function guardarPlanNutricion() {
   alumnos[idx].nutricion = { peso, altura, actividad, ajuste, protFactor, notas, calorias:kcal, proteinas:prot, carbos:carb, grasas:grasa, pctProt, pctCarb, pctGrasa };
   saveAlumnos(alumnos);
   toast('Plan nutricional guardado ✓');
+}
+
+function limpiarPlanNutricion() {
+  if (!currentAlumnoId) return;
+  if (!confirm('¿Limpiar el plan nutricional guardado de este alumno?')) return;
+  const alumnos = getAlumnos();
+  const idx = alumnos.findIndex(a => a.id === currentAlumnoId);
+  if (idx === -1) return;
+  delete alumnos[idx].nutricion;
+  saveAlumnos(alumnos);
+  renderNutricion(currentAlumnoId);
+  toast('Plan nutricional eliminado');
 }
 
 function abrirSuplementoDetalle(id, objetivo) {
