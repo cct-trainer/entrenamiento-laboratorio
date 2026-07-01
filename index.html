@@ -875,24 +875,42 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .nutr-obj-tag { display: inline-block; background: #f0f4ff; color: #1a2a4a; border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 700; margin-bottom: 14px; border: 1px solid #d6e0ff; }
 .nutr-disclaimer { font-size: 10px; color: #bbb; text-align: center; margin-top: 10px; font-style: italic; }
 /* Suplementos */
-.supl-list { display: flex; flex-direction: column; gap: 10px; max-height: 560px; overflow-y: auto; padding-right: 2px; }
-.supl-card { border: 1px solid #e8e8e8; border-radius: 10px; padding: 13px 15px; }
+.supl-list { display: flex; flex-direction: column; gap: 8px; max-height: 560px; overflow-y: auto; padding-right: 2px; }
+.supl-card { border: 1px solid #e8e8e8; border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: box-shadow 0.15s, transform 0.1s; }
+.supl-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.10); transform: translateY(-1px); }
 .supl-card.esencial    { border-left: 3px solid #2563eb; }
 .supl-card.recomendado { border-left: 3px solid #C9A84C; }
 .supl-card.opcional    { border-left: 3px solid #d1d5db; }
-.supl-top { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
-.supl-icon { font-size: 22px; line-height: 1; flex-shrink: 0; }
-.supl-info { flex: 1; }
-.supl-nombre { font-size: 13px; font-weight: 800; color: #1a1a1a; line-height: 1.2; }
-.supl-proposito { font-size: 11px; color: #666; margin-top: 2px; }
-.supl-badge { display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; margin-top: 4px; }
+.supl-nombre { font-size: 13px; font-weight: 800; color: #1a1a1a; line-height: 1.2; display: flex; align-items: center; justify-content: space-between; }
+.supl-nombre-arrow { font-size: 10px; color: #bbb; }
+.supl-proposito { font-size: 11px; color: #666; margin-top: 3px; }
+.supl-badge { display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; margin-top: 5px; }
 .badge-esencial    { background: #dbeafe; color: #1d4ed8; }
 .badge-recomendado { background: #fef3c7; color: #92400e; }
 .badge-opcional    { background: #f3f4f6; color: #6b7280; }
-.supl-detalles { border-top: 1px solid #f5f5f5; margin-top: 8px; padding-top: 8px; display: flex; flex-direction: column; gap: 3px; }
-.supl-dosis   { font-size: 12px; font-weight: 700; color: #1a2a4a; }
-.supl-timing  { font-size: 11px; color: #888; }
-.supl-nota    { font-size: 11px; color: #aaa; font-style: italic; }
+.supl-dosis-line { font-size: 11px; color: #1a2a4a; font-weight: 700; margin-top: 6px; border-top: 1px solid #f5f5f5; padding-top: 6px; }
+.supl-timing-line { font-size: 11px; color: #888; margin-top: 2px; }
+/* Panel detalle suplemento */
+.supl-detalle-wrap { display: none; flex-direction: column; height: 100%; }
+.supl-detalle-wrap.visible { display: flex; }
+.supl-detalle-back { background: none; border: none; color: #2563eb; font-size: 12px; font-weight: 700; cursor: pointer; padding: 0 0 12px 0; text-align: left; display: flex; align-items: center; gap: 4px; font-family: inherit; }
+.supl-detalle-back:hover { color: #1a2a4a; }
+.supl-detalle-header { margin-bottom: 14px; }
+.supl-detalle-nombre { font-size: 16px; font-weight: 900; color: #1a1a1a; }
+.supl-detalle-badge { display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; margin-top: 5px; }
+.supl-detalle-section { margin-bottom: 16px; }
+.supl-detalle-section-title { font-size: 10px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; color: #1a2a4a; margin-bottom: 8px; }
+.supl-detalle-dosis-box { background: #f0f4ff; border-radius: 8px; padding: 10px 13px; margin-bottom: 8px; }
+.supl-detalle-dosis-val { font-size: 15px; font-weight: 900; color: #1a2a4a; }
+.supl-detalle-timing-val { font-size: 11px; color: #555; margin-top: 3px; }
+.supl-detalle-nota { font-size: 11px; color: #888; font-style: italic; margin-top: 6px; }
+.supl-detalle-rec-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.supl-detalle-rec-list li { font-size: 12px; color: #333; padding-left: 14px; position: relative; }
+.supl-detalle-rec-list li::before { content: '—'; position: absolute; left: 0; color: #C9A84C; font-weight: 900; }
+.supl-detalle-comb-list { display: flex; flex-direction: column; gap: 8px; }
+.supl-detalle-comb-item { border: 1px solid #e8e8e8; border-radius: 8px; padding: 9px 12px; }
+.supl-detalle-comb-con { font-size: 12px; font-weight: 800; color: #1a1a1a; }
+.supl-detalle-comb-efecto { font-size: 11px; color: #666; margin-top: 2px; }
 
 /* BLOQUE */
 .bloque-wrap {
@@ -12354,16 +12372,186 @@ const LAB_CHIPS_RIGHT = ['espalda','triceps','gluteos','cuadriceps','isquiotibia
 // ════════════════════════════════════════════════════════════
 
 const SUPLEMENTOS_DB = [
-  { id:'proteina',   nombre:'Proteína Whey',            icono:'🥛', proposito:'Recuperación muscular y síntesis proteica',              dosis:'25–40g por batido',                    timing:'Post-entrenamiento o entre comidas',     nota:'Ajustar según ingesta proteica diaria total.',           prioridad:'esencial',    objetivos:['Hipertrofia','Fuerza','Pérdida de peso','Salud general','Rendimiento deportivo'] },
-  { id:'creatina',   nombre:'Creatina Monohidrato',     icono:'⚡', proposito:'Aumenta fuerza, potencia y volumen muscular',            dosis:'3–5g por día',                         timing:'Cualquier momento del día (consistencia)',nota:'No requiere carga. Efecto acumulativo en 2–4 semanas.',  prioridad:'esencial',    objetivos:['Hipertrofia','Fuerza','Rendimiento deportivo','Resistencia'] },
-  { id:'cafeina',    nombre:'Cafeína',                  icono:'☕', proposito:'Mejora rendimiento, foco y resistencia',                 dosis:'3–6mg/kg de peso corporal',            timing:'30–60 min antes del entrenamiento',      nota:'Evitar después de las 14h para no afectar el sueño.',    prioridad:'recomendado', objetivos:['Hipertrofia','Fuerza','Pérdida de peso','Rendimiento deportivo','Resistencia'] },
-  { id:'omega3',     nombre:'Omega-3 (EPA + DHA)',      icono:'🐟', proposito:'Antiinflamatorio, salud cardiovascular y articular',    dosis:'2–4g de EPA+DHA por día',              timing:'Con las comidas',                        nota:'Especialmente relevante en dietas bajas en pescado.',    prioridad:'recomendado', objetivos:['Hipertrofia','Fuerza','Pérdida de peso','Salud general','Rehabilitación','Rendimiento deportivo'] },
-  { id:'vitamina_d', nombre:'Vitamina D3 + K2',         icono:'☀️', proposito:'Salud ósea, muscular, hormonal e inmune',               dosis:'2000–4000 UI D3/día + K2 100mcg',      timing:'Con el desayuno (con grasa)',            nota:'Suplementar especialmente sin exposición solar diaria.', prioridad:'recomendado', objetivos:['Hipertrofia','Fuerza','Pérdida de peso','Salud general','Rehabilitación','Rendimiento deportivo','Resistencia'] },
-  { id:'magnesio',   nombre:'Magnesio Glicinato',       icono:'🔋', proposito:'Sueño, recuperación muscular y función nerviosa',       dosis:'200–400mg de magnesio elemental/día',  timing:'30–60 min antes de dormir',             nota:'Glicinato o malato tienen mejor absorción y tolerancia.',prioridad:'recomendado', objetivos:['Hipertrofia','Fuerza','Pérdida de peso','Salud general','Rehabilitación','Rendimiento deportivo'] },
-  { id:'colageno',   nombre:'Colágeno + Vitamina C',    icono:'🦴', proposito:'Salud articular, tendones y ligamentos',                dosis:'10–15g/día con vitamina C',            timing:'30–60 min antes del entrenamiento',     nota:'La vitamina C es necesaria para la síntesis de colágeno.',prioridad:'recomendado',objetivos:['Salud general','Rehabilitación','Fuerza','Rendimiento deportivo'] },
-  { id:'beta_al',    nombre:'Beta-Alanina',             icono:'🔥', proposito:'Resistencia muscular en alta intensidad',               dosis:'3.2–6.4g/día (dividida en 2 dosis)',   timing:'Pre-entrenamiento',                     nota:'El hormigueo (parestesia) es normal y temporal.',        prioridad:'opcional',    objetivos:['Rendimiento deportivo','Resistencia','Fuerza'] },
-  { id:'ashwag',     nombre:'Ashwagandha (KSM-66)',     icono:'🌿', proposito:'Cortisol, recuperación y calidad del sueño',            dosis:'300–600mg/día',                        timing:'Con desayuno o antes de dormir',         nota:'Útil en períodos de alto estrés o sobreentrenamiento.',  prioridad:'opcional',    objetivos:['Hipertrofia','Fuerza','Salud general','Rendimiento deportivo'] },
-  { id:'zinc',       nombre:'Zinc',                     icono:'💊', proposito:'Apoyo hormonal, inmune y función enzimática',           dosis:'15–30mg/día (con comida)',             timing:'Con el almuerzo o cena',                nota:'Tomar lejos del calcio para mejor absorción.',           prioridad:'opcional',    objetivos:['Hipertrofia','Fuerza','Salud general'] }
+  {
+    id:'proteina', nombre:'Proteína Whey', prioridad:'esencial',
+    proposito:'Recuperación muscular y síntesis proteica',
+    dosis:'25–40g por batido', timing:'Post-entrenamiento o entre comidas',
+    nota:'Ajustar según ingesta proteica diaria total.',
+    objetivos:['Hipertrofia','Fuerza','Pérdida de peso','Salud general','Rendimiento deportivo'],
+    recomendaciones:[
+      'Consumir dentro de las 2h post-entrenamiento para maximizar la síntesis proteica.',
+      'Si hay intolerancia a la lactosa, optar por isolado o hidrolizado.',
+      'No reemplaza fuentes proteicas de la dieta — complementa el total diario.',
+      'Verificar que aporte al menos 20g de proteína por servicio.'
+    ],
+    combinaciones:[
+      { con:'Creatina Monohidrato', efecto:'Sinergia clásica: la creatina potencia el rendimiento y la proteína optimiza la recuperación.' },
+      { con:'Omega-3 (EPA + DHA)', efecto:'El omega-3 amplifica la respuesta anabólica de la proteína y reduce inflamación post-ejercicio.' },
+      { con:'Magnesio Glicinato', efecto:'El magnesio mejora la calidad del sueño donde ocurre gran parte de la síntesis proteica.' }
+    ]
+  },
+  {
+    id:'creatina', nombre:'Creatina Monohidrato', prioridad:'esencial',
+    proposito:'Aumenta fuerza, potencia y volumen muscular',
+    dosis:'3–5g por día', timing:'Cualquier momento del día (consistencia)',
+    nota:'No requiere carga. Efecto acumulativo en 2–4 semanas.',
+    objetivos:['Hipertrofia','Fuerza','Rendimiento deportivo','Resistencia'],
+    recomendaciones:[
+      'Sin fase de carga: 3–5g/día es suficiente y más sostenible a largo plazo.',
+      'El momento de ingesta no importa; lo que importa es la consistencia diaria.',
+      'Consumir con suficiente agua (mínimo 2L/día) para evitar retención muscular incómoda.',
+      'Esperar 2–4 semanas para notar resultados claros en fuerza y volumen.'
+    ],
+    combinaciones:[
+      { con:'Proteína Whey', efecto:'Sinergia clásica para hipertrofia: creatina mejora el rendimiento, whey optimiza la recuperación.' },
+      { con:'Beta-Alanina', efecto:'Complemento ideal para alta intensidad: creatina para potencia, beta-alanina para resistencia.' },
+      { con:'Cafeína', efecto:'Evidencia mixta: la cafeína puede atenuar levemente el efecto de la creatina. Mejor tomarlos en momentos distintos.' }
+    ]
+  },
+  {
+    id:'cafeina', nombre:'Cafeína', prioridad:'recomendado',
+    proposito:'Mejora rendimiento, foco y resistencia',
+    dosis:'3–6mg/kg de peso corporal', timing:'30–60 min antes del entrenamiento',
+    nota:'Evitar después de las 14h para no afectar el sueño.',
+    objetivos:['Hipertrofia','Fuerza','Pérdida de peso','Rendimiento deportivo','Resistencia'],
+    recomendaciones:[
+      'No superar 6mg/kg — dosis mayores aumentan efectos adversos sin beneficio adicional.',
+      'La tolerancia se desarrolla rápido; ciclar 4–6 semanas con 1–2 semanas de pausa.',
+      'Para quienes son sensibles, empezar con 100–150mg y ajustar progresivamente.',
+      'Evitar post-14h para no comprometer la calidad del sueño y la recuperación.'
+    ],
+    combinaciones:[
+      { con:'Beta-Alanina', efecto:'Stack pre-entrenamiento potente: foco y activación (cafeína) + resistencia muscular (beta-alanina).' },
+      { con:'Creatina Monohidrato', efecto:'Puede atenuar levemente el efecto ergogénico de la creatina. Mejor separarlos o monitorear respuesta.' },
+      { con:'Ashwagandha (KSM-66)', efecto:'La ashwagandha puede contrarrestar la sobreestimulación. Útil si la cafeína genera ansiedad.' }
+    ]
+  },
+  {
+    id:'omega3', nombre:'Omega-3 (EPA + DHA)', prioridad:'recomendado',
+    proposito:'Antiinflamatorio, salud cardiovascular y articular',
+    dosis:'2–4g de EPA+DHA por día', timing:'Con las comidas',
+    nota:'Especialmente relevante en dietas bajas en pescado.',
+    objetivos:['Hipertrofia','Fuerza','Pérdida de peso','Salud general','Rehabilitación','Rendimiento deportivo'],
+    recomendaciones:[
+      'Buscar un suplemento con al menos 600mg EPA + 400mg DHA por cápsula.',
+      'Consumir con comidas que contengan grasa para mejorar la absorción.',
+      'Refrigerar el frasco tras abrirlo para evitar oxidación y rancidez.',
+      'En contexto inflamatorio o de rehabilitación, hasta 4g/día de EPA+DHA.'
+    ],
+    combinaciones:[
+      { con:'Vitamina D3 + K2', efecto:'Sinergia potente en salud cardiovascular, inmune y hormonal. Ambos son liposolubles y se absorben mejor juntos.' },
+      { con:'Colágeno + Vitamina C', efecto:'Efecto antiinflamatorio combinado sobre articulaciones, ligamentos y tejido conectivo.' },
+      { con:'Proteína Whey', efecto:'Potencia la respuesta anabólica post-entrenamiento y reduce el daño muscular inducido por ejercicio.' }
+    ]
+  },
+  {
+    id:'vitamina_d', nombre:'Vitamina D3 + K2', prioridad:'recomendado',
+    proposito:'Salud ósea, muscular, hormonal e inmune',
+    dosis:'2000–4000 UI D3/día + K2 100mcg', timing:'Con el desayuno (con grasa)',
+    nota:'Suplementar especialmente sin exposición solar diaria.',
+    objetivos:['Hipertrofia','Fuerza','Pérdida de peso','Salud general','Rehabilitación','Rendimiento deportivo','Resistencia'],
+    recomendaciones:[
+      'La K2 dirige el calcio hacia el hueso y previene calcificación arterial — siempre combinar con D3.',
+      'Dosis de mantenimiento: 2000 UI; en deficiencia documentada: 4000 UI.',
+      'La D3 es liposoluble — consumir siempre con una comida con grasa.',
+      'Objetivo sérico de 25-OH-D: entre 40 y 60 ng/mL para rendimiento óptimo.'
+    ],
+    combinaciones:[
+      { con:'Omega-3 (EPA + DHA)', efecto:'Sinergia en salud cardiovascular, inmune y hormonal. Ambos liposolubles, mejor absorción juntos con grasa.' },
+      { con:'Magnesio Glicinato', efecto:'El magnesio es cofactor necesario para activar la vitamina D. Sin suficiente magnesio, la D3 no se convierte correctamente.' },
+      { con:'Zinc', efecto:'Trío hormonal completo: D3 + K2 + Zinc actúan en conjunto para optimizar testosterona, sistema inmune y función muscular.' }
+    ]
+  },
+  {
+    id:'magnesio', nombre:'Magnesio Glicinato', prioridad:'recomendado',
+    proposito:'Sueño, recuperación muscular y función nerviosa',
+    dosis:'200–400mg de magnesio elemental/día', timing:'30–60 min antes de dormir',
+    nota:'Glicinato o malato tienen mejor absorción y tolerancia.',
+    objetivos:['Hipertrofia','Fuerza','Pérdida de peso','Salud general','Rehabilitación','Rendimiento deportivo'],
+    recomendaciones:[
+      'Evitar el óxido de magnesio: baja absorción (~4%) y efecto laxante frecuente.',
+      'Glicinato para sueño y recuperación; malato para energía y fatiga crónica.',
+      'El magnesio participa en más de 300 reacciones enzimáticas — deficiencia es común.',
+      'Tomar 30–60 min antes de dormir para potenciar calidad del sueño profundo.'
+    ],
+    combinaciones:[
+      { con:'Vitamina D3 + K2', efecto:'El magnesio es cofactor esencial para activar la vitamina D. Son co-dependientes para su función completa.' },
+      { con:'Ashwagandha (KSM-66)', efecto:'Stack nocturno de alta efectividad: magnesio + ashwagandha profundizan el sueño y mejoran la recuperación.' },
+      { con:'Zinc', efecto:'No combinar en la misma toma: magnesio y zinc compiten por absorción intestinal. Separar al menos 2h.' }
+    ]
+  },
+  {
+    id:'colageno', nombre:'Colágeno + Vitamina C', prioridad:'recomendado',
+    proposito:'Salud articular, tendones y ligamentos',
+    dosis:'10–15g/día con vitamina C', timing:'30–60 min antes del entrenamiento',
+    nota:'La vitamina C es necesaria para la síntesis de colágeno.',
+    objetivos:['Salud general','Rehabilitación','Fuerza','Rendimiento deportivo'],
+    recomendaciones:[
+      'Consumir 30–60 min pre-entrenamiento para maximizar síntesis en tendones activos.',
+      'La vitamina C (50–200mg) es indispensable — sin ella la síntesis de colágeno no ocurre.',
+      'Colágeno tipo I para piel, tendones y hueso; tipo II (no hidrolizado) para cartílago articular.',
+      'Resultados visibles en 8–12 semanas de uso consistente.'
+    ],
+    combinaciones:[
+      { con:'Omega-3 (EPA + DHA)', efecto:'El omega-3 reduce inflamación articular potenciando el efecto regenerativo del colágeno.' },
+      { con:'Magnesio Glicinato', efecto:'Soporte integral del tejido conectivo: colágeno para estructura, magnesio para función muscular y nerviosa.' },
+      { con:'Proteína Whey', efecto:'No combinar en la misma toma. El colágeno compite con aminoácidos de la whey. Separar al menos 30 min.' }
+    ]
+  },
+  {
+    id:'beta_al', nombre:'Beta-Alanina', prioridad:'opcional',
+    proposito:'Resistencia muscular en alta intensidad',
+    dosis:'3.2–6.4g/día (dividida en 2 dosis)', timing:'Pre-entrenamiento',
+    nota:'El hormigueo (parestesia) es normal y temporal.',
+    objetivos:['Rendimiento deportivo','Resistencia','Fuerza'],
+    recomendaciones:[
+      'El hormigueo (parestesia) es inofensivo — se reduce dividiendo la dosis en 2 tomas.',
+      'Más efectiva en esfuerzos de 1 a 4 minutos sostenidos (alta intensidad).',
+      'Efecto acumulativo por carnosina muscular: requiere 4–8 semanas de uso continuo.',
+      'No tiene beneficio agudo — no tiene sentido tomarla solo días de entrenamiento.'
+    ],
+    combinaciones:[
+      { con:'Creatina Monohidrato', efecto:'Sinergia probada para alta intensidad: creatina para potencia pico, beta-alanina para resistencia muscular.' },
+      { con:'Cafeína', efecto:'Stack pre-entrenamiento clásico: activación central (cafeína) + resistencia periférica (beta-alanina).' },
+      { con:'Proteína Whey', efecto:'Post-entrenamiento: beta-alanina agota el músculo, la proteína optimiza la reparación posterior.' }
+    ]
+  },
+  {
+    id:'ashwag', nombre:'Ashwagandha (KSM-66)', prioridad:'opcional',
+    proposito:'Cortisol, recuperación y calidad del sueño',
+    dosis:'300–600mg/día', timing:'Con desayuno o antes de dormir',
+    nota:'Útil en períodos de alto estrés o sobreentrenamiento.',
+    objetivos:['Hipertrofia','Fuerza','Salud general','Rendimiento deportivo'],
+    recomendaciones:[
+      'KSM-66 es el extracto con mayor evidencia científica en deportistas.',
+      'El efecto adaptogénico es más notable en períodos de alto estrés o sobreentrenamiento.',
+      'Ciclar: 8–12 semanas de uso, 4 semanas de pausa para mantener sensibilidad.',
+      'Puede tomarse antes de dormir para potenciar recuperación nocturna y sueño profundo.'
+    ],
+    combinaciones:[
+      { con:'Magnesio Glicinato', efecto:'Stack nocturno potente: ashwagandha baja el cortisol y el magnesio profundiza el sueño reparador.' },
+      { con:'Vitamina D3 + K2', efecto:'Apoyo hormonal y adaptogénico combinado. Útil en atletas con niveles de cortisol crónicamente elevados.' },
+      { con:'Cafeína', efecto:'La ashwagandha contrarresta parte de la sobreestimulación por cafeína. Tomar en momentos distintos del día.' }
+    ]
+  },
+  {
+    id:'zinc', nombre:'Zinc', prioridad:'opcional',
+    proposito:'Apoyo hormonal, inmune y función enzimática',
+    dosis:'15–30mg/día (con comida)', timing:'Con el almuerzo o cena',
+    nota:'Tomar lejos del calcio para mejor absorción.',
+    objetivos:['Hipertrofia','Fuerza','Salud general'],
+    recomendaciones:[
+      'No exceder 40mg/día de zinc elemental — dosis altas interfieren con la absorción de cobre.',
+      'Tomar lejos del calcio y del magnesio (compiten por absorción — separar al menos 2h).',
+      'ZMA (Zinc + Magnesio + B6) es una combinación popular para recuperación nocturna hormonal.',
+      'El bisglicinato de zinc tiene mejor tolerancia GI que el gluconato o el sulfato.'
+    ],
+    combinaciones:[
+      { con:'Vitamina D3 + K2', efecto:'Trío hormonal completo: zinc + D3 + K2 para optimizar testosterona, función inmune y salud ósea.' },
+      { con:'Magnesio Glicinato', efecto:'No combinar en la misma toma — compiten por absorción. Zinc al almuerzo, magnesio antes de dormir.' },
+      { con:'Omega-3 (EPA + DHA)', efecto:'Soporte inmune y antiinflamatorio complementario para recuperación general.' }
+    ]
+  }
 ];
 
 function renderNutricion(alumnoId) {
@@ -12385,20 +12573,12 @@ function renderNutricion(alumnoId) {
   suplTodos.sort((a,b) => ordenPrioridad[a.prioridad] - ordenPrioridad[b.prioridad]);
 
   const suplHTML = suplTodos.map(s => `
-    <div class="supl-card ${s.prioridad}">
-      <div class="supl-top">
-        <div class="supl-icon">${s.icono}</div>
-        <div class="supl-info">
-          <div class="supl-nombre">${s.nombre}</div>
-          <div class="supl-proposito">${s.proposito}</div>
-          <span class="supl-badge badge-${s.prioridad}">${s.prioridad}</span>
-        </div>
-      </div>
-      <div class="supl-detalles">
-        <div class="supl-dosis">📏 ${s.dosis}</div>
-        <div class="supl-timing">⏱ ${s.timing}</div>
-        <div class="supl-nota">${s.nota}</div>
-      </div>
+    <div class="supl-card ${s.prioridad}" onclick="abrirSuplementoDetalle('${s.id}','${objetivo.replace(/'/g,"\\'")}')">
+      <div class="supl-nombre">${s.nombre}<span class="supl-nombre-arrow">›</span></div>
+      <div class="supl-proposito">${s.proposito}</div>
+      <span class="supl-badge badge-${s.prioridad}">${s.prioridad}</span>
+      <div class="supl-dosis-line">Dosis: ${s.dosis}</div>
+      <div class="supl-timing-line">Timing: ${s.timing}</div>
     </div>
   `).join('');
 
@@ -12411,8 +12591,8 @@ function renderNutricion(alumnoId) {
     <div class="nutr-grid">
       <!-- MACROS -->
       <div class="nutr-card">
-        <div class="nutr-card-title">🥗 Planificación de Macronutrientes</div>
-        <div class="nutr-obj-tag">🎯 ${objetivo}</div>
+        <div class="nutr-card-title">Planificación de Macronutrientes</div>
+        <div class="nutr-obj-tag">${objetivo}</div>
         <div class="nutr-field-row">
           <div class="nutr-field">
             <label>Peso corporal (kg)</label>
@@ -12477,15 +12657,20 @@ function renderNutricion(alumnoId) {
           </div>
         </div>
         <textarea class="nutr-notas-area" id="nutr-notas" placeholder="Notas nutricionales del alumno (intolerancias, preferencias, contexto...)...">${plan.notas||''}</textarea>
-        <button class="nutr-btn-calc" onclick="calcularMacrosNutricion()">⚡ Calcular macros</button>
-        <button class="nutr-btn-save" onclick="guardarPlanNutricion()">💾 Guardar plan</button>
+        <button class="nutr-btn-calc" onclick="calcularMacrosNutricion()">Calcular macros</button>
+        <button class="nutr-btn-save" onclick="guardarPlanNutricion()">Guardar plan</button>
         <div class="nutr-disclaimer">Valores estimados. Ajustar según respuesta individual y contexto clínico.</div>
       </div>
       <!-- SUPLEMENTOS -->
       <div class="nutr-card">
-        <div class="nutr-card-title">💊 Suplementación Recomendada</div>
-        <div class="nutr-obj-tag">🎯 Filtrado por: ${objetivo}</div>
-        <div class="supl-list">${suplHTML}</div>
+        <div class="nutr-card-title">Suplementación Recomendada</div>
+        <div class="nutr-obj-tag" id="supl-obj-tag">Filtrado por: ${objetivo}</div>
+        <!-- Lista de suplementos -->
+        <div id="supl-lista-wrap">
+          <div class="supl-list">${suplHTML}</div>
+        </div>
+        <!-- Panel detalle (oculto por defecto) -->
+        <div id="supl-detalle-wrap" class="supl-detalle-wrap"></div>
       </div>
     </div>
   `;
@@ -12554,6 +12739,64 @@ function guardarPlanNutricion() {
   alumnos[idx].nutricion = { peso, actividad, ajuste, protFactor, notas, calorias:kcal, proteinas:prot, carbos:carb, grasas:grasa, pctProt, pctCarb, pctGrasa };
   saveAlumnos(alumnos);
   toast('Plan nutricional guardado ✓');
+}
+
+function abrirSuplementoDetalle(id, objetivo) {
+  const s = SUPLEMENTOS_DB.find(x => x.id === id);
+  if (!s) return;
+
+  const listaWrap   = document.getElementById('supl-lista-wrap');
+  const detalleWrap = document.getElementById('supl-detalle-wrap');
+  const objTag      = document.getElementById('supl-obj-tag');
+  if (!listaWrap || !detalleWrap) return;
+
+  // Combinaciones relevantes al objetivo
+  const combsHTML = s.combinaciones.map(c => `
+    <div class="supl-detalle-comb-item">
+      <div class="supl-detalle-comb-con">${c.con}</div>
+      <div class="supl-detalle-comb-efecto">${c.efecto}</div>
+    </div>
+  `).join('');
+
+  const recsHTML = s.recomendaciones.map(r => `<li>${r}</li>`).join('');
+
+  detalleWrap.innerHTML = `
+    <button class="supl-detalle-back" onclick="cerrarSuplementoDetalle()">‹ Volver a suplementos</button>
+    <div class="supl-detalle-header">
+      <div class="supl-detalle-nombre">${s.nombre}</div>
+      <span class="supl-detalle-badge badge-${s.prioridad}">${s.prioridad}</span>
+    </div>
+    <div class="supl-detalle-section">
+      <div class="supl-detalle-section-title">Para qué sirve</div>
+      <p style="font-size:12px;color:#333;margin:0 0 8px;">${s.proposito}</p>
+      <div class="supl-detalle-dosis-box">
+        <div class="supl-detalle-dosis-val">${s.dosis}</div>
+        <div class="supl-detalle-timing-val">Timing: ${s.timing}</div>
+      </div>
+      <div class="supl-detalle-nota">${s.nota}</div>
+    </div>
+    <div class="supl-detalle-section">
+      <div class="supl-detalle-section-title">Recomendaciones</div>
+      <ul class="supl-detalle-rec-list">${recsHTML}</ul>
+    </div>
+    <div class="supl-detalle-section">
+      <div class="supl-detalle-section-title">Combinaciones</div>
+      <div class="supl-detalle-comb-list">${combsHTML}</div>
+    </div>
+  `;
+
+  listaWrap.style.display = 'none';
+  if (objTag) objTag.style.display = 'none';
+  detalleWrap.classList.add('visible');
+}
+
+function cerrarSuplementoDetalle() {
+  const listaWrap   = document.getElementById('supl-lista-wrap');
+  const detalleWrap = document.getElementById('supl-detalle-wrap');
+  const objTag      = document.getElementById('supl-obj-tag');
+  if (listaWrap)   listaWrap.style.display = '';
+  if (objTag)      objTag.style.display = '';
+  if (detalleWrap) { detalleWrap.classList.remove('visible'); detalleWrap.innerHTML = ''; }
 }
 
 // ════════════════════════════════════════════════════════════
