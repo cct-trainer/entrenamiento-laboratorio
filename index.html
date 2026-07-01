@@ -1058,19 +1058,17 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .ej-ficha-toggle:hover { color: #9A7A28; }
 
 /* ═══ LAYOUT COLUMNAS MULTI-EJERCICIO ═══ */
+.bloque-wrap.multi {
+  background: rgba(26, 42, 74, 0.07);
+  border-left-color: #1a2a4a;
+}
 .bloque-body.multi-ej {
   display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 16px 20px;
-  overflow-x: auto;
-  overflow-y: visible;
+  flex-direction: column;
+  gap: 0;
+  padding: 12px 16px 16px;
 }
 .bloque-body.multi-ej .ej-card {
-  flex: 1;
-  min-width: 280px;
-  border-bottom: none;
   border: none;
   border-left: 3px solid #C9A84C;
   border-radius: 8px;
@@ -1080,28 +1078,20 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
   box-shadow: 0 4px 0 #bbb, 0 6px 16px rgba(0,0,0,0.18);
   overflow: visible;
 }
-.bloque-body.multi-ej .ej-card:last-child { border-right: none; }
 
-/* FLECHA ENTRE EJERCICIOS */
+/* FLECHA ENTRE EJERCICIOS (vertical) */
 .ej-arrow {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0 2px;
-  flex-shrink: 0;
   color: #C9A84C;
-  font-size: 22px;
-  min-height: 60px;
-  align-self: stretch;
-  background: #f8fbff;
-  border-top: none;
-  border-bottom: none;
-}
-.ej-arrow-return {
   font-size: 18px;
-  color: #e65100;
+  font-weight: 900;
+  padding: 6px 0;
+  background: transparent;
+  flex-shrink: 0;
 }
+.ej-arrow-return { display: none; }
 /* BLOQUE con 1 ej: layout normal */
 .bloque-body:not(.multi-ej) .ej-card {
   border-bottom: 1px solid #f0f0f0;
@@ -2236,22 +2226,7 @@ select.toolbox-input option:disabled { color: #888; }
 
   /* ── BLOQUE BODY MULTI (columnas) → SCROLL HORIZONTAL ── */
   .bloque-body.multi-ej {
-    flex-direction: row;
-    overflow-x: auto;
-    overflow-y: visible;
-    -webkit-overflow-scrolling: touch;
-    gap: 10px;
-    padding: 10px 12px 18px;
-  }
-  .bloque-body.multi-ej .ej-card {
-    min-width: 260px;
-    flex-shrink: 0;
-  }
-  /* Indicador de scroll */
-  .bloque-body.multi-ej::after {
-    content: '';
-    flex-shrink: 0;
-    width: 1px;
+    padding: 10px 12px 14px;
   }
 
   /* ── BLOQUE BODY SINGLE ── */
@@ -15603,29 +15578,24 @@ function actualizarLayoutBloque(bloqueId) {
   const ejes = body.querySelectorAll('.ej-card');
   const multi = ejes.length > 1;
 
+  const wrap = body.closest('.bloque-wrap');
   if (multi) {
     body.classList.add('multi-ej');
-    // Insertar flechas entre ejercicios
-    // Primero limpiar flechas existentes
+    wrap?.classList.add('multi');
+    // Limpiar flechas existentes
     body.querySelectorAll('.ej-arrow').forEach(a => a.remove());
-    const ejArray = Array.from(ejes);
+    const ejArray = Array.from(body.querySelectorAll('.ej-card'));
     ejArray.forEach((ej, i) => {
       if (i < ejArray.length - 1) {
         const arrow = document.createElement('div');
         arrow.className = 'ej-arrow';
-        arrow.innerHTML = '→';
+        arrow.innerHTML = '↓';
         body.insertBefore(arrow, ejArray[i + 1]);
       }
     });
-    // Flecha de retorno al último ejercicio
-    const lastEj = ejArray[ejArray.length - 1];
-    const returnArrow = document.createElement('div');
-    returnArrow.className = 'ej-arrow ej-arrow-return';
-    returnArrow.innerHTML = '↩';
-    returnArrow.title = 'Volver al primero';
-    body.appendChild(returnArrow);
   } else {
     body.classList.remove('multi-ej');
+    wrap?.classList.remove('multi');
     body.querySelectorAll('.ej-arrow').forEach(a => a.remove());
   }
 }
