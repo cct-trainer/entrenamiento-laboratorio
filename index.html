@@ -1059,8 +1059,23 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 
 /* ═══ LAYOUT COLUMNAS MULTI-EJERCICIO ═══ */
 .bloque-wrap.multi {
-  background: rgba(26, 42, 74, 0.07);
-  border-left-color: #1a2a4a;
+  background: #1a2a4a;
+  border-left-color: #C9A84C;
+}
+.bloque-wrap.multi .bloque-body { background: transparent; }
+.bloque-wrap.multi .bloque-footer {
+  background: rgba(255,255,255,0.06);
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+.bloque-wrap.multi .bloque-add-ej-btn {
+  color: rgba(255,255,255,0.75);
+  border-color: rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+}
+.bloque-wrap.multi .bloque-add-ej-btn:hover {
+  background: rgba(201,168,76,0.25);
+  border-color: #C9A84C;
+  color: #C9A84C;
 }
 .bloque-body.multi-ej {
   display: flex;
