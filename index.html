@@ -14119,15 +14119,30 @@ function renderCalendario() {
   const hoy = new Date().toISOString().split('T')[0];
   const feed = document.getElementById('cal-feed');
 
-  feed.innerHTML = semanas.map((dias, semIdx) => {
-    const desde = dias[0].getDate() + ' ' + MESES[dias[0].getMonth()].substring(0,3).toUpperCase();
-    const hasta  = dias[6].getDate() + ' ' + MESES[dias[6].getMonth()].substring(0,3).toUpperCase();
+  // Cabecera fija con los 7 días de la semana
+  const cabeceraHTML = `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:6px;">
+    ${DIAS_SHORT.map(d => `<div style="text-align:center;font-size:9px;font-weight:800;color:#aaa;letter-spacing:1.2px;padding:4px 0;">${d}</div>`).join('')}
+  </div>`;
+
+  const filasHTML = semanas.map((dias, semIdx) => {
+    const diasMes  = dias.filter(d => d.getMonth() === calMes);
+    const desdeDia = diasMes[0]?.getDate();
+    const hastaDia = diasMes[diasMes.length - 1]?.getDate();
+    const etiqueta = desdeDia && hastaDia
+      ? `SEM. ${semIdx + 1} · ${desdeDia} — ${hastaDia} ${MESES[calMes].substring(0,3).toUpperCase()}`
+      : `SEM. ${semIdx + 1}`;
 
     const diasHTML = dias.map((d, i) => {
-      const fechaStr   = d.toISOString().split('T')[0];
-      const esOtroMes  = d.getMonth() !== calMes;
-      const esHoy      = fechaStr === hoy;
-      const eventos    = eventosPorFecha[fechaStr] || [];
+      const fechaStr  = d.toISOString().split('T')[0];
+      const esOtroMes = d.getMonth() !== calMes;
+
+      // Celda vacía para días fuera del mes
+      if (esOtroMes) {
+        return `<div style="flex:1;min-width:0;min-height:64px;border:1px solid #f0f0f0;border-radius:8px;background:#f8f8f8;"></div>`;
+      }
+
+      const esHoy   = fechaStr === hoy;
+      const eventos = eventosPorFecha[fechaStr] || [];
 
       const chipsHTML = eventos.map(ev => {
         const esFuerza = ev.tipo === 'fuerza';
@@ -14137,28 +14152,28 @@ function renderCalendario() {
         const color = esFuerza ? '#0277bd' : '#e65100';
         const bg    = esFuerza ? '#e3f6fd' : '#fff3e0';
         const icon  = esFuerza ? '💪' : '🏃';
-        const label = ev.nombre;
-        return `<div onclick="${fn}" title="${label}" style="cursor:pointer;font-size:9px;font-weight:800;background:${bg};color:${color};border-left:3px solid ${color};border-radius:4px;padding:3px 5px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;">${icon} ${label}</div>`;
+        return `<div onclick="${fn}" title="${ev.nombre}" style="cursor:pointer;font-size:9px;font-weight:800;background:${bg};color:${color};border-left:3px solid ${color};border-radius:4px;padding:3px 5px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;">${icon} ${ev.nombre}</div>`;
       }).join('');
 
       const bordeColor = esHoy ? '#E8C96A' : '#e8e8e8';
-      const bgColor    = esHoy ? '#f0fbff' : esOtroMes ? '#fafafa' : '#fff';
-      const numColor   = esHoy ? '#E8C96A' : esOtroMes ? '#ccc' : '#1a1a1a';
+      const bgColor    = esHoy ? '#fffbef' : '#fff';
+      const numColor   = esHoy ? '#C9A84C' : '#1a1a1a';
 
-      return `<div style="flex:1;min-width:0;border:1px solid ${bordeColor};border-radius:8px;padding:7px 5px;background:${bgColor};${esHoy?'box-shadow:0 0 0 2px rgba(79,195,247,0.25);':''}">
+      return `<div style="flex:1;min-width:0;border:1px solid ${bordeColor};border-radius:8px;padding:7px 5px;background:${bgColor};${esHoy?'box-shadow:0 0 0 2px rgba(201,168,76,0.2);':''}">
         <div style="text-align:center;margin-bottom:5px;">
-          <div style="font-size:9px;font-weight:700;color:#aaa;letter-spacing:1px;">${DIAS_SHORT[i]}</div>
           <div style="font-size:15px;font-weight:800;color:${numColor};line-height:1.2;">${d.getDate()}</div>
         </div>
         <div style="min-height:18px;">${chipsHTML}</div>
       </div>`;
     }).join('');
 
-    return `<div style="margin-bottom:20px;">
-      <div style="font-size:10px;font-weight:700;color:#999;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">SEM. ${semIdx + 1} · ${desde} — ${hasta}</div>
+    return `<div style="margin-bottom:14px;">
+      <div style="font-size:9px;font-weight:700;color:#bbb;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:6px;">${etiqueta}</div>
       <div style="display:flex;gap:5px;">${diasHTML}</div>
     </div>`;
   }).join('');
+
+  feed.innerHTML = cabeceraHTML + filasHTML;
 
   window._calEventos = eventosPorFecha;
 }
