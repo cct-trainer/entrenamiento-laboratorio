@@ -842,6 +842,58 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 }
 .pln-constructor-sub { font-size: 11px; color: #aaa; margin-top: 2px; }
 
+/* ── NUTRICIÓN MODULE ── */
+.nutr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.nutr-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 14px; padding: 22px 24px; }
+.nutr-card-title { font-size: 13px; font-weight: 800; color: #1a2a4a; margin-bottom: 18px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
+.nutr-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.nutr-field { display: flex; flex-direction: column; gap: 5px; }
+.nutr-field label { font-size: 10px; font-weight: 700; color: #888; letter-spacing: 1.5px; text-transform: uppercase; }
+.nutr-field input, .nutr-field select { border: 1px solid #e0e0e0; border-radius: 8px; padding: 9px 12px; font-size: 13px; font-weight: 600; color: #222; font-family: inherit; background: #fafafa; transition: border-color 0.15s; }
+.nutr-field input:focus, .nutr-field select:focus { outline: none; border-color: #C9A84C; background: #fff; }
+.nutr-result-box { background: #f8f9fb; border-radius: 10px; padding: 16px 18px; margin-top: 4px; }
+.nutr-kcal-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; }
+.nutr-kcal-label { font-size: 10px; font-weight: 700; color: #888; letter-spacing: 1.5px; text-transform: uppercase; }
+.nutr-kcal-val { font-size: 28px; font-weight: 900; color: #1a2a4a; }
+.nutr-kcal-unit { font-size: 12px; font-weight: 600; color: #aaa; margin-left: 4px; }
+.nutr-macros-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.nutr-macro-block { text-align: center; background: #fff; border-radius: 8px; padding: 12px 6px; border: 1px solid #f0f0f0; }
+.nutr-macro-g { font-size: 22px; font-weight: 900; line-height: 1; }
+.nutr-macro-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #888; margin-top: 3px; }
+.nutr-macro-pct { font-size: 11px; font-weight: 600; color: #bbb; margin-top: 2px; }
+.nutr-macro-prot { color: #2563eb; }
+.nutr-macro-carb { color: #d97706; }
+.nutr-macro-fat  { color: #16a34a; }
+.nutr-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 14px; gap: 2px; }
+.nutr-bar-seg { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+.nutr-btn-calc { width: 100%; background: #1a2a4a; color: #E8C96A; border: none; border-radius: 8px; padding: 11px; font-size: 12px; font-weight: 700; cursor: pointer; margin-top: 14px; letter-spacing: 0.5px; font-family: inherit; transition: background 0.15s; }
+.nutr-btn-calc:hover { background: #253d6b; }
+.nutr-btn-save { width: 100%; background: #f5f5f5; color: #555; border: 1px solid #e0e0e0; border-radius: 8px; padding: 9px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 8px; font-family: inherit; transition: all 0.15s; }
+.nutr-btn-save:hover { background: #e8e8e8; }
+.nutr-notas-area { width: 100%; border: 1px solid #e0e0e0; border-radius: 8px; padding: 9px 12px; font-size: 12px; color: #333; font-family: inherit; margin-top: 12px; resize: vertical; min-height: 64px; box-sizing: border-box; }
+.nutr-notas-area:focus { outline: none; border-color: #C9A84C; }
+.nutr-obj-tag { display: inline-block; background: #f0f4ff; color: #1a2a4a; border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 700; margin-bottom: 14px; border: 1px solid #d6e0ff; }
+.nutr-disclaimer { font-size: 10px; color: #bbb; text-align: center; margin-top: 10px; font-style: italic; }
+/* Suplementos */
+.supl-list { display: flex; flex-direction: column; gap: 10px; max-height: 560px; overflow-y: auto; padding-right: 2px; }
+.supl-card { border: 1px solid #e8e8e8; border-radius: 10px; padding: 13px 15px; }
+.supl-card.esencial    { border-left: 3px solid #2563eb; }
+.supl-card.recomendado { border-left: 3px solid #C9A84C; }
+.supl-card.opcional    { border-left: 3px solid #d1d5db; }
+.supl-top { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+.supl-icon { font-size: 22px; line-height: 1; flex-shrink: 0; }
+.supl-info { flex: 1; }
+.supl-nombre { font-size: 13px; font-weight: 800; color: #1a1a1a; line-height: 1.2; }
+.supl-proposito { font-size: 11px; color: #666; margin-top: 2px; }
+.supl-badge { display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; margin-top: 4px; }
+.badge-esencial    { background: #dbeafe; color: #1d4ed8; }
+.badge-recomendado { background: #fef3c7; color: #92400e; }
+.badge-opcional    { background: #f3f4f6; color: #6b7280; }
+.supl-detalles { border-top: 1px solid #f5f5f5; margin-top: 8px; padding-top: 8px; display: flex; flex-direction: column; gap: 3px; }
+.supl-dosis   { font-size: 12px; font-weight: 700; color: #1a2a4a; }
+.supl-timing  { font-size: 11px; color: #888; }
+.supl-nota    { font-size: 11px; color: #aaa; font-style: italic; }
+
 /* BLOQUE */
 .bloque-wrap {
   background: #fff;
@@ -2799,6 +2851,7 @@ select.toolbox-input option:disabled { color: #888; }
             <button class="perfil-subtab active" onclick="switchPerfilSubtab('seg','antropometria')">Antropometría</button>
             <button class="perfil-subtab" onclick="switchPerfilSubtab('seg','rendimiento')">Rendimiento</button>
             <button class="perfil-subtab" onclick="switchPerfilSubtab('seg','evaluaciones')">Evaluaciones</button>
+            <button class="perfil-subtab" onclick="switchPerfilSubtab('seg','nutricion')">Nutrición</button>
           </div>
           <div id="seg-sub-antropometria" class="perfil-subcontent active">
             <div style="max-width:820px;margin:0 auto;">
@@ -2823,6 +2876,9 @@ select.toolbox-input option:disabled { color: #888; }
                 <div style="font-size:13px;color:#888;">Este espacio va a contener las evaluaciones físicas y métricas del alumno.</div>
               </div>
             </div>
+          </div>
+          <div id="seg-sub-nutricion" class="perfil-subcontent">
+            <div id="nutricion-content"></div>
           </div>
         </div>
       </div>
@@ -11653,6 +11709,7 @@ function switchPerfilSubtab(group, sub) {
   if (sub === 'antropometria') renderMediciones(currentAlumnoId);
   if (sub === 'evaluaciones')  renderLabFisico(currentAlumnoId);
   if (sub === 'rendimiento')   renderRendimientoAlumno(currentAlumnoId);
+  if (sub === 'nutricion')     renderNutricion(currentAlumnoId);
   if (sub === 'salud')         renderSalud(currentAlumnoId);
   if (sub === 'notas')         renderNotas(currentAlumnoId,'notas');
   if (sub === 'habitos')       renderHabitosAlumno(currentAlumnoId);
@@ -12287,6 +12344,215 @@ ${hairHTML}
 
 const LAB_CHIPS_LEFT  = ['cuello','hombros','pecho','biceps','abdomen','brazos_antebrazos','manos'];
 const LAB_CHIPS_RIGHT = ['espalda','triceps','gluteos','cuadriceps','isquiotibiales','pantorrillas'];
+
+// ════════════════════════════════════════════════════════════
+//  MÓDULO NUTRICIÓN
+// ════════════════════════════════════════════════════════════
+
+const SUPLEMENTOS_DB = [
+  { id:'proteina',   nombre:'Proteína Whey',            icono:'🥛', proposito:'Recuperación muscular y síntesis proteica',              dosis:'25–40g por batido',                    timing:'Post-entrenamiento o entre comidas',     nota:'Ajustar según ingesta proteica diaria total.',           prioridad:'esencial',    objetivos:['Hipertrofia','Fuerza','Pérdida de peso','Salud general','Rendimiento deportivo'] },
+  { id:'creatina',   nombre:'Creatina Monohidrato',     icono:'⚡', proposito:'Aumenta fuerza, potencia y volumen muscular',            dosis:'3–5g por día',                         timing:'Cualquier momento del día (consistencia)',nota:'No requiere carga. Efecto acumulativo en 2–4 semanas.',  prioridad:'esencial',    objetivos:['Hipertrofia','Fuerza','Rendimiento deportivo','Resistencia'] },
+  { id:'cafeina',    nombre:'Cafeína',                  icono:'☕', proposito:'Mejora rendimiento, foco y resistencia',                 dosis:'3–6mg/kg de peso corporal',            timing:'30–60 min antes del entrenamiento',      nota:'Evitar después de las 14h para no afectar el sueño.',    prioridad:'recomendado', objetivos:['Hipertrofia','Fuerza','Pérdida de peso','Rendimiento deportivo','Resistencia'] },
+  { id:'omega3',     nombre:'Omega-3 (EPA + DHA)',      icono:'🐟', proposito:'Antiinflamatorio, salud cardiovascular y articular',    dosis:'2–4g de EPA+DHA por día',              timing:'Con las comidas',                        nota:'Especialmente relevante en dietas bajas en pescado.',    prioridad:'recomendado', objetivos:['Hipertrofia','Fuerza','Pérdida de peso','Salud general','Rehabilitación','Rendimiento deportivo'] },
+  { id:'vitamina_d', nombre:'Vitamina D3 + K2',         icono:'☀️', proposito:'Salud ósea, muscular, hormonal e inmune',               dosis:'2000–4000 UI D3/día + K2 100mcg',      timing:'Con el desayuno (con grasa)',            nota:'Suplementar especialmente sin exposición solar diaria.', prioridad:'recomendado', objetivos:['Hipertrofia','Fuerza','Pérdida de peso','Salud general','Rehabilitación','Rendimiento deportivo','Resistencia'] },
+  { id:'magnesio',   nombre:'Magnesio Glicinato',       icono:'🔋', proposito:'Sueño, recuperación muscular y función nerviosa',       dosis:'200–400mg de magnesio elemental/día',  timing:'30–60 min antes de dormir',             nota:'Glicinato o malato tienen mejor absorción y tolerancia.',prioridad:'recomendado', objetivos:['Hipertrofia','Fuerza','Pérdida de peso','Salud general','Rehabilitación','Rendimiento deportivo'] },
+  { id:'colageno',   nombre:'Colágeno + Vitamina C',    icono:'🦴', proposito:'Salud articular, tendones y ligamentos',                dosis:'10–15g/día con vitamina C',            timing:'30–60 min antes del entrenamiento',     nota:'La vitamina C es necesaria para la síntesis de colágeno.',prioridad:'recomendado',objetivos:['Salud general','Rehabilitación','Fuerza','Rendimiento deportivo'] },
+  { id:'beta_al',    nombre:'Beta-Alanina',             icono:'🔥', proposito:'Resistencia muscular en alta intensidad',               dosis:'3.2–6.4g/día (dividida en 2 dosis)',   timing:'Pre-entrenamiento',                     nota:'El hormigueo (parestesia) es normal y temporal.',        prioridad:'opcional',    objetivos:['Rendimiento deportivo','Resistencia','Fuerza'] },
+  { id:'ashwag',     nombre:'Ashwagandha (KSM-66)',     icono:'🌿', proposito:'Cortisol, recuperación y calidad del sueño',            dosis:'300–600mg/día',                        timing:'Con desayuno o antes de dormir',         nota:'Útil en períodos de alto estrés o sobreentrenamiento.',  prioridad:'opcional',    objetivos:['Hipertrofia','Fuerza','Salud general','Rendimiento deportivo'] },
+  { id:'zinc',       nombre:'Zinc',                     icono:'💊', proposito:'Apoyo hormonal, inmune y función enzimática',           dosis:'15–30mg/día (con comida)',             timing:'Con el almuerzo o cena',                nota:'Tomar lejos del calcio para mejor absorción.',           prioridad:'opcional',    objetivos:['Hipertrofia','Fuerza','Salud general'] }
+];
+
+function renderNutricion(alumnoId) {
+  const el = document.getElementById('nutricion-content');
+  if (!el) return;
+  const alumno = getAlumnos().find(a => a.id === alumnoId);
+  if (!alumno) { el.innerHTML = '<p style="color:#888;padding:20px;">Seleccioná un alumno para ver el plan nutricional.</p>'; return; }
+
+  const objetivo = alumno.objetivo || 'Sin objetivo';
+  const mediciones = alumno.mediciones || [];
+  const ultimaMed = mediciones.length ? [...mediciones].sort((a,b)=>a.fecha<b.fecha?1:-1)[0] : null;
+  const pesoActual = ultimaMed?.peso || '';
+  const plan = alumno.nutricion || {};
+
+  // Filtrar suplementos por objetivo
+  const suplFiltrados = SUPLEMENTOS_DB.filter(s => s.objetivos.includes(objetivo));
+  const suplTodos = suplFiltrados.length > 0 ? suplFiltrados : SUPLEMENTOS_DB.slice(0, 6);
+  const ordenPrioridad = { esencial:0, recomendado:1, opcional:2 };
+  suplTodos.sort((a,b) => ordenPrioridad[a.prioridad] - ordenPrioridad[b.prioridad]);
+
+  const suplHTML = suplTodos.map(s => `
+    <div class="supl-card ${s.prioridad}">
+      <div class="supl-top">
+        <div class="supl-icon">${s.icono}</div>
+        <div class="supl-info">
+          <div class="supl-nombre">${s.nombre}</div>
+          <div class="supl-proposito">${s.proposito}</div>
+          <span class="supl-badge badge-${s.prioridad}">${s.prioridad}</span>
+        </div>
+      </div>
+      <div class="supl-detalles">
+        <div class="supl-dosis">📏 ${s.dosis}</div>
+        <div class="supl-timing">⏱ ${s.timing}</div>
+        <div class="supl-nota">${s.nota}</div>
+      </div>
+    </div>
+  `).join('');
+
+  const kcalGuardado = plan.calorias || '';
+  const protGuardado = plan.proteinas || '';
+  const carbGuardado = plan.carbos || '';
+  const grasaGuardado = plan.grasas || '';
+
+  el.innerHTML = `
+    <div class="nutr-grid">
+      <!-- MACROS -->
+      <div class="nutr-card">
+        <div class="nutr-card-title">🥗 Planificación de Macronutrientes</div>
+        <div class="nutr-obj-tag">🎯 ${objetivo}</div>
+        <div class="nutr-field-row">
+          <div class="nutr-field">
+            <label>Peso corporal (kg)</label>
+            <input type="number" id="nutr-peso" value="${plan.peso || pesoActual}" placeholder="Ej: 70" min="30" max="200" step="0.5" oninput="calcularMacrosNutricion()">
+          </div>
+          <div class="nutr-field">
+            <label>Nivel de actividad</label>
+            <select id="nutr-actividad" onchange="calcularMacrosNutricion()">
+              <option value="sedentario" ${(plan.actividad||'moderado')==='sedentario'?'selected':''}>Sedentario (escritorio)</option>
+              <option value="moderado"   ${(plan.actividad||'moderado')==='moderado'?'selected':''}>Moderado (3–4x/semana)</option>
+              <option value="activo"     ${(plan.actividad||'moderado')==='activo'?'selected':''}>Activo (5–6x/semana)</option>
+              <option value="muy_activo" ${(plan.actividad||'moderado')==='muy_activo'?'selected':''}>Muy activo (2x/día)</option>
+            </select>
+          </div>
+        </div>
+        <div class="nutr-field-row">
+          <div class="nutr-field">
+            <label>Ajuste calórico</label>
+            <select id="nutr-ajuste" onchange="calcularMacrosNutricion()">
+              <option value="deficit_alto"  ${(plan.ajuste||'mantenimiento')==='deficit_alto'?'selected':''}>Déficit alto (–500 kcal)</option>
+              <option value="deficit"       ${(plan.ajuste||'mantenimiento')==='deficit'?'selected':''}>Déficit moderado (–300 kcal)</option>
+              <option value="mantenimiento" ${(plan.ajuste||'mantenimiento')==='mantenimiento'?'selected':''}>Mantenimiento</option>
+              <option value="superavit"     ${(plan.ajuste||'mantenimiento')==='superavit'?'selected':''}>Superávit moderado (+250 kcal)</option>
+              <option value="superavit_alto"${(plan.ajuste||'mantenimiento')==='superavit_alto'?'selected':''}>Superávit alto (+400 kcal)</option>
+            </select>
+          </div>
+          <div class="nutr-field">
+            <label>Prioridad proteica</label>
+            <select id="nutr-prot-factor" onchange="calcularMacrosNutricion()">
+              <option value="1.6" ${(plan.protFactor||'2.0')==='1.6'?'selected':''}>Conservadora (1.6g/kg)</option>
+              <option value="2.0" ${(plan.protFactor||'2.0')==='2.0'?'selected':''}>Estándar (2.0g/kg)</option>
+              <option value="2.2" ${(plan.protFactor||'2.0')==='2.2'?'selected':''}>Alta (2.2g/kg)</option>
+            </select>
+          </div>
+        </div>
+        <div class="nutr-result-box">
+          <div class="nutr-kcal-row">
+            <div class="nutr-kcal-label">Calorías diarias objetivo</div>
+            <div><span class="nutr-kcal-val" id="nutr-res-kcal">${kcalGuardado||'—'}</span><span class="nutr-kcal-unit">kcal</span></div>
+          </div>
+          <div class="nutr-macros-row">
+            <div class="nutr-macro-block">
+              <div class="nutr-macro-g nutr-macro-prot" id="nutr-res-prot-g">${protGuardado||'—'}</div>
+              <div class="nutr-macro-label">Proteínas</div>
+              <div class="nutr-macro-pct" id="nutr-res-prot-pct">${protGuardado?'g':''}</div>
+            </div>
+            <div class="nutr-macro-block">
+              <div class="nutr-macro-g nutr-macro-carb" id="nutr-res-carb-g">${carbGuardado||'—'}</div>
+              <div class="nutr-macro-label">Carbohidratos</div>
+              <div class="nutr-macro-pct" id="nutr-res-carb-pct">${carbGuardado?'g':''}</div>
+            </div>
+            <div class="nutr-macro-block">
+              <div class="nutr-macro-g nutr-macro-fat" id="nutr-res-grasa-g">${grasaGuardado||'—'}</div>
+              <div class="nutr-macro-label">Grasas</div>
+              <div class="nutr-macro-pct" id="nutr-res-grasa-pct">${grasaGuardado?'g':''}</div>
+            </div>
+          </div>
+          <div class="nutr-bar">
+            <div class="nutr-bar-seg" id="nutr-bar-prot"  style="background:#2563eb;width:${plan.pctProt||0}%"></div>
+            <div class="nutr-bar-seg" id="nutr-bar-carb"  style="background:#d97706;width:${plan.pctCarb||0}%"></div>
+            <div class="nutr-bar-seg" id="nutr-bar-grasa" style="background:#16a34a;width:${plan.pctGrasa||0}%"></div>
+          </div>
+        </div>
+        <textarea class="nutr-notas-area" id="nutr-notas" placeholder="Notas nutricionales del alumno (intolerancias, preferencias, contexto...)...">${plan.notas||''}</textarea>
+        <button class="nutr-btn-calc" onclick="calcularMacrosNutricion()">⚡ Calcular macros</button>
+        <button class="nutr-btn-save" onclick="guardarPlanNutricion()">💾 Guardar plan</button>
+        <div class="nutr-disclaimer">Valores estimados. Ajustar según respuesta individual y contexto clínico.</div>
+      </div>
+      <!-- SUPLEMENTOS -->
+      <div class="nutr-card">
+        <div class="nutr-card-title">💊 Suplementación Recomendada</div>
+        <div class="nutr-obj-tag">🎯 Filtrado por: ${objetivo}</div>
+        <div class="supl-list">${suplHTML}</div>
+      </div>
+    </div>
+  `;
+
+  // Auto-calcular si hay peso guardado
+  if (plan.peso || pesoActual) calcularMacrosNutricion();
+}
+
+function calcularMacrosNutricion() {
+  const peso = parseFloat(document.getElementById('nutr-peso')?.value) || 0;
+  if (!peso) return;
+  const actividad  = document.getElementById('nutr-actividad')?.value  || 'moderado';
+  const ajuste     = document.getElementById('nutr-ajuste')?.value     || 'mantenimiento';
+  const protFactor = parseFloat(document.getElementById('nutr-prot-factor')?.value) || 2.0;
+
+  const factorAct = { sedentario:28, moderado:33, activo:38, muy_activo:43 };
+  const ajusteCal = { deficit_alto:-500, deficit:-300, mantenimiento:0, superavit:250, superavit_alto:400 };
+
+  const tdee     = peso * (factorAct[actividad] || 33);
+  const calorias = Math.round(tdee + (ajusteCal[ajuste] || 0));
+  const protG    = Math.round(peso * protFactor);
+  const grasaG   = Math.round(peso * 0.9);
+  const protCal  = protG * 4;
+  const grasaCal = grasaG * 9;
+  const carbCal  = Math.max(0, calorias - protCal - grasaCal);
+  const carbG    = Math.round(carbCal / 4);
+
+  const total    = protCal + grasaCal + carbCal;
+  const pctProt  = total > 0 ? Math.round(protCal / total * 100) : 0;
+  const pctCarb  = total > 0 ? Math.round(carbCal / total * 100) : 0;
+  const pctGrasa = total > 0 ? Math.round(grasaCal / total * 100) : 0;
+
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+  set('nutr-res-kcal',    calorias.toLocaleString());
+  set('nutr-res-prot-g',  protG + 'g');
+  set('nutr-res-carb-g',  carbG + 'g');
+  set('nutr-res-grasa-g', grasaG + 'g');
+  set('nutr-res-prot-pct',  pctProt + '%');
+  set('nutr-res-carb-pct',  pctCarb + '%');
+  set('nutr-res-grasa-pct', pctGrasa + '%');
+
+  const setW = (id, w) => { const el = document.getElementById(id); if(el) el.style.width = w + '%'; };
+  setW('nutr-bar-prot',  pctProt);
+  setW('nutr-bar-carb',  pctCarb);
+  setW('nutr-bar-grasa', pctGrasa);
+}
+
+function guardarPlanNutricion() {
+  if (!currentAlumnoId) return;
+  const peso      = document.getElementById('nutr-peso')?.value || '';
+  const actividad = document.getElementById('nutr-actividad')?.value || 'moderado';
+  const ajuste    = document.getElementById('nutr-ajuste')?.value || 'mantenimiento';
+  const protFactor= document.getElementById('nutr-prot-factor')?.value || '2.0';
+  const notas     = document.getElementById('nutr-notas')?.value || '';
+  const kcal      = document.getElementById('nutr-res-kcal')?.textContent?.replace(/\D/g,'') || '';
+  const prot      = document.getElementById('nutr-res-prot-g')?.textContent?.replace('g','') || '';
+  const carb      = document.getElementById('nutr-res-carb-g')?.textContent?.replace('g','') || '';
+  const grasa     = document.getElementById('nutr-res-grasa-g')?.textContent?.replace('g','') || '';
+  const pctProt   = parseInt(document.getElementById('nutr-res-prot-pct')?.textContent) || 0;
+  const pctCarb   = parseInt(document.getElementById('nutr-res-carb-pct')?.textContent) || 0;
+  const pctGrasa  = parseInt(document.getElementById('nutr-res-grasa-pct')?.textContent) || 0;
+
+  const alumnos = getAlumnos();
+  const idx = alumnos.findIndex(a => a.id === currentAlumnoId);
+  if (idx === -1) return;
+  alumnos[idx].nutricion = { peso, actividad, ajuste, protFactor, notas, calorias:kcal, proteinas:prot, carbos:carb, grasas:grasa, pctProt, pctCarb, pctGrasa };
+  saveAlumnos(alumnos);
+  toast('Plan nutricional guardado ✓');
+}
+
+// ════════════════════════════════════════════════════════════
 
 function renderLabFisico(alumnoId) {
   const c = document.getElementById('perfil-tab-labfisico');
