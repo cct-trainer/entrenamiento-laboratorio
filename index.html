@@ -10695,21 +10695,49 @@ function toggleReg(id){var el=document.getElementById(id);if(!el)return;var open
 }
 
 function _headerFuerzaHTML(titulo, a, extra, movil) {
-  return `<div style="background:#0d0d1a;color:#fff;${movil?'':'border-radius:10px;margin-bottom:20px;'}">
-    <div style="height:4px;background:linear-gradient(90deg,#E8C96A,#C9A84C);"></div>
-    <div style="padding:${movil?'14px':'16px 24px'};display:flex;align-items:${movil?'flex-start':'center'};justify-content:space-between;flex-direction:${movil?'column':'row'};gap:${movil?10:0}px;">
-      <div>
-        <div style="font-size:13px;font-weight:800;color:#fff;">CHRISTIAN CATTANEO</div>
-        <div style="font-size:10px;color:#aaa;">Entrenador</div>
-        <div style="font-size:9px;color:#E8C96A;font-weight:700;letter-spacing:2px;text-transform:uppercase;">LABORATORIO DE ENTRENAMIENTO</div>
+  const edad = (a?.nacimiento && typeof calcularEdad === 'function') ? calcularEdad(a.nacimiento) : null;
+  const infoLinea = [edad ? edad + ' años' : '', a?.nivel, a?.objetivo].filter(Boolean).join(' · ');
+  const sz = movil ? 60 : 76;
+  const fotoEl = a?.foto
+    ? `<img src="${a.foto}" style="width:${sz}px;height:${sz}px;border-radius:50%;object-fit:cover;border:3px solid #C9A84C;display:block;flex-shrink:0;">`
+    : (a ? `<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:#1e3a6a;border:3px solid #C9A84C;display:flex;align-items:center;justify-content:center;font-size:${movil?22:28}px;flex-shrink:0;color:#aaa;">👤</div>` : '');
+
+  return `<div style="background:#0d0d1a;color:#fff;${movil?'':'border-radius:12px;margin-bottom:24px;'}overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,0.35);">
+    <div style="height:4px;background:linear-gradient(90deg,#C9A84C,#E8C96A,#C9A84C);"></div>
+
+    <div style="display:flex;align-items:center;gap:${movil?14:22}px;padding:${movil?'14px 16px':'18px 28px'};flex-wrap:${movil?'wrap':'nowrap'};">
+
+      <!-- Branding -->
+      <div style="flex-shrink:0;padding-right:${movil?14:22}px;border-right:1px solid rgba(255,255,255,0.10);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <div style="width:${movil?28:34}px;height:${movil?28:34}px;border-radius:50%;background:linear-gradient(135deg,#C9A84C,#E8C96A);display:flex;align-items:center;justify-content:center;font-size:${movil?13:16}px;font-weight:900;color:#0d0d1a;">CC</div>
+          <div>
+            <div style="font-size:${movil?11:13}px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:0.5px;">CHRISTIAN CATTANEO</div>
+            <div style="font-size:${movil?8:9}px;color:#C9A84C;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-top:1px;">ENTRENADOR</div>
+          </div>
+        </div>
+        <div style="font-size:${movil?7:8}px;color:rgba(255,255,255,0.3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;">LABORATORIO DE ENTRENAMIENTO</div>
       </div>
-      <div style="text-align:${movil?'left':'right'};">
-        <div style="font-size:${movil?16:18}px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">💪 ${titulo}</div>
-        ${a?`<div style="font-size:12px;color:#aaa;margin-top:3px;">ALUMNO: <span style="color:#fff;font-weight:600;">${a.nombre}</span></div>`:''}
-        ${extra?`<div style="font-size:12px;color:#aaa;margin-top:2px;">${extra}</div>`:''}
+
+      <!-- Foto alumno -->
+      ${fotoEl ? `<div style="flex-shrink:0;">${fotoEl}</div>` : ''}
+
+      <!-- Info alumno -->
+      ${a ? `<div style="flex:1;min-width:0;">
+        <div style="font-size:${movil?9:9}px;color:#C9A84C;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">Alumno</div>
+        <div style="font-size:${movil?17:22}px;font-weight:900;color:#fff;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.nombre}</div>
+        ${infoLinea ? `<div style="font-size:${movil?11:12}px;color:rgba(255,255,255,0.45);margin-top:5px;">${infoLinea}</div>` : ''}
+      </div>` : ''}
+
+      <!-- Plan info -->
+      <div style="flex-shrink:0;text-align:right;${movil?'':'padding-left:22px;border-left:1px solid rgba(255,255,255,0.10);'}${movil?'width:100%;':''}">
+        <div style="font-size:${movil?8:8}px;color:rgba(255,255,255,0.35);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:4px;">Plan</div>
+        <div style="font-size:${movil?14:17}px;font-weight:900;letter-spacing:0.5px;text-transform:uppercase;color:#fff;line-height:1.15;">${titulo}</div>
+        ${extra ? `<div style="font-size:${movil?10:11}px;color:rgba(255,255,255,0.4);margin-top:4px;">${extra}</div>` : ''}
       </div>
     </div>
-    <div style="height:3px;background:#C9A84C;"></div>
+
+    <div style="height:3px;background:linear-gradient(90deg,#1a2a4a,#C9A84C,#1a2a4a);"></div>
   </div>`;
 }
 
