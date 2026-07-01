@@ -10755,7 +10755,8 @@ function _headerFuerzaHTML(titulo, a, extra, movil) {
   return `<div style="background:#0d0d1a;color:#fff;${movil?'':'border-radius:12px;margin-bottom:24px;'}overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,0.35);">
     <div style="height:4px;background:linear-gradient(90deg,#C9A84C,#E8C96A,#C9A84C);"></div>
 
-    <div style="display:flex;align-items:center;gap:${movil?14:22}px;padding:${movil?'14px 16px':'18px 28px'};flex-wrap:${movil?'wrap':'nowrap'};">
+    <!-- Fila 1: Branding + Foto + Nombre alumno -->
+    <div style="display:flex;align-items:center;gap:${movil?14:22}px;padding:${movil?'14px 16px':'18px 28px 12px'};">
 
       <!-- Branding -->
       <div style="flex-shrink:0;padding-right:${movil?14:22}px;border-right:1px solid rgba(255,255,255,0.10);">
@@ -10778,12 +10779,16 @@ function _headerFuerzaHTML(titulo, a, extra, movil) {
         <div style="font-size:${movil?17:22}px;font-weight:900;color:#fff;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.nombre}</div>
         ${infoLinea ? `<div style="font-size:${movil?11:12}px;color:rgba(255,255,255,0.45);margin-top:5px;">${infoLinea}</div>` : ''}
       </div>` : ''}
+    </div>
 
-      <!-- Plan info -->
-      <div style="flex-shrink:0;text-align:right;${movil?'':'padding-left:22px;border-left:1px solid rgba(255,255,255,0.10);'}${movil?'width:100%;':''}">
-        <div style="font-size:${movil?8:8}px;color:rgba(255,255,255,0.35);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:4px;">Plan</div>
-        <div style="font-size:${movil?14:17}px;font-weight:900;letter-spacing:0.5px;text-transform:uppercase;color:#fff;line-height:1.15;">${titulo}</div>
-        ${extra ? `<div style="font-size:${movil?10:11}px;color:rgba(255,255,255,0.4);margin-top:4px;">${extra}</div>` : ''}
+    <!-- Fila 2: Plan info debajo del nombre -->
+    <div style="padding:${movil?'6px 16px 14px':'8px 28px 16px'};border-top:1px solid rgba(255,255,255,0.07);">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:${movil?8:8}px;color:rgba(255,255,255,0.35);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:3px;">Plan</div>
+          <div style="font-size:${movil?14:18}px;font-weight:900;letter-spacing:0.5px;text-transform:uppercase;color:#fff;line-height:1.15;">${titulo}</div>
+        </div>
+        ${extra ? `<div style="font-size:${movil?10:11}px;color:rgba(255,255,255,0.4);padding-left:12px;border-left:1px solid rgba(255,255,255,0.15);">${extra}</div>` : ''}
       </div>
     </div>
 
