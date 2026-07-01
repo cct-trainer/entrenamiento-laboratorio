@@ -2702,6 +2702,9 @@ select.toolbox-input option:disabled { color: #888; }
         <button class="perfil-megamenu-item" id="mm-seg-eval" onclick="perfilSegGo('evaluaciones')">
           <span class="mm-text"><span class="mm-label">Evaluaciones</span><span class="mm-sub">Laboratorio físico del alumno</span></span>
         </button>
+        <button class="perfil-megamenu-item" id="mm-seg-nutr" onclick="perfilSegGo('nutricion')">
+          <span class="mm-text"><span class="mm-label">Nutrición</span><span class="mm-sub">Macros y suplementación</span></span>
+        </button>
       </div>
     </div>
 
@@ -11625,12 +11628,13 @@ function perfilPlanGo(sub) {
 // ── Seguimiento ───────────────────────────────────────────────────────────────
 function perfilSegGo(sub) {
   _activarTrigger('perfil-seg-trigger');
-  _activarMMItem({antropometria:'mm-seg-antro',rendimiento:'mm-seg-rend',evaluaciones:'mm-seg-eval'}[sub], '#perfil-seg-wrap');
+  _activarMMItem({antropometria:'mm-seg-antro',rendimiento:'mm-seg-rend',evaluaciones:'mm-seg-eval',nutricion:'mm-seg-nutr'}[sub], '#perfil-seg-wrap');
   _limpiarAreaPrincipal(() => {
     _activarSection('seguimiento');
     switchPerfilSubtab('seg', sub);
     if (!currentAlumnoId) return;
     if (sub === 'antropometria') renderMediciones(currentAlumnoId);
+    if (sub === 'nutricion')     renderNutricion(currentAlumnoId);
   });
 }
 
