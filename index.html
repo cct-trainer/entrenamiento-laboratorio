@@ -845,12 +845,12 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 /* BLOQUE */
 .bloque-wrap {
   background: #FDF8EC;
-  border: 1.5px solid #b3d9f7;
+  border: none;
   border-left: 4px solid #C9A84C;
   border-radius: 10px;
   margin-bottom: 16px;
   overflow: visible;
-  box-shadow: 0 2px 8px rgba(30,136,229,0.08);
+  box-shadow: 0 4px 0 #bbb, 0 6px 16px rgba(0,0,0,0.18);
 }
 .bloque-head {
   background: #1a1a1a; border-bottom: 1px solid #111;
@@ -1175,12 +1175,12 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 }
 .bloque-add-ej-btn {
   display: flex; align-items: center; gap: 6px;
-  background: none; border: 1px dashed #ccc; color: #888;
+  background: #e0e0e0; border: 1px solid #555; color: #111;
   padding: 7px 16px; border-radius: 6px; font-size: 12px;
   font-weight: 600; cursor: pointer; font-family: inherit;
   transition: all 0.15s;
 }
-.bloque-add-ej-btn:hover { border-color: #C9A84C; color: #C9A84C; background: #f0f9ff; }
+.bloque-add-ej-btn:hover { border-color: #C9A84C; color: #C9A84C; background: #f5f0e0; }
 /* ── CARDIO PANEL ── */
 .cardio-panel { padding: 14px 16px; }
 .cardio-act-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
@@ -1964,12 +1964,14 @@ select.toolbox-input option:disabled { color: #888; }
 .mes-agregar-zona { text-align:center; padding:4px 0 16px; }
 .mes-btn-agregar { background:#fff; border:2px dashed #90caf9; color:#C9A84C; border-radius:12px; padding:11px 0; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.15s; width:100%; }
 .mes-btn-agregar:hover { background:#FDF6E3; border-color:#C9A84C; border-style:solid; }
-.plan-dia-mini { background:#1a2a4a; border:none; border-radius:5px; padding:5px 8px; margin-bottom:4px; font-size:11px; font-weight:700; color:#fff; cursor:pointer; transition:background 0.15s; }
+.plan-dia-mini { background:#1a2a4a; border:none; border-radius:5px; padding:5px 8px 5px 8px; margin-bottom:4px; font-size:11px; font-weight:700; color:#fff; cursor:pointer; transition:background 0.15s; position:relative; }
 .plan-dia-mini:hover { background:#253a5e; }
+.plan-dia-mini-del { position:absolute; top:4px; right:5px; background:transparent; border:none; color:#ef4444; font-size:13px; font-weight:900; cursor:pointer; line-height:1; padding:0 2px; opacity:0.6; transition:opacity 0.15s; }
+.plan-dia-mini-del:hover { opacity:1; }
 .plan-dia-mini-tipo { font-size:9px; font-weight:800; color:#C9A84C; text-transform:uppercase; margin-bottom:1px; }
 
 /* Editor día fuerza */
-.plan-sesion-editor { background:#fff; border:1.5px solid #1a2a4a; border-radius:10px; margin-bottom:20px; overflow:hidden; }
+.plan-sesion-editor { background:#fff; border:none; border-radius:10px; margin-bottom:20px; overflow:visible; }
 .plan-sesion-editor-head { background:#1a2a4a; color:#fff; padding:12px 16px; display:flex; align-items:center; gap:10px; }
 .plan-sesion-editor-titulo { font-size:14px; font-weight:700; flex:1; }
 .plan-sesion-cerrar { background:none; border:none; color:#fff; font-size:20px; cursor:pointer; padding:0 4px; }
@@ -2002,7 +2004,86 @@ select.toolbox-input option:disabled { color: #888; }
 }
 #plan-editor-page-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 #plan-editor-page-scroll {
-  flex: 1; overflow-y: auto; padding: 20px 24px;
+  flex: 1; overflow-y: auto; padding: 0;
+  display: flex; flex-direction: row; align-items: flex-start;
+}
+#plan-editor-page-content {
+  flex: 1; min-width: 0; padding: 20px 24px; overflow-y: auto; height: 100%;
+  box-sizing: border-box;
+}
+/* Copiloto embebido en el editor de sesión */
+#plan-dia-copiloto {
+  width: 320px; flex-shrink: 0; height: 100%; overflow-y: auto;
+  background: #0f1b2d; border-left: 1px solid #1e3a5f;
+  display: flex; flex-direction: column; box-sizing: border-box;
+}
+#plan-dia-copiloto .cop-embed-header {
+  background: linear-gradient(135deg, #1a2a4a, #0f1b2d);
+  padding: 12px 14px 10px; border-bottom: 1px solid #1e3a5f; flex-shrink: 0;
+}
+#plan-dia-copiloto .cop-embed-title {
+  font-size: 11px; font-weight: 800; color: #C9A84C; letter-spacing: 1px;
+  text-transform: uppercase;
+}
+#plan-dia-copiloto .cop-embed-body {
+  flex: 1; overflow-y: auto; padding: 12px 14px; display: flex;
+  flex-direction: column; gap: 12px;
+}
+#plan-dia-copiloto .cop-embed-section-title {
+  font-size: 9px; font-weight: 800; color: #C9A84C; text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 6px;
+}
+#plan-dia-copiloto textarea {
+  width: 100%; background: #ffffff0d; border: 1px solid #ffffff20;
+  border-radius: 7px; color: #fff; font-size: 11px; font-family: inherit;
+  padding: 9px 11px; box-sizing: border-box; resize: vertical;
+  outline: none; min-height: 90px;
+}
+#plan-dia-copiloto textarea:focus { border-color: #C9A84C44; }
+#plan-dia-copiloto .cop-embed-btn {
+  width: 100%; padding: 9px; border: none; border-radius: 7px;
+  font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+  font-family: inherit;
+}
+#plan-dia-copiloto .cop-embed-btn.primary {
+  background: #1a5c38; color: #fff;
+}
+#plan-dia-copiloto .cop-embed-btn.primary:hover { background: #166334; }
+#plan-dia-copiloto .cop-embed-btn.secondary {
+  background: #1e3a5f; color: #C9A84C;
+}
+#plan-dia-copiloto .cop-embed-btn.secondary:hover { background: #254b7a; }
+#plan-dia-copiloto .cop-embed-messages {
+  max-height: 200px; overflow-y: auto; display: flex; flex-direction: column;
+  gap: 8px; margin-bottom: 6px;
+}
+#plan-dia-copiloto .cop-embed-msg {
+  font-size: 11px; line-height: 1.5; padding: 8px 10px; border-radius: 8px;
+}
+#plan-dia-copiloto .cop-embed-msg.user {
+  background: #1e3a5f; color: #e0eaff; align-self: flex-end; max-width: 90%;
+}
+#plan-dia-copiloto .cop-embed-msg.ai {
+  background: #1a2a4a; color: #d1fae5; align-self: flex-start; max-width: 95%;
+}
+#plan-dia-copiloto .cop-embed-msg.empty {
+  color: #4b5563; font-style: italic; font-size: 10px;
+}
+#plan-dia-copiloto .cop-embed-chat-row {
+  display: flex; gap: 6px; align-items: flex-end;
+}
+#plan-dia-copiloto .cop-embed-chat-row textarea {
+  min-height: 42px; flex: 1; resize: none;
+}
+#plan-dia-copiloto .cop-embed-send {
+  background: #C9A84C; border: none; border-radius: 7px; color: #fff;
+  font-size: 14px; font-weight: 700; cursor: pointer; padding: 0 12px;
+  height: 42px; flex-shrink: 0;
+}
+#plan-dia-copiloto .cop-embed-send:hover { background: #b8943f; }
+@media (max-width: 768px) {
+  #plan-editor-page-scroll { flex-direction: column; }
+  #plan-dia-copiloto { width: 100%; height: auto; border-left: none; border-top: 1px solid #1e3a5f; }
 }
 .plan-sesion-body { padding:16px; }
 .plan-add-bloque-zone { border:2px dashed #bcd0ea; border-radius:8px; padding:14px; text-align:center; cursor:pointer; color:#C9A84C; font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-top:12px; transition:all 0.2s; }
@@ -2955,6 +3036,41 @@ select.toolbox-input option:disabled { color: #888; }
       </div>
       <div id="plan-editor-page-scroll">
         <div id="plan-editor-page-content"></div>
+        <!-- COPILOTO EMBEBIDO -->
+        <div id="plan-dia-copiloto">
+          <div class="cop-embed-header">
+            <div class="cop-embed-title">🤖 Copiloto IA</div>
+            <div id="cop-embed-alumno" style="font-size:10px;color:#9ca3af;margin-top:2px;">Sin alumno</div>
+          </div>
+          <div class="cop-embed-body">
+            <!-- Interpretar sesión -->
+            <div>
+              <div class="cop-embed-section-title">📥 Dictar sesión</div>
+              <textarea id="cop-embed-input"
+                placeholder="Describí la sesión en lenguaje libre y la cargo automáticamente.&#10;&#10;Ej: Sentadilla 4x6 RIR 2, prensa 3x10 pausa, extensión de cuádriceps 3x15 drop set."
+                rows="6"></textarea>
+              <button class="cop-embed-btn primary" style="margin-top:6px;" onclick="copEmbedInterpretar()">
+                📥 Interpretar y cargar
+              </button>
+              <div id="cop-embed-preview" style="display:none;margin-top:8px;"></div>
+            </div>
+            <!-- Divisor -->
+            <div style="border-top:1px solid #1e3a5f;"></div>
+            <!-- Chat -->
+            <div>
+              <div class="cop-embed-section-title">💬 Consultar</div>
+              <div class="cop-embed-messages" id="cop-embed-messages">
+                <div class="cop-embed-msg empty">Preguntame sobre la sesión, el alumno o los ejercicios...</div>
+              </div>
+              <div class="cop-embed-chat-row">
+                <textarea id="cop-embed-chat-input" rows="2"
+                  placeholder="¿Qué ejercicio de cadera puedo agregar?"
+                  onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();copEmbedPreguntar();}"></textarea>
+                <button class="cop-embed-send" onclick="copEmbedPreguntar()">↑</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -9626,11 +9742,14 @@ function renderPlanMes() {
       const sesiones = sem.dias[i] || [];
       const tiene = sesiones.length > 0;
       const fechaStr = _diaFecha(semIdx, i);
-      const minis = sesiones.map(s => {
+      const minis = sesiones.map((s, sIdx) => {
         const bc = (s.bloques||[]).length;
         const primera = s.bloques&&s.bloques[0] ? (s.bloques[0].nombre||s.bloques[0].tipo||'Bloque') : 'Sesion';
-        return '<div class="plan-dia-mini"><div class="plan-dia-mini-tipo">'+bc+' bloque'+(bc!==1?'s':'')+'</div>'
-             + '<div style="font-size:10px;color:#fff;font-weight:600;">'+primera+(bc>1?' + mas':'')+'</div></div>';
+        return '<div class="plan-dia-mini">'
+             + '<button class="plan-dia-mini-del" onclick="event.stopPropagation();eliminarSesionDia('+i+','+semIdx+','+sIdx+')" title="Eliminar sesión">✕</button>'
+             + '<div class="plan-dia-mini-tipo">'+bc+' bloque'+(bc!==1?'s':'')+'</div>'
+             + '<div style="font-size:10px;color:#fff;font-weight:600;padding-right:14px;">'+primera+(bc>1?' + mas':'')+'</div>'
+             + '</div>';
       }).join('');
       return '<div class="plan-dia-card'+(tiene?' tiene-sesion':'')+'" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'"'+(tiene?' draggable="true"':'')+' onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
         + '<div class="plan-dia-head">'
@@ -9706,6 +9825,33 @@ function limpiarPlanDia(idx, semIdx) {
   renderPlanMes();
 }
 
+function eliminarSesionDia(diaIdx, semIdx, sesionIdx) {
+  if(!confirm('¿Eliminar esta sesión?')) return;
+  semIdx = (semIdx !== undefined) ? semIdx : planSemEditando;
+  const sesiones = planSemanasArray[semIdx].dias[diaIdx];
+  if(!sesiones) return;
+  sesiones.splice(sesionIdx, 1);
+  if(sesiones.length === 0) {
+    delete planSemanasArray[semIdx].dias[diaIdx];
+    if(planSemEditando === semIdx && planDiaAbierto === diaIdx) {
+      const overlay = document.getElementById('plan-editor-page');
+      if(overlay) overlay.classList.remove('open');
+      planDiaAbierto = null;
+    }
+  }
+  // Guardar cambios en el plan actual
+  if(planSemActualId) {
+    const planes = getPlanificaciones();
+    const idx = planes.findIndex(x => x.id === planSemActualId);
+    if(idx !== -1) {
+      planes[idx].semanasArray = planSemanasArray;
+      planes[idx].diasData = planSemanasArray[0]?.dias || {};
+      savePlanificaciones(planes);
+    }
+  }
+  renderPlanMes();
+}
+
 // ── Editor de día (usa los bloques/ejercicios existentes) ────────────────────
 function abrirPlanDiaEditor(diaIdx, semIdx) {
   semIdx = (semIdx !== undefined) ? semIdx : planSemEditando;
@@ -9733,6 +9879,10 @@ function abrirPlanDiaEditor(diaIdx, semIdx) {
   const scroll = document.getElementById('plan-editor-page-scroll');
   if(scroll) scroll.scrollTop = 0;
   renderPlanDiaEditor(diaIdx);
+  copEmbedActualizarAlumno();
+  // Limpiar mensajes del chat embebido al abrir nuevo día
+  const embMsg = document.getElementById('cop-embed-messages');
+  if(embMsg) embMsg.innerHTML = '<div class="cop-embed-msg empty">Preguntame sobre la sesión, el alumno o los ejercicios...</div>';
 }
 
 function renderPlanDiaEditor(diaIdx) {
@@ -9793,6 +9943,162 @@ function cerrarPlanDiaEditor() {
   renderPlanMes();
 }
 
+// ── Copiloto embebido en editor de día ───────────────────────────────────────
+function copEmbedActualizarAlumno() {
+  const el = document.getElementById('cop-embed-alumno');
+  if(!el) return;
+  const alumno = currentAlumnoId ? loadAlumnos().find(a=>a.id===currentAlumnoId) : null;
+  el.textContent = alumno ? (alumno.nombre || 'Sin nombre') : 'Sin alumno seleccionado';
+}
+
+function copEmbedAddMsg(role, text) {
+  const box = document.getElementById('cop-embed-messages');
+  if(!box) return;
+  const empty = box.querySelector('.empty');
+  if(empty) empty.remove();
+  const div = document.createElement('div');
+  div.className = 'cop-embed-msg ' + (role === 'user' ? 'user' : 'ai');
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function copEmbedInterpretar() {
+  const input   = document.getElementById('cop-embed-input');
+  const preview = document.getElementById('cop-embed-preview');
+  const texto   = input?.value?.trim();
+  if(!texto) return;
+  if(!soccTieneApiKey()) {
+    if(preview) { preview.style.display='block'; preview.innerHTML='<div style="color:#fca5a5;font-size:10px;">⚠️ No hay API key configurada.</div>'; }
+    return;
+  }
+  // Loading
+  if(preview) {
+    preview.style.display = 'block';
+    preview.innerHTML = '<div style="text-align:center;padding:16px;color:#888;font-size:11px;"><div style="width:16px;height:16px;border:2px solid #C9A84C44;border-top-color:#C9A84C;border-radius:50%;animation:cop-spin 0.7s linear infinite;margin:0 auto 8px;"></div>Interpretando...</div>';
+  }
+
+  const alumno = currentAlumnoId ? getAlumnos().find(a=>a.id===currentAlumnoId) : null;
+  const ctxAlumno = alumno ? `Alumno: ${alumno.nombre} | Objetivo: ${alumno.objetivo||'—'} | Nivel: ${alumno.nivel||'—'} | Lesiones: ${alumno.lesiones||'ninguna'}\n\n` : '';
+
+  const PROMPT = `${ctxAlumno}El entrenador dictó la siguiente sesión. Convertila al formato JSON. NO inventes ejercicios ni modifiques nada — solo estructurá exactamente lo que está descrito.
+
+SESIÓN:
+${texto}
+
+Respondé ÚNICAMENTE con JSON válido (sin markdown, sin texto extra):
+{
+  "bloques": [
+    {
+      "nombre": "Descripción del bloque",
+      "tipo": "Activación | Potencia | Fuerza Principal | Complementario 1 | Complementario 2 | Zona Media",
+      "serieTipo": "Serie Simple | Biserie | Triserie | Superserie | Circuito",
+      "ejercicios": [
+        { "nombre": "Nombre exacto", "series": "4", "reps": "8-10", "rir": "2", "pausa": "2 min", "notas": "" }
+      ]
+    }
+  ]
+}
+
+Reglas: NO modifiques nombres. RIR no indicado → principal=1-2, complementario=2-3. Pausa no indicada → compuesto=2-3 min, complementario=90 seg.`;
+
+  await soccLlamarClaude(PROMPT,
+    (respJSON) => {
+      try {
+        const parsed = JSON.parse(respJSON.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim());
+        if(!parsed.bloques?.length) throw new Error('No se detectaron bloques.');
+
+        const sesion = {
+          bloques: parsed.bloques.map(b => ({
+            nombre: b.nombre || 'Bloque',
+            tipo: b.tipo || 'Complementario 1',
+            serieTipo: b.serieTipo || 'Serie Simple',
+            ejercicios: (b.ejercicios||[]).map(ej => ({
+              nombre: ej.nombre,
+              ctrl: { series: String(ej.series||'3'), reps: String(ej.reps||'10'), peso:'', pausa: ej.pausa||'90 seg', rir: String(ej.rir||'2') },
+              series: Array.from({length: parseInt(ej.series)||3}, (_,i) => ({
+                reps: String(ej.reps||'10'), peso:'', rir: String(ej.rir||'2'), pausa: ej.pausa||'90 seg',
+                comentarios: i===0 ? (ej.notas||'') : ''
+              })),
+              video:'', ficha:{}
+            }))
+          })),
+          meta: { ciclo:'custom', grupos:[], alumno: alumno?.nombre||'—' }
+        };
+
+        // Mostrar preview en el panel embebido
+        const letras = 'ABCDEFGHIJ';
+        const bloquesHTML = sesion.bloques.map((b,i) => {
+          const ejsHTML = b.ejercicios.map(ej =>
+            `<div style="font-size:10px;color:#d1d5db;padding:2px 0;">· ${ej.nombre} — ${ej.ctrl.series}×${ej.ctrl.reps} RIR${ej.ctrl.rir}</div>`
+          ).join('');
+          return `<div style="background:#ffffff0d;border-radius:6px;padding:7px 9px;margin-bottom:6px;">
+            <div style="font-size:9px;font-weight:800;color:#C9A84C;margin-bottom:4px;">${letras[i]||i+1}. ${b.nombre}</div>
+            ${ejsHTML}
+          </div>`;
+        }).join('');
+
+        window._copEmbedSesionPendiente = sesion;
+        preview.innerHTML = `
+          <div style="border-top:1px solid #1e3a5f;padding-top:10px;">
+            <div style="font-size:9px;font-weight:800;color:#86efac;margin-bottom:8px;">✓ ${sesion.bloques.length} bloques interpretados</div>
+            ${bloquesHTML}
+            <button onclick="copilotoCargarEnPlanificador(window._copEmbedSesionPendiente)"
+              style="width:100%;background:#C9A84C;border:none;border-radius:7px;color:#0d0d1a;font-size:11px;font-weight:800;cursor:pointer;padding:9px;margin-top:8px;font-family:inherit;">
+              ⚡ Cargar en el planificador
+            </button>
+          </div>`;
+        if(input) input.value = '';
+      } catch(e) {
+        if(preview) preview.innerHTML = `<div style="color:#fca5a5;font-size:10px;">⚠️ ${e.message}</div>`;
+      }
+    },
+    (err) => {
+      if(preview) preview.innerHTML = `<div style="color:#fca5a5;font-size:10px;">⚠️ ${err}</div>`;
+    }
+  );
+}
+
+function copEmbedPreguntar() {
+  const input = document.getElementById('cop-embed-chat-input');
+  const texto = input?.value?.trim();
+  if(!texto) return;
+  input.value = '';
+  copEmbedAddMsg('user', texto);
+  // Construir contexto del día actual
+  const alumno = currentAlumnoId ? loadAlumnos().find(a=>a.id===currentAlumnoId) : null;
+  const diaIdx = planDiaAbierto;
+  const semIdx = planSemEditando;
+  const diaNom = _diaNombreReal(semIdx, diaIdx);
+  const sesion = planDiasData?.[diaIdx]?.[0] || {};
+  const bloques = (sesion.bloques||[]).map(b=>{
+    const ejs = (b.ejercicios||[]).map(e=>e.nombre||e.ejercicio||'').filter(Boolean).join(', ');
+    return (b.nombre||b.tipo||'Bloque') + (ejs ? ': '+ejs : '');
+  }).join('\n');
+  const contexto = `Alumno: ${alumno?.nombre||'Sin alumno'}. Objetivo: ${alumno?.objetivo||'—'}. Nivel: ${alumno?.nivel||'—'}.
+Sesión del ${diaNom.nombre}:
+${bloques||'(sin bloques aún)'}`;
+  const msgUsuario = `${contexto}\n\nPregunta: ${texto}`;
+  const thinking = document.createElement('div');
+  thinking.className = 'cop-embed-msg ai';
+  thinking.textContent = '...';
+  thinking.id = 'cop-embed-thinking';
+  document.getElementById('cop-embed-messages')?.appendChild(thinking);
+  soccLlamarClaude(
+    msgUsuario,
+    (resp) => {
+      const t = document.getElementById('cop-embed-thinking');
+      if(t) t.remove();
+      copEmbedAddMsg('ai', resp);
+    },
+    (err) => {
+      const t = document.getElementById('cop-embed-thinking');
+      if(t) t.remove();
+      copEmbedAddMsg('ai', '⚠️ ' + err);
+    }
+  );
+}
+
 function guardarEstadoDiaActual() {
   if(planDiaAbierto === null) return;
   const diaIdx = planDiaAbierto;
@@ -9840,8 +10146,7 @@ function guardarEstadoDiaActual() {
         if (!tb) return result;
         tb.querySelectorAll('tr').forEach(row => {
           const inputs = row.querySelectorAll('input');
-          if (inputs.length >= 5) result.push({ reps: inputs[0]?.value||'', peso: inputs[1]?.value||'', rir: inputs[2]?.value||'', pausa: inputs[3]?.value||'', comentarios: inputs[4]?.value||'' });
-          else if (inputs.length >= 4) result.push({ reps: inputs[0]?.value||'', peso: inputs[1]?.value||'', rir: inputs[2]?.value||'', pausa: inputs[3]?.value||'', comentarios: '' });
+          if (inputs.length >= 4) result.push({ reps: inputs[0]?.value||'', peso: inputs[1]?.value||'', rir: inputs[2]?.value||'', pausa: inputs[3]?.value||'', comentarios: '' });
         });
         return result;
       }
@@ -10004,7 +10309,6 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
           <td><input type="text" value="${s.peso||''}"></td>
           <td><input type="text" value="${s.rir||''}"></td>
           <td><input type="text" value="${s.pausa||''}"></td>
-          <td><input type="text" class="comments-input" value="${s.comentarios||''}"></td>
           <td><button class="btn-del-row" onclick="this.closest('tr').remove();_renumRows('${tbodyId}','${prefix}')">×</button></td>`;
         tb.appendChild(tr);
       });
@@ -13659,7 +13963,7 @@ function addEjercicio(bloqueId) {
         <div class="series-sec-body" id="${ejId}-apro-body">
           <table class="series-table">
             <thead><tr>
-              <th>Apro</th><th>Reps</th><th>Peso</th><th>RIR</th><th>Pausa</th><th>Comentario</th><th></th>
+              <th>Apro</th><th>Reps</th><th>Peso</th><th>RIR</th><th>Pausa</th><th></th>
             </tr></thead>
             <tbody id="${ejId}-apro-tbody"></tbody>
           </table>
@@ -13678,7 +13982,7 @@ function addEjercicio(bloqueId) {
         <div class="series-sec-body" id="${ejId}-efec-body">
           <table class="series-table">
             <thead><tr>
-              <th>Serie</th><th>Reps</th><th>Peso</th><th>RIR</th><th>Pausa</th><th>Comentario</th><th></th>
+              <th>Serie</th><th>Reps</th><th>Peso</th><th>RIR</th><th>Pausa</th><th></th>
             </tr></thead>
             <tbody id="${ejId}-efec-tbody"></tbody>
           </table>
@@ -13945,7 +14249,6 @@ function _makeSerieRow(ejId, tbodyId, prefix, num) {
     <td><input type="text" placeholder="0"></td>
     <td><input type="text" placeholder="0"></td>
     <td><input type="text" placeholder="60"></td>
-    <td><input type="text" class="comments-input" placeholder=""></td>
     <td><button class="btn-del-row" onclick="this.closest('tr').remove();_renumRows('${tbodyId}','${prefix}')">×</button></td>`;
   return tr;
 }
@@ -17199,10 +17502,9 @@ FORMATO PARA SEMANAS DE RUNNING:
 3. Nota de progresión para semanas siguientes`;
 
 // ── Gestión de API key ────────────────────────────────────────────────────────
-const _SOCC_DEFAULT_KEY = ''; // Configurá tu API key desde el panel de Copiloto
-function soccGetApiKey()   { return localStorage.getItem('SOCC_CLAUDE_API_KEY') || _SOCC_DEFAULT_KEY; }
+function soccGetApiKey()   { return localStorage.getItem('SOCC_CLAUDE_API_KEY') || ''; }
 function soccSetApiKey(k)  { if (k) localStorage.setItem('SOCC_CLAUDE_API_KEY', k.trim()); else localStorage.removeItem('SOCC_CLAUDE_API_KEY'); }
-function soccTieneApiKey() { return true; }
+function soccTieneApiKey() { return !!localStorage.getItem('SOCC_CLAUDE_API_KEY'); }
 
 // ── Llamada a Claude API (sin streaming por compatibilidad browser) ────────────
 async function soccLlamarClaude(userMessage, onDone, onError) {
@@ -19032,12 +19334,6 @@ document.addEventListener('keydown', function(e) {
   </div>
 </div>
 
-<script>
-// SOCC — configurar API key al cargar (key se ingresa desde el panel de Copiloto)
-(function() {
-  console.log('[SOCC] Copiloto listo. Ingresá tu API key desde el panel de configuración.');
-})();
-</script>
 
 <script>
 // ── SOCC: Drag & Drop de sesiones entre días ─────────────────────────────────
