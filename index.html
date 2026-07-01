@@ -1220,6 +1220,7 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .series-sec-header:hover { color: #555; }
 .series-sec-header.apro { color: #222; }
 .series-sec-header.efec { color: #222; }
+.series-sec-header.drop { color: #b45309; }
 .series-sec-icon { font-size: 11px; display: inline-block; }
 .series-sec-body { padding: 6px 0 8px; background: #fff; display: none; }
 .series-sec-body.open { display: block; }
@@ -10277,7 +10278,8 @@ function guardarEstadoDiaActual() {
         ? _leerTbodyLocal(eId+'-efec-tbody')
         : _leerTbodyLocal(eId+'-tbody');
       const seriesApro = _leerTbodyLocal(eId+'-apro-tbody');
-      if(eName) ejercicios.push({ nombre:eName, ctrl, video, ficha, series, seriesApro });
+      const dropset = _leerTbodyLocal(eId+'-drop-tbody');
+      if(eName) ejercicios.push({ nombre:eName, ctrl, video, ficha, series, seriesApro, dropset });
     });
     // Leer datos cardio si aplica
     let cardioData = null;
@@ -10438,11 +10440,13 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
     }
     _fillTbody(ejId+'-efec-tbody', datosPrevios.series, 'Serie');
     _fillTbody(ejId+'-apro-tbody', datosPrevios.seriesApro, 'Apro');
+    _fillTbody(ejId+'-drop-tbody', datosPrevios.dropset, 'DS');
     // Legacy: también poblar el -tbody viejo si existe
     _fillTbody(ejId+'-tbody', datosPrevios.series, 'Serie');
     // Auto-abrir las secciones que tienen datos
     if(datosPrevios.series?.length)    toggleSeriesSec(ejId,'efec');
     if(datosPrevios.seriesApro?.length) toggleSeriesSec(ejId,'apro');
+    if(datosPrevios.dropset?.length)   toggleSeriesSec(ejId,'drop');
     // Restaurar ficha técnica y video desde la biblioteca
     const exLib = getEjerciciosCompletos().find(e => e.nombre === datosPrevios.nombre);
     if(exLib) {
@@ -14576,6 +14580,8 @@ function addEjercicio(bloqueId) {
   const tipo = document.getElementById(bloqueId+'-serie-tipo').value;
   const idx = body.querySelectorAll('.ej-card').length;
   const letra = getLetraEjercicio(tipo, idx);
+  const bloqueTipo = document.getElementById(bloqueId+'-tipo')?.value || '';
+  const mostrarDropset = !['Movilidad','Activación'].includes(bloqueTipo);
 
   const div = document.createElement('div');
   div.className = 'ej-card'; div.id = ejId;
@@ -14637,6 +14643,25 @@ function addEjercicio(bloqueId) {
           <span class="series-agregar-link" onclick="addSerieEfec('${ejId}')">＋ Agregar serie efectiva</span>
         </div>
       </div>
+
+      ${mostrarDropset ? `<!-- DROPSETS -->
+      <div class="series-section" id="${ejId}-drop-section">
+        <div class="series-sec-header drop" onclick="toggleSeriesSec('${ejId}','drop')">
+          <span class="series-sec-icon" id="${ejId}-drop-icon">▸</span>
+          DROPSETS
+        </div>
+        <div class="series-sec-body" id="${ejId}-drop-body">
+          <table class="series-table">
+            <thead><tr>
+              <th>DS</th><th>Reps</th><th>Peso</th><th>RIR</th><th>Pausa</th><th></th>
+            </tr></thead>
+            <tbody id="${ejId}-drop-tbody"></tbody>
+          </table>
+        </div>
+        <div class="series-sec-footer" id="${ejId}-drop-footer" style="display:none;">
+          <span class="series-agregar-link" onclick="addDropset('${ejId}')">＋ Agregar dropset</span>
+        </div>
+      </div>` : ''}
 
     </div>
 
@@ -14918,12 +14943,20 @@ function addSerieEfec(ejId) {
   const num = tbody.querySelectorAll('tr').length + 1;
   tbody.appendChild(_makeSerieRow(ejId, tbodyId, 'Serie', num));
 }
+function addDropset(ejId) {
+  const tbodyId = ejId+'-drop-tbody';
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  const num = tbody.querySelectorAll('tr').length + 1;
+  tbody.appendChild(_makeSerieRow(ejId, tbodyId, 'DS', num));
+}
 // Backward compat
 function addSerie(ejId) { addSerieEfec(ejId); }
 
 function renumberSeries(ejId) {
   _renumRows(ejId+'-efec-tbody', 'Serie');
   _renumRows(ejId+'-apro-tbody', 'Apro');
+  _renumRows(ejId+'-drop-tbody', 'DS');
 }
 
 // ================================================
@@ -14993,10 +15026,11 @@ function leerBloques() {
         ? _leerTbody(eId+'-efec-tbody')
         : _leerTbody(eId+'-tbody');
       const seriesApro = _leerTbody(eId+'-apro-tbody');
+      const dropset = _leerTbody(eId+'-drop-tbody');
 
       if (eNombre) {
         ejercicios.push({
-          nombre: eNombre, video, ficha, series, seriesApro,
+          nombre: eNombre, video, ficha, series, seriesApro, dropset,
           ctrlSeries, ctrlReps, ctrlPeso, ctrlPausa, ctrlRir
         });
       }
