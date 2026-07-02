@@ -881,7 +881,6 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .nutr-imc-box { margin-top: 14px; padding-top: 14px; border-top: 1px solid #e8e8e8; }
 .nutr-imc-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .nutr-imc-label { font-size: 10px; font-weight: 700; color: #888; letter-spacing: 1px; text-transform: uppercase; }
-.nutr-imc-val { font-size: 22px; font-weight: 900; color: #1a2a4a; }
 .nutr-imc-cat { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
 .nutr-peso-rec { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
 .nutr-peso-chip { background: #f0fdf4; border-radius: 8px; padding: 8px 6px; text-align: center; border: 1px solid #d4edda; }
@@ -890,16 +889,6 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .nutr-peso-chip.ideal .nutr-peso-chip-val { color: #c2410c; }
 .nutr-peso-chip-lbl { font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px; }
 /* Mate card */
-.nutr-mate-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 14px; padding: 20px 24px; margin-top: 20px; }
-.nutr-mate-title { font-size: 13px; font-weight: 800; color: #1a2a4a; margin-bottom: 3px; }
-.nutr-mate-sub { font-size: 11px; color: #888; margin-bottom: 16px; }
-.nutr-mate-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
-.nutr-mate-item { background: #f8f9fb; border-radius: 10px; padding: 12px 14px; border-left: 3px solid #C9A84C; }
-.nutr-mate-item.warn { border-left-color: #ef4444; }
-.nutr-mate-item.ok { border-left-color: #22c55e; }
-.nutr-mate-item.info { border-left-color: #3b82f6; }
-.nutr-mate-item-title { font-size: 11px; font-weight: 800; color: #1a2a4a; margin-bottom: 4px; }
-.nutr-mate-item-text { font-size: 11px; color: #555; line-height: 1.55; }
 .nutr-btn-plan { width: 100%; background: linear-gradient(135deg,#1a2a4a,#253d6b); color: #C9A84C; border: 1.5px solid #C9A84C; border-radius: 8px; padding: 11px; font-size: 12px; font-weight: 800; cursor: pointer; margin-top: 10px; letter-spacing: 1px; font-family: inherit; transition: all 0.15s; text-transform: uppercase; }
 .nutr-btn-plan:hover { background: linear-gradient(135deg,#253d6b,#1e3a6a); box-shadow: 0 4px 12px rgba(201,168,76,0.3); }
 .nutr-btn-enviar { width: 100%; background: #064e3b; color: #6ee7b7; border: 1.5px solid #34d399; border-radius: 8px; padding: 11px; font-size: 12px; font-weight: 800; cursor: pointer; margin-top: 10px; letter-spacing: 1px; font-family: inherit; transition: all 0.15s; text-transform: uppercase; }
@@ -12809,30 +12798,23 @@ function renderNutricion(alumnoId) {
             <div class="nutr-bar-seg" id="nutr-bar-carb"  style="background:#d97706;width:${plan.pctCarb||0}%"></div>
             <div class="nutr-bar-seg" id="nutr-bar-grasa" style="background:#16a34a;width:${plan.pctGrasa||0}%"></div>
           </div>
-          <!-- IMC + Peso Recomendado -->
+          <!-- Peso Saludable -->
           <div id="nutr-imc-box" class="nutr-imc-box" style="display:none;">
             <div class="nutr-imc-row">
-              <div class="nutr-imc-label">IMC</div>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <span class="nutr-imc-val" id="nutr-imc-val">—</span>
-                <span class="nutr-imc-cat" id="nutr-imc-cat"></span>
-              </div>
+              <div class="nutr-imc-label">Peso Saludable</div>
+              <span class="nutr-imc-cat" id="nutr-imc-cat"></span>
             </div>
             <div class="nutr-peso-rec">
               <div class="nutr-peso-chip">
                 <div class="nutr-peso-chip-val" id="nutr-peso-min">—</div>
-                <div class="nutr-peso-chip-lbl">Peso mín.</div>
-              </div>
-              <div class="nutr-peso-chip ideal">
-                <div class="nutr-peso-chip-val" id="nutr-peso-ideal">—</div>
-                <div class="nutr-peso-chip-lbl">Peso ideal</div>
+                <div class="nutr-peso-chip-lbl">Mínimo</div>
               </div>
               <div class="nutr-peso-chip">
                 <div class="nutr-peso-chip-val" id="nutr-peso-max">—</div>
-                <div class="nutr-peso-chip-lbl">Peso máx.</div>
+                <div class="nutr-peso-chip-lbl" id="nutr-peso-max-lbl">Máximo</div>
               </div>
             </div>
-            <div id="nutr-imc-nota" style="display:none;margin-top:8px;font-size:10px;color:#0369a1;background:#e0f2fe;border-radius:6px;padding:5px 8px;line-height:1.4;"></div>
+            <div id="nutr-imc-nota" style="display:none;margin-top:8px;font-size:10px;border-radius:6px;padding:6px 9px;line-height:1.5;"></div>
           </div>
         </div>
         <textarea class="nutr-notas-area" id="nutr-notas" placeholder="Notas nutricionales del alumno (intolerancias, preferencias, contexto...)...">${plan.notas||''}</textarea>
@@ -12856,45 +12838,6 @@ function renderNutricion(alumnoId) {
       </div>
     </div>
 
-    <!-- MATE -->
-    <div class="nutr-mate-card">
-      <div class="nutr-mate-title">Mate y consumo diario</div>
-      <div class="nutr-mate-sub">Recomendaciones para quienes toman mate regularmente</div>
-      <div class="nutr-mate-grid">
-        <div class="nutr-mate-item warn">
-          <div class="nutr-mate-item-title">Temperatura — no más de 65°C</div>
-          <div class="nutr-mate-item-text">La OMS clasifica las bebidas a más de 65°C como posiblemente cancerígenas para el esófago. Esperá que baje la temperatura o usá agua a ~70°C al cebar.</div>
-        </div>
-        <div class="nutr-mate-item warn">
-          <div class="nutr-mate-item-title">Absorción de hierro</div>
-          <div class="nutr-mate-item-text">Los taninos del mate inhiben la absorción de hierro no hemo. Esperá al menos 1 hora después de comer antes de tomar mate, especialmente si hay carnes, legumbres o espinaca en la comida.</div>
-        </div>
-        <div class="nutr-mate-item warn">
-          <div class="nutr-mate-item-title">Ayunas — evitar</div>
-          <div class="nutr-mate-item-text">El mate en ayunas estimula la producción de ácido gástrico y puede generar acidez, reflujo o irritación. Siempre comer algo antes, aunque sea liviano.</div>
-        </div>
-        <div class="nutr-mate-item ok">
-          <div class="nutr-mate-item-title">Hidratación compensatoria</div>
-          <div class="nutr-mate-item-text">El mate tiene efecto diurético por su contenido de cafeína y xantinas. Sumar al menos 500 ml extra de agua por cada litro de mate consumido para mantener la hidratación.</div>
-        </div>
-        <div class="nutr-mate-item ok">
-          <div class="nutr-mate-item-title">Cafeína total del día</div>
-          <div class="nutr-mate-item-text">Un litro de mate aporta ~70–80 mg de cafeína. Si también tomás café o té, la suma no debería superar los 300–400 mg/día. El corte recomendado es 4–5 hs antes de dormir.</div>
-        </div>
-        <div class="nutr-mate-item info">
-          <div class="nutr-mate-item-title">Antioxidantes y rendimiento</div>
-          <div class="nutr-mate-item-text">El mate contiene polifenoles, ácidos clorogénicos y saponinas con efecto antiinflamatorio y antioxidante. Tomado en el momento correcto puede mejorar el foco y el rendimiento en el entrenamiento.</div>
-        </div>
-        <div class="nutr-mate-item info">
-          <div class="nutr-mate-item-title">Tereré — mejor opción en verano</div>
-          <div class="nutr-mate-item-text">El tereré (mate frío) elimina el riesgo de quemadura esofágica y mejora la hidratación. Es ideal en días de calor y durante jornadas de entrenamiento prolongadas.</div>
-        </div>
-        <div class="nutr-mate-item">
-          <div class="nutr-mate-item-title">No mezclar con medicamentos</div>
-          <div class="nutr-mate-item-text">El mate puede interactuar con anticoagulantes (warfarina), estimulantes y algunos antidepresivos. Si el alumno toma medicación, consultar con el médico sobre el consumo.</div>
-        </div>
-      </div>
-    </div>
   `;
 
   // Auto-calcular si hay peso guardado
@@ -12964,61 +12907,58 @@ function calcularMacrosNutricion() {
   setW('nutr-bar-carb',  pctCarb);
   setW('nutr-bar-grasa', pctGrasa);
 
-  // ── IMC + Peso Recomendado (adaptado por objetivo y actividad) ──
+  // ── Peso Saludable (contextual por objetivo y actividad) ──
   const imcBox = document.getElementById('nutr-imc-box');
   if (altura > 0 && imcBox) {
     const hM  = altura / 100;
     const imc = peso / (hM * hM);
 
-    // Detectar perfil atlético: objetivo musculación O actividad alta
-    const alIMC   = currentAlumnoId ? getAlumnos().find(a => a.id === currentAlumnoId) : null;
-    const objStr  = (alIMC?.objetivo || '').toLowerCase();
-    const esMusc  = objStr.includes('hipertrofia') || objStr.includes('volumen') || objStr.includes('masa');
-    const esActivo = actividad === 'activo' || actividad === 'muy_activo';
-    const esAtleta = esMusc || esActivo || ajuste === 'superavit' || ajuste === 'superavit_alto';
+    // ¿Entrena fuerza/hipertrofia de manera constante?
+    const alPS   = currentAlumnoId ? getAlumnos().find(a => a.id === currentAlumnoId) : null;
+    const objPS  = (alPS?.objetivo || '').toLowerCase();
+    const esMusc = objPS.includes('hipertrofia') || objPS.includes('volumen') || objPS.includes('masa');
+    const esAtleta = esMusc || actividad === 'activo' || actividad === 'muy_activo';
 
-    // Umbrales adaptativos
-    // Atleta: "Normal" llega a 27.0 (músculo pesa más que grasa)
-    // Sedentario: escala estándar OMS (hasta 24.9)
-    const limNormal  = esAtleta ? 27.0 : 25.0;
-    const limZonaAt  = esAtleta ? 30.0 : null;
-    const imcIdeal   = esAtleta ? 24.5 : 22.0;
-    const imcMaxRec  = esAtleta ? 27.0 : 24.9;
+    const pMin    = Math.round(18.5 * hM * hM * 10) / 10;
+    const pMaxSed = Math.round(24.9 * hM * hM * 10) / 10;
+    const pMaxAt  = Math.round(27.0 * hM * hM * 10) / 10;
+    const pMax    = esAtleta ? pMaxAt : pMaxSed;
 
-    const pMin   = Math.round(18.5 * hM * hM * 10) / 10;
-    const pMax   = Math.round(imcMaxRec * hM * hM * 10) / 10;
-    const pIdeal = Math.round(imcIdeal  * hM * hM * 10) / 10;
+    let cat, catBg, catColor, nota = '', notaBg = '', notaColor = '';
 
-    let cat, color, bg, nota = '';
     if (imc < 18.5) {
-      cat = 'Bajo peso'; color = '#1d4ed8'; bg = '#dbeafe';
-    } else if (imc < limNormal) {
-      cat = esAtleta ? 'Normal (atlético)' : 'Normal'; color = '#166534'; bg = '#dcfce7';
-    } else if (esAtleta && imc < limZonaAt) {
-      cat = 'Zona atlética'; color = '#0369a1'; bg = '#e0f2fe';
-      nota = 'IMC elevado por masa muscular. En contexto de hipertrofia/alta actividad, valores hasta 30 pueden ser completamente normales.';
-    } else if (imc < (esAtleta ? 35 : 30)) {
-      cat = 'Sobrepeso'; color = '#854d0e'; bg = '#fef9c3';
-    } else if (imc < (esAtleta ? 40 : 35)) {
-      cat = 'Obesidad I'; color = '#c2410c'; bg = '#ffedd5';
-    } else if (imc < 40) {
-      cat = 'Obesidad II'; color = '#991b1b'; bg = '#fee2e2';
+      cat = 'Bajo peso'; catBg = '#dbeafe'; catColor = '#1d4ed8';
+      nota = 'El peso actual está por debajo del mínimo recomendado para esta talla.';
+      notaBg = '#dbeafe'; notaColor = '#1d4ed8';
+    } else if (imc < 25) {
+      // Rango normal universal
+      cat = 'Saludable'; catBg = '#dcfce7'; catColor = '#166534';
+    } else if (imc < 27 && esAtleta) {
+      // 25–27 saludable SOLO si entrena fuerza constantemente
+      cat = 'Saludable atlético'; catBg = '#e0f2fe'; catColor = '#0369a1';
+      nota = 'Superás el límite sedentario (' + pMaxSed + ' kg), pero es peso saludable si entrenás fuerza/hipertrofia de manera constante. En este contexto, el peso extra corresponde a masa muscular. Si vinieras de un perfil sedentario, superar los ' + pMaxSed + ' kg no sería saludable.';
+      notaBg = '#e0f2fe'; notaColor = '#0369a1';
+    } else if (!esAtleta && imc >= 25) {
+      cat = 'Fuera de rango'; catBg = '#fee2e2'; catColor = '#991b1b';
+      nota = 'Para una persona con perfil sedentario o actividad moderada, superar los ' + pMaxSed + ' kg no es saludable. El exceso de peso en este contexto se relaciona con mayor acumulación de grasa y riesgo metabólico.';
+      notaBg = '#fee2e2'; notaColor = '#991b1b';
     } else {
-      cat = 'Obesidad III'; color = '#7f1d1d'; bg = '#fecaca';
+      // >27 fuera de rango para todos
+      cat = 'Fuera de rango'; catBg = '#ffedd5'; catColor = '#c2410c';
+      nota = 'Peso por encima del rango saludable incluso para perfil atlético (>' + pMaxAt + ' kg). Se recomienda evaluar composición corporal.';
+      notaBg = '#ffedd5'; notaColor = '#c2410c';
     }
-    if (esAtleta && !nota && imc >= limNormal - 2 && imc < limNormal) {
-      nota = 'Escala ajustada para perfil atlético. El IMC estándar subestima la masa muscular en personas activas.';
-    }
+
+    const maxLbl = document.getElementById('nutr-peso-max-lbl');
+    if (maxLbl) maxLbl.textContent = esAtleta ? 'Máx. atlético' : 'Máximo';
 
     imcBox.style.display = 'block';
-    set('nutr-imc-val', imc.toFixed(1));
     const catEl  = document.getElementById('nutr-imc-cat');
-    if (catEl)  { catEl.textContent = cat; catEl.style.background = bg; catEl.style.color = color; }
+    if (catEl)  { catEl.textContent = cat; catEl.style.background = catBg; catEl.style.color = catColor; }
     const notaEl = document.getElementById('nutr-imc-nota');
-    if (notaEl) { notaEl.textContent = nota; notaEl.style.display = nota ? 'block' : 'none'; }
-    set('nutr-peso-min',   pMin   + ' kg');
-    set('nutr-peso-ideal', pIdeal + ' kg');
-    set('nutr-peso-max',   pMax   + ' kg');
+    if (notaEl) { notaEl.textContent = nota; notaEl.style.display = nota ? 'block' : 'none'; notaEl.style.background = notaBg; notaEl.style.color = notaColor; }
+    set('nutr-peso-min', pMin + ' kg');
+    set('nutr-peso-max', pMax + ' kg');
   } else if (imcBox) {
     imcBox.style.display = 'none';
   }
