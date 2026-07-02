@@ -877,6 +877,29 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .nutr-notas-area:focus { outline: none; border-color: #C9A84C; }
 .nutr-obj-tag { display: inline-block; background: #f0f4ff; color: #1a2a4a; border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 700; margin-bottom: 14px; border: 1px solid #d6e0ff; }
 .nutr-disclaimer { font-size: 10px; color: #bbb; text-align: center; margin-top: 10px; font-style: italic; }
+/* IMC + Peso Recomendado */
+.nutr-imc-box { margin-top: 14px; padding-top: 14px; border-top: 1px solid #e8e8e8; }
+.nutr-imc-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.nutr-imc-label { font-size: 10px; font-weight: 700; color: #888; letter-spacing: 1px; text-transform: uppercase; }
+.nutr-imc-val { font-size: 22px; font-weight: 900; color: #1a2a4a; }
+.nutr-imc-cat { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+.nutr-peso-rec { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.nutr-peso-chip { background: #f0fdf4; border-radius: 8px; padding: 8px 6px; text-align: center; border: 1px solid #d4edda; }
+.nutr-peso-chip.ideal { background: #fff7ed; border-color: #fed7aa; }
+.nutr-peso-chip-val { font-size: 13px; font-weight: 900; color: #166534; }
+.nutr-peso-chip.ideal .nutr-peso-chip-val { color: #c2410c; }
+.nutr-peso-chip-lbl { font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px; }
+/* Mate card */
+.nutr-mate-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 14px; padding: 20px 24px; margin-top: 20px; }
+.nutr-mate-title { font-size: 13px; font-weight: 800; color: #1a2a4a; margin-bottom: 3px; }
+.nutr-mate-sub { font-size: 11px; color: #888; margin-bottom: 16px; }
+.nutr-mate-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.nutr-mate-item { background: #f8f9fb; border-radius: 10px; padding: 12px 14px; border-left: 3px solid #C9A84C; }
+.nutr-mate-item.warn { border-left-color: #ef4444; }
+.nutr-mate-item.ok { border-left-color: #22c55e; }
+.nutr-mate-item.info { border-left-color: #3b82f6; }
+.nutr-mate-item-title { font-size: 11px; font-weight: 800; color: #1a2a4a; margin-bottom: 4px; }
+.nutr-mate-item-text { font-size: 11px; color: #555; line-height: 1.55; }
 .nutr-btn-plan { width: 100%; background: linear-gradient(135deg,#1a2a4a,#253d6b); color: #C9A84C; border: 1.5px solid #C9A84C; border-radius: 8px; padding: 11px; font-size: 12px; font-weight: 800; cursor: pointer; margin-top: 10px; letter-spacing: 1px; font-family: inherit; transition: all 0.15s; text-transform: uppercase; }
 .nutr-btn-plan:hover { background: linear-gradient(135deg,#253d6b,#1e3a6a); box-shadow: 0 4px 12px rgba(201,168,76,0.3); }
 .nutr-btn-enviar { width: 100%; background: #064e3b; color: #6ee7b7; border: 1.5px solid #34d399; border-radius: 8px; padding: 11px; font-size: 12px; font-weight: 800; cursor: pointer; margin-top: 10px; letter-spacing: 1px; font-family: inherit; transition: all 0.15s; text-transform: uppercase; }
@@ -12786,6 +12809,30 @@ function renderNutricion(alumnoId) {
             <div class="nutr-bar-seg" id="nutr-bar-carb"  style="background:#d97706;width:${plan.pctCarb||0}%"></div>
             <div class="nutr-bar-seg" id="nutr-bar-grasa" style="background:#16a34a;width:${plan.pctGrasa||0}%"></div>
           </div>
+          <!-- IMC + Peso Recomendado -->
+          <div id="nutr-imc-box" class="nutr-imc-box" style="display:none;">
+            <div class="nutr-imc-row">
+              <div class="nutr-imc-label">IMC</div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="nutr-imc-val" id="nutr-imc-val">—</span>
+                <span class="nutr-imc-cat" id="nutr-imc-cat"></span>
+              </div>
+            </div>
+            <div class="nutr-peso-rec">
+              <div class="nutr-peso-chip">
+                <div class="nutr-peso-chip-val" id="nutr-peso-min">—</div>
+                <div class="nutr-peso-chip-lbl">Peso mín.</div>
+              </div>
+              <div class="nutr-peso-chip ideal">
+                <div class="nutr-peso-chip-val" id="nutr-peso-ideal">—</div>
+                <div class="nutr-peso-chip-lbl">Peso ideal</div>
+              </div>
+              <div class="nutr-peso-chip">
+                <div class="nutr-peso-chip-val" id="nutr-peso-max">—</div>
+                <div class="nutr-peso-chip-lbl">Peso máx.</div>
+              </div>
+            </div>
+          </div>
         </div>
         <textarea class="nutr-notas-area" id="nutr-notas" placeholder="Notas nutricionales del alumno (intolerancias, preferencias, contexto...)...">${plan.notas||''}</textarea>
         <button class="nutr-btn-calc" onclick="calcularMacrosNutricion()">Calcular macros</button>
@@ -12805,6 +12852,46 @@ function renderNutricion(alumnoId) {
         </div>
         <!-- Panel detalle (oculto por defecto) -->
         <div id="supl-detalle-wrap" class="supl-detalle-wrap"></div>
+      </div>
+    </div>
+
+    <!-- MATE -->
+    <div class="nutr-mate-card">
+      <div class="nutr-mate-title">Mate y consumo diario</div>
+      <div class="nutr-mate-sub">Recomendaciones para quienes toman mate regularmente</div>
+      <div class="nutr-mate-grid">
+        <div class="nutr-mate-item warn">
+          <div class="nutr-mate-item-title">Temperatura — no más de 65°C</div>
+          <div class="nutr-mate-item-text">La OMS clasifica las bebidas a más de 65°C como posiblemente cancerígenas para el esófago. Esperá que baje la temperatura o usá agua a ~70°C al cebar.</div>
+        </div>
+        <div class="nutr-mate-item warn">
+          <div class="nutr-mate-item-title">Absorción de hierro</div>
+          <div class="nutr-mate-item-text">Los taninos del mate inhiben la absorción de hierro no hemo. Esperá al menos 1 hora después de comer antes de tomar mate, especialmente si hay carnes, legumbres o espinaca en la comida.</div>
+        </div>
+        <div class="nutr-mate-item warn">
+          <div class="nutr-mate-item-title">Ayunas — evitar</div>
+          <div class="nutr-mate-item-text">El mate en ayunas estimula la producción de ácido gástrico y puede generar acidez, reflujo o irritación. Siempre comer algo antes, aunque sea liviano.</div>
+        </div>
+        <div class="nutr-mate-item ok">
+          <div class="nutr-mate-item-title">Hidratación compensatoria</div>
+          <div class="nutr-mate-item-text">El mate tiene efecto diurético por su contenido de cafeína y xantinas. Sumar al menos 500 ml extra de agua por cada litro de mate consumido para mantener la hidratación.</div>
+        </div>
+        <div class="nutr-mate-item ok">
+          <div class="nutr-mate-item-title">Cafeína total del día</div>
+          <div class="nutr-mate-item-text">Un litro de mate aporta ~70–80 mg de cafeína. Si también tomás café o té, la suma no debería superar los 300–400 mg/día. El corte recomendado es 4–5 hs antes de dormir.</div>
+        </div>
+        <div class="nutr-mate-item info">
+          <div class="nutr-mate-item-title">Antioxidantes y rendimiento</div>
+          <div class="nutr-mate-item-text">El mate contiene polifenoles, ácidos clorogénicos y saponinas con efecto antiinflamatorio y antioxidante. Tomado en el momento correcto puede mejorar el foco y el rendimiento en el entrenamiento.</div>
+        </div>
+        <div class="nutr-mate-item info">
+          <div class="nutr-mate-item-title">Tereré — mejor opción en verano</div>
+          <div class="nutr-mate-item-text">El tereré (mate frío) elimina el riesgo de quemadura esofágica y mejora la hidratación. Es ideal en días de calor y durante jornadas de entrenamiento prolongadas.</div>
+        </div>
+        <div class="nutr-mate-item">
+          <div class="nutr-mate-item-title">No mezclar con medicamentos</div>
+          <div class="nutr-mate-item-text">El mate puede interactuar con anticoagulantes (warfarina), estimulantes y algunos antidepresivos. Si el alumno toma medicación, consultar con el médico sobre el consumo.</div>
+        </div>
       </div>
     </div>
   `;
@@ -12875,6 +12962,34 @@ function calcularMacrosNutricion() {
   setW('nutr-bar-prot',  pctProt);
   setW('nutr-bar-carb',  pctCarb);
   setW('nutr-bar-grasa', pctGrasa);
+
+  // ── IMC + Peso Recomendado (solo si hay altura) ──
+  const imcBox = document.getElementById('nutr-imc-box');
+  if (altura > 0 && imcBox) {
+    const hM   = altura / 100;
+    const imc  = peso / (hM * hM);
+    const pMin = Math.round(18.5 * hM * hM * 10) / 10;
+    const pMax = Math.round(24.9 * hM * hM * 10) / 10;
+    const pIdeal = Math.round(22.0 * hM * hM * 10) / 10;
+
+    let cat, color, bg;
+    if      (imc < 18.5) { cat = 'Bajo peso';   color = '#1d4ed8'; bg = '#dbeafe'; }
+    else if (imc < 25)   { cat = 'Normal';       color = '#166534'; bg = '#dcfce7'; }
+    else if (imc < 30)   { cat = 'Sobrepeso';    color = '#854d0e'; bg = '#fef9c3'; }
+    else if (imc < 35)   { cat = 'Obesidad I';   color = '#c2410c'; bg = '#ffedd5'; }
+    else if (imc < 40)   { cat = 'Obesidad II';  color = '#991b1b'; bg = '#fee2e2'; }
+    else                 { cat = 'Obesidad III'; color = '#7f1d1d'; bg = '#fecaca'; }
+
+    imcBox.style.display = 'block';
+    set('nutr-imc-val', imc.toFixed(1));
+    const catEl = document.getElementById('nutr-imc-cat');
+    if (catEl) { catEl.textContent = cat; catEl.style.background = bg; catEl.style.color = color; }
+    set('nutr-peso-min',   pMin + ' kg');
+    set('nutr-peso-ideal', pIdeal + ' kg');
+    set('nutr-peso-max',   pMax + ' kg');
+  } else if (imcBox) {
+    imcBox.style.display = 'none';
+  }
 }
 
 function guardarPlanNutricion() {
