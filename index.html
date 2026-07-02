@@ -19343,4 +19343,1152 @@ function _copParseIntent(intent) {
 
   // Patrones de sesión predefinidos
   if (q.match(/tren inferior|lower body|piernas completa/)) {
-    if (!grupos.length) gr
+    if (!grupos.length) grupos.push('cadera_principal', 'rodilla_principal', 'isquiotibiales');
+  }
+  if (q.match(/tren superior|upper body/)) {
+    if (!grupos.length) grupos.push('espalda', 'pectoral', 'hombros');
+  }
+  if (q.match(/full body|cuerpo completo/)) {
+    if (!grupos.length) grupos.push('cadera_principal', 'rodilla_principal', 'espalda', 'pectoral');
+  }
+  if (q.match(/espalda.*bicep|bicep.*espalda|tirón|pull day/)) {
+    if (!grupos.length) grupos.push('espalda', 'biceps');
+  }
+  if (q.match(/pectoral.*tricep|tricep.*pectoral|press day|push day/)) {
+    if (!grupos.length) grupos.push('pectoral', 'triceps', 'hombros');
+  }
+  if (q.match(/gluteo.*isquio|isquio.*gluteo|posterior completo/)) {
+    if (!grupos.length) grupos.push('cadera_principal', 'isquiotibiales', 'abductores');
+  }
+
+  // Fallback
+  if (!grupos.length) grupos.push('cadera_principal', 'rodilla_principal');
+
+  // Si se especificó ejercicio principal, asegurar que su grupo esté primero
+  if (ejercicioPrincipal && ejercicioPrincipal.grupo && !grupos.includes(ejercicioPrincipal.grupo)) {
+    grupos.unshift(ejercicioPrincipal.grupo);
+  }
+  if (!grupos.length) grupos.push('cadera_principal');
+  return { ciclo, grupos, ejercicioPrincipal, soloFocalizado, raw: intent };
+}
+
+// ── Seleccionar ejercicios de la biblioteca ───────────────────────────────────
+function _copEjerciciosDe(cats, alumno, n) {
+  const lesiones = (alumno?.lesiones || '').toLowerCase();
+  const nivel = (alumno?.nivel || '').toLowerCase();
+
+  const all = getEjerciciosCompletos ? getEjerciciosCompletos() : EJERCICIOS_DB;
+
+  const filtrados = all.filter(ej => {
+    const cat = (ej.cat || '').toLowerCase();
+    const patron = (ej.patron || '').toLowerCase();
+    const matchCat = cats.some(c => cat.includes(c) || patron.includes(c));
+    if (!matchCat) return false;
+
+    // Filtros por lesión
+    const nombre = (ej.nombre || '').toLowerCase();
+    if (lesiones.includes('lumbar') || lesiones.includes('hernia')) {
+      if (nombre.includes('peso muerto convencional') || nombre.includes('good morning') ||
+          nombre.includes('sentadilla con barra')) return false;
+    }
+    if (lesiones.includes('rodilla') || lesiones.includes('menisco')) {
+      if (nombre.includes('extensión de cuádricep') || nombre.includes('leg extension')) return false;
+    }
+    if (lesiones.includes('hombro') || lesiones.includes('manguito')) {
+      if (nombre.includes('press militar') || nombre.includes('press sobre la cabeza')) return false;
+    }
+
+    // Filtro por nivel
+    const ejNivel = (ej.nivel || '').toLowerCase();
+    if (nivel.includes('principiante') || nivel.includes('básico')) {
+      if (ejNivel.includes('avanzado')) return false;
+    }
+
+    return true;
+  });
+
+  // Mezclar un poco para variedad, priorizar los primeros (generalmente más fundamentales)
+  const shuffled = filtrados.sort(() => Math.random() * 0.6 - 0.3);
+  return shuffled.slice(0, n);
+}
+
+// ── Construir ejercicio con parámetros metodológicos ─────────────────────────
+function _copMkEj(ej, cantSeries, repsRange, rir, pausa, notas) {
+  const [rMin, rMax] = repsRange;
+  const repsStr = rMin === rMax ? String(rMin) : `${rMin}-${rMax}`;
+  const series = Array.from({length: cantSeries}, (_, i) => ({
+    reps: repsStr, peso: '', rir: String(rir), pausa: pausa, comentarios: i === 0 ? (notas||'') : ''
+  }));
+  return {
+    nombre: ej.nombre,
+    ctrl: { series: String(cantSeries), reps: repsStr, peso: '', pausa: pausa, rir: String(rir) },
+    series,
+    video: ej.video || '',
+    ficha: { musculos: ej.principales || [], desc: ej.desc || '', ejecucion: ej.ejecucion || '' }
+  };
+}
+
+function _copNombreBloque(grupo, idx) {
+  const nombres = {
+    cadera_principal: 'Dominante de Cadera',
+    rodilla_principal: 'Dominante de Rodilla',
+    peso_muerto: 'Patrón Bisagra',
+    isquiotibiales: 'Isquiotibiales',
+    abductores: 'Abductores / Glúteo Medio',
+    aductores: 'Aductores',
+    espalda: 'Tracción / Espalda',
+    pectoral: 'Empuje / Pectoral',
+    hombros: 'Hombros',
+    biceps: 'Bíceps',
+    triceps: 'Tríceps',
+    gemelos: 'Gemelos / Pantorrillas',
+    core: 'Zona Media',
+    carries: 'Carries / Traslados',
+  };
+  return nombres[grupo] || `Bloque ${idx + 1}`;
+}
+
+function _copNotasPrincipal(grupo, ciclo, alumno) {
+  const lesiones = (alumno?.lesiones || '').toLowerCase();
+  if (grupo === 'cadera_principal') {
+    if (lesiones.includes('lumbar')) return 'Preferir Hip Thrust (sin carga axial). Foco en retroversión pélvica al tope.';
+    return ciclo === 'fuerza' ? 'Progresión de carga. Registrá el peso de cada serie.' : 'RIR honesto. Contracción máxima en el punto de extensión.';
+  }
+  if (grupo === 'rodilla_principal') {
+    if (lesiones.includes('rodilla')) return 'Rango controlado. Evitar valgo. Detener si hay dolor > 3/10.';
+    return 'Rodillas en línea con los pies. Control excéntrico de 2-3 seg.';
+  }
+  if (grupo === 'espalda') return 'Retracción escapular. No usar el impulso del torso.';
+  if (grupo === 'pectoral') return 'Control en la fase excéntrica. Codos a 45° del torso.';
+  return '';
+}
+
+function _copGruposComplementarios(grupos, principales) {
+  const extra = [];
+  // Si hay cadera principal → agregar isqui y abductores
+  if (grupos.includes('cadera_principal') || principales.includes('cadera_principal')) {
+    if (!grupos.includes('isquiotibiales')) extra.push('isquiotibiales');
+    if (!grupos.includes('abductores')) extra.push('abductores');
+  }
+  // Si hay espalda → agregar bíceps
+  if (grupos.includes('espalda') || principales.includes('espalda')) {
+    if (!grupos.includes('biceps')) extra.push('biceps');
+  }
+  // Si hay pectoral → agregar tríceps
+  if (grupos.includes('pectoral') || principales.includes('pectoral')) {
+    if (!grupos.includes('triceps')) extra.push('triceps');
+  }
+  return extra;
+}
+
+// ── UI: Interpretar sesión dictada por Christian y cargarla al planificador ───
+async function copilotoGenerarSesion() { return copilotoInterpretarSesion(); }
+
+async function copilotoInterpretarSesion() {
+  const input = document.getElementById('cop-gen-input');
+  const textoSesion = (input?.value || '').trim();
+  if (!textoSesion) {
+    _copChatAgregar('ai', '📝 Escribí o dictá tu sesión. Ej: "Bloque A activación: puente de glúteos 3x15. Bloque B: peso muerto 4x6 RIR 1. Bloque C biserie: remo 3x10 con curl 3x12"');
+    return;
+  }
+
+  if (!soccTieneApiKey()) {
+    _copChatAgregar('ai', '⚙️ Para interpretar sesiones necesitás la API key del SOCC activa. Configurala con el botón ⚙️ abajo.');
+    return;
+  }
+
+  const alumnoId = document.getElementById('plan-alumno-select')?.value || currentAlumnoId;
+  const alumno   = alumnoId ? getAlumnos().find(a => a.id === alumnoId) : null;
+
+  const previewZone = document.getElementById('cop-preview-zone');
+  if (previewZone) {
+    previewZone.style.display = 'block';
+    previewZone.innerHTML = `<div style="text-align:center;padding:24px;color:#888;font-size:11px;">
+      <div class="cop-spinner" style="margin:0 auto 10px;width:18px;height:18px;border:2px solid #C9A84C44;border-top-color:#C9A84C;border-radius:50%;animation:cop-spin 0.7s linear infinite;"></div>
+      Interpretando sesión...</div>`;
+  }
+  _copChatAgregar('user', '📋 ' + textoSesion.substring(0, 80) + (textoSesion.length > 80 ? '...' : ''));
+
+  const ctxAlumno = alumno
+    ? `Alumno: ${alumno.nombre} | Objetivo: ${alumno.objetivo||'—'} | Nivel: ${alumno.nivel||'—'} | Lesiones: ${alumno.lesiones||'ninguna'}\n\n`
+    : '';
+
+  const PARSE_PROMPT = `${ctxAlumno}El entrenador dictó la siguiente sesión. Convertila al formato JSON. NO inventes ejercicios ni modifiques nada — solo estructurá exactamente lo que está descrito.
+
+SESIÓN:
+${textoSesion}
+
+Respondé ÚNICAMENTE con JSON válido (sin markdown, sin texto extra):
+{
+  "bloques": [
+    {
+      "nombre": "Descripción del bloque",
+      "tipo": "Activación | Potencia | Fuerza Principal | Complementario 1 | Complementario 2 | Complementario 3 | Zona Media",
+      "serieTipo": "Serie Simple | Biserie | Triserie | Superserie | Circuito",
+      "ejercicios": [
+        {
+          "nombre": "Nombre exacto del ejercicio",
+          "series": "4",
+          "reps": "8-10",
+          "rir": "2",
+          "pausa": "2 min",
+          "notas": "cue técnico si se mencionó"
+        }
+      ]
+    }
+  ]
+}
+
+Reglas estrictas:
+- Respetá EXACTAMENTE los nombres de ejercicios. No los modifiques.
+- Si dice "biserie"/"superserie"/"triserie" → usalo. Si no → inferí por relación muscular.
+- RIR no indicado → activación=4, compuesto principal=1-2, complementario=2-3, aislamiento=3
+- Pausa no indicada → compuesto pesado=2-3 min, complementario=90 seg, aislamiento=60 seg, activación=30 seg
+- Si dice 4x8 → series="4", reps="8". Si dice 8-12 → reps="8-12"
+- tipo: inferí según posición en la sesión y característica del ejercicio`;
+
+  await soccLlamarClaude(PARSE_PROMPT,
+    (respuestaJSON) => {
+      try {
+        const jsonStr = respuestaJSON.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+        const parsed = JSON.parse(jsonStr);
+
+        if (!parsed.bloques || !parsed.bloques.length) {
+          throw new Error('No se detectaron bloques. Revisá el formato del texto.');
+        }
+
+        const sesionObj = {
+          bloques: parsed.bloques.map(b => ({
+            nombre: b.nombre || 'Bloque',
+            tipo: b.tipo || 'Complementario 1',
+            serieTipo: b.serieTipo || 'Serie Simple',
+            ejercicios: (b.ejercicios || []).map(ej => ({
+              nombre: ej.nombre,
+              ctrl: {
+                series: String(ej.series||'3'),
+                reps: String(ej.reps||'10'),
+                peso: '',
+                pausa: ej.pausa||'90 seg',
+                rir: String(ej.rir||'2')
+              },
+              series: Array.from({length: parseInt(ej.series)||3}, (_,i) => ({
+                reps: String(ej.reps||'10'),
+                peso: '',
+                rir: String(ej.rir||'2'),
+                pausa: ej.pausa||'90 seg',
+                comentarios: i===0 ? (ej.notas||'') : ''
+              })),
+              video: '',
+              ficha: {}
+            }))
+          })),
+          meta: { ciclo: 'custom', grupos: [], alumno: alumno?.nombre||'—' }
+        };
+
+        _copMostrarPreviewSesion(sesionObj, alumno);
+        const nb = sesionObj.bloques.length;
+        const ne = sesionObj.bloques.reduce((s,b) => s + (b.ejercicios?.length||0), 0);
+        _copChatAgregar('ai', `✓ Sesión interpretada: ${nb} bloque${nb!==1?'s':''}, ${ne} ejercicio${ne!==1?'s':''}. Revisá la previsualización y cargá al planificador.`);
+        if (input) input.value = '';
+
+      } catch(parseErr) {
+        console.error('[SOCC] JSON parse error:', parseErr, respuestaJSON);
+        if (previewZone) previewZone.innerHTML = `<div style="padding:12px;color:#fca5a5;font-size:11px;">⚠️ No pude interpretar la sesión: ${parseErr.message}<br><br><small style="color:#6b7280;">${respuestaJSON.substring(0,300)}</small></div>`;
+        _copChatAgregar('ai', '⚠️ Error al interpretar: ' + parseErr.message + '. Intentá ser más explícito con los bloques.');
+      }
+    },
+    (err) => {
+      if (previewZone) previewZone.innerHTML = `<div style="padding:12px;color:#fca5a5;font-size:11px;">⚠️ ${err}</div>`;
+      _copChatAgregar('ai', '⚠️ ' + err);
+    }
+  );
+}
+
+// ── Mostrar respuesta de Claude en el panel ──────────────────────────────────
+function _soccMostrarRespuesta(respuesta, alumno, intent) {
+  const zone = document.getElementById('cop-preview-zone');
+  if (!zone) return;
+
+  // Limpiar markdown básico para display
+  const html = respuesta
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^#+\s*(.+)$/gm, '<div style="font-size:10px;font-weight:800;color:#C9A84C;margin:10px 0 4px;text-transform:uppercase;letter-spacing:1px;">$1</div>')
+    .replace(/^[-•]\s*(.+)$/gm, '<div style="padding:2px 0 2px 12px;font-size:10px;color:#d1d5db;">· $1</div>')
+    .replace(/\n\n/g, '<br>')
+    .replace(/\n/g, '<br>');
+
+  zone.innerHTML = `
+    <div style="border-top:1px solid #ffffff15;padding-top:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:8px;font-weight:800;color:#C9A84C;letter-spacing:2px;text-transform:uppercase;">SOCC — Sesión diseñada</div>
+        <span style="font-size:8px;color:#86efac;font-weight:700;">● Claude API</span>
+      </div>
+      <div style="font-size:11px;color:#d1d5db;line-height:1.7;background:#ffffff06;border-radius:7px;padding:12px;max-height:400px;overflow-y:auto;">${html}</div>
+      <div style="margin-top:10px;font-size:9px;color:#6b7280;line-height:1.5;">
+        Esta sesión fue diseñada por el SOCC con razonamiento completo. Usá la respuesta como guía para construir los bloques en el planificador, o copialá al portapapeles.
+      </div>
+      <button onclick="navigator.clipboard.writeText(${JSON.stringify(respuesta).replace(/\//g,'\\/')})" 
+        style="margin-top:8px;width:100%;background:none;border:1px solid #C9A84C44;border-radius:6px;color:#C9A84C;font-size:10px;cursor:pointer;padding:7px;font-family:inherit;">
+        📋 Copiar sesión completa
+      </button>
+    </div>`;
+}
+
+// ── Preview de la sesión generada ─────────────────────────────────────────────
+function _copMostrarPreviewSesion(sesion, alumno) {
+  const zone = document.getElementById('cop-preview-zone');
+  if (!zone) return;
+
+  const letras = 'ABCDEFGHIJ';
+  const bloquesHTML = sesion.bloques.map((b, i) => {
+    const ejsHTML = b.ejercicios.map(ej => `
+      <div style="display:flex;align-items:flex-start;gap:6px;padding:4px 0;border-bottom:1px solid #ffffff08;">
+        <span style="width:5px;height:5px;background:#C9A84C;border-radius:50%;margin-top:5px;flex-shrink:0;"></span>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:#e5e7eb;">${ej.nombre}</div>
+          <div style="font-size:9px;color:#9ca3af;">${ej.ctrl.series} × ${ej.ctrl.reps} reps · RIR ${ej.ctrl.rir} · ${ej.ctrl.pausa}</div>
+          ${ej.ctrl.pausa && ej.series[0]?.comentarios ? `<div style="font-size:9px;color:#6b7280;font-style:italic;margin-top:2px;">${ej.series[0].comentarios}</div>` : ''}
+        </div>
+      </div>`).join('');
+
+    return `<div style="margin-bottom:10px;background:#ffffff08;border-radius:7px;overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:7px;padding:8px 10px;background:#ffffff0d;border-bottom:1px solid #ffffff10;">
+        <span style="width:20px;height:20px;background:#C9A84C;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#0d0d1a;flex-shrink:0;">${letras[i]||i+1}</span>
+        <span style="font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:0.3px;">${b.nombre}</span>
+        <span style="margin-left:auto;font-size:8px;color:#C9A84C;font-weight:700;letter-spacing:1px;">${b.tipo}</span>
+      </div>
+      <div style="padding:8px 10px;">${ejsHTML}</div>
+    </div>`;
+  }).join('');
+
+  const alumnoTag = alumno ? `<span style="color:#C9A84C;font-weight:700;">${alumno.nombre}</span>` : 'Sin alumno';
+  const advertencia = alumno?.lesiones ? `<div style="background:#ef444415;border:1px solid #ef444430;border-radius:5px;padding:6px 10px;font-size:9px;color:#fca5a5;margin-bottom:8px;">⚠️ Generada considerando: ${alumno.lesiones}</div>` : '';
+
+  zone.style.display = 'block';
+  zone.innerHTML = `
+    <div style="border-top:1px solid #ffffff15;padding-top:14px;margin-top:4px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div>
+          <div style="font-size:8px;font-weight:800;color:#C9A84C;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">SESIÓN GENERADA</div>
+          <div style="font-size:10px;color:#9ca3af;">Para ${alumnoTag} · ${sesion.meta.ciclo.toUpperCase()} · ${sesion.bloques.length} bloques</div>
+        </div>
+        <button onclick="copilotoRegenerarSesion()" style="background:none;border:1px solid #ffffff20;border-radius:5px;color:#9ca3af;font-size:9px;cursor:pointer;padding:4px 8px;font-family:inherit;">↺ Nueva</button>
+      </div>
+      ${advertencia}
+      ${bloquesHTML}
+      <div style="display:flex;gap:6px;margin-top:12px;">
+        <button onclick="copilotoCargarEnPlanificador(${JSON.stringify(sesion).replace(/"/g, '&quot;')})" 
+          style="flex:1;background:#C9A84C;border:none;border-radius:7px;color:#0d0d1a;font-size:11px;font-weight:800;cursor:pointer;padding:10px;font-family:inherit;">
+          ⚡ Cargar en el Planificador
+        </button>
+      </div>
+    </div>`;
+
+  // Guardar referencia para regenerar
+  window._lastCopSesion = sesion;
+  window._lastCopAlumo = alumno;
+}
+
+function copilotoRegenerarSesion() {
+  if (window._lastCopSesion) {
+    const alumnoId = document.getElementById('plan-alumno-select')?.value || currentAlumnoId;
+    const alumno = alumnoId ? getAlumnos().find(a => a.id === alumnoId) : null;
+    const tipo = _copParseIntent(window._lastCopSesion.meta.intent || '');
+    const nueva = _copBuildSesion(tipo, alumno);
+    _copMostrarPreviewSesion(nueva, alumno);
+  }
+}
+
+// ── Cargar sesión generada en el planificador ─────────────────────────────────
+function copilotoCargarEnPlanificador(sesionData) {
+  // Determinar el día actualmente abierto
+  const diaIdx = planDiaAbierto !== null ? planDiaAbierto : 0;
+
+  // Si no hay editor abierto, abrir el lunes
+  if (planDiaAbierto === null) {
+    abrirPlanDiaEditor(0, planSemEditando || 0);
+    setTimeout(() => _copInsertarBloques(sesionData, 0), 150);
+    return;
+  }
+
+  _copInsertarBloques(sesionData, diaIdx);
+}
+
+function _copInsertarBloques(sesionData, diaIdx) {
+  const contenedor = document.getElementById(`plan-dia-bloques-${diaIdx}`);
+  if (!contenedor) {
+    toast('Abrí un día en el planificador primero');
+    return;
+  }
+
+  // Preguntar si quiere reemplazar o agregar
+  const tieneContenido = contenedor.querySelectorAll('.bloque-wrap').length > 0;
+  if (tieneContenido) {
+    if (!confirm('El día ya tiene bloques. ¿Reemplazarlos con la sesión generada?')) return;
+    contenedor.innerHTML = '';
+    bloqueCounter = 0; ejercicioCounter = 0;
+  }
+
+  // Insertar cada bloque
+  sesionData.bloques.forEach(bloque => {
+    addBloqueDia(diaIdx, bloque);
+  });
+
+  // Cerrar copiloto y notificar
+  cerrarCopiloto();
+  toast('✓ Sesión cargada en el planificador');
+
+  // Actualizar nombre de la sesión si estaba vacío
+  const tituloInput = document.getElementById('plan-titulo');
+  if (tituloInput && !tituloInput.value) {
+    const ciclo = sesionData.meta?.ciclo || '';
+    const grupos = sesionData.meta?.grupos || [];
+    const descripcion = grupos.map(g => _copNombreBloque(g, 0)).slice(0, 2).join(' + ');
+    tituloInput.value = (descripcion + ' · ' + ciclo.toUpperCase()).trim();
+    const display = document.getElementById('pln-titulo-display');
+    if (display) display.textContent = '💪 ' + tituloInput.value;
+  }
+}
+
+
+
+
+// ── Copiloto — Reconocimiento de voz ─────────────────────────────────────────
+let _copMicActivo = false;
+let _copRecognition = null;
+
+function copilotoToggleMic() {
+  if (_copMicActivo) {
+    _copMicActivo = false;
+    if (_copRecognition) _copRecognition.stop();
+    _copActualizarBtnMic(false);
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    _copChatAgregar('ai', 'Tu navegador no soporta voz. Usa Chrome.');
+    return;
+  }
+  _copRecognition = new SR();
+  _copRecognition.lang = 'es-AR';
+  _copRecognition.continuous = false;
+  _copRecognition.interimResults = false;
+  _copRecognition.onstart  = () => { _copMicActivo = true;  _copActualizarBtnMic(true); };
+  _copRecognition.onend    = () => { _copMicActivo = false; _copActualizarBtnMic(false); };
+  _copRecognition.onerror  = (e) => {
+    _copMicActivo = false; _copActualizarBtnMic(false);
+    if (e.error !== 'no-speech') _copChatAgregar('ai', 'Error de mic: ' + e.error);
+  };
+  _copRecognition.onresult = (e) => {
+    const txt = e.results[0][0].transcript;
+    const inp = document.getElementById('cop-chat-input');
+    if (inp) inp.value = txt;
+    _copActualizarBtnMic(false);
+    _copMicActivo = false;
+    setTimeout(copilotoPreguntar, 300);
+  };
+  _copRecognition.start();
+}
+
+function _copActualizarBtnMic(activo) {
+  const btn = document.getElementById('cop-mic-btn');
+  if (!btn) return;
+  btn.textContent = activo ? '⏹️' : '🎙️';
+  btn.style.background = activo ? '#ef444433' : '#ffffff15';
+  btn.style.border     = activo ? '1px solid #ef4444' : 'none';
+  btn.title = activo ? 'Detener' : 'Hablar con el Copiloto';
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// ── Atajo de teclado: Escape para cerrar ──────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && copilotoAbierto) cerrarCopiloto();
+});
+
+
+// ── SOCC Drag & Drop — bloques y ejercicios ─────────
+// ── SOCC Drag & Drop — bloques y ejercicios ───────────────────────────────────
+(function() {
+  let src = null;
+
+  document.addEventListener('dragstart', function(e) {
+    const handle = e.target;
+    if (!handle.classList || !handle.classList.contains('drag-handle')) return;
+    const type = handle.dataset.type;
+    const el = type === 'bloque'
+      ? handle.closest('.bloque-wrap')
+      : handle.closest('.ej-card');
+    if (!el) return;
+    src = { el, type };
+    setTimeout(function() { el.classList.add('socc-dragging'); }, 0);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', el.id);
+  }, true);
+
+  document.addEventListener('dragover', function(e) {
+    if (!src) return;
+    var sel = src.type === 'bloque' ? '.bloque-wrap' : '.ej-card';
+    var over = e.target.closest ? e.target.closest(sel) : null;
+    if (!over || over === src.el) return;
+    if (over.parentNode !== src.el.parentNode) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.socc-dnd-before,.socc-dnd-after').forEach(function(el) {
+      el.classList.remove('socc-dnd-before','socc-dnd-after');
+    });
+    var rect = over.getBoundingClientRect();
+    over.classList.add(e.clientY < rect.top + rect.height / 2 ? 'socc-dnd-before' : 'socc-dnd-after');
+  });
+
+  document.addEventListener('drop', function(e) {
+    if (!src) return;
+    var sel = src.type === 'bloque' ? '.bloque-wrap' : '.ej-card';
+    var over = e.target.closest ? e.target.closest(sel) : null;
+    if (!over || over === src.el || over.parentNode !== src.el.parentNode) return;
+    e.preventDefault();
+    var parent = over.parentNode;
+    var rect = over.getBoundingClientRect();
+    if (e.clientY < rect.top + rect.height / 2) {
+      parent.insertBefore(src.el, over);
+    } else {
+      parent.insertBefore(src.el, over.nextSibling);
+    }
+    if (src.type === 'bloque') {
+      if (typeof actualizarLetrasBloque === 'function') actualizarLetrasBloque();
+    } else {
+      var bWrap = src.el.closest('.bloque-wrap');
+      if (bWrap && typeof actualizarLayoutBloque === 'function') actualizarLayoutBloque(bWrap.id);
+    }
+  });
+
+  document.addEventListener('dragend', function() {
+    document.querySelectorAll('.socc-dragging,.socc-dnd-before,.socc-dnd-after').forEach(function(el) {
+      el.classList.remove('socc-dragging','socc-dnd-before','socc-dnd-after');
+    });
+    src = null;
+  });
+})();
+
+</script>
+
+<!-- MODAL GUARDAR PLANTILLA -->
+<div class="modal-overlay" id="modal-guardar-plantilla">
+  <div class="modal" style="width:440px;">
+    <div class="modal-header">
+      <h2>💾 Guardar como plantilla</h2>
+      <button class="modal-close" onclick="closeModal('modal-guardar-plantilla')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#555;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px;">NOMBRE</label>
+          <input id="plt-nombre" type="text" placeholder="Ej: Tren superior · Hipertrofia" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:9px 12px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label style="font-size:11px;font-weight:700;color:#555;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px;">CATEGORÍA</label>
+            <select id="plt-categoria" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:9px 10px;font-size:13px;box-sizing:border-box;">
+              <option value="Fuerza">Fuerza</option>
+              <option value="Hipertrofia">Hipertrofia</option>
+              <option value="Movilidad">Movilidad</option>
+              <option value="Running">Running</option>
+              <option value="Mixto">Mixto</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700;color:#555;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px;">NIVEL</label>
+            <select id="plt-nivel" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:9px 10px;font-size:13px;box-sizing:border-box;">
+              <option value="">—</option>
+              <option value="Principiante">Principiante</option>
+              <option value="Intermedio">Intermedio</option>
+              <option value="Avanzado">Avanzado</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#555;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px;">TAGS (separados por coma)</label>
+          <input id="plt-tags" type="text" placeholder="Ej: empuje, barra, pesado" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:9px 12px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-guardar-plantilla')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarGuardarPlantilla()">✓ Guardar plantilla</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DUPLICAR / MOVER SESIÓN -->
+<div class="modal-overlay" id="modal-duplicar-mover">
+  <div class="modal" style="width:420px;">
+    <div class="modal-header">
+      <h2 id="modal-dup-mov-titulo">📋 Duplicar sesión</h2>
+      <button class="modal-close" onclick="closeModal('modal-duplicar-mover')">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="modal-dup-mov-desc" style="font-size:13px;color:#666;margin-bottom:16px;">Se crea una copia exacta en el día/semana que elijas.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#555;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px;">SEMANA DESTINO</label>
+          <select id="dup-mov-semana-sel" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:9px 10px;font-size:13px;box-sizing:border-box;"></select>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#555;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px;">DÍA DESTINO</label>
+          <select id="dup-mov-dia-sel" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:9px 10px;font-size:13px;box-sizing:border-box;">
+            <option value="0">Lunes</option>
+            <option value="1">Martes</option>
+            <option value="2">Miércoles</option>
+            <option value="3">Jueves</option>
+            <option value="4">Viernes</option>
+            <option value="5">Sábado</option>
+            <option value="6">Domingo</option>
+          </select>
+        </div>
+      </div>
+      <div id="dup-mov-alumno-opt" style="display:none;border-top:1px solid #eee;padding-top:14px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;">
+          <input type="checkbox" id="dup-mov-otro-alumno-chk" onchange="toggleDupMovAlumno()" style="width:16px;height:16px;">
+          También copiar a otro alumno
+        </label>
+        <div id="dup-mov-alumno-sel-wrap" style="display:none;margin-top:10px;">
+          <select id="dup-mov-alumno-sel" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:9px 10px;font-size:13px;box-sizing:border-box;">
+            <option value="">Seleccionar alumno...</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-duplicar-mover')">Cancelar</button>
+      <button class="btn btn-primary" id="modal-dup-mov-btn" onclick="confirmarDuplicarMover()">📋 Duplicar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO BLOQUE -->
+<div class="modal-overlay" id="modal-nuevo-bloque">
+  <div class="modal" style="width:460px;">
+    <div class="modal-header">
+      <h2>➕ Nuevo bloque</h2>
+      <button class="modal-close" onclick="closeModal('modal-nuevo-bloque')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;font-weight:700;color:#555;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Elegí el tipo de bloque</p>
+      <div class="nbp-grid" id="nbp-grid"></div>
+      <div id="nuevo-bloque-nombre-wrap" style="display:none;">
+        <input id="nuevo-bloque-nombre" type="text" placeholder="Nombre del bloque personalizado..." onkeydown="if(event.key==='Enter') confirmarNuevoBloque()">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-nuevo-bloque')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarNuevoBloque()">Agregar bloque</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MEDICION CORPORAL -->
+<div class="modal-overlay" id="modal-medicion">
+  <div class="modal" style="width:540px;max-height:90vh;overflow-y:auto;">
+    <div class="modal-header">
+      <h2>Nueva medicion</h2>
+      <button class="modal-close" onclick="closeModal('modal-medicion')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Fecha *</label><input type="date" id="med-fecha" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px;">
+        <div class="field"><label>Peso (kg)</label><input type="number" step="0.1" id="med-peso" placeholder="70.5" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;"></div>
+        <div class="field"><label>% Grasa</label><input type="number" step="0.1" id="med-grasa" placeholder="18.0" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;"></div>
+        <div class="field"><label>% Musculo</label><input type="number" step="0.1" id="med-musculo" placeholder="42.0" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+        <div class="field"><label>Cintura (cm)</label><input type="number" step="0.1" id="med-cintura" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;"></div>
+        <div class="field"><label>Cadera (cm)</label><input type="number" step="0.1" id="med-cadera" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;"></div>
+        <div class="field"><label>Pecho (cm)</label><input type="number" step="0.1" id="med-pecho" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;"></div>
+        <div class="field"><label>Brazo D (cm)</label><input type="number" step="0.1" id="med-brazo" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;"></div>
+        <div class="field"><label>Muslo D (cm)</label><input type="number" step="0.1" id="med-muslo" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;"></div>
+        <div class="field"><label>Pantorrilla (cm)</label><input type="number" step="0.1" id="med-panto" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;"></div>
+      </div>
+      <div class="field" style="margin-top:10px;"><label>Observaciones</label><textarea id="med-obs" rows="2" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-medicion')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarMedicion()">Guardar medicion</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SALUD -->
+<div class="modal-overlay" id="modal-salud">
+  <div class="modal" style="width:480px;">
+    <div class="modal-header">
+      <h2>Nueva entrada de salud</h2>
+      <button class="modal-close" onclick="closeModal('modal-salud')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field"><label>Tipo</label>
+          <select id="salud-tipo" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;">
+            <option value="lesion">Lesion</option>
+            <option value="condicion">Condicion medica</option>
+            <option value="restriccion">Restriccion</option>
+            <option value="cirugia">Cirugia</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="field"><label>Estado</label>
+          <select id="salud-estado" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;">
+            <option value="activo">Activo</option>
+            <option value="en_tratamiento">En tratamiento</option>
+            <option value="cronico">Cronico</option>
+            <option value="resuelto">Resuelto</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-top:12px;"><label>Descripcion *</label>
+        <input type="text" id="salud-desc" placeholder="Ej: Dolor lumbar, Rotura de menisco..." style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+        <div class="field"><label>Fecha inicio</label><input type="date" id="salud-inicio" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;"></div>
+        <div class="field"><label>Fecha fin</label><input type="date" id="salud-fin" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;"></div>
+      </div>
+      <div class="field" style="margin-top:12px;"><label>Notas / Restricciones</label>
+        <textarea id="salud-notas" rows="3" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-salud')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarEntradaSalud()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Elegir tipo de objetivo ════════════════════════════ -->
+<div class="modal-overlay" id="modal-obj-tipo">
+  <div class="modal" style="width:360px;max-width:95vw;">
+    <div class="modal-header">
+      <span class="modal-title">🎯 Nuevo Objetivo</span>
+      <button class="modal-close" onclick="cerrarTipoSelector()">×</button>
+    </div>
+    <div class="modal-body" style="padding:24px;display:flex;flex-direction:column;gap:14px;">
+      <p style="margin:0 0 8px;font-size:13px;color:#555;">¿Qué tipo de objetivo querés agregar?</p>
+      <button onclick="selectTipoObjetivo('musculacion')"
+        style="display:flex;align-items:center;gap:14px;padding:16px 18px;border:2px solid #e0e0e0;border-radius:12px;background:#fff;cursor:pointer;font-size:14px;font-weight:600;color:#1a2a4a;transition:border-color .2s;"
+        onmouseover="this.style.borderColor='#C9A84C'" onmouseout="this.style.borderColor='#e0e0e0'">
+        <span style="font-size:28px;">💪</span>
+        <div style="text-align:left;">
+          <div>Musculación / Fuerza</div>
+          <div style="font-size:11px;font-weight:400;color:#888;margin-top:2px;">Objetivos de hipertrofia, fuerza o composición corporal</div>
+        </div>
+      </button>
+      <button onclick="selectTipoObjetivo('running')"
+        style="display:flex;align-items:center;gap:14px;padding:16px 18px;border:2px solid #e0e0e0;border-radius:12px;background:#fff;cursor:pointer;font-size:14px;font-weight:600;color:#1a2a4a;transition:border-color .2s;"
+        onmouseover="this.style.borderColor='#C9A84C'" onmouseout="this.style.borderColor='#e0e0e0'">
+        <span style="font-size:28px;">🏃</span>
+        <div style="text-align:left;">
+          <div>Running / Cardio</div>
+          <div style="font-size:11px;font-weight:400;color:#888;margin-top:2px;">Tiempos de carrera, ritmo, predicciones McMillan</div>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Objetivo de Musculación ════════════════════════════ -->
+<div class="modal-overlay" id="modal-obj-musc">
+  <div class="modal" style="width:520px;max-width:95vw;">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-musc-titulo">💪 Objetivo de Musculación</span>
+      <button class="modal-close" onclick="cerrarModalMusc()">×</button>
+    </div>
+    <div class="modal-body" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+      <input type="hidden" id="musc-editing-id">
+      <div class="field">
+        <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">Título del objetivo *</label>
+        <input type="text" id="musc-titulo" placeholder="Ej: Ganar masa muscular en 6 meses"
+          style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">Categoría</label>
+          <select id="musc-categoria" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;background:#fff;">
+            <option value="fuerza">💪 Fuerza</option>
+            <option value="hipertrofia">📈 Hipertrofia</option>
+            <option value="composicion">⚖️ Composición corporal</option>
+            <option value="rendimiento">🏅 Rendimiento</option>
+            <option value="salud">❤️ Salud general</option>
+          </select>
+        </div>
+        <div class="field">
+          <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">Fecha objetivo</label>
+          <input type="date" id="musc-fecha" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div class="field">
+        <label style="font-size:11px;font-weight:700;color:#C9A84C;display:block;margin-bottom:4px;">🎯 Objetivo largo plazo</label>
+        <input type="text" id="musc-largo" placeholder="Ej: Llegar a 80 kg con 15% grasa corporal"
+          style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div class="field">
+        <label style="font-size:11px;font-weight:700;color:#888;display:block;margin-bottom:4px;">📌 Objetivo mediano plazo</label>
+        <input type="text" id="musc-mediano" placeholder="Ej: Sentadilla 100 kg en 3 meses"
+          style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div class="field">
+        <label style="font-size:11px;font-weight:700;color:#888;display:block;margin-bottom:4px;">🔹 Objetivo corto plazo</label>
+        <input type="text" id="musc-corto" placeholder="Ej: Entrenar 4 veces por semana este mes"
+          style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div class="field">
+        <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">Descripción / Notas</label>
+        <textarea id="musc-descripcion" rows="3" placeholder="Contexto adicional, antecedentes, restricciones..."
+          style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModalMusc()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarObjetivoMusc()">Guardar objetivo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Objetivo de Running ════════════════════════════════ -->
+<div class="modal-overlay" id="modal-obj-run">
+  <div class="modal" style="width:620px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+    <div class="modal-header" style="position:sticky;top:0;background:#fff;z-index:1;">
+      <span class="modal-title" id="modal-run-titulo">🏃 Objetivo de Running</span>
+      <button class="modal-close" onclick="cerrarModalRun()">×</button>
+    </div>
+    <div class="modal-body" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+      <input type="hidden" id="run-obj-editing-id">
+
+      <!-- Objetivos -->
+      <div class="field">
+        <label style="font-size:11px;font-weight:700;color:#C9A84C;display:block;margin-bottom:4px;">🎯 Objetivo largo plazo *</label>
+        <input type="text" id="run-obj-largo" placeholder="Ej: Correr una maratón en menos de 4hs"
+          style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label style="font-size:11px;font-weight:700;color:#888;display:block;margin-bottom:4px;">📌 Objetivo mediano plazo</label>
+          <input type="text" id="run-obj-mediano" placeholder="Ej: 10K en menos de 50 min"
+            style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div class="field">
+          <label style="font-size:11px;font-weight:700;color:#888;display:block;margin-bottom:4px;">🔹 Objetivo corto plazo</label>
+          <input type="text" id="run-obj-corto" placeholder="Ej: Correr 3 veces por semana"
+            style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <!-- Nivel y perfil -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:6px;">Nivel</label>
+          <input type="hidden" id="run-nivel" value="Intermedio">
+          <div class="chip-row" style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="chip-selector" onclick="setRunChip('run-nivel','Principiante',this)">Principiante</button>
+            <button class="chip-selector active" onclick="setRunChip('run-nivel','Intermedio',this)">Intermedio</button>
+            <button class="chip-selector" onclick="setRunChip('run-nivel','Avanzado',this)">Avanzado</button>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:6px;">Perfil</label>
+          <input type="hidden" id="run-perfil" value="Hibrido">
+          <div class="chip-row" style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="chip-selector" onclick="setRunChip('run-perfil','Velocista',this)">⚡ Velocista</button>
+            <button class="chip-selector active" onclick="setRunChip('run-perfil','Hibrido',this)">⚖️ Híbrido</button>
+            <button class="chip-selector" onclick="setRunChip('run-perfil','Fondista',this)">🏔️ Fondista</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Última carrera de referencia -->
+      <div style="background:#f8f7f2;border-radius:10px;padding:14px;border:1px solid #e8e3d0;">
+        <div style="font-size:11px;font-weight:800;color:#C9A84C;margin-bottom:10px;letter-spacing:.5px;">📊 CARRERA DE REFERENCIA (para predicciones McMillan)</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;">
+          <div class="field">
+            <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">Distancia</label>
+            <select id="run-ref-dist" onchange="actualizarCalcRun()"
+              style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;background:#fff;">
+              <option value="1000">1 km</option>
+              <option value="1609">1 milla</option>
+              <option value="3000">3 km</option>
+              <option value="5000" selected>5 km</option>
+              <option value="10000">10 km</option>
+              <option value="21097">Media maratón</option>
+              <option value="42195">Maratón</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">Tiempo (h:m:s)</label>
+            <div style="display:flex;gap:4px;align-items:center;">
+              <input type="number" id="run-ref-h" min="0" max="9" placeholder="0" oninput="actualizarCalcRun()"
+                style="width:44px;border:1px solid #e0e0e0;border-radius:6px;padding:8px 6px;font-size:13px;text-align:center;">
+              <span style="color:#888;font-size:12px;">h</span>
+              <input type="number" id="run-ref-m" min="0" max="59" placeholder="00" oninput="actualizarCalcRun()"
+                style="width:44px;border:1px solid #e0e0e0;border-radius:6px;padding:8px 6px;font-size:13px;text-align:center;">
+              <span style="color:#888;font-size:12px;">m</span>
+              <input type="number" id="run-ref-s" min="0" max="59" placeholder="00" oninput="actualizarCalcRun()"
+                style="width:44px;border:1px solid #e0e0e0;border-radius:6px;padding:8px 6px;font-size:13px;text-align:center;">
+              <span style="color:#888;font-size:12px;">s</span>
+            </div>
+          </div>
+        </div>
+        <!-- Ritmo calculado -->
+        <div id="run-ritmo-display" style="display:none;margin-top:10px;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:#888;">Ritmo promedio:</span>
+          <span id="run-ritmo-val" style="font-size:15px;font-weight:700;color:#C9A84C;"></span>
+          <span style="font-size:11px;color:#888;">/km</span>
+        </div>
+      </div>
+
+      <!-- Predicciones y zonas (se llenan por JS) -->
+      <div id="run-calc-section" style="display:none;">
+        <div style="font-size:11px;font-weight:800;color:#555;margin-bottom:8px;letter-spacing:.5px;">
+          🏁 PREDICCIONES · Perfil: <span id="run-perfil-label-calc" style="color:#C9A84C;"></span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px;">
+          <thead>
+            <tr style="background:#f0f0f0;">
+              <th class="td-dist" style="padding:6px 8px;text-align:left;font-weight:700;color:#333;">Distancia</th>
+              <th class="td-time-pred" style="padding:6px 8px;text-align:center;font-weight:700;color:#333;">Tiempo pred.</th>
+              <th class="td-pace-pred" style="padding:6px 8px;text-align:center;font-weight:700;color:#333;">Ritmo</th>
+            </tr>
+          </thead>
+          <tbody id="run-pred-tbody"></tbody>
+        </table>
+        <div id="run-zonas-wrap"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModalRun()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarObjetivoRun()">Guardar objetivo</button>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- COPILOTO PANEL - global -->
+<!-- ═══ COPILOTO IA - PANEL ═══ -->
+<div class="copiloto-backdrop" id="copiloto-backdrop" onclick="cerrarCopiloto()"></div>
+<div class="copiloto-panel" id="copiloto-panel">
+
+  <div class="copiloto-header">
+    <div class="copiloto-header-top">
+      <div class="copiloto-badge">🤖 Copiloto IA</div>
+      <button class="copiloto-close-btn" onclick="cerrarCopiloto()">×</button>
+    </div>
+    <div class="copiloto-alumno-nombre" id="cop-alumno-nombre">Sin alumno seleccionado</div>
+    <div class="copiloto-alumno-sub" id="cop-alumno-sub">Seleccioná un alumno para activar sugerencias</div>
+  </div>
+
+  <div class="copiloto-body" id="copiloto-body">
+
+    <!-- INTERPRETAR SESIÓN -->
+    <div class="cop-section">
+      <div class="cop-section-title">📥 Cargar sesión al planificador</div>
+      <div style="font-size:10px;color:#888;line-height:1.5;margin-bottom:8px;">
+        Describí tu sesión en lenguaje libre y la cargo automáticamente al planificador. No invento nada — solo interpreto lo que vos diseñaste.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <textarea id="cop-gen-input" class="cop-chat-input"
+          placeholder="Ej: Bloque A activación: puente de glúteos 3x15, clamshell 3x12. Bloque B principal: peso muerto rumano 4x8 RIR 2. Bloque C biserie: remo en polea 3x10 con curl de bíceps 3x12 RIR 3."
+          rows="6"
+          onkeydown="if(event.key==='Enter'&&event.ctrlKey){event.preventDefault();copilotoInterpretarSesion();}"></textarea>
+        <button onclick="copilotoInterpretarSesion()" class="cop-ctx-btn primary" style="margin-bottom:0;background:#1a5c38;">
+          📥 Interpretar y previsualizar
+        </button>
+      </div>
+      <div style="margin-top:8px;font-size:9px;color:#6b7280;line-height:1.6;background:#ffffff06;border-radius:6px;padding:8px 10px;">
+        💡 <strong style="color:#C9A84C;">Tip:</strong> Podés dictar con el micrófono 🎙️ o escribir libremente. Ejemplos:<br>
+        · "Biserie de hombros: press militar 4x8 RIR 1 + elevaciones laterales 3x15 RIR 3"<br>
+        · "Bloque principal: sentadilla libre 5x5 pausa 3 min. Complementario: prensa 3x12"
+      </div>
+      <div id="cop-preview-zone" style="display:none;margin-top:12px;"></div>
+    </div>
+
+    <!-- CONTEXTO DEL ALUMNO -->
+    <div class="cop-section" id="cop-sec-contexto">
+      <div class="cop-section-title">📋 Contexto del alumno</div>
+      <div id="cop-contexto-content">
+        <div style="color:#555;font-size:11px;font-style:italic;">Seleccioná un alumno para ver su contexto.</div>
+      </div>
+    </div>
+
+    <!-- ANÁLISIS DEL PLAN ACTUAL -->
+    <div class="cop-section" id="cop-sec-analisis">
+      <div class="cop-section-title">🔍 Análisis del plan actual</div>
+      <div id="cop-analisis-content">
+        <div style="color:#555;font-size:11px;font-style:italic;">Construí bloques en el planificador para ver el análisis.</div>
+      </div>
+    </div>
+
+    <!-- SUGERENCIAS IA -->
+    <div class="cop-section" id="cop-sec-sugerencias">
+      <div class="cop-section-title">💡 Sugerencias</div>
+      <div id="cop-sugerencias-content">
+        <div style="color:#555;font-size:11px;font-style:italic;">Las sugerencias aparecerán aquí al construir el plan.</div>
+      </div>
+    </div>
+
+    <!-- CONSULTAR -->
+    <div class="cop-section">
+      <div class="cop-section-title">💬 Consultar al copiloto</div>
+      <div class="cop-chat-messages" id="cop-chat-messages">
+        <div class="cop-msg empty">Hacé una pregunta sobre el plan o el alumno...</div>
+      </div>
+      <div class="cop-chat-input-row">
+        <textarea class="cop-chat-input" id="cop-chat-input"
+          placeholder="Ej: ¿Qué ejercicio de cadera puedo agregar?"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();copilotoPreguntar();}"></textarea>
+        <button id="cop-mic-btn" class="cop-chat-send-btn" onclick="copilotoToggleMic()" title="Hablar con el Copiloto" style="background:#ffffff15;font-size:14px;">🎙️</button>
+        <button class="cop-chat-send-btn" onclick="copilotoPreguntar()">↑</button>
+      </div>
+    </div>
+
+    <!-- GENERAR CONTEXTO PARA CLAUDE -->
+    <div class="cop-section">
+      <div class="cop-section-title">📤 Usar con Claude (Cowork)</div>
+      <div style="font-size:10px;color:#888;line-height:1.5;margin-bottom:10px;">
+        Genera un resumen completo del alumno y el plan actual para consultarle a Claude con contexto real.
+      </div>
+      <button class="cop-ctx-btn primary" onclick="copilotoGenerarContexto()">
+        📋 Copiar contexto completo
+      </button>
+      <div id="cop-ctx-feedback" style="display:none;font-size:10px;color:#86efac;text-align:center;margin-top:6px;"></div>
+    </div>
+
+    <!-- CONFIGURACIÓN SOCC / API KEY -->
+    <div class="cop-section" style="padding-bottom:6px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span id="socc-api-badge" style="font-size:9px;color:#6b7280;font-weight:600;">○ Sin API key</span>
+        <button onclick="soccAbrirConfigApi()" 
+          style="background:none;border:1px solid #ffffff20;border-radius:6px;color:#9ca3af;font-size:9px;cursor:pointer;padding:5px 10px;font-family:inherit;transition:all 0.15s;"
+          onmouseover="this.style.borderColor='#C9A84C';this.style.color='#C9A84C'"
+          onmouseout="this.style.borderColor='#ffffff20';this.style.color='#9ca3af'">
+          ⚙️ Configurar Claude API
+        </button>
+      </div>
+    </div>
+
+    <!-- REFRESCAR -->
+    <div style="text-align:center;padding-top:8px;padding-bottom:20px;">
+      <button class="cop-ctx-btn" onclick="refreshCopiloto()" style="width:auto;padding:8px 20px;">
+        🔄 Actualizar análisis
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+// ── SOCC: Drag & Drop de sesiones entre días ─────────────────────────────────
+(function() {
+  var _src = null;
+  var _ghost = null;
+
+  function doMove(destDia, destSem) {
+    if (_src.dia === destDia && _src.sem === destSem) return;
+    guardarEstadoDiaActual();
+    var srcData = JSON.parse(JSON.stringify(planSemanasArray[_src.sem].dias[_src.dia]));
+    if (!planSemanasArray[destSem].dias) planSemanasArray[destSem].dias = {};
+    var destData = planSemanasArray[destSem].dias[destDia];
+    if (destData) {
+      planSemanasArray[_src.sem].dias[_src.dia] = destData;
+    } else {
+      delete planSemanasArray[_src.sem].dias[_src.dia];
+    }
+    planSemanasArray[destSem].dias[destDia] = srcData;
+    renderPlanMes();
+    toast('\u2194 Sesi\u00f3n movida');
+  }
+
+  function clearDndClasses() {
+    document.querySelectorAll('.dnd-dia-src,.dnd-dia-over').forEach(function(el) {
+      el.classList.remove('dnd-dia-src','dnd-dia-over');
+    });
+  }
+
+  // Mouse D&D
+  document.addEventListener('dragstart', function(e) {
+    var card = e.target.closest ? e.target.closest('.plan-dia-card[draggable]') : null;
+    if (!card) return;
+    _src = { dia: parseInt(card.dataset.dia), sem: parseInt(card.dataset.sem), card: card };
+    setTimeout(function(){ card.classList.add('dnd-dia-src'); }, 0);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', card.id || '');
+  }, true);
+
+  document.addEventListener('dragover', function(e) {
+    if (!_src) return;
+    var card = e.target.closest ? e.target.closest('.plan-dia-card') : null;
+    if (!card) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    clearDndClasses();
+    _src.card.classList.add('dnd-dia-src');
+    if (card !== _src.card) card.classList.add('dnd-dia-over');
+  });
+
+  document.addEventListener('drop', function(e) {
+    if (!_src) return;
+    var card = e.target.closest ? e.target.closest('.plan-dia-card') : null;
+    if (!card || card === _src.card) return;
+    e.preventDefault();
+    doMove(parseInt(card.dataset.dia), parseInt(card.dataset.sem));
+    _src = null;
+  });
+
+  document.addEventListener('dragend', function() {
+    clearDndClasses();
+    _src = null;
+  });
+
+  // Touch D&D
+  var _touchOffX = 0, _touchOffY = 0;
+
+  document.addEventListener('touchstart', function(e) {
+    var card = e.target.closest ? e.target.closest('.plan-dia-card[draggable]') : null;
+    if (!card) return;
+    var touch = e.touches[0];
+    var rect = card.getBoundingClientRect();
+    _touchOffX = touch.clientX - rect.left;
+    _touchOffY = touch.clientY - rect.top;
+    _src = { dia: parseInt(card.dataset.dia), sem: parseInt(card.dataset.sem), card: card };
+    _ghost = card.cloneNode(true);
+    _ghost.style.cssText = 'position:fixed;pointer-events:none;z-index:9999;opacity:0.85;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.3);transform:rotate(2deg);width:'+rect.width+'px;';
+    _ghost.style.left = (touch.clientX - _touchOffX) + 'px';
+    _ghost.style.top  = (touch.clientY - _touchOffY) + 'px';
+    document.body.appendChild(_ghost);
+    card.classList.add('dnd-dia-src');
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function(e) {
+    if (!_src || !_ghost) return;
+    var touch = e.touches[0];
+    _ghost.style.left = (touch.clientX - _touchOffX) + 'px';
+    _ghost.style.top  = (touch.clientY - _touchOffY) + 'px';
+    _ghost.style.display = 'none';
+    var el = document.elementFromPoint(touch.clientX, touch.clientY);
+    _ghost.style.display = '';
+    document.querySelectorAll('.dnd-dia-over').forEach(function(x){ x.classList.remove('dnd-dia-over'); });
+    var over = el ? el.closest('.plan-dia-card') : null;
+    if (over && over !== _src.card) over.classList.add('dnd-dia-over');
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    if (!_src) return;
+    var touch = e.changedTouches[0];
+    if (_ghost) { _ghost.remove(); _ghost = null; }
+    var el = document.elementFromPoint(touch.clientX, touch.clientY);
+    var destCard = el ? el.closest('.plan-dia-card') : null;
+    if (destCard && destCard !== _src.card) {
+      doMove(parseInt(destCard.dataset.dia), parseInt(destCard.dataset.sem));
+    }
+    clearDndClasses();
+    _src = null;
+  });
+})();
+</script>
+</body>
+</html>
