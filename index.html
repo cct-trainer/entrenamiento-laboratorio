@@ -13282,17 +13282,6 @@ function exportarPlanCompletoAlumno() {
   const al = getAlumnos().find(a => a.id === currentAlumnoId);
   if (!al) { toast('Alumno no encontrado'); return; }
 
-  // ── Datos de entrenamiento ──
-  const planes = getPlanificaciones().filter(p => p.alumnoId === currentAlumnoId && p.tipo !== 'running');
-  const ultimoPlan = planes.sort((a,b) => (b.fecha||b.fechaInicio||'').localeCompare(a.fecha||a.fechaInicio||''))[0];
-  let diasData = {}, planTitulo = 'Plan de Entrenamiento', planSemana = '1', planFecha = '';
-  if (ultimoPlan) {
-    diasData   = ultimoPlan.semanasArray?.length ? ultimoPlan.semanasArray[0].dias : (ultimoPlan.diasData || {});
-    planTitulo = ultimoPlan.titulo || 'Plan de Entrenamiento';
-    planSemana = String(ultimoPlan.semana || ultimoPlan.semanasArray?.[0]?.semana || 1);
-    planFecha  = ultimoPlan.fecha || ultimoPlan.fechaInicio || '';
-  }
-
   // ── Nutrición ──
   const obj = (al.objetivo || '').toLowerCase();
   let tipoNutr = 'mantenimiento';
@@ -13305,25 +13294,6 @@ function exportarPlanCompletoAlumno() {
   const prot  = document.getElementById('nutr-res-prot-g')?.textContent?.replace('g','') || '';
   const carb  = document.getElementById('nutr-res-carb-g')?.textContent?.replace('g','') || '';
   const grasa = document.getElementById('nutr-res-grasa-g')?.textContent?.replace('g','') || '';
-
-  // ── HTML de entrenamiento (7 días) ──
-  const DIAS  = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
-  const SIGS  = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
-  const trainDias = Array.from({length:7}, (_,i) => {
-    const sesiones = diasData[i] || [];
-    const tiene = !!(sesiones.length && sesiones[0]?.bloques?.length);
-    const bloques = tiene ? sesiones[0].bloques : [];
-    const label = tiene ? (bloques[0]?.nombre || bloques[0]?.tipo || 'Fuerza') : 'Descanso';
-    const html  = tiene ? renderPlanHTML({bloques}) : '';
-    return { sig: SIGS[i], dia: DIAS[i], tiene, label, html };
-  });
-  const firstTrain = trainDias.findIndex(d => d.tiene);
-  const trainTabNav = trainDias.map((d,i) =>
-    `<button class="tab-btn${i===(firstTrain>=0?firstTrain:0)?' active':''}${d.tiene?'':' rest'}" onclick="showTrainTab(${i})"><span class="tab-sig">${d.sig}</span><span class="tab-nombre">${d.label}</span></button>`
-  ).join('');
-  const trainPanels = trainDias.map((d,i) =>
-    `<div class="tab-panel${i===(firstTrain>=0?firstTrain:0)?' active':''}" id="tp-${i}">${d.tiene ? d.html : '<div style="text-align:center;padding:48px 20px;"><div style="font-size:36px;margin-bottom:10px;">💤</div><div style="font-size:14px;font-weight:700;color:#888;">Día de descanso</div></div>'}</div>`
-  ).join('');
 
   // ── HTML de nutrición (7 días) ──
   const nutrTabNav = planNutr.dias.map((d,i) =>
@@ -13345,7 +13315,7 @@ function exportarPlanCompletoAlumno() {
 
   const html = `<!DOCTYPE html><html lang="es"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>${al.nombre} — Plan Completo</title>
+<title>${al.nombre} — Plan Nutricional</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:#f4f6f9;color:#1a1a2e;font-size:13px;}
@@ -13371,18 +13341,6 @@ body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:#f4f6f9;color:
 table{width:100%;border-collapse:collapse;}
 th{background:#f0f0f0;padding:6px 8px;border:1px solid #e0e0e0;font-size:9px;font-weight:700;color:#555;text-align:center;text-transform:uppercase;}
 td{padding:6px 8px;border:1px solid #e8e8e8;text-align:center;font-size:12px;}
-/* Training tabs */
-.tabs-nav{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:20px;background:#f0f2f5;border-radius:14px;padding:10px;box-shadow:inset 0 2px 6px rgba(0,0,0,.1);}
-.tab-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;border-radius:10px;border:none;background:#fff;cursor:pointer;font-family:inherit;width:100%;box-shadow:0 3px 0 #c8cdd6,0 4px 8px rgba(0,0,0,.12);transition:all .12s;}
-.tab-btn:hover{box-shadow:0 5px 0 #b0b8c4;transform:translateY(-2px);background:#f0f8ff;}
-.tab-btn.active{background:linear-gradient(160deg,#2196f3,#9A7A28);box-shadow:0 1px 0 #0d47a1,0 2px 6px rgba(21,101,192,.35);transform:translateY(2px);}
-.tab-btn.rest{background:#f8f8f8;opacity:.75;box-shadow:0 3px 0 #d0d0d0;}
-.tab-btn.rest.active{background:linear-gradient(160deg,#78909c,#546e7a);}
-.tab-sig{font-size:10px;font-weight:900;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;}
-.tab-btn.active .tab-sig{color:rgba(255,255,255,.85);}
-.tab-nombre{font-size:10px;font-weight:700;color:#222;margin-top:3px;text-align:center;line-height:1.2;}
-.tab-btn.active .tab-nombre{color:#fff;}
-.tab-panel{display:none;}.tab-panel.active{display:block;}
 /* Nutrition day tabs */
 .nutr-days-nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;-webkit-overflow-scrolling:touch;}
 .nutr-day-btn{flex-shrink:0;padding:8px 14px;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;font-size:12px;font-weight:700;color:#555;cursor:pointer;font-family:inherit;transition:all .15s;}
@@ -13433,26 +13391,11 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:
     </div>
   </div>
   <div class="header-bottom">
-    <div style="font-size:9px;color:rgba(255,255,255,.3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;">Plan Completo — Entrenamiento + Nutrición</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;">Plan Nutricional · Antiinflamatorio · Argentina</div>
     <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">${new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}</div>
   </div>
   <div class="header-bar2"></div>
 </div>
-
-<div class="section">
-  <div class="sec-title">
-    <div class="sec-icon" style="background:#1a1a2e;">💪</div>
-    <div>
-      <div class="sec-name">${planTitulo}</div>
-      <div class="sec-sub">Semana ${planSemana}${planFecha?' · '+planFecha:''}</div>
-    </div>
-  </div>
-  ${ultimoPlan
-    ? `<div class="tabs-nav">${trainTabNav}</div><div class="tabs-content">${trainPanels}</div>`
-    : `<div style="text-align:center;padding:40px;background:#fff;border-radius:12px;color:#bbb;border:1px dashed #e0e0e0;">Sin plan de entrenamiento cargado</div>`}
-</div>
-
-<div class="divider"></div>
 
 <div class="section">
   <div class="sec-title">
@@ -13471,10 +13414,6 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:
 <div style="height:32px;"></div>
 
 <script>
-function showTrainTab(idx){
-  document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.toggle('active',i===idx);});
-  document.querySelectorAll('.tab-panel').forEach(function(p,i){p.classList.toggle('active',i===idx);});
-}
 function showNutrTab(idx){
   document.querySelectorAll('.nutr-day-btn').forEach(function(b,i){b.classList.toggle('active',i===idx);});
   document.querySelectorAll('.nutr-day-panel').forEach(function(p,i){p.classList.toggle('active',i===idx);});
@@ -13487,11 +13426,6 @@ function toggleMeal(diaIdx,mealIdx){
   items.style.display=open?'none':'block';
   if(arrow)arrow.classList.toggle('open',!open);
 }
-function _resetCard(card){card.style.borderColor='#e0e0e0';card.style.background='#fff';var hdr=card.querySelector('.ej-card-header');if(hdr)hdr.style.background='#f5f5f5';var bh=card.querySelector('.ej-btn-hecho');if(bh){bh.classList.remove('active');bh.style.background='#e8f5e9';bh.style.color='#2e7d32';bh.style.borderColor='#a5d6a7';}var bn=card.querySelector('.ej-btn-nopude');if(bn){bn.classList.remove('active');bn.style.background='#fff3f3';bn.style.color='#c62828';bn.style.borderColor='#ef9a9a';}var nr=card.querySelector('.ej-nopude-row');if(nr)nr.style.display='none';}
-function marcHecho(btn){var card=btn.closest('.ej-card');var wasActive=btn.classList.contains('active');_resetCard(card);if(!wasActive){btn.classList.add('active');card.style.borderColor='#22c55e';card.style.background='#f0fdf4';var hdr=card.querySelector('.ej-card-header');if(hdr)hdr.style.background='#dcfce7';btn.style.background='#16a34a';btn.style.color='#fff';btn.style.borderColor='#16a34a';}}
-function marcNoPude(btn){var card=btn.closest('.ej-card');var wasActive=btn.classList.contains('active');_resetCard(card);if(!wasActive){btn.classList.add('active');card.style.borderColor='#ef4444';card.style.background='#fff8f8';var hdr=card.querySelector('.ej-card-header');if(hdr)hdr.style.background='#fce4e4';btn.style.background='#c62828';btn.style.color='#fff';btn.style.borderColor='#c62828';var nr=card.querySelector('.ej-nopude-row');if(nr)nr.style.display='block';}}
-function toggleReg(id){var el=document.getElementById(id);if(!el)return;var open=el.style.display!=='none';el.style.display=open?'none':'block';var icon=document.getElementById('icon-'+id);if(icon)icon.textContent=open?'▶':'▼';}
-function switchEjTab(uid,tab){var reg=document.getElementById('panel-reg-'+uid);var tec=document.getElementById('panel-tec-'+uid);var btnReg=document.getElementById('tab-reg-'+uid);var btnTec=document.getElementById('tab-tec-'+uid);if(tab==='reg'){if(reg)reg.style.display='';if(tec)tec.style.display='none';if(btnReg){btnReg.style.background='linear-gradient(135deg,#1a1a2e,#0d0d1a)';btnReg.style.color='#E8C96A';}if(btnTec){btnTec.style.background='#fafafa';btnTec.style.color='#888';}}else{if(reg)reg.style.display='none';if(tec)tec.style.display='';if(btnTec){btnTec.style.background='linear-gradient(135deg,#1a1a2e,#0d0d1a)';btnTec.style.color='#E8C96A';}if(btnReg){btnReg.style.background='#fafafa';btnReg.style.color='#888';}}}
 document.addEventListener('DOMContentLoaded',function(){var m=document.getElementById('mi-0-0');if(m){m.style.display='block';var a=document.getElementById('ma-0-0');if(a)a.classList.add('open');}});
 <\/script>
 </body></html>`;
@@ -13500,7 +13434,7 @@ document.addEventListener('DOMContentLoaded',function(){var m=document.getElemen
   const blob = new Blob([html], {type:'text/html;charset=utf-8'});
   const url  = URL.createObjectURL(blob);
   const link = document.createElement('a');
-  link.href = url; link.download = nombreArchivo+'-plan-completo.html'; link.click();
+  link.href = url; link.download = nombreArchivo+'-plan-nutricional.html'; link.click();
   URL.revokeObjectURL(url);
   toast('⬇ Plan completo exportado ✓');
 }
