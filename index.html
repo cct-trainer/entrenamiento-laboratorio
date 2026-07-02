@@ -12832,6 +12832,7 @@ function renderNutricion(alumnoId) {
                 <div class="nutr-peso-chip-lbl">Peso máx.</div>
               </div>
             </div>
+            <div id="nutr-imc-nota" style="display:none;margin-top:8px;font-size:10px;color:#0369a1;background:#e0f2fe;border-radius:6px;padding:5px 8px;line-height:1.4;"></div>
           </div>
         </div>
         <textarea class="nutr-notas-area" id="nutr-notas" placeholder="Notas nutricionales del alumno (intolerancias, preferencias, contexto...)...">${plan.notas||''}</textarea>
@@ -12963,30 +12964,61 @@ function calcularMacrosNutricion() {
   setW('nutr-bar-carb',  pctCarb);
   setW('nutr-bar-grasa', pctGrasa);
 
-  // ── IMC + Peso Recomendado (solo si hay altura) ──
+  // ── IMC + Peso Recomendado (adaptado por objetivo y actividad) ──
   const imcBox = document.getElementById('nutr-imc-box');
   if (altura > 0 && imcBox) {
-    const hM   = altura / 100;
-    const imc  = peso / (hM * hM);
-    const pMin = Math.round(18.5 * hM * hM * 10) / 10;
-    const pMax = Math.round(24.9 * hM * hM * 10) / 10;
-    const pIdeal = Math.round(22.0 * hM * hM * 10) / 10;
+    const hM  = altura / 100;
+    const imc = peso / (hM * hM);
 
-    let cat, color, bg;
-    if      (imc < 18.5) { cat = 'Bajo peso';   color = '#1d4ed8'; bg = '#dbeafe'; }
-    else if (imc < 25)   { cat = 'Normal';       color = '#166534'; bg = '#dcfce7'; }
-    else if (imc < 30)   { cat = 'Sobrepeso';    color = '#854d0e'; bg = '#fef9c3'; }
-    else if (imc < 35)   { cat = 'Obesidad I';   color = '#c2410c'; bg = '#ffedd5'; }
-    else if (imc < 40)   { cat = 'Obesidad II';  color = '#991b1b'; bg = '#fee2e2'; }
-    else                 { cat = 'Obesidad III'; color = '#7f1d1d'; bg = '#fecaca'; }
+    // Detectar perfil atlético: objetivo musculación O actividad alta
+    const alIMC   = currentAlumnoId ? getAlumnos().find(a => a.id === currentAlumnoId) : null;
+    const objStr  = (alIMC?.objetivo || '').toLowerCase();
+    const esMusc  = objStr.includes('hipertrofia') || objStr.includes('volumen') || objStr.includes('masa');
+    const esActivo = actividad === 'activo' || actividad === 'muy_activo';
+    const esAtleta = esMusc || esActivo || ajuste === 'superavit' || ajuste === 'superavit_alto';
+
+    // Umbrales adaptativos
+    // Atleta: "Normal" llega a 27.0 (músculo pesa más que grasa)
+    // Sedentario: escala estándar OMS (hasta 24.9)
+    const limNormal  = esAtleta ? 27.0 : 25.0;
+    const limZonaAt  = esAtleta ? 30.0 : null;
+    const imcIdeal   = esAtleta ? 24.5 : 22.0;
+    const imcMaxRec  = esAtleta ? 27.0 : 24.9;
+
+    const pMin   = Math.round(18.5 * hM * hM * 10) / 10;
+    const pMax   = Math.round(imcMaxRec * hM * hM * 10) / 10;
+    const pIdeal = Math.round(imcIdeal  * hM * hM * 10) / 10;
+
+    let cat, color, bg, nota = '';
+    if (imc < 18.5) {
+      cat = 'Bajo peso'; color = '#1d4ed8'; bg = '#dbeafe';
+    } else if (imc < limNormal) {
+      cat = esAtleta ? 'Normal (atlético)' : 'Normal'; color = '#166534'; bg = '#dcfce7';
+    } else if (esAtleta && imc < limZonaAt) {
+      cat = 'Zona atlética'; color = '#0369a1'; bg = '#e0f2fe';
+      nota = 'IMC elevado por masa muscular. En contexto de hipertrofia/alta actividad, valores hasta 30 pueden ser completamente normales.';
+    } else if (imc < (esAtleta ? 35 : 30)) {
+      cat = 'Sobrepeso'; color = '#854d0e'; bg = '#fef9c3';
+    } else if (imc < (esAtleta ? 40 : 35)) {
+      cat = 'Obesidad I'; color = '#c2410c'; bg = '#ffedd5';
+    } else if (imc < 40) {
+      cat = 'Obesidad II'; color = '#991b1b'; bg = '#fee2e2';
+    } else {
+      cat = 'Obesidad III'; color = '#7f1d1d'; bg = '#fecaca';
+    }
+    if (esAtleta && !nota && imc >= limNormal - 2 && imc < limNormal) {
+      nota = 'Escala ajustada para perfil atlético. El IMC estándar subestima la masa muscular en personas activas.';
+    }
 
     imcBox.style.display = 'block';
     set('nutr-imc-val', imc.toFixed(1));
-    const catEl = document.getElementById('nutr-imc-cat');
-    if (catEl) { catEl.textContent = cat; catEl.style.background = bg; catEl.style.color = color; }
-    set('nutr-peso-min',   pMin + ' kg');
+    const catEl  = document.getElementById('nutr-imc-cat');
+    if (catEl)  { catEl.textContent = cat; catEl.style.background = bg; catEl.style.color = color; }
+    const notaEl = document.getElementById('nutr-imc-nota');
+    if (notaEl) { notaEl.textContent = nota; notaEl.style.display = nota ? 'block' : 'none'; }
+    set('nutr-peso-min',   pMin   + ' kg');
     set('nutr-peso-ideal', pIdeal + ' kg');
-    set('nutr-peso-max',   pMax + ' kg');
+    set('nutr-peso-max',   pMax   + ' kg');
   } else if (imcBox) {
     imcBox.style.display = 'none';
   }
