@@ -3547,6 +3547,10 @@ select.toolbox-input option:disabled { color: #888; }
   </div>
 </div>
 
+<!-- Modal Plan Nutricional -->
+<div id="plan-nutr-overlay" class="plan-nutr-overlay" onclick="if(event.target===this)cerrarPlanNutricional()">
+  <div class="plan-nutr-modal"></div>
+</div>
 
 <script>
 // ================================================
@@ -15959,11 +15963,6 @@ function enviarFeedback() {
   }
 }
 <\/script>
-
-<!-- Modal Plan Nutricional -->
-<div id="plan-nutr-overlay" class="plan-nutr-overlay" onclick="if(event.target===this)cerrarPlanNutricional()">
-  <div class="plan-nutr-modal"></div>
-</div>
 
 </body>
 </html>
