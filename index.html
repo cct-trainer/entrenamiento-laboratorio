@@ -13369,36 +13369,52 @@ function exportarPlanCompletoAlumno() {
   const al = getAlumnos().find(a => a.id === currentAlumnoId);
   if (!al) { toast('Alumno no encontrado'); return; }
 
-  // ── Nutrición ──
   const obj = (al.objetivo || '').toLowerCase();
   let tipoNutr = 'mantenimiento';
   if (obj.includes('hipertrofia')||obj.includes('volumen')||obj.includes('masa')) tipoNutr = 'hipertrofia';
   else if (obj.includes('definicion')||obj.includes('grasa')||obj.includes('peso')||obj.includes('adelgaz')) tipoNutr = 'definicion';
   const planNutr = MENU_ANTIINFL[tipoNutr];
 
-  // Macros del UI (si están calculados)
   const kcal  = document.getElementById('nutr-res-kcal')?.textContent?.replace(/[^0-9]/g,'') || '';
   const prot  = document.getElementById('nutr-res-prot-g')?.textContent?.replace('g','') || '';
   const carb  = document.getElementById('nutr-res-carb-g')?.textContent?.replace('g','') || '';
   const grasa = document.getElementById('nutr-res-grasa-g')?.textContent?.replace('g','') || '';
 
-  // ── HTML de nutrición (7 días) ──
-  const nutrTabNav = planNutr.dias.map((d,i) =>
-    `<button class="nutr-day-btn${i===0?' active':''}" onclick="showNutrTab(${i})">${d.nombre}</button>`
-  ).join('');
-  const nutrPanels = planNutr.dias.map((d,i) =>
-    `<div class="nutr-day-panel${i===0?' active':''}" id="np-${i}">${
-      d.comidas.map((c,ci) => `<div class="meal-card"><div class="meal-head" onclick="toggleMeal(${i},${ci})"><div><div class="meal-nombre">${c.nombre}</div><div class="meal-hora">${c.hora}</div></div><span class="meal-arrow" id="ma-${i}-${ci}">›</span></div><div class="meal-items" id="mi-${i}-${ci}" style="display:none;">${c.items.map(it=>`<div class="meal-item"><div class="meal-dot${it.ai?' ai':''}"></div><div class="meal-text">${it.texto}${it.ai?'<span class="ai-tag">anti-infl</span>':''}</div></div>`).join('')}</div></div>`).join('')
-    }</div>`
-  ).join('');
-  const macroStrip = kcal ? `<div class="macro-strip">${[kcal?`<div class="macro-chip"><div class="macro-val">${kcal}</div><div class="macro-lbl">kcal/día</div></div>`:'',prot?`<div class="macro-chip"><div class="macro-val">${prot}g</div><div class="macro-lbl">Proteínas</div></div>`:'',carb?`<div class="macro-chip"><div class="macro-val">${carb}g</div><div class="macro-lbl">Carbos</div></div>`:'',grasa?`<div class="macro-chip"><div class="macro-val">${grasa}g</div><div class="macro-lbl">Grasas</div></div>`:'' ].join('')}</div>` : '';
-
-  // ── Header ──
   const edad = (al.nacimiento && typeof calcularEdad==='function') ? calcularEdad(al.nacimiento) : null;
   const infoLinea = [edad?edad+' años':'', al.nivel, al.objetivo].filter(Boolean).join(' · ');
   const fotoEl = al.foto
-    ? `<img src="${al.foto}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #C9A84C;flex-shrink:0;">`
-    : `<div style="width:64px;height:64px;border-radius:50%;background:#1e3a6a;border:3px solid #C9A84C;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;color:#aaa;">👤</div>`;
+    ? `<img src="${al.foto}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid #C9A84C;flex-shrink:0;">`
+    : `<div style="width:56px;height:56px;border-radius:50%;background:#1e3a6a;border:3px solid #C9A84C;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;color:#aaa;">👤</div>`;
+
+  const macroStrip = kcal
+    ? `<div class="plan-nutr-macro-strip">${[
+        kcal  ? `<div class="plan-nutr-macro-chip"><div class="plan-nutr-macro-chip-val">${kcal}</div><div class="plan-nutr-macro-chip-lbl">kcal/día</div></div>` : '',
+        prot  ? `<div class="plan-nutr-macro-chip"><div class="plan-nutr-macro-chip-val">${prot}g</div><div class="plan-nutr-macro-chip-lbl">Proteínas</div></div>` : '',
+        carb  ? `<div class="plan-nutr-macro-chip"><div class="plan-nutr-macro-chip-val">${carb}g</div><div class="plan-nutr-macro-chip-lbl">Carbos</div></div>` : '',
+        grasa ? `<div class="plan-nutr-macro-chip"><div class="plan-nutr-macro-chip-val">${grasa}g</div><div class="plan-nutr-macro-chip-lbl">Grasas</div></div>` : ''
+      ].join('')}</div>` : '';
+
+  const DIAS_ABREV = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+
+  const dayTabs = planNutr.dias.map((d,i) =>
+    `<button class="plan-nutr-dia-btn${i===0?' active':''}" onclick="showDay(${i})">${DIAS_ABREV[i]||d.nombre}</button>`
+  ).join('');
+
+  const dayPanels = planNutr.dias.map((d,i) =>
+    `<div class="day-panel${i===0?' active':''}" id="dp-${i}"><div class="plan-nutr-comidas">${
+      d.comidas.map((c,ci) =>
+        `<div class="plan-nutr-comida"><div class="plan-nutr-comida-head" onclick="toggleMeal(${i},${ci})"><div><div class="plan-nutr-comida-nombre">${c.nombre}</div><div class="plan-nutr-comida-hora">${c.hora}</div></div><span class="plan-nutr-comida-arrow" id="pnc-arrow-${i}-${ci}">›</span></div><div class="plan-nutr-comida-items" id="pnc-items-${i}-${ci}">${
+          c.items.map(it =>
+            `<div class="plan-nutr-item"><div class="plan-nutr-item-dot"></div><div class="plan-nutr-item-text">${it.texto}${it.ai?'<span class="plan-nutr-anti-tag">anti-infl</span>':''}</div></div>`
+          ).join('')
+        }</div></div>`
+      ).join('')
+    }</div></div>`
+  ).join('');
+
+  const tipsSection = planNutr.tips?.length
+    ? `<div class="plan-nutr-tips"><div class="plan-nutr-tips-title">Principios antiinflamatorios</div>${planNutr.tips.map(t=>`<div class="plan-nutr-tip">${t}</div>`).join('')}</div>`
+    : '';
 
   const html = `<!DOCTYPE html><html lang="es"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -13406,114 +13422,90 @@ function exportarPlanCompletoAlumno() {
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:#f4f6f9;color:#1a1a2e;font-size:13px;}
-.header{background:#0d0d1a;color:#fff;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,0.35);}
-.header-bar{height:4px;background:linear-gradient(90deg,#C9A84C,#E8C96A,#C9A84C);}
-.header-bar2{height:3px;background:linear-gradient(90deg,#1a2a4a,#C9A84C,#1a2a4a);}
-.header-top{display:flex;align-items:center;gap:20px;padding:16px 24px 12px;}
-.brand{flex-shrink:0;padding-right:20px;border-right:1px solid rgba(255,255,255,.1);}
-.brand-logo{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#C9A84C,#E8C96A);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#0d0d1a;margin-bottom:4px;}
-.brand-name{font-size:12px;font-weight:900;color:#fff;letter-spacing:.5px;}
-.brand-role{font-size:8px;color:#C9A84C;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
-.alumno-info{flex:1;min-width:0;}
-.alumno-lbl{font-size:8px;color:#C9A84C;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;}
-.alumno-nombre{font-size:22px;font-weight:900;color:#fff;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.alumno-meta{font-size:12px;color:rgba(255,255,255,.4);margin-top:4px;}
-.header-bottom{padding:8px 24px 14px;border-top:1px solid rgba(255,255,255,.07);}
-.section{max-width:860px;margin:24px auto;padding:0 16px;}
-.sec-title{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
-.sec-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
-.sec-name{font-size:16px;font-weight:900;color:#1a1a2e;}
-.sec-sub{font-size:11px;color:#888;margin-top:2px;}
-.divider{height:1px;background:linear-gradient(90deg,transparent,#d0d0d0,transparent);margin:4px 32px 24px;}
-table{width:100%;border-collapse:collapse;}
-th{background:#f0f0f0;padding:6px 8px;border:1px solid #e0e0e0;font-size:9px;font-weight:700;color:#555;text-align:center;text-transform:uppercase;}
-td{padding:6px 8px;border:1px solid #e8e8e8;text-align:center;font-size:12px;}
-/* Nutrition day tabs */
-.nutr-days-nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;-webkit-overflow-scrolling:touch;}
-.nutr-day-btn{flex-shrink:0;padding:8px 14px;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;font-size:12px;font-weight:700;color:#555;cursor:pointer;font-family:inherit;transition:all .15s;}
-.nutr-day-btn.active{background:#0d0d1a;color:#E8C96A;border-color:#0d0d1a;}
-.nutr-day-panel{display:none;}.nutr-day-panel.active{display:block;}
-/* Meals */
-.meal-card{background:#fff;border-radius:12px;border:1px solid #eee;margin-bottom:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);}
-.meal-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;user-select:none;}
-.meal-nombre{font-size:13px;font-weight:800;color:#1a1a2e;}
-.meal-hora{font-size:11px;color:#999;margin-top:2px;}
-.meal-arrow{font-size:18px;color:#C9A84C;transition:transform .2s;display:inline-block;}
-.meal-arrow.open{transform:rotate(90deg);}
-.meal-items{padding:4px 16px 12px;border-top:1px solid #f0f0f0;}
-.meal-item{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid #f8f8f8;}
-.meal-item:last-child{border:none;}
-.meal-dot{width:6px;height:6px;border-radius:50%;background:#C9A84C;margin-top:5px;flex-shrink:0;}
-.meal-dot.ai{background:#16a34a;}
-.meal-text{font-size:12px;color:#333;line-height:1.5;flex:1;}
-.ai-tag{display:inline-block;background:#dcfce7;color:#166534;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:5px;vertical-align:middle;text-transform:uppercase;letter-spacing:.5px;}
-/* Macros */
-.macro-strip{display:flex;gap:10px;flex-wrap:wrap;background:#1a1a2e;border-radius:10px;padding:12px 16px;margin-bottom:16px;}
-.macro-chip{text-align:center;flex:1;min-width:60px;}
-.macro-val{font-size:16px;font-weight:900;color:#E8C96A;}
-.macro-lbl{font-size:9px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-top:1px;}
-/* Nutr tips */
-.nutr-tips{background:#f8f9fb;border-radius:12px;padding:14px 16px;margin-top:16px;border:1px solid #eee;}
-.nutr-tips-title{font-size:11px;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
-.nutr-tip{font-size:11px;color:#666;padding:4px 0;border-bottom:1px solid #f0f0f0;line-height:1.5;}
-.nutr-tip:last-child{border:none;}
+.pn-wrapper{max-width:860px;margin:0 auto;padding:20px 12px 40px;}
+.pn-cc-header{background:#0d0d1a;border-radius:18px 18px 0 0;overflow:hidden;}
+.pn-cc-bar{height:4px;background:linear-gradient(90deg,#C9A84C,#E8C96A,#C9A84C);}
+.pn-cc-top{display:flex;align-items:center;gap:16px;padding:16px 24px 12px;}
+.pn-cc-brand{flex-shrink:0;padding-right:16px;border-right:1px solid rgba(255,255,255,0.1);}
+.pn-cc-logo{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#C9A84C,#E8C96A);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#0d0d1a;margin-bottom:4px;}
+.pn-cc-name{font-size:12px;font-weight:900;color:#fff;letter-spacing:0.5px;}
+.pn-cc-role{font-size:8px;color:#C9A84C;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+.pn-al-info{flex:1;min-width:0;}
+.pn-al-lbl{font-size:8px;color:#C9A84C;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;}
+.pn-al-nombre{font-size:20px;font-weight:900;color:#fff;line-height:1.1;}
+.pn-al-meta{font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px;}
+.pn-cc-bottom{padding:8px 24px 14px;border-top:1px solid rgba(255,255,255,0.07);}
+.plan-nutr-header{background:linear-gradient(135deg,#0d0d1a,#1a2a4a);color:#fff;padding:22px 28px;}
+.plan-nutr-badge{font-size:8px;font-weight:800;letter-spacing:2px;color:#C9A84C;text-transform:uppercase;margin-bottom:6px;}
+.plan-nutr-titulo{font-size:20px;font-weight:900;letter-spacing:0.5px;line-height:1.15;}
+.plan-nutr-subtitulo{font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px;}
+.plan-nutr-macro-strip{display:flex;gap:16px;margin-top:16px;flex-wrap:wrap;}
+.plan-nutr-macro-chip{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 14px;text-align:center;}
+.plan-nutr-macro-chip-val{font-size:16px;font-weight:900;color:#E8C96A;}
+.plan-nutr-macro-chip-lbl{font-size:9px;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
+.plan-nutr-body{padding:24px 28px;background:#fff;border-radius:0 0 18px 18px;box-shadow:0 8px 32px rgba(0,0,0,0.12);}
+.plan-nutr-comidas{display:flex;flex-direction:column;gap:14px;}
+.plan-nutr-comida{border:1px solid #e8e8e8;border-radius:12px;overflow:hidden;}
+.plan-nutr-comida-head{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:#f8f9fb;border-bottom:1px solid #e8e8e8;cursor:pointer;user-select:none;}
+.plan-nutr-comida-nombre{font-size:12px;font-weight:800;color:#1a2a4a;letter-spacing:0.5px;text-transform:uppercase;}
+.plan-nutr-comida-hora{font-size:10px;color:#C9A84C;font-weight:700;}
+.plan-nutr-comida-arrow{font-size:11px;color:#aaa;transition:transform 0.2s;}
+.plan-nutr-comida-arrow.open{transform:rotate(90deg);}
+.plan-nutr-comida-items{display:none;padding:12px 16px 14px;}
+.plan-nutr-comida-items.open{display:block;}
+.plan-nutr-item{display:flex;gap:10px;padding:7px 0;border-bottom:1px dashed #f0f0f0;}
+.plan-nutr-item:last-child{border-bottom:none;}
+.plan-nutr-item-dot{width:6px;height:6px;border-radius:50%;background:#C9A84C;flex-shrink:0;margin-top:5px;}
+.plan-nutr-item-text{font-size:12px;color:#333;line-height:1.5;}
+.plan-nutr-anti-tag{display:inline-block;font-size:9px;font-weight:700;letter-spacing:1px;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:middle;}
+.plan-nutr-tips{margin-top:24px;background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px 20px;}
+.plan-nutr-tips-title{font-size:11px;font-weight:800;color:#92400e;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
+.plan-nutr-tip{display:flex;gap:8px;padding:5px 0;font-size:11px;color:#78350f;line-height:1.5;}
+.plan-nutr-tip::before{content:'→';color:#C9A84C;font-weight:700;flex-shrink:0;}
+.plan-nutr-dias-nav{display:flex;gap:0;border-bottom:2px solid #e8e8e8;margin:0 0 20px;}
+.plan-nutr-dia-btn{flex:1;background:none;border:none;border-bottom:3px solid transparent;padding:10px 4px 8px;font-size:11px;font-weight:700;color:#bbb;cursor:pointer;letter-spacing:0.5px;text-transform:uppercase;font-family:inherit;margin-bottom:-2px;transition:all 0.15s;}
+.plan-nutr-dia-btn.active{color:#1a2a4a;border-bottom-color:#C9A84C;}
+.plan-nutr-dia-btn:hover:not(.active){color:#555;background:#f8f9fb;}
+.day-panel{display:none;}.day-panel.active{display:block;}
 button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer;}
-@media(max-width:520px){.tabs-nav{grid-template-columns:repeat(4,1fr);}.header-top{gap:12px;padding:12px 16px 10px;}.alumno-nombre{font-size:18px;}.section{padding:0 12px;}}
-@media print{body{background:#fff;}}
+@media(max-width:600px){.plan-nutr-body{padding:16px;}.plan-nutr-header{padding:18px 16px;}.plan-nutr-macro-strip{gap:8px;}.pn-cc-top{gap:10px;padding:12px 16px 10px;}.pn-al-nombre{font-size:16px;}}
 </style></head><body>
-
-<div class="header">
-  <div class="header-bar"></div>
-  <div class="header-top">
-    <div class="brand">
-      <div class="brand-logo">CC</div>
-      <div class="brand-name">CHRISTIAN CATTANEO</div>
-      <div class="brand-role">Entrenador</div>
+<div class="pn-wrapper">
+<div class="pn-cc-header">
+  <div class="pn-cc-bar"></div>
+  <div class="pn-cc-top">
+    <div class="pn-cc-brand">
+      <div class="pn-cc-logo">CC</div>
+      <div class="pn-cc-name">CHRISTIAN CATTANEO</div>
+      <div class="pn-cc-role">Entrenador</div>
     </div>
     ${fotoEl}
-    <div class="alumno-info">
-      <div class="alumno-lbl">Alumno</div>
-      <div class="alumno-nombre">${al.nombre}</div>
-      ${infoLinea ? `<div class="alumno-meta">${infoLinea}</div>` : ''}
+    <div class="pn-al-info">
+      <div class="pn-al-lbl">Alumno</div>
+      <div class="pn-al-nombre">${al.nombre}</div>
+      ${infoLinea?`<div class="pn-al-meta">${infoLinea}</div>`:''}
     </div>
   </div>
-  <div class="header-bottom">
-    <div style="font-size:9px;color:rgba(255,255,255,.3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;">Plan Nutricional · Antiinflamatorio · Argentina</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">${new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}</div>
+  <div class="pn-cc-bottom">
+    <div style="font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;">${new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}</div>
   </div>
-  <div class="header-bar2"></div>
 </div>
-
-<div class="section">
-  <div class="sec-title">
-    <div class="sec-icon" style="background:#064e3b;">🥗</div>
-    <div>
-      <div class="sec-name">${planNutr.titulo}</div>
-      <div class="sec-sub">${planNutr.subtitulo}</div>
-    </div>
-  </div>
+<div class="plan-nutr-header">
+  <div class="plan-nutr-badge">Plan Nutricional · Antiinflamatorio</div>
+  <div class="plan-nutr-titulo">${planNutr.titulo}</div>
+  <div class="plan-nutr-subtitulo">${planNutr.subtitulo}</div>
   ${macroStrip}
-  <div class="nutr-days-nav">${nutrTabNav}</div>
-  <div>${nutrPanels}</div>
-  ${planNutr.tips?.length ? `<div class="nutr-tips"><div class="nutr-tips-title">Principios antiinflamatorios</div>${planNutr.tips.map(t=>`<div class="nutr-tip">${t}</div>`).join('')}</div>` : ''}
 </div>
-
-<div style="height:32px;"></div>
-
+<div class="plan-nutr-body">
+  <div class="plan-nutr-dias-nav">${dayTabs}</div>
+  ${dayPanels}
+  ${tipsSection}
+</div>
+</div>
 <script>
-function showNutrTab(idx){
-  document.querySelectorAll('.nutr-day-btn').forEach(function(b,i){b.classList.toggle('active',i===idx);});
-  document.querySelectorAll('.nutr-day-panel').forEach(function(p,i){p.classList.toggle('active',i===idx);});
-}
-function toggleMeal(diaIdx,mealIdx){
-  var items=document.getElementById('mi-'+diaIdx+'-'+mealIdx);
-  var arrow=document.getElementById('ma-'+diaIdx+'-'+mealIdx);
-  if(!items)return;
-  var open=items.style.display!=='none';
-  items.style.display=open?'none':'block';
-  if(arrow)arrow.classList.toggle('open',!open);
-}
-document.addEventListener('DOMContentLoaded',function(){var m=document.getElementById('mi-0-0');if(m){m.style.display='block';var a=document.getElementById('ma-0-0');if(a)a.classList.add('open');}});
+function showDay(idx){document.querySelectorAll('.plan-nutr-dia-btn').forEach(function(b,i){b.classList.toggle('active',i===idx);});document.querySelectorAll('.day-panel').forEach(function(p,i){p.classList.toggle('active',i===idx);});}
+function toggleMeal(d,c){var it=document.getElementById('pnc-items-'+d+'-'+c);var ar=document.getElementById('pnc-arrow-'+d+'-'+c);if(!it)return;var op=it.classList.contains('open');it.classList.toggle('open',!op);if(ar){ar.textContent=op?'›':'⌄';ar.classList.toggle('open',!op);}}
+document.addEventListener('DOMContentLoaded',function(){var h=new Date().getDay();var di=h===0?6:h-1;showDay(di);var m=document.getElementById('pnc-items-'+di+'-0');if(m){m.classList.add('open');var a=document.getElementById('pnc-arrow-'+di+'-0');if(a){a.textContent='⌄';a.classList.add('open');}}});
 <\/script>
 </body></html>`;
 
@@ -13523,7 +13515,7 @@ document.addEventListener('DOMContentLoaded',function(){var m=document.getElemen
   const link = document.createElement('a');
   link.href = url; link.download = nombreArchivo+'-plan-nutricional.html'; link.click();
   URL.revokeObjectURL(url);
-  toast('⬇ Plan completo exportado ✓');
+  toast('⬇ Plan exportado ✓');
 }
 
 function toggleComidaPlan(idx) {
