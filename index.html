@@ -877,6 +877,45 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .nutr-notas-area:focus { outline: none; border-color: #C9A84C; }
 .nutr-obj-tag { display: inline-block; background: #f0f4ff; color: #1a2a4a; border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 700; margin-bottom: 14px; border: 1px solid #d6e0ff; }
 .nutr-disclaimer { font-size: 10px; color: #bbb; text-align: center; margin-top: 10px; font-style: italic; }
+.nutr-btn-plan { width: 100%; background: linear-gradient(135deg,#1a2a4a,#253d6b); color: #C9A84C; border: 1.5px solid #C9A84C; border-radius: 8px; padding: 11px; font-size: 12px; font-weight: 800; cursor: pointer; margin-top: 10px; letter-spacing: 1px; font-family: inherit; transition: all 0.15s; text-transform: uppercase; }
+.nutr-btn-plan:hover { background: linear-gradient(135deg,#253d6b,#1e3a6a); box-shadow: 0 4px 12px rgba(201,168,76,0.3); }
+
+/* Modal Plan Nutricional */
+.plan-nutr-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:9000; overflow-y:auto; padding:20px 16px; }
+.plan-nutr-overlay.open { display:flex; justify-content:center; align-items:flex-start; }
+.plan-nutr-modal { background:#fff; border-radius:18px; max-width:820px; width:100%; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+.plan-nutr-header { background:linear-gradient(135deg,#0d0d1a,#1a2a4a); color:#fff; padding:22px 28px; }
+.plan-nutr-header-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.plan-nutr-badge { font-size:8px; font-weight:800; letter-spacing:2px; color:#C9A84C; text-transform:uppercase; margin-bottom:6px; }
+.plan-nutr-titulo { font-size:20px; font-weight:900; letter-spacing:0.5px; line-height:1.15; }
+.plan-nutr-subtitulo { font-size:11px; color:rgba(255,255,255,0.5); margin-top:6px; }
+.plan-nutr-close { background:rgba(255,255,255,0.1); border:none; color:#fff; width:32px; height:32px; border-radius:50%; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background 0.15s; }
+.plan-nutr-close:hover { background:rgba(255,255,255,0.2); }
+.plan-nutr-macro-strip { display:flex; gap:16px; margin-top:16px; flex-wrap:wrap; }
+.plan-nutr-macro-chip { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:6px 14px; text-align:center; }
+.plan-nutr-macro-chip-val { font-size:16px; font-weight:900; color:#E8C96A; }
+.plan-nutr-macro-chip-lbl { font-size:9px; color:rgba(255,255,255,0.45); letter-spacing:1px; text-transform:uppercase; margin-top:2px; }
+.plan-nutr-body { padding:24px 28px; }
+.plan-nutr-comidas { display:flex; flex-direction:column; gap:14px; }
+.plan-nutr-comida { border:1px solid #e8e8e8; border-radius:12px; overflow:hidden; }
+.plan-nutr-comida-head { display:flex; align-items:center; justify-content:space-between; padding:11px 16px; background:#f8f9fb; border-bottom:1px solid #e8e8e8; cursor:pointer; user-select:none; }
+.plan-nutr-comida-nombre { font-size:12px; font-weight:800; color:#1a2a4a; letter-spacing:0.5px; text-transform:uppercase; }
+.plan-nutr-comida-hora { font-size:10px; color:#C9A84C; font-weight:700; }
+.plan-nutr-comida-arrow { font-size:11px; color:#aaa; transition:transform 0.2s; }
+.plan-nutr-comida-arrow.open { transform:rotate(90deg); }
+.plan-nutr-comida-items { display:none; padding:12px 16px 14px; }
+.plan-nutr-comida-items.open { display:block; }
+.plan-nutr-item { display:flex; gap:10px; padding:7px 0; border-bottom:1px dashed #f0f0f0; }
+.plan-nutr-item:last-child { border-bottom:none; }
+.plan-nutr-item-dot { width:6px; height:6px; border-radius:50%; background:#C9A84C; flex-shrink:0; margin-top:5px; }
+.plan-nutr-item-text { font-size:12px; color:#333; line-height:1.5; }
+.plan-nutr-item-text strong { color:#1a2a4a; }
+.plan-nutr-anti-tag { display:inline-block; font-size:9px; font-weight:700; letter-spacing:1px; background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; border-radius:4px; padding:1px 6px; margin-left:6px; vertical-align:middle; }
+.plan-nutr-tips { margin-top:24px; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:16px 20px; }
+.plan-nutr-tips-title { font-size:11px; font-weight:800; color:#92400e; letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
+.plan-nutr-tip { display:flex; gap:8px; padding:5px 0; font-size:11px; color:#78350f; line-height:1.5; }
+.plan-nutr-tip::before { content:'→'; color:#C9A84C; font-weight:700; flex-shrink:0; }
+@media(max-width:600px){ .plan-nutr-body { padding:16px; } .plan-nutr-header { padding:18px 16px; } .plan-nutr-macro-strip { gap:8px; } }
 /* Suplementos */
 .supl-list { display: flex; flex-direction: column; gap: 8px; max-height: 560px; overflow-y: auto; padding-right: 2px; }
 .supl-card { border: 1px solid #e8e8e8; border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: box-shadow 0.15s, transform 0.1s; }
@@ -12739,6 +12778,7 @@ function renderNutricion(alumnoId) {
         </div>
         <textarea class="nutr-notas-area" id="nutr-notas" placeholder="Notas nutricionales del alumno (intolerancias, preferencias, contexto...)...">${plan.notas||''}</textarea>
         <button class="nutr-btn-calc" onclick="calcularMacrosNutricion()">Calcular macros</button>
+        <button class="nutr-btn-plan" onclick="generarPlanNutricional()">Plan Nutricional</button>
         <button class="nutr-btn-save" onclick="guardarPlanNutricion()">Guardar plan</button>
         <button class="nutr-btn-clear" onclick="limpiarPlanNutricion()">Limpiar plan guardado</button>
         <div class="nutr-disclaimer">Valores estimados. Ajustar según respuesta individual y contexto clínico.</div>
@@ -12917,6 +12957,232 @@ function cerrarSuplementoDetalle() {
   if (listaWrap)   listaWrap.style.display = '';
   if (objTag)      objTag.style.display = '';
   if (detalleWrap) { detalleWrap.classList.remove('visible'); detalleWrap.innerHTML = ''; }
+}
+
+// ════════════════════════════════════════════════════════════
+// PLAN NUTRICIONAL ANTIINFLAMATORIO · CONTEXTO ARGENTINO
+// ════════════════════════════════════════════════════════════
+
+const MENU_ANTIINFL = {
+
+  hipertrofia: {
+    titulo: 'Plan de Hipertrofia · Volumen Limpio',
+    subtitulo: 'Alta proteína · Carbohidratos complejos · Antiinflamatorio',
+    comidas: [
+      { nombre:'Desayuno', hora:'07:00 – 08:00', items:[
+        { texto:'Avena arrollada (80 g) con leche descremada o bebida vegetal sin azúcar (250 ml)', ai:true },
+        { texto:'Banana mediana — potasio, hidratos de absorción progresiva', ai:false },
+        { texto:'Nueces (30 g, 7 mitades) — Omega-3, grasas antiinflamatorias', ai:true },
+        { texto:'Agregar cúrcuma + canela + pimienta negra a la avena — curcumina activa', ai:true }
+      ]},
+      { nombre:'Media Mañana', hora:'10:00 – 10:30', items:[
+        { texto:'Yogur griego natural sin azúcar (200 g) — proteína + probióticos intestinales', ai:true },
+        { texto:'Arándanos o frutillas (100 g) — polifenoles antioxidantes', ai:true },
+        { texto:'Semillas de chía o lino molido (1 cda) — Omega-3 vegetal + fibra', ai:true }
+      ]},
+      { nombre:'Almuerzo', hora:'13:00 – 14:00', items:[
+        { texto:'Pechuga de pollo (200 g) — marinada con AOVE, ajo, cúrcuma y limón, a la plancha o horno', ai:false },
+        { texto:'Arroz integral o quinoa (80 g en seco) — carbohidrato complejo, fibra, índice glucémico bajo', ai:true },
+        { texto:'Brócoli o espinaca salteada con ajo y aceite de oliva extra virgen (200 g)', ai:true },
+        { texto:'Aceite de oliva extra virgen (1 cda) para cocinar — oleocantal antiinflamatorio', ai:true }
+      ]},
+      { nombre:'Post-Entreno', hora:'16:00 – 17:00', items:[
+        { texto:'Proteína whey (30 g en agua o leche) — síntesis proteica inmediata', ai:false },
+        { texto:'Banana o 2 mandarinas — reponer glucógeno muscular rápido', ai:false }
+      ]},
+      { nombre:'Merienda', hora:'18:00 – 18:30', items:[
+        { texto:'2 huevos revueltos o duros — proteína completa, colina, vitamina D', ai:false },
+        { texto:'2 tostadas integrales o 4 galletas de arroz', ai:false },
+        { texto:'Palta (½ unidad) — grasas monoinsaturadas, potasio, vitamina E', ai:true }
+      ]},
+      { nombre:'Cena', hora:'20:30 – 21:30', items:[
+        { texto:'Salmón rosado o atún al natural (180 g) — EPA + DHA, Omega-3 de cadena larga', ai:true },
+        { texto:'Batata al horno (150 g) o puré de coliflor con AOVE — betacaroteno, fibra', ai:true },
+        { texto:'Ensalada: rúcula + tomate cherry + cebolla morada + pepino + ajo', ai:true },
+        { texto:'Aderezo: aceite de oliva + jugo de limón + orégano — antiinflamatorio natural', ai:true }
+      ]}
+    ],
+    tips:[
+      'Usar aceite de oliva extra virgen (AOVE) en frío o a temperatura media. Para salteados rápidos podés usar aceite de coco.',
+      'La cúrcuma necesita pimienta negra para activar la curcumina y AOVE para absorberla. Usar siempre juntos.',
+      'El mate es antiinflamatorio y rico en antioxidantes. Tomarlo sin azúcar o con stevia. Evitar el exceso.',
+      'Cortes vacunos magros disponibles en Argentina: peceto, nalga, cuadril, lomo. Limitar a 2–3 veces por semana.',
+      'Evitar aceite de girasol en exceso: alto en Omega-6 proinflamatorio. Priorizar AOVE.',
+      'Incluir ajo crudo 3–4 veces por semana: alicina con potente efecto antiinflamatorio y antimicrobiano.'
+    ]
+  },
+
+  mantenimiento: {
+    titulo: 'Plan de Mantenimiento · Equilibrio Metabólico',
+    subtitulo: 'Macros balanceados · Antiinflamatorio · Energía estable',
+    comidas: [
+      { nombre:'Desayuno', hora:'07:00 – 08:00', items:[
+        { texto:'Avena arrollada (60 g) con leche descremada (200 ml) + canela + semillas de lino', ai:true },
+        { texto:'1–2 huevos revueltos con espinaca y AOVE — proteína + folato', ai:false },
+        { texto:'Mate amargo o café sin azúcar — antioxidantes naturales', ai:true }
+      ]},
+      { nombre:'Media Mañana', hora:'10:00 – 10:30', items:[
+        { texto:'Manzana o pera (1 unidad) — fibra soluble, quercetina antiinflamatoria', ai:true },
+        { texto:'Almendras o nueces (20 g, un puñado pequeño)', ai:true }
+      ]},
+      { nombre:'Almuerzo', hora:'13:00 – 14:00', items:[
+        { texto:'Peceto o nalga al horno (180 g) con hierbas — proteína magra vacuna, hierro hem', ai:false },
+        { texto:'Lentejas o garbanzos cocidos (150 g) — proteína vegetal, fibra, bajo IG', ai:true },
+        { texto:'Ensalada grande: lechuga, tomate, zanahoria rallada, cebolla, aceitunas negras', ai:true },
+        { texto:'Aceite de oliva extra virgen (1–2 cdas) + limón como aderezo', ai:true }
+      ]},
+      { nombre:'Merienda', hora:'16:30 – 17:00', items:[
+        { texto:'Yogur griego natural (150 g) + 1 cda de miel pura o frutas de estación', ai:true },
+        { texto:'Semillas de chía o girasol (1 cda)', ai:true }
+      ]},
+      { nombre:'Cena', hora:'20:00 – 21:00', items:[
+        { texto:'Pechuga o muslo de pollo sin piel (160 g) al horno con cúrcuma, ajo y AOVE', ai:true },
+        { texto:'Papa o batata hervida (120 g) — carbohidrato complejo, potasio', ai:false },
+        { texto:'Brócoli, coliflor o coles de Bruselas al vapor (200 g) — sulforafano antiinflamatorio', ai:true },
+        { texto:'Infusión de jengibre + limón antes de dormir — digestivo y antiinflamatorio', ai:true }
+      ]}
+    ],
+    tips:[
+      'Hidratarse con 2–2.5 L de agua por día. El mate cuenta parcialmente pero no reemplaza el agua.',
+      'Incluir legumbres (lentejas, porotos negros, garbanzos) al menos 3 veces por semana — fibra prebiótica.',
+      'El jengibre fresco rallado en comidas o infusiones es uno de los antiinflamatorios naturales más potentes.',
+      'Priorizar carnes blancas y pescado sobre carne vacuna. Cuando consumas vacuno, elegir cortes magros.',
+      'Las verduras de hoja verde oscura (espinaca, rúcula, acelga) son alimentos estrella antiinflamatorios en Argentina.'
+    ]
+  },
+
+  definicion: {
+    titulo: 'Plan de Definición · Déficit Inteligente',
+    subtitulo: 'Alta proteína · Bajo en carbohidratos refinados · Antiinflamatorio',
+    comidas: [
+      { nombre:'Desayuno', hora:'07:00 – 08:00', items:[
+        { texto:'3 claras de huevo + 1 huevo entero revueltos con espinaca, tomate y cúrcuma — AOVE', ai:true },
+        { texto:'Avena arrollada (40 g) con agua o leche descremada + canela', ai:true },
+        { texto:'Infusión de té verde o jengibre + limón — termogénico natural', ai:true }
+      ]},
+      { nombre:'Media Mañana', hora:'10:00 – 10:30', items:[
+        { texto:'Yogur griego natural sin azúcar (200 g) — alto en proteína, bajo en carbos', ai:true },
+        { texto:'Frutillas o arándanos (80 g) — antioxidantes, bajo índice glucémico', ai:true }
+      ]},
+      { nombre:'Almuerzo', hora:'13:00 – 14:00', items:[
+        { texto:'Pechuga de pollo (220 g) o atún al natural (200 g) — alta proteína, baja en grasa', ai:false },
+        { texto:'Ensalada abundante: rúcula, espinaca, tomate, pepino, cebolla morada, apio — sin límite', ai:true },
+        { texto:'Batata pequeña (80 g) o ½ taza de arroz integral — carbohidrato limpio y moderado', ai:true },
+        { texto:'Aderezo: aceite de oliva extra virgen (1 cda) + vinagre de manzana + mostaza', ai:true }
+      ]},
+      { nombre:'Post-Entreno', hora:'16:00 – 17:00', items:[
+        { texto:'Proteína whey (25–30 g) en agua — síntesis proteica sin calorías extra', ai:false },
+        { texto:'1 mandarina o kiwi — antioxidantes, vitamina C, porción de carbos justa', ai:true }
+      ]},
+      { nombre:'Cena', hora:'20:00 – 21:00', items:[
+        { texto:'Salmón rosado al horno (200 g) con limón y hierbas — Omega-3, proteína, saciante', ai:true },
+        { texto:'Coliflor o zucchini asados con AOVE, ajo y romero (250 g) — volumen sin calorías', ai:true },
+        { texto:'Ensalada de hojas verdes con aceitunas (6 unidades) y semillas de calabaza', ai:true }
+      ]}
+    ],
+    tips:[
+      'Priorizar siempre la proteína en cada comida — sacia más, preserva músculo y tiene mayor efecto térmico.',
+      'El vinagre de manzana (1 cda en agua antes de comer) ayuda a moderar el pico de glucosa post-comida.',
+      'Los vegetales de bajo almidón (rúcula, espinaca, brócoli, coliflor, pepino, apio) pueden consumirse en cantidades generosas sin comprometer el déficit.',
+      'Evitar jugos de fruta, galletitas "diet" y productos ultraprocesados aunque digan "light" — son proinflamatorios.',
+      'El salmón es la mejor opción de proteína antiinflamatoria. El atún al natural es la alternativa más accesible en Argentina.',
+      'Descanso y gestión del estrés son tan importantes como la dieta: el cortisol elevado promueve inflamación y retención de grasa.'
+    ]
+  }
+};
+
+function generarPlanNutricional() {
+  // Leer macros actuales de pantalla
+  const kcal = document.getElementById('nutr-res-kcal')?.textContent?.replace(/[^0-9]/g,'') || '';
+  const prot = document.getElementById('nutr-res-prot-g')?.textContent?.replace('g','') || '';
+  const carb = document.getElementById('nutr-res-carb-g')?.textContent?.replace('g','') || '';
+  const grasa= document.getElementById('nutr-res-grasa-g')?.textContent?.replace('g','') || '';
+  const ajuste= document.getElementById('nutr-ajuste')?.value || 'mantenimiento';
+
+  // Determinar tipo de plan
+  let tipo = 'mantenimiento';
+  if(['superavit','superavit_alto'].includes(ajuste)) tipo = 'hipertrofia';
+  else if(['deficit','deficit_alto'].includes(ajuste)) tipo = 'definicion';
+
+  // También considerar el objetivo del alumno
+  if(currentAlumnoId) {
+    const al = getAlumnos().find(a => a.id === currentAlumnoId);
+    const obj = (al?.objetivo || '').toLowerCase();
+    if(obj.includes('hipertrofia') || obj.includes('volumen') || obj.includes('masa')) tipo = 'hipertrofia';
+    else if(obj.includes('definicion') || obj.includes('grasa') || obj.includes('peso') || obj.includes('adelgaz')) tipo = 'definicion';
+  }
+
+  const plan = MENU_ANTIINFL[tipo];
+  if(!plan) return;
+
+  // Construir comidas HTML
+  const comidasHTML = plan.comidas.map((c, ci) => `
+    <div class="plan-nutr-comida">
+      <div class="plan-nutr-comida-head" onclick="toggleComidaPlan(${ci})">
+        <div>
+          <div class="plan-nutr-comida-nombre">${c.nombre}</div>
+          <div class="plan-nutr-comida-hora">${c.hora}</div>
+        </div>
+        <span class="plan-nutr-comida-arrow" id="pnc-arrow-${ci}">›</span>
+      </div>
+      <div class="plan-nutr-comida-items" id="pnc-items-${ci}">
+        ${c.items.map(it => `
+          <div class="plan-nutr-item">
+            <div class="plan-nutr-item-dot"></div>
+            <div class="plan-nutr-item-text">${it.texto}${it.ai ? '<span class="plan-nutr-anti-tag">anti-infl</span>' : ''}</div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+
+  const tipsHTML = plan.tips.map(t => `<div class="plan-nutr-tip">${t}</div>`).join('');
+
+  const macroStrip = (kcal && kcal !== '—') ? `
+    <div class="plan-nutr-macro-strip">
+      ${kcal ? `<div class="plan-nutr-macro-chip"><div class="plan-nutr-macro-chip-val">${kcal}</div><div class="plan-nutr-macro-chip-lbl">kcal / día</div></div>` : ''}
+      ${prot ? `<div class="plan-nutr-macro-chip"><div class="plan-nutr-macro-chip-val">${prot}g</div><div class="plan-nutr-macro-chip-lbl">Proteínas</div></div>` : ''}
+      ${carb ? `<div class="plan-nutr-macro-chip"><div class="plan-nutr-macro-chip-val">${carb}g</div><div class="plan-nutr-macro-chip-lbl">Carbohidratos</div></div>` : ''}
+      ${grasa ? `<div class="plan-nutr-macro-chip"><div class="plan-nutr-macro-chip-val">${grasa}g</div><div class="plan-nutr-macro-chip-lbl">Grasas</div></div>` : ''}
+    </div>` : '';
+
+  // Inyectar en el overlay
+  const overlay = document.getElementById('plan-nutr-overlay');
+  if(!overlay) return;
+  overlay.querySelector('.plan-nutr-modal').innerHTML = `
+    <div class="plan-nutr-header">
+      <div class="plan-nutr-header-top">
+        <div>
+          <div class="plan-nutr-badge">Plan Nutricional · Antiinflamatorio · Argentina</div>
+          <div class="plan-nutr-titulo">${plan.titulo}</div>
+          <div class="plan-nutr-subtitulo">${plan.subtitulo}</div>
+        </div>
+        <button class="plan-nutr-close" onclick="cerrarPlanNutricional()">✕</button>
+      </div>
+      ${macroStrip}
+    </div>
+    <div class="plan-nutr-body">
+      <div class="plan-nutr-comidas">${comidasHTML}</div>
+      <div class="plan-nutr-tips">
+        <div class="plan-nutr-tips-title">Principios antiinflamatorios clave</div>
+        ${tipsHTML}
+      </div>
+    </div>`;
+
+  overlay.classList.add('open');
+  // Abrir la primera comida por defecto
+  setTimeout(() => toggleComidaPlan(0), 50);
+}
+
+function cerrarPlanNutricional() {
+  document.getElementById('plan-nutr-overlay')?.classList.remove('open');
+}
+
+function toggleComidaPlan(idx) {
+  const items = document.getElementById('pnc-items-' + idx);
+  const arrow = document.getElementById('pnc-arrow-' + idx);
+  if(!items) return;
+  const isOpen = items.classList.contains('open');
+  items.classList.toggle('open', !isOpen);
+  if(arrow) { arrow.textContent = isOpen ? '›' : '⌄'; arrow.classList.toggle('open', !isOpen); }
 }
 
 // ════════════════════════════════════════════════════════════
@@ -15693,6 +15959,12 @@ function enviarFeedback() {
   }
 }
 <\/script>
+
+<!-- Modal Plan Nutricional -->
+<div id="plan-nutr-overlay" class="plan-nutr-overlay" onclick="if(event.target===this)cerrarPlanNutricional()">
+  <div class="plan-nutr-modal"></div>
+</div>
+
 </body>
 </html>
 </body>
