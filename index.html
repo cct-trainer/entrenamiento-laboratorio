@@ -2365,6 +2365,239 @@ select.toolbox-input option:disabled { color: #888; }
   nav button { padding: 10px 12px; font-size: 11px; }
 }
 
+/* ═══════════════════════════════════════════════════════
+   MOBILE — Planificador / Sidebar / Megamenús / Layout
+   ═══════════════════════════════════════════════════════ */
+
+/* Backdrop para sidebar mobile y megamenús */
+.mob-sidebar-bd {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.52);
+  z-index: 899;
+}
+.mob-sidebar-bd.visible { display: block; }
+
+/* Botón hamburger — visible sólo en mobile (oculto por defecto en desktop) */
+.mob-sb-toggle {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  background: #1a2a4a;
+  color: #C9A84C;
+  border: 1px solid #C9A84C33;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  letter-spacing: 0.3px;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.mob-sb-toggle:hover { background: #243d5e; }
+
+@media (max-width: 768px) {
+
+  /* ── PLANIFICADOR / RUNNING: layout vertical ── */
+  #view-planificador.active,
+  #view-running.active {
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100dvh - 110px);
+    margin: -14px -12px;
+    overflow: visible;
+  }
+
+  /* Sidebar → overlay deslizante desde la izquierda */
+  .plan-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 82%;
+    max-width: 300px;
+    height: 100dvh;
+    z-index: 900;
+    transform: translateX(-105%);
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+    border-radius: 0;
+  }
+  .plan-sidebar.mob-open {
+    transform: translateX(0);
+    box-shadow: 6px 0 28px rgba(0,0,0,0.45);
+  }
+
+  /* Plan-right → ancho completo */
+  .plan-right {
+    width: 100%;
+    height: auto;
+    min-height: calc(100dvh - 110px);
+    padding: 14px 12px 100px;
+    overflow-y: auto;
+  }
+
+  /* Botón hamburger: visible en mobile */
+  .mob-sb-toggle { display: flex !important; }
+
+  /* Run topbar en mobile */
+  .run-topbar {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 0 10px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 12px;
+  }
+  .run-topbar-left { width: 100%; }
+  .run-topbar-right {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+  .run-topbar-right .pln-btn {
+    font-size: 11px;
+    padding: 7px 10px;
+    flex: 1;
+    text-align: center;
+  }
+
+  /* Meta bar: override inline grid-template-columns */
+  .run-meta-bar,
+  .pln-meta-bar {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .run-meta-field:nth-child(2n),
+  .pln-meta-field:nth-child(2n) { border-right: none; }
+  .run-meta-field:nth-child(n+3),
+  .pln-meta-field:nth-child(n+3) { border-top: 1px solid #e8e8e8; }
+
+  /* Días tabs del planificador: scroll horizontal */
+  .plan-dias-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .plan-dias-tabs::-webkit-scrollbar { display: none; }
+  .plan-dia-btn { white-space: nowrap; }
+
+  /* Semanas scroll */
+  .plan-semanas-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Megamenús: bottom sheet en mobile */
+  .perfil-megamenu {
+    position: fixed !important;
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    border-radius: 18px 18px 0 0 !important;
+    min-width: 100vw !important;
+    max-width: 100vw !important;
+    max-height: 75vh !important;
+    overflow-y: auto !important;
+    z-index: 1000 !important;
+    box-shadow: 0 -6px 32px rgba(0,0,0,0.25) !important;
+    padding: 20px 16px 32px !important;
+    transform: none !important;
+  }
+  /* Agrega un handle visual en la parte superior */
+  .perfil-megamenu::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+  .perfil-megamenu.open {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  .perfil-megamenu:not(.open) {
+    display: none !important;
+  }
+
+  /* Megamenú de Planificación: columna en mobile */
+  .perfil-megamenu--plan {
+    flex-direction: column !important;
+  }
+  .pmm-left {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    border-right: none;
+    border-bottom: 1px solid #eee;
+    padding: 0 0 12px;
+    margin: 0 0 12px;
+    min-width: auto;
+    width: 100%;
+  }
+  .pmm-left-item {
+    flex: 1;
+    min-width: 120px;
+    text-align: center;
+    padding: 10px 12px;
+  }
+  .pmm-right {
+    max-height: 45vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Megamenu items: más grandes para touch */
+  .perfil-megamenu-item {
+    padding: 14px 12px;
+  }
+  .perfil-megamenu-item .mm-label { font-size: 15px; }
+  .perfil-megamenu-item .mm-sub   { font-size: 12px; }
+
+  /* Nav dropdown también como bottom sheet en mobile */
+  .nav-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    border-radius: 18px 18px 0 0 !important;
+    min-width: 100vw !important;
+    max-height: 60vh !important;
+    overflow-y: auto !important;
+    z-index: 1000 !important;
+    box-shadow: 0 -6px 32px rgba(0,0,0,0.2) !important;
+    padding: 16px !important;
+    border: none !important;
+  }
+  .nav-dropdown::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+    margin: 0 auto 12px;
+  }
+  .nav-dropdown-item { padding: 13px 12px; border-radius: 8px; }
+  .nav-dd-label { font-size: 15px; }
+  .nav-dd-sub   { font-size: 12px; }
+
+  /* Backdrop activo cuando hay megamenu/dropdown abierto */
+  body.mm-open .mob-sidebar-bd { display: block; }
+}
+
+/* ── EXTRA: pantallas muy pequeñas ── */
+@media (max-width: 400px) {
+  .run-meta-bar,
+  .pln-meta-bar { grid-template-columns: 1fr !important; }
+  .run-meta-field,
+  .pln-meta-field { border-right: none !important; border-bottom: 1px solid #e8e8e8; }
+}
+
 
 /* ═══════════════════════════════════════════════════════
    COPILOTO IA — Panel deslizable
@@ -2782,11 +3015,6 @@ select.toolbox-input option:disabled { color: #888; }
     <div class="nav-sep"></div>
     <div id="nav-alumno-chip"></div>
     <div class="nav-sep"></div>
-    <button id="nav-btn-antropometria" class="perfil-nav-btn" onclick="showView('antropometria')">Mi Cuerpo</button>
-    <div class="nav-sep"></div>
-
-    <!-- Escritorio -->
-    <button class="perfil-nav-btn" id="nav-perfil-btn-escritorio" onclick="switchPerfilSection('escritorio')">Escritorio</button>
 
     <!-- Planificación mega menú -->
     <div class="perfil-nav-plan-wrap" id="perfil-plan-wrap">
@@ -2808,6 +3036,9 @@ select.toolbox-input option:disabled { color: #888; }
           <button class="pmm-left-item" id="pmm-cat-nueva" onclick="perfilPlanGo('nueva')">
             Nueva sesión
           </button>
+          <button class="pmm-left-item" id="pmm-cat-agregar-mes" onclick="perfilPlanGo('mes')">
+            📅 Agregar mes
+          </button>
         </div>
         <div class="pmm-right" id="pmm-right-panel">
           <div class="pmm-right-empty">
@@ -2823,14 +3054,8 @@ select.toolbox-input option:disabled { color: #888; }
         Seguimiento <span class="perfil-nav-plan-chevron">▾</span>
       </button>
       <div class="perfil-megamenu" id="perfil-mm-seg">
-        <button class="perfil-megamenu-item" id="mm-seg-antro" onclick="perfilSegGo('antropometria')">
-          <span class="mm-text"><span class="mm-label">Antropometría</span><span class="mm-sub">Mediciones y composición corporal</span></span>
-        </button>
-        <button class="perfil-megamenu-item" id="mm-seg-rend" onclick="perfilSegGo('rendimiento')">
-          <span class="mm-text"><span class="mm-label">Rendimiento</span><span class="mm-sub">Métricas de rendimiento físico</span></span>
-        </button>
-        <button class="perfil-megamenu-item" id="mm-seg-eval" onclick="perfilSegGo('evaluaciones')">
-          <span class="mm-text"><span class="mm-label">Evaluaciones</span><span class="mm-sub">Laboratorio físico del alumno</span></span>
+        <button class="perfil-megamenu-item" id="nav-btn-antropometria" onclick="showView('antropometria')">
+          <span class="mm-text"><span class="mm-label">Mi Cuerpo</span><span class="mm-sub">Protocolo ISAK · composición corporal</span></span>
         </button>
         <button class="perfil-megamenu-item" id="mm-seg-nutr" onclick="perfilSegGo('nutricion')">
           <span class="mm-text"><span class="mm-label">Nutrición</span><span class="mm-sub">Macros y suplementación</span></span>
@@ -2938,7 +3163,8 @@ select.toolbox-input option:disabled { color: #888; }
             <p class="mh-sub" id="mh-sub-plan">Sesiones de fuerza, running y calendario</p>
           </div>
           <div class="mh-actions" id="mh-actions-plan">
-            <button class="btn btn-primary" onclick="crearPlanFuerza()">+ Nueva sesión</button>
+            <button class="btn btn-primary" onclick="crearPlanFuerza()" style="font-size:12px;">+ Nueva sesión</button>
+            <button class="btn btn-primary" onclick="crearMesFuerza()" style="font-size:12px;background:#1a3a6a;margin-left:6px;">📅 Agregar mes</button>
           </div>
         </div>
         <div class="module-content">
@@ -3132,12 +3358,15 @@ select.toolbox-input option:disabled { color: #888; }
 
     <!-- TOPBAR -->
     <div class="run-topbar">
-      <div class="run-topbar-left">
-        <h1 class="run-titulo-sesion" id="pln-titulo-display" style="color:#111;">💪 NUEVA SESIÓN</h1>
-        <input class="run-titulo-input" id="plan-titulo" type="text"
-          placeholder="Nombre de la sesión (ej: TREN SUPERIOR · HIPERTROFIA)"
-          oninput="actualizarTituloDisplay(this.value)"
-          style="border-bottom-color:#C9A84C;">
+      <div class="run-topbar-left" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <button class="mob-sb-toggle" onclick="mobToggleSidebar('plan-fuerza-sidebar')">☰ Alumno</button>
+        <div style="flex:1;min-width:0;">
+          <h1 class="run-titulo-sesion" id="pln-titulo-display" style="color:#111;">💪 NUEVA SESIÓN</h1>
+          <input class="run-titulo-input" id="plan-titulo" type="text"
+            placeholder="Nombre de la sesión (ej: TREN SUPERIOR · HIPERTROFIA)"
+            oninput="actualizarTituloDisplay(this.value)"
+            style="border-bottom-color:#C9A84C;">
+        </div>
       </div>
       <div class="run-topbar-right">
         <button class="pln-btn pln-btn-outline" onclick="abrirBibliotecaEditor()">Ejercicios</button>
@@ -3289,11 +3518,14 @@ select.toolbox-input option:disabled { color: #888; }
 
     <!-- TOPBAR -->
     <div class="run-topbar">
-      <div class="run-topbar-left">
-        <h1 class="run-titulo-sesion" id="run-titulo-display">🏃 PLANIFICACIÓN DE RUNNING</h1>
-        <input class="run-titulo-input" id="run-titulo" type="text"
-          placeholder="Nombre del plan (ej: SEMANA 1 · BASE AERÓBICA)"
-          oninput="actualizarTituloRunning(this.value)">
+      <div class="run-topbar-left" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <button class="mob-sb-toggle" onclick="mobToggleSidebar('plan-running-sidebar')">☰ Alumno</button>
+        <div style="flex:1;min-width:0;">
+          <h1 class="run-titulo-sesion" id="run-titulo-display">🏃 PLANIFICACIÓN DE RUNNING</h1>
+          <input class="run-titulo-input" id="run-titulo" type="text"
+            placeholder="Nombre del plan (ej: SEMANA 1 · BASE AERÓBICA)"
+            oninput="actualizarTituloRunning(this.value)">
+        </div>
       </div>
       <div class="run-topbar-right">
         <button id="copiloto-toggle-btn-run" class="copiloto-toggle-btn" onclick="toggleCopiloto()">Copiloto IA</button>
@@ -3561,6 +3793,9 @@ select.toolbox-input option:disabled { color: #888; }
   </div>
 
 </main>
+
+<!-- Backdrop mobile (sidebar + megamenús) -->
+<div class="mob-sidebar-bd" id="mob-sidebar-bd" onclick="mobCloseSidebar()"></div>
 
 <!-- MODAL ALUMNO -->
 <div class="modal-overlay" id="modal-alumno">
@@ -11409,12 +11644,27 @@ function toggleNavDropdown() {
   const isOpen = dd.classList.contains('open');
   dd.classList.toggle('open');
   trigger.classList.toggle('open', !isOpen);
+  if (window.innerWidth <= 768) {
+    const bd = document.getElementById('mob-sidebar-bd');
+    if (!isOpen) {
+      document.body.classList.add('mm-open');
+      if (bd) bd.classList.add('visible');
+    } else {
+      document.body.classList.remove('mm-open');
+      if (bd) bd.classList.remove('visible');
+    }
+  }
 }
 document.addEventListener('click', function(e) {
   const wrap = document.querySelector('.nav-dropdown-wrap');
   if (wrap && !wrap.contains(e.target)) {
     document.getElementById('nav-planif-dropdown')?.classList.remove('open');
     document.getElementById('nav-btn-planificador')?.classList.remove('open');
+    document.body.classList.remove('mm-open');
+    if (window.innerWidth <= 768) {
+      const bd = document.getElementById('mob-sidebar-bd');
+      if (bd && !document.querySelector('.perfil-megamenu.open')) bd.classList.remove('visible');
+    }
   }
 });
 
@@ -11830,9 +12080,17 @@ function togglePerfilMM(e, key) {
     _asegurarVistaPerfilLimpia();
     dd.classList.add('open');
     tr.classList.add('open');
+    if (window.innerWidth <= 768) {
+      document.body.classList.add('mm-open');
+      var bd = document.getElementById('mob-sidebar-bd');
+      if (bd) bd.classList.add('visible');
+    }
   } else {
     dd.classList.remove('open');
     tr.classList.remove('open');
+    document.body.classList.remove('mm-open');
+    var bd2 = document.getElementById('mob-sidebar-bd');
+    if (bd2) bd2.classList.remove('visible');
   }
 }
 // alias para compatibilidad con el botón original
@@ -11855,6 +12113,11 @@ document.addEventListener('click', function(e) {
       document.getElementById(cfg.dd)?.classList.remove('open');
       document.getElementById(cfg.trigger)?.classList.remove('open');
     });
+    document.body.classList.remove('mm-open');
+    if (window.innerWidth <= 768) {
+      const _bd = document.getElementById('mob-sidebar-bd');
+      if (_bd && !document.querySelector('.plan-sidebar.mob-open')) _bd.classList.remove('visible');
+    }
     // Si el área sigue vacía (placeholder visible y ninguna sección activa),
     // volver a Escritorio como fallback
     const haySeccion = document.querySelector('.perfil-section.active');
@@ -12001,6 +12264,7 @@ function perfilPlanGo(sub) {
   _activarTrigger('perfil-plan-trigger');
   _cerrarTodosPerfilMM();
   if (sub === 'nueva') { irAPlanFuerza(); return; }
+  if (sub === 'mes') { _cerrarTodosPerfilMM(); crearMesFuerza(); return; }
   _limpiarAreaPrincipal(() => {
     _activarSection('planificacion');
     if (currentAlumnoId) switchPerfilSubtab('plan','calendario');
@@ -12075,7 +12339,7 @@ function switchPerfilSubtab(group, sub) {
   if (group === 'plan') {
     const btn = document.getElementById('mh-actions-plan');
     if (btn) {
-      if (sub === 'fuerza')     btn.innerHTML = `<button class="btn btn-primary" onclick="crearPlanFuerza()">+ Nueva sesión</button>`;
+      if (sub === 'fuerza')     btn.innerHTML = `<button class="btn btn-primary" onclick="crearPlanFuerza()" style="font-size:12px;">+ Nueva sesión</button><button class="btn btn-primary" onclick="crearMesFuerza()" style="font-size:12px;background:#1a3a6a;margin-left:6px;">📅 Agregar mes</button>`;
       else if (sub === 'running') btn.innerHTML = `<button class="btn btn-primary" style="background:#e65100;" onclick="crearPlanRunning()">+ Nueva sesión running</button>`;
       else btn.innerHTML = '';
     }
@@ -15657,6 +15921,25 @@ function crearPlanFuerza() {
   abrirPlanFuerzaSemanal();
 }
 
+function crearMesFuerza() {
+  // Calcular el nombre del mes actual en español
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const ahora = new Date();
+  const tituloMes = meses[ahora.getMonth()].toUpperCase() + ' ' + ahora.getFullYear();
+
+  // Abrir el planificador igual que nueva sesión
+  abrirPlanFuerzaSemanal();
+
+  // Pre-cargar el título con el nombre del mes
+  setTimeout(() => {
+    const t = document.getElementById('plan-titulo');
+    if (t) { t.value = tituloMes; t.dispatchEvent(new Event('input')); }
+    const d = document.getElementById('pln-titulo-display');
+    if (d) d.textContent = '📅 ' + tituloMes;
+  }, 80);
+}
+
 function crearPlanRunning() {
   abrirPlanRunning();
 }
@@ -16971,6 +17254,34 @@ function enviarFeedback() {
     window.location.href = waUrl;
   }
 }
+
+// ── MOBILE SIDEBAR TOGGLE ──────────────────────────────────────────────
+function mobToggleSidebar(sidebarId) {
+  var sidebar = document.getElementById(sidebarId);
+  var bd = document.getElementById('mob-sidebar-bd');
+  if (!sidebar) return;
+  var isOpen = sidebar.classList.contains('mob-open');
+  if (isOpen) {
+    sidebar.classList.remove('mob-open');
+    if (bd) bd.classList.remove('visible');
+  } else {
+    sidebar.classList.add('mob-open');
+    if (bd) bd.classList.add('visible');
+  }
+}
+
+function mobCloseSidebar() {
+  var bd = document.getElementById('mob-sidebar-bd');
+  document.querySelectorAll('.plan-sidebar.mob-open').forEach(function(s) {
+    s.classList.remove('mob-open');
+  });
+  if (bd) bd.classList.remove('visible');
+  // Also close any open megamenus
+  document.querySelectorAll('.perfil-megamenu.open, .nav-dropdown.open').forEach(function(m) {
+    m.classList.remove('open');
+  });
+  document.body.classList.remove('mm-open');
+}
 <\/script>
 
 </body>
@@ -17290,11 +17601,12 @@ function confirmarCopiarSesion() {
   const planes = getPlanificaciones();
   const original = planes.find(p => p.id === copiarSesionPlanId);
   if (!original) return;
-  const copia = Object.assign({}, original, {
-    id: 'plan_' + Date.now(),
-    alumnoId,
-    titulo: (original.titulo || 'Plan') + ' (copia)'
-  });
+  const tituloInput = document.getElementById('copiar-titulo-input')?.value.trim();
+  const copia = JSON.parse(JSON.stringify(original));
+  copia.id = 'plan_' + Date.now();
+  copia.alumnoId = alumnoId;
+  copia.titulo = tituloInput || (original.titulo || 'Plan') + ' (copia)';
+  copia.createdAt = new Date().toISOString();
   planes.push(copia);
   savePlanificaciones(planes);
   closeModal('modal-copiar-sesion');
