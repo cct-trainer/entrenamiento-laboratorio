@@ -2103,7 +2103,7 @@ select.toolbox-input option:disabled { color: #888; }
 .mes-btn-accion:hover { background:#bbdefb; }
 .mes-btn-danger { background:#ffebee; color:#c62828; border-color:#ef9a9a; }
 .mes-btn-danger:hover { background:#ffcdd2; }
-.mes-dias-grid { gap:8px; }
+.mes-dias-grid { column-gap:8px; row-gap:8px; margin-bottom:0; }
 .mes-agregar-zona { text-align:center; padding:4px 0 16px; }
 .mes-btn-agregar { background:#fff; border:2px dashed #90caf9; color:#C9A84C; border-radius:12px; padding:11px 0; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.15s; width:100%; }
 .mes-btn-agregar:hover { background:#FDF6E3; border-color:#C9A84C; border-style:solid; }
@@ -3159,12 +3159,11 @@ select.toolbox-input option:disabled { color: #888; }
       <div id="perfil-sec-planificacion" class="perfil-section">
         <div class="module-header">
           <div class="mh-left">
-            <h2 class="mh-title">Planificación</h2>
-            <p class="mh-sub" id="mh-sub-plan">Sesiones de fuerza, running y calendario</p>
+            <h2 class="mh-title">Cuerpo del Plan</h2>
+            <p class="mh-sub" id="mh-sub-plan">Meses de entrenamiento · Fuerza y Running</p>
           </div>
           <div class="mh-actions" id="mh-actions-plan">
-            <button class="btn btn-primary" onclick="crearPlanFuerza()" style="font-size:12px;">+ Nueva sesión</button>
-            <button class="btn btn-primary" onclick="crearMesFuerza()" style="font-size:12px;background:#1a3a6a;margin-left:6px;">📅 Agregar mes</button>
+            <button class="btn btn-primary" onclick="abrirModalCrearMes()" style="font-size:12px;background:#1a3a6a;padding:8px 18px;font-weight:700;">📅 Crear nuevo mes</button>
           </div>
         </div>
         <div class="module-content">
@@ -3373,7 +3372,7 @@ select.toolbox-input option:disabled { color: #888; }
         <button class="pln-btn pln-btn-outline" onclick="abrirBibliotecaSesiones()">Biblioteca</button>
         <button class="pln-btn pln-btn-outline" onclick="guardarPlantillaSesion()">Guardar plantilla</button>
         <button class="pln-btn pln-btn-guardar" onclick="abrirModalAsignarSesion()">Asignar a alumno</button>
-        <button id="copiloto-toggle-btn" class="copiloto-toggle-btn" onclick="toggleCopiloto()">Copiloto IA</button>
+        <button id="copiloto-toggle-btn" class="copiloto-toggle-btn" onclick="toggleCopiloto()" style="display:none;">Copiloto IA</button>
       </div>
     </div>
 
@@ -3424,27 +3423,36 @@ select.toolbox-input option:disabled { color: #888; }
       <div id="plantillas-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
     </div>
 
-    <!-- DISTRIBUCIÓN SEMANAL -->
-    <div class="run-semana-header">
-      <div class="run-semana-titulo" style="color:#9A7A28;">DISTRIBUCIÓN SEMANAL</div>
-      <div class="run-semana-nav">
+    <!-- TABS: DISTRIBUCIÓN / PROGRESIÓN -->
+    <div style="display:flex;align-items:center;gap:0;border-bottom:2px solid #e8e0cc;margin-bottom:0;">
+      <button id="pln-tab-dist" onclick="switchPlanTab('distribucion')"
+        style="padding:10px 22px;font-size:12px;font-weight:800;letter-spacing:1px;border:none;border-bottom:3px solid #C9A84C;background:none;color:#C9A84C;cursor:pointer;transition:all .15s;">
+        DISTRIBUCIÓN SEMANAL
+      </button>
+      <button id="pln-tab-prog" onclick="switchPlanTab('progresion')"
+        style="padding:10px 22px;font-size:12px;font-weight:800;letter-spacing:1px;border:none;border-bottom:3px solid transparent;background:none;color:#aaa;cursor:pointer;transition:all .15s;">
+        PROGRESIÓN DE CARGAS
+      </button>
+      <!-- nav semanas sólo visible en distribución -->
+      <div id="pln-nav-dist" style="display:flex;align-items:center;gap:8px;margin-left:auto;">
         <button class="run-semana-btn" style="--c:#C9A84C;" onclick="planNavSemana(-1)">‹</button>
         <div class="run-semana-label" id="plan-semana-label" style="color:#C9A84C;">Semana 1</div>
         <button class="run-semana-btn" onclick="planNavSemana(1)">›</button>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button class="pln-btn pln-btn-outline" onclick="exportarPlanSemanaHTML()">Exportar semana</button>
-        <button class="pln-btn" style="background:#0d0d1a;color:#E8C96A;border:1px solid #E8C96A;" onclick="exportarPlanSemanaMovil()">Celular</button>
+        <button class="pln-btn pln-btn-outline" onclick="exportarPlanSemanaHTML()" style="font-size:11px;padding:5px 12px;">Exportar</button>
+        <button class="pln-btn" style="background:#0d0d1a;color:#E8C96A;border:1px solid #E8C96A;font-size:11px;padding:5px 12px;" onclick="exportarPlanSemanaMovil()">Celular</button>
       </div>
     </div>
 
     <!-- VISTA MENSUAL (semanas apiladas) -->
     <div id="plan-mes-container"></div>
 
+    <!-- VISTA PROGRESIÓN DE CARGAS -->
+    <div id="plan-progresion-container" style="display:none;padding:0 0 24px;"></div>
+
     <!-- FOOTER FIJO -->
     <div class="pln-footer">
       <button class="pln-btn pln-btn-outline" onclick="showView('inicio')">← Inicio</button>
-      <button class="pln-btn pln-btn-outline" onclick="volverAlPerfil()">Perfil</button>
+      <button class="pln-btn pln-btn-outline" onclick="volverAlPerfil()" style="background:#e8f0fe;color:#1a3a6a;border-color:#1a3a6a;font-weight:700;">← Volver al alumno</button>
       <button class="pln-btn pln-btn-outline" onclick="irAPlanRunning()">Running</button>
       <button class="pln-btn pln-btn-outline" onclick="exportarPlanSemanaHTML()">Exportar HTML</button>
       <button class="pln-btn" style="background:#0d0d1a;color:#E8C96A;border:1px solid #E8C96A;" onclick="exportarPlanSemanaMovil()">Celular</button>
@@ -3462,9 +3470,12 @@ select.toolbox-input option:disabled { color: #888; }
       <div id="plan-editor-page-scroll">
         <div id="plan-editor-page-content"></div>
         <!-- COPILOTO EMBEBIDO -->
-        <div id="plan-dia-copiloto">
+        <div id="plan-dia-copiloto" style="display:none">
           <div class="cop-embed-header">
-            <div class="cop-embed-title">🤖 Copiloto IA</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div class="cop-embed-title">📋 Secretario</div>
+              <button onclick="soccAbrirConfigApi()" style="background:none;border:1px solid #22c55e44;color:#86efac;font-size:9px;padding:2px 7px;border-radius:4px;cursor:pointer;font-weight:700;">⚙️ Gemini (gratis)</button>
+            </div>
             <div id="cop-embed-alumno" style="font-size:10px;color:#9ca3af;margin-top:2px;">Sin alumno</div>
           </div>
           <div class="cop-embed-body">
@@ -3472,10 +3483,10 @@ select.toolbox-input option:disabled { color: #888; }
             <div>
               <div class="cop-embed-section-title">📥 Dictar sesión</div>
               <textarea id="cop-embed-input"
-                placeholder="Describí la sesión en lenguaje libre y la cargo automáticamente.&#10;&#10;Ej: Sentadilla 4x6 RIR 2, prensa 3x10 pausa, extensión de cuádriceps 3x15 drop set."
-                rows="6"></textarea>
+                placeholder="▸ Para que arme la sesión:&#10;  piernas hipertrofia&#10;  espalda y bíceps fuerza&#10;  sentadilla libre + tren inferior&#10;&#10;▸ Para dictar la tuya:&#10;  Bloque A: sentadilla 4x6 RIR 2&#10;  Bloque B: prensa 3x10, extensión 3x15"
+                rows="7"></textarea>
               <button class="cop-embed-btn primary" style="margin-top:6px;" onclick="copEmbedInterpretar()">
-                📥 Interpretar y cargar
+                🤖 Generar / Cargar al planificador
               </button>
               <div id="cop-embed-preview" style="display:none;margin-top:8px;"></div>
             </div>
@@ -3528,7 +3539,7 @@ select.toolbox-input option:disabled { color: #888; }
         </div>
       </div>
       <div class="run-topbar-right">
-        <button id="copiloto-toggle-btn-run" class="copiloto-toggle-btn" onclick="toggleCopiloto()">Copiloto IA</button>
+        <button id="copiloto-toggle-btn-run" class="copiloto-toggle-btn" onclick="toggleCopiloto()" style="display:none;">Copiloto IA</button>
         <button class="btn-run btn-run-naranja" onclick="guardarPlanRunning()">Guardar semana</button>
       </div>
     </div>
@@ -3587,7 +3598,7 @@ select.toolbox-input option:disabled { color: #888; }
     <!-- FOOTER -->
     <div class="run-footer">
       <button class="btn-run btn-run-outline" onclick="showView('inicio')">← Inicio</button>
-      <button class="btn-run btn-run-outline" onclick="volverAlPerfil()" style="background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7;">👤 Perfil</button>
+      <button class="btn-run btn-run-outline" onclick="volverAlPerfil()" style="background:#e8f0fe;color:#1a3a6a;border-color:#1a3a6a;font-weight:700;">← Volver al alumno</button>
       <button class="btn-run btn-run-outline" onclick="irAPlanFuerza()" style="background:#FDF6E3;color:#9A7A28;border-color:#90caf9;">💪 Fuerza</button>
       <button class="btn-run btn-run-outline" onclick="exportarRunSemanaHTML()">⬇ Exportar HTML</button>
       <button class="btn-run" style="background:#0d0d1a;color:#E8C96A;border:1px solid #E8C96A;" onclick="exportarRunSemanaMovil()">📱 Celular</button>
@@ -3796,6 +3807,45 @@ select.toolbox-input option:disabled { color: #888; }
 
 <!-- Backdrop mobile (sidebar + megamenús) -->
 <div class="mob-sidebar-bd" id="mob-sidebar-bd" onclick="mobCloseSidebar()"></div>
+
+<!-- MODAL CREAR MES -->
+<div class="modal-overlay" id="modal-crear-mes">
+  <div class="modal" style="width:440px;max-width:95vw;">
+    <div class="modal-header">
+      <h2>📅 Nuevo mes de entrenamiento</h2>
+      <button class="modal-close" onclick="closeModal('modal-crear-mes')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label style="font-weight:700;color:#1a1a1a;">Nombre del mes *</label>
+        <input type="text" id="crear-mes-nombre" placeholder="Ej: JULIO 2026" style="text-transform:uppercase;font-weight:700;font-size:15px;letter-spacing:0.5px;">
+      </div>
+      <div class="field" style="margin-top:14px;">
+        <label style="font-weight:700;color:#1a1a1a;">Fecha de inicio del mes *</label>
+        <input type="date" id="crear-mes-fecha" style="font-size:14px;">
+        <div style="font-size:11px;color:#888;margin-top:4px;">Esta fecha define cuándo empieza el mes en el calendario.</div>
+      </div>
+      <div class="field" style="margin-top:14px;">
+        <label style="font-weight:700;color:#1a1a1a;">Ciclo de entrenamiento</label>
+        <select id="crear-mes-ciclo" style="font-size:13px;">
+          <option value="">— Sin especificar —</option>
+          <option value="Volumen">Volumen</option>
+          <option value="Hipertrofia">Hipertrofia</option>
+          <option value="Fuerza máxima">Fuerza máxima</option>
+          <option value="Definición">Definición / Estética</option>
+          <option value="Pérdida de peso">Pérdida de peso</option>
+          <option value="Potencia">Potencia</option>
+          <option value="Resistencia">Resistencia</option>
+          <option value="Rehabilitación">Rehabilitación</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-crear-mes')" style="background:#f0f0f0;color:#333;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:600;">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarCrearMes()" style="background:#1a3a6a;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:700;font-size:14px;">Crear mes y abrir planificador →</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL ALUMNO -->
 <div class="modal-overlay" id="modal-alumno">
@@ -9882,7 +9932,9 @@ ${_htmlRunHeader(titulo,a,extra,movil)}
 // ════════════════════════════════════════════════════════
 // PLANIFICADOR FUERZA SEMANAL
 // ════════════════════════════════════════════════════════
-let planSemActualId  = null;
+let planSemActualId        = null;
+let planSemOriginalAlumnoId = null; // alumnoId al momento de abrir el plan (para detectar cambio de alumno)
+let _undoSnapshot = null;           // snapshot del plan antes de la última eliminación
 let planSemanasArray = [];   // [{semana:1, fechaInicio:'YYYY-MM-DD', dias:{}}]
 let planSemEditando  = 0;    // índice de la semana activa en edición
 let planDiasData     = {};   // { 0:[{bloques}], ... }
@@ -9910,11 +9962,12 @@ const TIPOS_SERIE_F  = ['Serie Simple','Biserie','Triserie','Superserie','Serie 
 // ── Abrir / inicializar ──────────────────────────────────────────────────────
 function abrirPlanFuerzaSemanal() {
   planSemActualId  = null;
+  planSemOriginalAlumnoId = null;
   planSemEditando  = 0;
   planDiaAbierto   = null;
   bloqueCounter    = 0;
   ejercicioCounter = 0;
-  const todayStr   = new Date().toISOString().split('T')[0];
+  const todayStr   = _getLunesDe(new Date().toISOString().split('T')[0]); // siempre lunes
   planSemanasArray = [{ semana:1, fechaInicio: todayStr, dias:{} }];
   planDiasData     = planSemanasArray[0].dias;
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
@@ -10342,10 +10395,12 @@ function renderPlanMes() {
       const minis = sesiones.map((s, sIdx) => {
         const bc = (s.bloques||[]).length;
         const primera = s.bloques&&s.bloques[0] ? (s.bloques[0].nombre||s.bloques[0].tipo||'Bloque') : 'Sesion';
+        const nomSes = s.nombre ? '<div style="font-size:11px;color:#fde68a;font-weight:800;margin-bottom:2px;padding-right:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+s.nombre+'</div>' : '';
         return '<div class="plan-dia-mini">'
              + '<button class="plan-dia-mini-del" onclick="event.stopPropagation();eliminarSesionDia('+i+','+semIdx+','+sIdx+')" title="Eliminar sesión">✕</button>'
+             + nomSes
              + '<div class="plan-dia-mini-tipo">'+bc+' bloque'+(bc!==1?'s':'')+'</div>'
-             + '<div style="font-size:10px;color:#fff;font-weight:600;padding-right:14px;">'+primera+(bc>1?' + mas':'')+'</div>'
+             + (s.nombre ? '' : '<div style="font-size:10px;color:#fff;font-weight:600;padding-right:14px;">'+primera+(bc>1?' + mas':'')+'</div>')
              + '</div>';
       }).join('');
       return '<div class="plan-dia-card'+(tiene?' tiene-sesion':'')+'" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'"'+(tiene?' draggable="true"':'')+' onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
@@ -10362,48 +10417,16 @@ function renderPlanMes() {
         + '</div>';
     };
 
-    // Empty placeholder cell for days outside the plan range
-    const emptyCell = '<div style="border:1px dashed #e0e0e0;border-radius:12px;background:#f8f9fb;min-height:80px;"></div>';
 
-    // Fixed LUN→DOM header labels
-    const _HDR_DIAS = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+    // Header fijo LUN→DOM (la migración garantiza que todas las semanas empiezan en lunes)
     const headerRow = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:4px;">'
-      + _HDR_DIAS.map(d => '<div style="text-align:center;font-size:9px;font-weight:800;letter-spacing:1px;color:#aaa;padding:2px 0;">'+d+'</div>').join('')
+      + ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'].map(d=>'<div style="text-align:center;font-size:9px;font-weight:800;letter-spacing:1px;color:#aaa;padding:2px 0;">'+d+'</div>').join('')
       + '</div>';
 
-    // Build calendar-aligned grid rows
-    let gridHTML;
-    if (!sem.fechaInicio) {
-      // No start date: fall back to plain 0–6 order
-      gridHTML = '<div class="run-dias-grid mes-dias-grid">'
-        + Array.from({length:7}, (_,i) => renderCard(i)).join('')
-        + '</div>';
-    } else {
-      const fi  = new Date(sem.fechaInicio + 'T12:00:00');
-      const dow = fi.getDay();                      // JS: 0=Dom 1=Lun … 6=Sáb
-      const colFI = dow === 0 ? 6 : dow - 1;       // Mon=0 … Sun=6
-
-      if (colFI === 0) {
-        // Plan starts on Monday → one row, no empty cells needed
-        gridHTML = '<div class="run-dias-grid mes-dias-grid">'
-          + Array.from({length:7}, (_,i) => renderCard(i)).join('')
-          + '</div>';
-      } else {
-        // Row 1: colFI empty cells + plan slots 0 … (6-colFI)
-        const slotsRow1 = 7 - colFI;
-        const row1 = Array(colFI).fill(emptyCell).concat(
-          Array.from({length: slotsRow1}, (_,k) => renderCard(k))
-        ).join('');
-
-        // Row 2: plan slots (7-colFI) … 6 + trailing empty cells
-        const row2 = Array.from({length: colFI}, (_,k) => renderCard(slotsRow1 + k)).concat(
-          Array(slotsRow1).fill(emptyCell)
-        ).join('');
-
-        gridHTML = '<div class="run-dias-grid mes-dias-grid" style="margin-bottom:8px;">' + row1 + '</div>'
-                 + '<div class="run-dias-grid mes-dias-grid">'                              + row2 + '</div>';
-      }
-    }
+    // 7 días siempre en una fila — los headers muestran el día real de cada columna
+    const gridHTML = '<div class="run-dias-grid mes-dias-grid">'
+      + Array.from({length:7}, (_,i) => renderCard(i)).join('')
+      + '</div>';
 
     return '<div class="mes-semana-bloque'+(isEd?' mes-semana-editando':'')+'" id="mes-sem-bloque-'+semIdx+'">'
       + '<div class="mes-semana-header">'
@@ -10419,6 +10442,382 @@ function renderPlanMes() {
   }).join('')
   + '<div class="mes-agregar-zona"><button class="mes-btn-agregar" onclick="agregarSemana()">&#65291; Agregar semana</button></div>';
   actualizarSemanaFinder();
+}
+
+// ── Pestaña Progresión de Cargas ─────────────────────────────────────────────
+let _progDiaActivo = 2; // día por defecto (MIÉ = 2)
+
+function switchPlanTab(tab) {
+  const esDist = tab === 'distribucion';
+  document.getElementById('plan-mes-container').style.display      = esDist ? '' : 'none';
+  document.getElementById('plan-progresion-container').style.display = esDist ? 'none' : '';
+  document.getElementById('pln-nav-dist').style.display            = esDist ? '' : 'none';
+
+  const tDist = document.getElementById('pln-tab-dist');
+  const tProg = document.getElementById('pln-tab-prog');
+  tDist.style.borderBottomColor = esDist ? '#C9A84C' : 'transparent';
+  tDist.style.color             = esDist ? '#C9A84C' : '#aaa';
+  tProg.style.borderBottomColor = esDist ? 'transparent' : '#C9A84C';
+  tProg.style.color             = esDist ? '#aaa' : '#C9A84C';
+
+  if (!esDist) renderProgresionMesociclo(_progDiaActivo);
+}
+
+function renderProgresionMesociclo(diaIdx) {
+  _progDiaActivo = diaIdx;
+  const container = document.getElementById('plan-progresion-container');
+  if (!container) return;
+
+  const semanas = planSemanasArray;
+  const DIAS_N = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+  const DIAS_S = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+
+  // Selector de días
+  const selectorHTML = `<div style="display:flex;gap:6px;padding:14px 0 10px;flex-wrap:wrap;">
+    ${DIAS_N.map((n,i) => {
+      const tieneSesion = semanas.some(s => s.dias[i]?.[0]?.bloques?.length);
+      return `<button onclick="renderProgresionMesociclo(${i})"
+        style="padding:6px 14px;border-radius:20px;border:2px solid ${i===diaIdx?'#C9A84C':'#e0e0e0'};
+          background:${i===diaIdx?'#C9A84C':'#fff'};color:${i===diaIdx?'#fff':'#666'};
+          font-size:11px;font-weight:800;cursor:pointer;position:relative;">
+        ${DIAS_S[i]}${tieneSesion?'<span style="position:absolute;top:-4px;right:-4px;width:7px;height:7px;background:#22c55e;border-radius:50%;border:1.5px solid #fff;"></span>':''}
+      </button>`;
+    }).join('')}
+  </div>`;
+
+  // Buscar bloques de referencia (primera semana que tenga sesión para este día)
+  let bloquesRef = null;
+  let nombreSesion = '';
+  for (const sem of semanas) {
+    const ses = sem.dias[diaIdx]?.[0];
+    if (ses?.bloques?.length) { bloquesRef = ses.bloques; nombreSesion = ses.nombre || ''; break; }
+  }
+
+  if (!bloquesRef) {
+    container.innerHTML = selectorHTML + `<div style="text-align:center;padding:48px 20px;color:#bbb;font-size:14px;">
+      Sin sesión cargada para el ${DIAS_N[diaIdx]}.<br>
+      <span style="font-size:12px;">Cargá los ejercicios en <strong>DISTRIBUCIÓN SEMANAL</strong> primero.</span>
+    </div>`;
+    return;
+  }
+
+  // ── Cabecera fija de métricas (SER / REP / PESO / RIR) ──────────────────────
+  // Cada semana tiene 2 grupos: PLAN y REAL, cada uno con 4 sub-columnas
+  const metricLabels = ['SER','REP','PESO','RIR'];
+  const totalSubCols = semanas.length * 2 * 4; // 4 métricas × 2 (plan+real) × semanas
+
+  // Fila 1: SEM N (colspan=8 por 4 métricas × PLAN+REAL)
+  const semThs = semanas.map((s,i) => {
+    const fecha = s.fechaInicio ? new Date(s.fechaInicio+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}) : `Sem ${i+1}`;
+    return `<th colspan="8" style="padding:7px 4px;text-align:center;border-left:2px solid #d0ccc0;background:#f7f3ea;">
+      <span style="font-size:10px;font-weight:900;letter-spacing:.5px;color:#C9A84C;">SEM ${i+1}</span>
+      <span style="font-size:9px;color:#bbb;font-weight:400;margin-left:5px;">${fecha}</span>
+    </th>`;
+  }).join('');
+
+  // Fila 2: PLAN (4 cols) | REAL (4 cols) por semana
+  const planRealThs = semanas.map(() => `
+    <th colspan="4" style="padding:3px 4px;text-align:center;font-size:9px;font-weight:900;letter-spacing:.5px;color:#9A7A28;background:#fdf8ee;border-left:2px solid #d0ccc0;border-bottom:1px solid #e8e0cc;">PLAN</th>
+    <th colspan="4" style="padding:3px 4px;text-align:center;font-size:9px;font-weight:900;letter-spacing:.5px;color:#16a34a;background:#f2fbf4;border-bottom:1px solid #e8e0cc;">REAL</th>
+  `).join('');
+
+  // Fila 3: SER | REP | PESO | RIR por cada grupo PLAN/REAL
+  const metricThs = semanas.map((_,sIdx) => metricLabels.map((m,mi) =>
+    `<th style="padding:3px 2px;text-align:center;font-size:8px;font-weight:700;color:#bbb;background:#fdf8ee;${mi===0?'border-left:2px solid #d0ccc0;':''}min-width:38px;">${m}</th>`
+  ).join('') + metricLabels.map((m,mi) =>
+    `<th style="padding:3px 2px;text-align:center;font-size:8px;font-weight:700;color:#bbb;background:#f2fbf4;${mi===0?'border-left:1px solid #e0ead0;':''}min-width:38px;">${m}</th>`
+  ).join('')).join('');
+
+  // ── Filas de datos ────────────────────────────────────────────────────────
+  const iStyle = (focusColor) =>
+    `border:none;outline:none;width:100%;padding:4px 3px;font-size:11px;font-weight:700;text-align:center;background:transparent;color:#1a1a1a;box-sizing:border-box;` +
+    `onfocus="this.style.boxShadow='inset 0 0 0 2px ${focusColor}'" onblur="this.style.boxShadow='none'"`;
+
+  let rowsHTML = '';
+  bloquesRef.forEach((bloque, bIdx) => {
+    const totalCols = semanas.length * 8 + 1;
+    // Separador de bloque — sutil, NO negro
+    rowsHTML += `<tr style="border-top:${bIdx>0?'3px solid #e0d8c8':'none'};">
+      <td colspan="${totalCols}" style="background:#faf5e8;padding:5px 14px;border-bottom:1px solid #e8e0cc;">
+        <span style="font-size:9px;font-weight:900;letter-spacing:1.2px;color:#9A7A28;">
+          ▸ ${'ABCDEFGHIJ'[bIdx]||bIdx+1} — ${(bloque.nombre||bloque.tipo||'Bloque').toUpperCase()}
+        </span>
+        <span style="font-size:9px;color:#bbb;margin-left:8px;font-weight:400;">${bloque.serieTipo||''}</span>
+      </td>
+    </tr>`;
+
+    if (!bloque.ejercicios?.length) {
+      rowsHTML += `<tr><td colspan="${totalCols}" style="padding:6px 14px;color:#ccc;font-size:11px;font-style:italic;border-bottom:1px solid #f0f0f0;">Sin ejercicios cargados</td></tr>`;
+      return;
+    }
+
+    bloque.ejercicios.forEach((ej, eIdx) => {
+      const rowBg = eIdx % 2 === 0 ? '#ffffff' : '#fafafa';
+      const semCells = semanas.map((sem, sIdx) => {
+        const ejSem = sem.dias[diaIdx]?.[0]?.bloques?.[bIdx]?.ejercicios?.[eIdx];
+        const ctrl  = ejSem?.ctrl       || {};
+        const ctrlR = ejSem?.ctrl_real  || {};
+        const prog  = ejSem?.progresionSemanal?.[sIdx] || {};
+
+        const PS = ctrl.series || prog.series || '';
+        const PR = ctrl.reps   || prog.reps   || '';
+        const PP = ctrl.peso   || prog.peso   || '';
+        const PI = ctrl.rir    || prog.rir    || '';
+        const RS = ctrlR.series || '';
+        const RR = ctrlR.reps   || '';
+        const RP = ctrlR.peso   || '';
+        const RI = ctrlR.rir    || '';
+
+        const ppNum = parseFloat(PP) || 0;
+        const rpNum = parseFloat(RP) || 0;
+        const pesoBgR = RP ? (rpNum >= ppNum ? '#dcfce7' : '#ffedd5') : rowBg;
+
+        const plUid = `pg-pl-b${bIdx}-e${eIdx}-s${sIdx}`;
+        const rlUid = `pg-rl-b${bIdx}-e${eIdx}-s${sIdx}`;
+        const pFoc  = `onfocus="this.parentNode.style.boxShadow='inset 0 0 0 2px #C9A84C'" onblur="this.parentNode.style.boxShadow='none';_queueProgresionSave()"`;
+        const rFoc  = `onfocus="this.parentNode.style.boxShadow='inset 0 0 0 2px #16a34a'" onblur="this.parentNode.style.boxShadow='none';_queueProgresionSave()"`;
+        const inp   = 'border:none;outline:none;width:100%;padding:5px 2px;font-size:11px;font-weight:700;text-align:center;background:transparent;color:#1a1a1a;box-sizing:border-box;';
+
+        const mkPlan = (id,val,ph) => `<td style="border-right:1px solid #ece8e0;${id.endsWith('-s')?'border-left:2px solid #d0ccc0;':''}background:${rowBg};"><input id="${id}" value="${val}" placeholder="${ph}" style="${inp}" ${pFoc}/></td>`;
+        const mkReal = (id,val,ph,bg) => `<td style="border-right:1px solid #e4ead8;${id.endsWith('-s')?'border-left:1px solid #c8ddb8;':''}background:${bg};"><input id="${id}" value="${val}" placeholder="${ph}" style="${inp}" ${rFoc}/></td>`;
+
+        return mkPlan(`${plUid}-s`,PS,'—') + mkPlan(`${plUid}-r`,PR,'—') + mkPlan(`${plUid}-p`,PP,'kg') + mkPlan(`${plUid}-i`,PI,'—') +
+               mkReal(`${rlUid}-s`,RS,'—',rowBg) + mkReal(`${rlUid}-r`,RR,'—',rowBg) + mkReal(`${rlUid}-p`,RP,'kg',pesoBgR) + mkReal(`${rlUid}-i`,RI,'—',rowBg);
+      }).join('');
+
+      rowsHTML += `<tr style="border-bottom:1px solid #ece8e0;">
+        <td style="padding:7px 14px;white-space:nowrap;border-right:1px solid #e0d8c8;background:${rowBg};">
+          <div onclick="_mostrarGraficoEjercicio(${bIdx},${eIdx},${diaIdx})" title="Ver gráfico de progresión"
+            style="font-size:12px;font-weight:700;color:#2a2a2a;cursor:pointer;display:flex;align-items:center;gap:5px;">
+            ${ej.nombre||'—'}<span style="font-size:9px;color:#C9A84C;opacity:.65;flex-shrink:0;">📈</span>
+          </div>
+        </td>
+        ${semCells}
+      </tr>`;
+    });
+  });
+
+  // Leyenda de colores
+  const legendaHTML = `<div style="display:flex;gap:14px;padding:8px 0 8px;flex-wrap:wrap;font-size:10px;color:#888;align-items:center;">
+    <span style="font-weight:800;color:#aaa;letter-spacing:.5px;">REF:</span>
+    <span><span style="display:inline-block;width:9px;height:9px;background:#fdf8ee;border:1px solid #e8d8a0;border-radius:2px;margin-right:3px;vertical-align:middle;"></span>Planificado</span>
+    <span><span style="display:inline-block;width:9px;height:9px;background:#dcfce7;border:1px solid #86efac;border-radius:2px;margin-right:3px;vertical-align:middle;"></span>Real ≥ Plan ✓</span>
+    <span><span style="display:inline-block;width:9px;height:9px;background:#ffedd5;border:1px solid #fdba74;border-radius:2px;margin-right:3px;vertical-align:middle;"></span>Real &lt; Plan</span>
+  </div>`;
+
+  container.innerHTML = selectorHTML + `
+    <div style="font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:4px;">
+      ${DIAS_N[diaIdx].toUpperCase()}${nombreSesion ? ' · '+nombreSesion : ''}
+    </div>
+    ${legendaHTML}
+    <div style="overflow-x:auto;border-radius:8px;border:1.5px solid #d8d0c4;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.06);">
+      <table style="width:100%;border-collapse:collapse;font-family:inherit;">
+        <thead>
+          <tr style="border-bottom:1px solid #e0d8c8;">
+            <th rowspan="3" style="padding:10px 14px;text-align:left;font-size:10px;letter-spacing:1px;color:#9A7A28;min-width:160px;border-right:1px solid #e0d8c8;vertical-align:middle;background:#f7f3ea;">EJERCICIO</th>
+            ${semThs}
+          </tr>
+          <tr>${planRealThs}</tr>
+          <tr style="border-bottom:2px solid #d8d0c4;">${metricThs}</tr>
+        </thead>
+        <tbody>${rowsHTML}</tbody>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+      <button onclick="guardarProgresionMesociclo(${diaIdx})"
+        style="background:#C9A84C;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.5px;">
+        💾 Guardar progresión
+      </button>
+    </div>`;
+}
+
+function guardarProgresionMesociclo(diaIdx) {
+  const semanas = planSemanasArray;
+  let bloquesRef = null;
+  for (const sem of semanas) {
+    if (sem.dias[diaIdx]?.[0]?.bloques?.length) { bloquesRef = sem.dias[diaIdx][0].bloques; break; }
+  }
+  if (!bloquesRef) return;
+
+  bloquesRef.forEach((bloque, bIdx) => {
+    (bloque.ejercicios || []).forEach((ej, eIdx) => {
+      semanas.forEach((sem, sIdx) => {
+        const plUid = `pg-pl-b${bIdx}-e${eIdx}-s${sIdx}`;
+        const rlUid = `pg-rl-b${bIdx}-e${eIdx}-s${sIdx}`;
+
+        const pS = document.getElementById(plUid+'-s')?.value || '';
+        const pR = document.getElementById(plUid+'-r')?.value || '';
+        const pP = document.getElementById(plUid+'-p')?.value || '';
+        const pI = document.getElementById(plUid+'-i')?.value || '';
+
+        const rS = document.getElementById(rlUid+'-s')?.value || '';
+        const rR = document.getElementById(rlUid+'-r')?.value || '';
+        const rP = document.getElementById(rlUid+'-p')?.value || '';
+        const rI = document.getElementById(rlUid+'-i')?.value || '';
+
+        if (!pS && !pR && !pP && !pI && !rS && !rR && !rP && !rI) return; // semana vacía, no tocar
+
+        // Asegurar estructura mínima en la semana
+        if (!sem.dias[diaIdx]) sem.dias[diaIdx] = [{ bloques: JSON.parse(JSON.stringify(bloquesRef)) }];
+        const bloquesSem = sem.dias[diaIdx][0].bloques;
+        if (!bloquesSem[bIdx]) bloquesSem[bIdx] = JSON.parse(JSON.stringify(bloque));
+        if (!bloquesSem[bIdx].ejercicios[eIdx]) bloquesSem[bIdx].ejercicios[eIdx] = JSON.parse(JSON.stringify(ej));
+
+        const ejTarget = bloquesSem[bIdx].ejercicios[eIdx];
+
+        // PLAN → ctrl
+        if (pS || pR || pP || pI) {
+          ejTarget.ctrl = { series:pS, reps:pR, peso:pP, rir:pI, pausa: ejTarget.ctrl?.pausa || '' };
+        }
+        // REAL → ctrl_real
+        if (rS || rR || rP || rI) {
+          ejTarget.ctrl_real = { series:rS, reps:rR, peso:rP, rir:rI };
+        }
+      });
+    });
+  });
+
+  guardarPlanSemanal();
+  toast('Progresión guardada ✓');
+  renderProgresionMesociclo(diaIdx); // re-render para actualizar colores
+}
+
+// Guarda sin toast ni re-render — usado por auto-save al hacer blur en los inputs
+let _progSaveTimer = null;
+function _queueProgresionSave() {
+  clearTimeout(_progSaveTimer);
+  _progSaveTimer = setTimeout(() => {
+    if (_progDiaActivo !== null) _guardarProgresionSilente(_progDiaActivo);
+  }, 900);
+}
+function _guardarProgresionSilente(diaIdx) {
+  const semanas = planSemanasArray;
+  let bloquesRef = null;
+  for (const sem of semanas) {
+    if (sem.dias[diaIdx]?.[0]?.bloques?.length) { bloquesRef = sem.dias[diaIdx][0].bloques; break; }
+  }
+  if (!bloquesRef) return;
+  bloquesRef.forEach((bloque, bIdx) => {
+    (bloque.ejercicios || []).forEach((ej, eIdx) => {
+      semanas.forEach((sem, sIdx) => {
+        const plUid = `pg-pl-b${bIdx}-e${eIdx}-s${sIdx}`;
+        const rlUid = `pg-rl-b${bIdx}-e${eIdx}-s${sIdx}`;
+        const pS = document.getElementById(plUid+'-s')?.value || '';
+        const pR = document.getElementById(plUid+'-r')?.value || '';
+        const pP = document.getElementById(plUid+'-p')?.value || '';
+        const pI = document.getElementById(plUid+'-i')?.value || '';
+        const rS = document.getElementById(rlUid+'-s')?.value || '';
+        const rR = document.getElementById(rlUid+'-r')?.value || '';
+        const rP = document.getElementById(rlUid+'-p')?.value || '';
+        const rI = document.getElementById(rlUid+'-i')?.value || '';
+        if (!pS && !pR && !pP && !pI && !rS && !rR && !rP && !rI) return;
+        if (!sem.dias[diaIdx]) sem.dias[diaIdx] = [{ bloques: JSON.parse(JSON.stringify(bloquesRef)) }];
+        const bloquesSem = sem.dias[diaIdx][0].bloques;
+        if (!bloquesSem[bIdx]) bloquesSem[bIdx] = JSON.parse(JSON.stringify(bloque));
+        if (!bloquesSem[bIdx].ejercicios[eIdx]) bloquesSem[bIdx].ejercicios[eIdx] = JSON.parse(JSON.stringify(ej));
+        const ejT = bloquesSem[bIdx].ejercicios[eIdx];
+        if (pS || pR || pP || pI) ejT.ctrl      = { series:pS, reps:pR, peso:pP, rir:pI, pausa: ejT.ctrl?.pausa || '' };
+        if (rS || rR || rP || rI) ejT.ctrl_real  = { series:rS, reps:rR, peso:rP, rir:rI };
+      });
+    });
+  });
+  guardarPlanSemanal();
+}
+
+function _mostrarGraficoEjercicio(bIdx, eIdx, diaIdx) {
+  const semanas = planSemanasArray;
+  let ejNombre = '—';
+  for (const sem of semanas) {
+    const n = sem.dias[diaIdx]?.[0]?.bloques?.[bIdx]?.ejercicios?.[eIdx]?.nombre;
+    if (n) { ejNombre = n; break; }
+  }
+
+  const data = semanas.map((sem, sIdx) => {
+    const ejSem = sem.dias[diaIdx]?.[0]?.bloques?.[bIdx]?.ejercicios?.[eIdx];
+    const ctrl  = ejSem?.ctrl || {};
+    const ctrlR = ejSem?.ctrl_real || {};
+    const prog  = ejSem?.progresionSemanal?.[sIdx] || {};
+    const pV = parseFloat(ctrl.peso || prog.peso) || null;
+    const rV = parseFloat(ctrlR.peso) || null;
+    return {
+      label: `S${sIdx+1}`,
+      plan: pV,
+      real: rV,
+      srP: (ctrl.series && ctrl.reps) ? `${ctrl.series}×${ctrl.reps}` : '',
+      srR: (ctrlR.series && ctrlR.reps) ? `${ctrlR.series}×${ctrlR.reps}` : '',
+    };
+  });
+
+  const hasAny = data.some(d => d.plan || d.real);
+  const W = 500, H = 230;
+  const PAD = {top:30, right:24, bottom:44, left:52};
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top - PAD.bottom;
+  const allV = data.flatMap(d => [d.plan, d.real]).filter(v => v != null && v > 0);
+  const minV = allV.length ? Math.floor(Math.min(...allV) * 0.92) : 0;
+  const maxV = allV.length ? Math.ceil(Math.max(...allV) * 1.08) : 100;
+  const n = data.length;
+  const xS = i => PAD.left + (n > 1 ? i / (n-1) * cW : cW/2);
+  const yS = v => PAD.top + cH - ((v - minV) / ((maxV - minV) || 1)) * cH;
+
+  // Y ticks
+  const ticks = 5;
+  const yTicks = Array.from({length:ticks+1}, (_,i) => {
+    const v = Math.round((minV + (maxV-minV)*i/ticks) * 10) / 10;
+    return {v, y: yS(v)};
+  });
+
+  // Build paths
+  const planPts = data.map((d,i) => d.plan != null ? {x:xS(i), y:yS(d.plan), v:d.plan, sr:d.srP} : null).filter(Boolean);
+  const realPts = data.map((d,i) => d.real != null ? {x:xS(i), y:yS(d.real), v:d.real, sr:d.srR} : null).filter(Boolean);
+  const planPath = planPts.map((p,i) => (i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+  const realPath = realPts.map((p,i) => (i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+
+  const svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px;">
+    <defs>
+      <filter id="gs"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#00000020"/></filter>
+    </defs>
+    ${yTicks.map(t=>`<line x1="${PAD.left}" y1="${t.y.toFixed(1)}" x2="${PAD.left+cW}" y2="${t.y.toFixed(1)}" stroke="#f0ece4" stroke-width="1"/>
+      <text x="${PAD.left-6}" y="${(t.y+3.5).toFixed(1)}" text-anchor="end" font-size="9" fill="#bbb" font-family="inherit">${t.v}</text>
+    `).join('')}
+    <line x1="${PAD.left}" y1="${PAD.top}" x2="${PAD.left}" y2="${PAD.top+cH}" stroke="#d8d0c8" stroke-width="1.5"/>
+    <line x1="${PAD.left}" y1="${PAD.top+cH}" x2="${PAD.left+cW}" y2="${PAD.top+cH}" stroke="#d8d0c8" stroke-width="1.5"/>
+    ${data.map((_,i)=>`<line x1="${xS(i).toFixed(1)}" y1="${PAD.top+cH}" x2="${xS(i).toFixed(1)}" y2="${PAD.top+cH+4}" stroke="#d8d0c8" stroke-width="1"/>
+      <text x="${xS(i).toFixed(1)}" y="${PAD.top+cH+15}" text-anchor="middle" font-size="9" fill="#aaa" font-family="inherit">${data[i].label}</text>
+    `).join('')}
+    ${planPath ? `<path d="${planPath}" fill="none" stroke="#C9A84C" stroke-width="2" stroke-dasharray="6,3" stroke-linejoin="round"/>` : ''}
+    ${realPath ? `<path d="${realPath}" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linejoin="round" filter="url(#gs)"/>` : ''}
+    ${planPts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="#fff" stroke="#C9A84C" stroke-width="2"/>
+      <text x="${p.x.toFixed(1)}" y="${(p.y-8).toFixed(1)}" text-anchor="middle" font-size="9" fill="#9A7A28" font-family="inherit" font-weight="600">${p.v}</text>
+    `).join('')}
+    ${realPts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="#16a34a" filter="url(#gs)"/>
+      <text x="${p.x.toFixed(1)}" y="${(p.y-9).toFixed(1)}" text-anchor="middle" font-size="9" fill="#16a34a" font-weight="800" font-family="inherit">${p.v}</text>
+    `).join('')}
+    <line x1="${PAD.left+2}" y1="${H-10}" x2="${PAD.left+20}" y2="${H-10}" stroke="#C9A84C" stroke-width="2" stroke-dasharray="5,3"/>
+    <text x="${PAD.left+24}" y="${H-7}" font-size="9" fill="#9A7A28" font-family="inherit">Planificado</text>
+    <circle cx="${PAD.left+92}" cy="${H-10}" r="4" fill="#16a34a"/>
+    <text x="${PAD.left+99}" y="${H-7}" font-size="9" fill="#16a34a" font-family="inherit">Real</text>
+    <text x="11" y="${(PAD.top+cH/2).toFixed(0)}" text-anchor="middle" font-size="9" fill="#ccc" font-family="inherit" transform="rotate(-90,11,${(PAD.top+cH/2).toFixed(0)})">kg</text>
+  </svg>`;
+
+  const old = document.getElementById('_grafico-overlay');
+  if (old) old.remove();
+  const overlay = document.createElement('div');
+  overlay.id = '_grafico-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,10,20,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+  overlay.innerHTML = `<div style="background:#fff;border-radius:14px;padding:22px 24px 18px;max-width:560px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.35);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+      <div>
+        <div style="font-size:14px;font-weight:900;color:#1a1a2e;">${ejNombre}</div>
+        <div style="font-size:10px;color:#bbb;margin-top:2px;letter-spacing:.5px;">PROGRESIÓN DE CARGA — MESOCICLO</div>
+      </div>
+      <button onclick="document.getElementById('_grafico-overlay').remove()"
+        style="background:#f4f4f4;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;color:#888;line-height:28px;text-align:center;flex-shrink:0;">✕</button>
+    </div>
+    ${hasAny ? svg : '<div style="text-align:center;padding:40px 20px;color:#bbb;font-size:13px;">Sin datos de carga aún.<br><span style="font-size:11px;">Completá el PLAN o el REAL en la tabla primero.</span></div>'}
+  </div>`;
+  document.body.appendChild(overlay);
 }
 
 // ── Gestión de semanas ────────────────────────────────────────────────────────
@@ -10456,8 +10855,10 @@ function eliminarSemana(semIdx) {
 
 
 function limpiarPlanDia(idx, semIdx) {
-  if(!confirm('Limpiar este dia?')) return;
+  if(!confirm('¿Eliminar la sesión de este día?')) return;
   semIdx = (semIdx !== undefined) ? semIdx : planSemEditando;
+  const nomSes = planSemanasArray[semIdx]?.dias[idx]?.[0]?.nombre || 'la sesión';
+  _guardarUndoSnapshot(nomSes);
   delete planSemanasArray[semIdx].dias[idx];
   if(planSemEditando === semIdx && planDiaAbierto === idx) {
     const overlay = document.getElementById('plan-editor-page');
@@ -10465,13 +10866,48 @@ function limpiarPlanDia(idx, semIdx) {
     planDiaAbierto = null;
   }
   renderPlanMes();
+  // Toast con botón deshacer
+  const _t2 = document.createElement('div');
+  _t2.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.35);';
+  _t2.innerHTML=`<span>🗑 "${nomSes}" eliminada</span><button onclick="deshacerUltimaEliminacion();this.closest('div').remove();" style="background:#C9A84C;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:800;cursor:pointer;">DESHACER</button>`;
+  document.body.appendChild(_t2);
+  setTimeout(()=>{ if(_t2.parentNode) _t2.remove(); }, 7000);
+}
+
+function _guardarUndoSnapshot(label) {
+  _undoSnapshot = {
+    label,
+    semanasArray: JSON.parse(JSON.stringify(planSemanasArray)),
+    planSemActualId
+  };
+}
+
+function deshacerUltimaEliminacion() {
+  if(!_undoSnapshot) return;
+  planSemanasArray = _undoSnapshot.semanasArray;
+  planDiasData = planSemanasArray[planSemEditando]?.dias || planSemanasArray[0].dias;
+  if(planSemActualId) {
+    const planes = getPlanificaciones();
+    const idx = planes.findIndex(x => x.id === planSemActualId);
+    if(idx !== -1) {
+      planes[idx].semanasArray = planSemanasArray;
+      planes[idx].diasData = planSemanasArray[0]?.dias || {};
+      savePlanificaciones(planes);
+    }
+  }
+  _undoSnapshot = null;
+  renderPlanMes();
+  toast('✓ Sesión restaurada');
 }
 
 function eliminarSesionDia(diaIdx, semIdx, sesionIdx) {
   if(!confirm('¿Eliminar esta sesión?')) return;
   semIdx = (semIdx !== undefined) ? semIdx : planSemEditando;
-  const sesiones = planSemanasArray[semIdx].dias[diaIdx];
+  const sesiones = planSemanasArray[semIdx]?.dias[diaIdx];
   if(!sesiones) return;
+  const nomSes = sesiones[sesionIdx]?.nombre || 'la sesión';
+  // Guardar snapshot ANTES de eliminar
+  _guardarUndoSnapshot(nomSes);
   sesiones.splice(sesionIdx, 1);
   if(sesiones.length === 0) {
     delete planSemanasArray[semIdx].dias[diaIdx];
@@ -10481,7 +10917,6 @@ function eliminarSesionDia(diaIdx, semIdx, sesionIdx) {
       planDiaAbierto = null;
     }
   }
-  // Guardar cambios en el plan actual
   if(planSemActualId) {
     const planes = getPlanificaciones();
     const idx = planes.findIndex(x => x.id === planSemActualId);
@@ -10492,6 +10927,12 @@ function eliminarSesionDia(diaIdx, semIdx, sesionIdx) {
     }
   }
   renderPlanMes();
+  // Toast con botón deshacer
+  const t = document.createElement('div');
+  t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.35);';
+  t.innerHTML=`<span>🗑 "${nomSes}" eliminada</span><button onclick="deshacerUltimaEliminacion();this.closest('div').remove();" style="background:#C9A84C;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:800;cursor:pointer;">DESHACER</button>`;
+  document.body.appendChild(t);
+  setTimeout(()=>{ if(t.parentNode) t.remove(); }, 7000);
 }
 
 // ── Editor de día (usa los bloques/ejercicios existentes) ────────────────────
@@ -10521,6 +10962,10 @@ function abrirPlanDiaEditor(diaIdx, semIdx) {
   const scroll = document.getElementById('plan-editor-page-scroll');
   if(scroll) scroll.scrollTop = 0;
   renderPlanDiaEditor(diaIdx);
+  // Cargar nombre de sesión si ya existe
+  const _sesExist = planDiasData[diaIdx]?.[0];
+  const _nomInput = document.getElementById('plan-sesion-nombre');
+  if(_nomInput && _sesExist?.nombre) _nomInput.value = _sesExist.nombre;
   copEmbedActualizarAlumno();
   // Limpiar mensajes del chat embebido al abrir nuevo día
   const embMsg = document.getElementById('cop-embed-messages');
@@ -10548,6 +10993,12 @@ function renderPlanDiaEditor(diaIdx) {
   editor.innerHTML = `
     <div class="plan-sesion-editor" style="margin-bottom:0;">
       <div class="plan-sesion-body">
+        <div style="padding:14px 16px 4px;">
+          <input id="plan-sesion-nombre" type="text" maxlength="80"
+            placeholder="Nombre de la sesión  (ej: Piernas · Fuerza, Tren superior · Hipertrofia…)"
+            style="width:100%;padding:10px 14px;border:1.5px solid #dde1ea;border-radius:9px;font-size:14px;font-weight:700;color:#1a1a1a;background:#f4f6fb;box-sizing:border-box;outline:none;transition:border .15s;"
+            onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='#dde1ea'" />
+        </div>
         <div id="plan-dia-bloques-${diaIdx}"></div>
         <div class="plan-add-bloque-zone" onclick="abrirModalNuevoBloque(${diaIdx})">
           ＋ AGREGAR BLOQUE
@@ -10605,85 +11056,207 @@ function copEmbedAddMsg(role, text) {
   box.scrollTop = box.scrollHeight;
 }
 
-async function copEmbedInterpretar() {
+// ── Parser local de sesión (sin API) ─────────────────────────────────────────
+// Formato soportado:
+//   Bloque A: sentadilla 4x6 RIR 2, prensa 3x10 RIR 3
+//   Movilidad: cadera 5 min
+//   sentadilla 4x6 RIR 2, prensa 3x10, extensión 3x15 drop set
+function _parserarSesionTexto(texto) {
+  // 1. Normalizar separadores de bloque
+  let t = texto
+    .replace(/\.\s+(?=[A-ZÁÉÍÓÚ])/g, '\n')   // ". Bloque..." → nueva línea
+    .replace(/;\s*/g, '\n')
+    .trim();
+
+  // 2. Partir por líneas y luego expandir ":"
+  const lineasRaw = t.split(/\n+/).map(l => l.trim()).filter(Boolean);
+  const expandidas = [];
+  for (const l of lineasRaw) {
+    const ci = l.indexOf(':');
+    if (ci > 0 && ci < 35) {
+      // "Bloque A: sentadilla 4x6, prensa 3x10" → header + ejercicios separados
+      const antes = l.slice(0, ci).trim();
+      const despues = l.slice(ci + 1).trim();
+      expandidas.push(antes);
+      if (despues) despues.split(/\s*,\s*/).forEach(e => e.trim() && expandidas.push(e.trim()));
+    } else if (/^bloque\s+[a-z\d]/i.test(l)) {
+      expandidas.push(l);   // línea de bloque, sin partir por coma
+    } else {
+      l.split(/\s*,\s*/).forEach(e => e.trim() && expandidas.push(e.trim()));
+    }
+  }
+
+  // 3. Helpers
+  const BLOQUE_RE = /^(bloque\s+[a-z\d]|movilidad|activaci[oó]n|calentamiento|fuerza\s+principal|complementario|core|zona\s+media|biserie|triserie|superserie|potencia)/i;
+  const letras = 'ABCDEFGHIJKLMNOP';
+  let autoLetra = 0;
+
+  const tipoBloque = (s, idx) => {
+    const t = s.toLowerCase();
+    if (/movilid|calent|warm/.test(t) || /activaci/.test(t)) return 'Activación';
+    if (/potencia|explosiv/.test(t))     return 'Potencia';
+    if (/principal/.test(t))             return 'Fuerza Principal';
+    if (/complementario\s*2/.test(t))   return 'Complementario 2';
+    if (/complementario/.test(t))        return 'Complementario 1';
+    if (/core|zona\s*media|abdomen/.test(t)) return 'Zona Media';
+    if (idx === 0) return 'Activación';
+    if (idx === 1) return 'Fuerza Principal';
+    return idx >= 3 ? 'Complementario 2' : 'Complementario 1';
+  };
+
+  const serieTipoBloque = (s) => {
+    if (/biserie|superserie/i.test(s))  return 'Biserie';
+    if (/triserie/i.test(s))            return 'Triserie';
+    if (/circuito/i.test(s))            return 'Circuito';
+    return 'Serie Simple';
+  };
+
+  const parsearEj = (linea) => {
+    const orig = linea.trim();
+    if (!orig || orig.length < 3) return null;
+    if (BLOQUE_RE.test(orig) && !/\d/.test(orig)) return null;
+
+    let s = orig;
+    let series = '3', reps = '10', rir = '2', pausa = '', notas = '';
+
+    // RIR
+    s = s.replace(/\brir\s*(\d+(?:[.,]\d+)?)/gi, (_, v) => { rir = v.replace(',','.'); return ''; });
+
+    // Pausa numérica
+    s = s.replace(/\b(\d+(?:[.,]\d+)?)\s*(min(?:uto)?s?|seg(?:undo)?s?|'(?!')|")/gi, (m) => { pausa = m.trim(); return ''; });
+    // "pausa" sola
+    s = s.replace(/\bpausa\s*(?:larga|corta)?\b/gi, () => { if (!pausa) pausa = '2-3 min'; return ''; });
+
+    // Técnicas
+    const tecs = [];
+    [/drop\s*set/i, /cluster/i, /rest[\s-]?pause/i, /myo[\s-]?rep/i, /mechanic[\s-]?drop/i].forEach(re => {
+      s = s.replace(re, m => { tecs.push(m.trim()); return ''; });
+    });
+    if (tecs.length) notas = tecs.join(', ');
+
+    // "con X" → biserie
+    s = s.replace(/\s+con\s+/gi, ' + ');
+
+    // NxM  ó  N × M
+    s = s.replace(/\b(\d{1,2})\s*[xX×]\s*(\d{1,3}(?:-\d{1,3})?)\b/, (_, se, re) => { series=se; reps=re; return ''; });
+
+    // "4 series de 8"
+    if (series === '3') {
+      s = s.replace(/\b(\d{1,2})\s*series?\s*(?:de\s*)?(\d{1,3}(?:-\d{1,3})?)?(?=\s|$)/gi, (_, se, re) => {
+        series = se; if (re) reps = re; return '';
+      });
+    }
+
+    // "10 reps"
+    s = s.replace(/\b(\d{1,3}(?:-\d{1,3})?)\s*rep(?:etici(?:on|ón))?(?:es)?\b/gi, (_, r) => { reps=r; return ''; });
+
+    let nombre = s.replace(/[-:,;.]+\s*$/g,'').replace(/\s{2,}/g,' ').trim();
+    if (nombre.length < 2) {
+      const m = orig.match(/^([^0-9]+)/);
+      nombre = m ? m[1].replace(/[-:,]/g,'').trim() : '';
+    }
+    if (!nombre || nombre.length < 2) return null;
+
+    nombre = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+
+    if (!pausa) {
+      const rn = parseInt(reps);
+      pausa = rn <= 5 ? '3 min' : rn <= 8 ? '2 min' : rn <= 12 ? '90 seg' : '60 seg';
+    }
+
+    return { nombre, series, reps, rir, pausa, notas };
+  };
+
+  // 4. Construir bloques
+  const bloques = [];
+  let bloqueActual = null;
+
+  for (const linea of expandidas) {
+    const limpio = linea.replace(/:$/, '').trim();
+    if (BLOQUE_RE.test(limpio)) {
+      bloqueActual = {
+        nombre: limpio,
+        tipo: tipoBloque(limpio, bloques.length),
+        serieTipo: serieTipoBloque(limpio),
+        ejercicios: []
+      };
+      bloques.push(bloqueActual);
+    } else {
+      const ej = parsearEj(linea);
+      if (ej) {
+        if (!bloqueActual) {
+          bloqueActual = {
+            nombre: `Bloque ${letras[autoLetra++] || 'A'}`,
+            tipo: tipoBloque('', bloques.length),
+            serieTipo: 'Serie Simple',
+            ejercicios: []
+          };
+          bloques.push(bloqueActual);
+        }
+        bloqueActual.ejercicios.push(ej);
+      }
+    }
+  }
+
+  // 5. Limpiar y nombrar
+  const resultado = bloques
+    .filter(b => b.ejercicios.length > 0)
+    .map((b, i) => ({
+      ...b,
+      nombre: /^bloque\s+[a-z]/i.test(b.nombre)
+        ? b.nombre
+        : `Bloque ${letras[i] || i+1} — ${b.nombre}`
+    }));
+
+  return resultado.length > 0 ? { bloques: resultado } : null;
+}
+
+function copEmbedInterpretar() {
   const input   = document.getElementById('cop-embed-input');
   const preview = document.getElementById('cop-embed-preview');
   const texto   = input?.value?.trim();
   if(!texto) return;
-  if(!soccTieneApiKey()) {
-    if(preview) { preview.style.display='block'; preview.innerHTML='<div style="color:#fca5a5;font-size:10px;">⚠️ No hay API key configurada.</div>'; }
-    return;
-  }
-  // Loading
-  if(preview) {
-    preview.style.display = 'block';
-    preview.innerHTML = '<div style="text-align:center;padding:16px;color:#888;font-size:11px;"><div style="width:16px;height:16px;border:2px solid #C9A84C44;border-top-color:#C9A84C;border-radius:50%;animation:cop-spin 0.7s linear infinite;margin:0 auto 8px;"></div>Interpretando...</div>';
-  }
+  if(preview) { preview.style.display='block'; preview.innerHTML=''; }
 
   const alumno = currentAlumnoId ? getAlumnos().find(a=>a.id===currentAlumnoId) : null;
-  const ctxAlumno = alumno ? `Alumno: ${alumno.nombre} | Objetivo: ${alumno.objetivo||'—'} | Nivel: ${alumno.nivel||'—'} | Lesiones: ${alumno.lesiones||'ninguna'}\n\n` : '';
 
-  const PROMPT = `${ctxAlumno}El entrenador dictó la siguiente sesión. Convertila al formato JSON. NO inventes ejercicios ni modifiques nada — solo estructurá exactamente lo que está descrito.
+  // Detectar modo: si tiene "4x6" / "3 series" → parser. Si no → generador SOCC
+  const esDictado = /\d\s*[xX×]\s*\d|\d+\s+series?/i.test(texto);
 
-SESIÓN:
-${texto}
-
-Respondé ÚNICAMENTE con JSON válido (sin markdown, sin texto extra):
-{
-  "bloques": [
-    {
-      "nombre": "Descripción del bloque",
-      "tipo": "Activación | Potencia | Fuerza Principal | Complementario 1 | Complementario 2 | Zona Media",
-      "serieTipo": "Serie Simple | Biserie | Triserie | Superserie | Circuito",
-      "ejercicios": [
-        { "nombre": "Nombre exacto", "series": "4", "reps": "8-10", "rir": "2", "pausa": "2 min", "notas": "" }
-      ]
-    }
-  ]
-}
-
-Reglas: NO modifiques nombres. RIR no indicado → principal=1-2, complementario=2-3. Pausa no indicada → compuesto=2-3 min, complementario=90 seg.`;
-
-  await soccLlamarClaude(PROMPT,
-    (respJSON) => {
-      try {
-        const parsed = JSON.parse(respJSON.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim());
-        if(!parsed.bloques?.length) throw new Error('No se detectaron bloques.');
-
-        const sesion = {
-          bloques: parsed.bloques.map(b => ({
-            nombre: b.nombre || 'Bloque',
-            tipo: b.tipo || 'Complementario 1',
-            serieTipo: b.serieTipo || 'Serie Simple',
-            ejercicios: (b.ejercicios||[]).map(ej => ({
-              nombre: ej.nombre,
-              ctrl: { series: String(ej.series||'3'), reps: String(ej.reps||'10'), peso:'', pausa: ej.pausa||'90 seg', rir: String(ej.rir||'2') },
-              series: Array.from({length: parseInt(ej.series)||3}, (_,i) => ({
-                reps: String(ej.reps||'10'), peso:'', rir: String(ej.rir||'2'), pausa: ej.pausa||'90 seg',
-                comentarios: i===0 ? (ej.notas||'') : ''
-              })),
-              video:'', ficha:{}
-            }))
-          })),
-          meta: { ciclo:'custom', grupos:[], alumno: alumno?.nombre||'—' }
-        };
-
-        // Mostrar preview en el panel embebido
+  try {
+    let parsed;
+    if (esDictado) {
+      // Modo parser: el entrenador dicta la sesión completa
+      parsed = _parserarSesionTexto(texto);
+      if (!parsed || !parsed.bloques.length) {
+        if(preview) preview.innerHTML = `<div style="color:#fca5a5;font-size:10px;">⚠️ No pude detectar ejercicios. Usá el formato: Sentadilla 4x6 RIR 2</div>`;
+        return;
+      }
+    } else {
+      // Modo generador: armar sesión desde cero con metodología SOCC
+      const tipo = _copParseIntent(texto);
+      const sesionGenerada = _copBuildSesion(tipo, alumno);
+      if (!sesionGenerada || !sesionGenerada.bloques?.length) {
+        if(preview) preview.innerHTML = `<div style="color:#fca5a5;font-size:10px;">⚠️ No pude identificar el tipo de sesión. Probá: "piernas hipertrofia" o "espalda fuerza"</div>`;
+        return;
+      }
+      // Mostrar preview directo y salir (sesión ya tiene estructura completa)
+      window._copEmbedSesionPendiente = sesionGenerada;
+      if(preview) {
         const letras = 'ABCDEFGHIJ';
-        const bloquesHTML = sesion.bloques.map((b,i) => {
-          const ejsHTML = b.ejercicios.map(ej =>
-            `<div style="font-size:10px;color:#d1d5db;padding:2px 0;">· ${ej.nombre} — ${ej.ctrl.series}×${ej.ctrl.reps} RIR${ej.ctrl.rir}</div>`
+        const bloquesHTML = sesionGenerada.bloques.map((b,i) => {
+          const ejsHTML = (b.ejercicios||[]).map(ej =>
+            `<div style="font-size:10px;color:#d1d5db;padding:2px 0;">· ${ej.nombre} — ${ej.ctrl?.series||'3'}×${ej.ctrl?.reps||'10'} RIR${ej.ctrl?.rir||'2'}</div>`
           ).join('');
           return `<div style="background:#ffffff0d;border-radius:6px;padding:7px 9px;margin-bottom:6px;">
             <div style="font-size:9px;font-weight:800;color:#C9A84C;margin-bottom:4px;">${letras[i]||i+1}. ${b.nombre}</div>
             ${ejsHTML}
           </div>`;
         }).join('');
-
-        window._copEmbedSesionPendiente = sesion;
+        preview.style.display='block';
         preview.innerHTML = `
           <div style="border-top:1px solid #1e3a5f;padding-top:10px;">
-            <div style="font-size:9px;font-weight:800;color:#86efac;margin-bottom:8px;">✓ ${sesion.bloques.length} bloques interpretados</div>
+            <div style="font-size:9px;font-weight:800;color:#86efac;margin-bottom:8px;">✓ ${sesionGenerada.bloques.length} bloques generados (metodología SOCC)</div>
             ${bloquesHTML}
             <button onclick="copilotoCargarEnPlanificador(window._copEmbedSesionPendiente)"
               style="width:100%;background:#C9A84C;border:none;border-radius:7px;color:#0d0d1a;font-size:11px;font-weight:800;cursor:pointer;padding:9px;margin-top:8px;font-family:inherit;">
@@ -10691,17 +11264,58 @@ Reglas: NO modifiques nombres. RIR no indicado → principal=1-2, complementario
             </button>
           </div>`;
         if(input) input.value = '';
-      } catch(e) {
-        if(preview) preview.innerHTML = `<div style="color:#fca5a5;font-size:10px;">⚠️ ${e.message}</div>`;
       }
-    },
-    (err) => {
-      if(preview) preview.innerHTML = `<div style="color:#fca5a5;font-size:10px;">⚠️ ${err}</div>`;
+      return;
     }
-  );
+    // Continua con el path del parser (modo dictado):
+    const sesion = {
+      bloques: parsed.bloques.map(b => ({
+        nombre: b.nombre || 'Bloque',
+        tipo: b.tipo || 'Complementario 1',
+        serieTipo: b.serieTipo || 'Serie Simple',
+        ejercicios: (b.ejercicios||[]).map(ej => ({
+          nombre: ej.nombre,
+          ctrl: { series: String(ej.series||'3'), reps: String(ej.reps||'10'), peso:'', pausa: ej.pausa||'90 seg', rir: String(ej.rir||'2') },
+          series: Array.from({length: parseInt(ej.series)||3}, (_,i) => ({
+            reps: String(ej.reps||'10'), peso:'', rir: String(ej.rir||'2'), pausa: ej.pausa||'90 seg',
+            comentarios: i===0 ? (ej.notas||'') : ''
+          })),
+          video:'', ficha:{}
+        }))
+      })),
+      meta: { ciclo:'custom', grupos:[], alumno: alumno?.nombre||'—' }
+    };
+    const letras = 'ABCDEFGHIJ';
+    const bloquesHTML = sesion.bloques.map((b,i) => {
+      const ejsHTML = b.ejercicios.map(ej =>
+        `<div style="font-size:10px;color:#d1d5db;padding:2px 0;">· ${ej.nombre} — ${ej.ctrl.series}×${ej.ctrl.reps} RIR${ej.ctrl.rir}</div>`
+      ).join('');
+      return `<div style="background:#ffffff0d;border-radius:6px;padding:7px 9px;margin-bottom:6px;">
+        <div style="font-size:9px;font-weight:800;color:#C9A84C;margin-bottom:4px;">${letras[i]||i+1}. ${b.nombre}</div>
+        ${ejsHTML}
+      </div>`;
+    }).join('');
+    window._copEmbedSesionPendiente = sesion;
+    if(preview) {
+      preview.style.display = 'block';
+      preview.innerHTML = `
+        <div style="border-top:1px solid #1e3a5f;padding-top:10px;">
+          <div style="font-size:9px;font-weight:800;color:#86efac;margin-bottom:8px;">✓ ${sesion.bloques.length} bloque${sesion.bloques.length!==1?'s':''} detectado${sesion.bloques.length!==1?'s':''}</div>
+          ${bloquesHTML}
+          <button onclick="copilotoCargarEnPlanificador(window._copEmbedSesionPendiente)"
+            style="width:100%;background:#C9A84C;border:none;border-radius:7px;color:#0d0d1a;font-size:11px;font-weight:800;cursor:pointer;padding:9px;margin-top:8px;font-family:inherit;">
+            ⚡ Cargar en el planificador
+          </button>
+        </div>`;
+    }
+    if(input) input.value = '';
+  } catch(e) {
+    if(preview) preview.innerHTML = `<div style="color:#fca5a5;font-size:10px;">⚠️ Error: ${e.message}</div>`;
+  }
 }
 
 function copEmbedPreguntar() {
+  if(!soccTieneApiKey()) { soccAbrirConfigApi(); return; }
   const input = document.getElementById('cop-embed-chat-input');
   const texto = input?.value?.trim();
   if(!texto) return;
@@ -10726,7 +11340,7 @@ ${bloques||'(sin bloques aún)'}`;
   thinking.textContent = '...';
   thinking.id = 'cop-embed-thinking';
   document.getElementById('cop-embed-messages')?.appendChild(thinking);
-  soccLlamarClaude(
+  soccLlamarGemini(
     msgUsuario,
     (resp) => {
       const t = document.getElementById('cop-embed-thinking');
@@ -10821,7 +11435,8 @@ function guardarEstadoDiaActual() {
   // planDiasData is a reference to planSemanasArray[planSemEditando].dias — update in place
   if(!planSemanasArray[planSemEditando]) return;
   if(!planSemanasArray[planSemEditando].dias[diaIdx]) planSemanasArray[planSemEditando].dias[diaIdx] = [{}];
-  planSemanasArray[planSemEditando].dias[diaIdx][0] = { bloques };
+  const _nombreSesion = document.getElementById('plan-sesion-nombre')?.value?.trim() || '';
+  planSemanasArray[planSemEditando].dias[diaIdx][0] = { bloques, nombre: _nombreSesion };
   planDiasData = planSemanasArray[planSemEditando].dias;
 }
 
@@ -10990,8 +11605,16 @@ function guardarPlanSemanal() {
   const titulo   = document.getElementById('plan-titulo')?.value.trim() || 'Plan de fuerza';
   if(!alumnoId) { toast('Seleccioná un alumno','error'); return; }
 
+  // Si el alumno cambió respecto al que tenía el plan al abrirlo,
+  // creamos un plan NUEVO para el nuevo alumno (nunca movemos el original).
+  const alumnoDistinto = planSemActualId && planSemOriginalAlumnoId && alumnoId !== planSemOriginalAlumnoId;
+  const nuevoId = alumnoDistinto ? genId() : (planSemActualId || genId());
+
+  // Deep-clone semanasArray para garantizar independencia total de datos
+  const semanasClone = JSON.parse(JSON.stringify(planSemanasArray));
+
   const plan = {
-    id:         planSemActualId || genId(),
+    id:         nuevoId,
     alumnoId,
     tipoPlan:   'fuerza',
     tipoPlanEstructura: 'semanal',
@@ -11000,22 +11623,30 @@ function guardarPlanSemanal() {
     fecha:      document.getElementById('plan-fecha')?.value || '',
     objetivo:   document.getElementById('plan-objetivo')?.value || '',
     nivel:      document.getElementById('plan-nivel')?.value || '',
-    diasData:   planSemanasArray[0]?.dias || planDiasData,
-    semanasArray: planSemanasArray,
+    diasData:   semanasClone[0]?.dias || {},
+    semanasArray: semanasClone,
     createdAt:  new Date().toISOString()
   };
 
   let planes = getPlanificaciones();
-  if(planSemActualId) {
+
+  if (alumnoDistinto) {
+    // Alumno cambió → insertar como plan nuevo; el original queda intacto
+    planes.push(plan);
+    planSemActualId         = plan.id;
+    planSemOriginalAlumnoId = alumnoId;
+  } else if (planSemActualId) {
     const idx = planes.findIndex(x=>x.id===planSemActualId);
     if(idx!==-1) planes[idx]=plan; else planes.push(plan);
   } else {
     planes.push(plan);
-    planSemActualId = plan.id;
+    planSemActualId         = plan.id;
+    planSemOriginalAlumnoId = alumnoId;
   }
+
   try {
     savePlanificaciones(planes);
-    toast('Plan de fuerza guardado ✓');
+    toast(alumnoDistinto ? 'Plan guardado como nuevo para el alumno seleccionado ✓' : 'Plan de fuerza guardado ✓');
     if(currentAlumnoId) {
       renderPerfilPlanificaciones(currentAlumnoId,'fuerza');
       renderCalendario && renderCalendario();
@@ -11023,18 +11654,73 @@ function guardarPlanSemanal() {
   } catch(e) { toast('Error al guardar','error'); }
 }
 
+// ── Migración: alinea todas las semanas al lunes sin perder ninguna sesión ───
+// Días que desbordan al desplazar se mueven a la semana siguiente (o se crea una nueva).
+function _migrarTodasLasSemanas(arr) {
+  const result = [];
+  let overflowParaSiguiente = {}; // sesiones que pasan a la semana siguiente
+
+  for (let i = 0; i < arr.length; i++) {
+    const sem = JSON.parse(JSON.stringify(arr[i]));
+    const overflowDeAnterior = overflowParaSiguiente;
+    overflowParaSiguiente = {};
+
+    // 1. Calcular offset y snapear a lunes
+    let offset = 0;
+    if (sem.fechaInicio) {
+      const lunes = _getLunesDe(sem.fechaInicio);
+      if (lunes !== sem.fechaInicio) {
+        offset = (new Date(sem.fechaInicio + 'T12:00:00').getDay() + 6) % 7;
+        const newDias = {};
+        Object.keys(sem.dias).forEach(k => {
+          const data = sem.dias[k];
+          if (!data || !data.length) return; // ignorar días vacíos
+          const newIdx = parseInt(k) + offset;
+          if (newIdx <= 6) newDias[String(newIdx)] = data;
+          else overflowParaSiguiente[String(newIdx - 7)] = data; // pasa a la siguiente semana
+        });
+        sem.fechaInicio = lunes;
+        sem.dias = newDias;
+      }
+    }
+
+    // 2. Aplicar overflow de la semana anterior (sin pisar sesiones existentes)
+    Object.keys(overflowDeAnterior).forEach(k => {
+      const data = sem.dias[k];
+      if (!data || !data.length) sem.dias[k] = overflowDeAnterior[k];
+    });
+
+    result.push(sem);
+  }
+
+  // Si quedó overflow después de la última semana → crear semana nueva
+  if (Object.keys(overflowParaSiguiente).length > 0) {
+    const ult = result[result.length - 1];
+    const nextLun = new Date((ult.fechaInicio || '') + 'T12:00:00');
+    nextLun.setDate(nextLun.getDate() + 7);
+    result.push({
+      semana: result.length + 1,
+      fechaInicio: nextLun.toISOString().slice(0, 10),
+      dias: overflowParaSiguiente
+    });
+  }
+
+  return result;
+}
+
 // ── Abrir plan semanal existente ─────────────────────────────────────────────
 function abrirPlanFuerzaExistente(planId) {
   const p = getPlanificaciones().find(x=>x.id===planId);
   if(!p) return;
-  planSemActualId = planId;
+  planSemActualId         = planId;
+  planSemOriginalAlumnoId = p.alumnoId || null;
   planSemEditando = 0;
   planDiaAbierto  = null;
   bloqueCounter=0; ejercicioCounter=0;
   if(p.semanasArray && p.semanasArray.length) {
-    planSemanasArray = p.semanasArray;
+    planSemanasArray = _migrarTodasLasSemanas(JSON.parse(JSON.stringify(p.semanasArray)));
   } else {
-    planSemanasArray = [{ semana:1, fechaInicio: p.fecha||'', dias: p.diasData||{} }];
+    planSemanasArray = _migrarTodasLasSemanas([{ semana:1, fechaInicio: p.fecha||'', dias: JSON.parse(JSON.stringify(p.diasData||{})) }]);
   }
   planDiasData = planSemanasArray[0].dias;
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
@@ -11505,16 +12191,16 @@ function limpiarStorageEmergencia() {
 // ================================================
 function exportarBackupCompleto() {
   const backup = {
-    _version: 1,
+    _version: 2,
     _fecha: new Date().toISOString(),
     _app: 'Laboratorio de Entrenamiento',
-    alumnos:       getAlumnos(),
-    planificaciones: getPlanificaciones(),
-    objetivos:     getObjetivos(),
+    alumnos:          getAlumnos(),
+    planificaciones:  getPlanificaciones(),
+    objetivos:        getObjetivos(),
     ejerciciosCustom: getCustomEjercicios(),
-    notas:         getNotas(),
-    suscriptores:  getSuscriptores(),
-      plantillas:    getPlantillas(),
+    notas:            getNotas(),
+    plantillas:       getPlantillas(),
+    antropometria:    (() => { try { return JSON.parse(localStorage.getItem('LAB_ANTROPOMETRIA') || '[]'); } catch(e){ return []; } })(),
   };
   const json = JSON.stringify(backup, null, 2);
   const blob = new Blob([json], {type: 'application/json'});
@@ -11555,8 +12241,8 @@ function importarBackupCompleto(input) {
       if (data.objetivos)        localStorage.setItem(DB_OBJETIVOS,         JSON.stringify(data.objetivos));
       if (data.ejerciciosCustom) localStorage.setItem(DB_EJERCICIOS_CUSTOM, JSON.stringify(data.ejerciciosCustom));
       if (data.notas)            localStorage.setItem(DB_NOTAS,             JSON.stringify(data.notas));
-      if (data.suscriptores)     localStorage.setItem(DB_SUSCRIPTORES,      JSON.stringify(data.suscriptores));
-          if (data.plantillas)       localStorage.setItem(DB_PLANTILLAS,        JSON.stringify(data.plantillas));
+      if (data.plantillas)       localStorage.setItem(DB_PLANTILLAS,        JSON.stringify(data.plantillas));
+      if (data.antropometria)    localStorage.setItem('LAB_ANTROPOMETRIA',  JSON.stringify(data.antropometria));
 
       toast(`✅ Backup restaurado: ${totalAlumnos} alumnos, ${totalPlanes} planes`);
       setTimeout(() => location.reload(), 1200);
@@ -11889,7 +12575,7 @@ function openPerfilAlumno(id) {
         ${filas}
         <div style="display:flex;gap:12px;margin-top:8px;align-items:center;">
           <button id="btn-editar-alumno" style="background:none;border:none;color:#C9A84C;font-size:12px;cursor:pointer;padding:0;font-weight:600;">✏️ Editar datos</button>
-          <button id="btn-portal-alumno" style="display:none;background:none;border:none;color:#E8C96A;font-size:12px;cursor:pointer;padding:0;font-weight:600;">🔗 Copiar link portal</button>
+          <button id="btn-portal-alumno" style="background:linear-gradient(135deg,#1a3a1a,#0f2a0f);border:1px solid #22c55e;color:#22c55e;font-size:11px;cursor:pointer;padding:5px 12px;font-weight:700;border-radius:6px;letter-spacing:.3px;">🔗 Portal del alumno</button>
         </div>
       </div>
       <button onclick="showView('inicio')" style="margin-left:auto;background:none;border:1px solid #ddd;color:#777;padding:7px 16px;border-radius:6px;cursor:pointer;font-size:12px;flex-shrink:0;">← Volver</button>
@@ -11907,25 +12593,45 @@ function openPerfilAlumno(id) {
   // Portal button
   const _btnPortal = document.getElementById('btn-portal-alumno');
   if (_btnPortal) {
-    if (a.pin) {
-      _btnPortal.style.display = 'inline-flex';
-      _btnPortal.onclick = () => {
-        const url = window.location.origin + window.location.pathname.replace('index.html','') + 'alumno.html?pin=' + encodeURIComponent(a.pin);
-        navigator.clipboard.writeText(url).then(() => toast('Link del portal copiado ✓')).catch(() => { window.open(url,'_blank'); });
-      };
-    } else {
-      _btnPortal.style.display = 'none';
-    }
+    _btnPortal.style.display = 'inline-flex';
+    _btnPortal.onclick = () => {
+      const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+      const url  = base + 'alumno.html?id=' + encodeURIComponent(a.id);
+      navigator.clipboard.writeText(url)
+        .then(() => toast('🔗 Link del portal copiado — mandáselo al alumno por WhatsApp'))
+        .catch(() => { prompt('Copiá este link y mandáselo al alumno:', url); });
+    };
   }
-  // Pre-cargar ambas listas y dashboard
+  // Pre-cargar listas y sidebar
   renderPerfilPlanificaciones(id, 'fuerza');
   renderPerfilPlanificaciones(id, 'running');
   renderHistorialPlanes(id);
-  switchPerfilTab('datos');
-  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
-  document.getElementById('view-perfil').classList.add('active');
   renderSidebarAlumno(id);
   renderEscritorioAlumno(id);
+  // Mostrar SIEMPRE la planificación (cuerpo del plan) al abrir el perfil
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.getElementById('view-perfil').classList.add('active');
+  document.querySelectorAll('.perfil-section').forEach(s => s.classList.remove('active','fade-in','fade-out'));
+  document.getElementById('perfil-sec-placeholder')?.classList.remove('active');
+  document.getElementById('perfil-sec-planificacion')?.classList.add('active');
+  // Resetear nav: activar trigger de Planificación
+  document.querySelectorAll('.perfil-nav-btn').forEach(b => b.classList.remove('active'));
+  if (typeof _perfilMMs !== 'undefined') {
+    Object.values(_perfilMMs).forEach(cfg => {
+      document.getElementById(cfg.trigger)?.classList.remove('active','open');
+      document.getElementById(cfg.dd)?.classList.remove('open');
+    });
+  }
+  document.getElementById('perfil-plan-trigger')?.classList.add('active');
+  // Asegurar subtab Fuerza activo
+  const secPlan = document.getElementById('perfil-sec-planificacion');
+  if (secPlan) {
+    secPlan.querySelectorAll('.perfil-subtab').forEach(b => b.classList.remove('active'));
+    secPlan.querySelectorAll('.perfil-subcontent').forEach(c => c.classList.remove('active'));
+    const firstTab = secPlan.querySelector('.perfil-subtab');
+    if (firstTab) firstTab.classList.add('active');
+    document.getElementById('plan-sub-fuerza')?.classList.add('active');
+  }
   showView('perfil');
 
 }
@@ -12139,23 +12845,11 @@ function _cerrarTodosPerfilMM() {
   });
 }
 
-// ── Limpieza del área principal ───────────────────────────────────────────────
+// ── Limpieza del área principal (sin animación para evitar parpadeo) ──────────
 function _limpiarAreaPrincipal(cb) {
-  const activa = document.querySelector('.perfil-section.active');
+  document.querySelectorAll('.perfil-section').forEach(s => s.classList.remove('active', 'fade-out', 'fade-in'));
   document.getElementById('perfil-sec-placeholder')?.classList.remove('active');
-  if (activa) {
-    activa.classList.add('fade-out');
-    setTimeout(() => {
-      document.querySelectorAll('.perfil-section').forEach(s => {
-        s.classList.remove('active', 'fade-out', 'fade-in');
-      });
-      document.getElementById('perfil-sec-placeholder')?.classList.add('active');
-      if (cb) cb();
-    }, 180);
-  } else {
-    document.getElementById('perfil-sec-placeholder')?.classList.add('active');
-    if (cb) cb();
-  }
+  if (cb) cb();
 }
 
 // ── Helper: resetea nav y activa un trigger ───────────────────────────────────
@@ -12314,7 +13008,18 @@ function switchPerfilSection(sec) {
     _activarSection(sec);
     if (!currentAlumnoId) return;
     if (sec === 'escritorio')    renderEscritorioAlumno(currentAlumnoId);
-    if (sec === 'planificacion') renderPerfilPlanificaciones(currentAlumnoId,'fuerza');
+    if (sec === 'planificacion') {
+      renderPerfilPlanificaciones(currentAlumnoId,'fuerza');
+      // Asegurar subtab Fuerza activo
+      const secEl = document.getElementById('perfil-sec-planificacion');
+      if (secEl) {
+        secEl.querySelectorAll('.perfil-subtab').forEach(b => b.classList.remove('active'));
+        secEl.querySelectorAll('.perfil-subcontent').forEach(c => c.classList.remove('active'));
+        const firstTab = secEl.querySelector('.perfil-subtab');
+        if (firstTab) firstTab.classList.add('active');
+        document.getElementById('plan-sub-fuerza')?.classList.add('active');
+      }
+    }
     if (sec === 'seguimiento')   renderMediciones(currentAlumnoId);
     if (sec === 'objetivos')     { renderHistorialPlanes(currentAlumnoId); renderObjetivos(currentAlumnoId); }
     if (sec === 'coach')         renderNotas(currentAlumnoId,'notas');
@@ -12416,12 +13121,28 @@ function renderSidebarAlumno(id) {
     <button onclick="openModalEditarAlumno('${id}')"
       style="width:100%;background:none;border:1px solid #C9A84C44;border-radius:6px;
              color:#C9A84C;font-size:11px;font-weight:700;padding:8px 12px;cursor:pointer;
-             letter-spacing:0.5px;font-family:inherit;"
+             letter-spacing:0.5px;font-family:inherit;margin-bottom:8px;"
       onmouseover="this.style.background='#C9A84C22'" onmouseout="this.style.background='none'">
       ✏️ Editar perfil
     </button>
+    <button onclick="_copiarLinkPortal('${id}')"
+      style="width:100%;background:linear-gradient(135deg,#0d2a14,#0a1f0e);border:1px solid #22c55e88;border-radius:6px;
+             color:#22c55e;font-size:11px;font-weight:700;padding:8px 12px;cursor:pointer;
+             letter-spacing:0.5px;font-family:inherit;"
+      onmouseover="this.style.background='#16a34a22'" onmouseout="this.style.background='linear-gradient(135deg,#0d2a14,#0a1f0e)'">
+      🔗 Portal del alumno
+    </button>
   `;
 }
+function _copiarLinkPortal(id) {
+  // Usar siempre la URL de GitHub Pages, independientemente de dónde esté corriendo
+  const PORTAL_BASE = 'https://cct-trainer.github.io/entrenamiento-laboratorio/';
+  const url = PORTAL_BASE + 'alumno.html?id=' + encodeURIComponent(id);
+  navigator.clipboard.writeText(url)
+    .then(() => toast('🔗 Link copiado — mandáselo al alumno por WhatsApp'))
+    .catch(() => { prompt('Copiá este link y mandáselo al alumno:', url); });
+}
+
 // ── Escritorio ─────────────────────────────────────────────────────────────────
 function renderEscritorioAlumno(id) {
   const el = document.getElementById('escritorio-content');
@@ -15897,6 +16618,7 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
       </div>
       <div class="plan-item-actions">
         ${actionsBtns}
+        <button class="plan-item-action-btn" onclick="renombrarPlanificacion('${p.id}')">RENOMBRAR</button>
         <button class="plan-item-action-btn danger" onclick="eliminarPlanificacion('${p.id}')">BORRAR</button>
       </div>
       <div class="plan-item-copy-row">
@@ -15922,22 +16644,68 @@ function crearPlanFuerza() {
 }
 
 function crearMesFuerza() {
-  // Calcular el nombre del mes actual en español
+  abrirModalCrearMes();
+}
+
+function abrirModalCrearMes() {
+  if (!currentAlumnoId) { toast('Abrí el perfil de un alumno primero', 'error'); return; }
   const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const ahora = new Date();
-  const tituloMes = meses[ahora.getMonth()].toUpperCase() + ' ' + ahora.getFullYear();
+  // Pre-llenar nombre con mes actual
+  const nombreInput = document.getElementById('crear-mes-nombre');
+  if (nombreInput) nombreInput.value = meses[ahora.getMonth()].toUpperCase() + ' ' + ahora.getFullYear();
+  // Pre-llenar fecha con el primer día del mes actual
+  const fechaInput = document.getElementById('crear-mes-fecha');
+  if (fechaInput) {
+    const primerDia = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    fechaInput.value = primerDia.toISOString().split('T')[0];
+  }
+  // Limpiar ciclo
+  const cicloSel = document.getElementById('crear-mes-ciclo');
+  if (cicloSel) cicloSel.value = '';
+  document.getElementById('modal-crear-mes')?.classList.add('open');
+  setTimeout(() => document.getElementById('crear-mes-nombre')?.select(), 100);
+}
 
-  // Abrir el planificador igual que nueva sesión
-  abrirPlanFuerzaSemanal();
+function confirmarCrearMes() {
+  const nombre = document.getElementById('crear-mes-nombre')?.value.trim();
+  const fecha  = document.getElementById('crear-mes-fecha')?.value;
+  const ciclo  = document.getElementById('crear-mes-ciclo')?.value;
 
-  // Pre-cargar el título con el nombre del mes
-  setTimeout(() => {
-    const t = document.getElementById('plan-titulo');
-    if (t) { t.value = tituloMes; t.dispatchEvent(new Event('input')); }
-    const d = document.getElementById('pln-titulo-display');
-    if (d) d.textContent = '📅 ' + tituloMes;
-  }, 80);
+  if (!nombre) { toast('Poné un nombre al mes', 'error'); return; }
+  if (!fecha)  { toast('Elegí la fecha de inicio del mes', 'error'); return; }
+  if (!currentAlumnoId) { toast('Seleccioná un alumno primero', 'error'); return; }
+
+  // Crear el plan en localStorage AHORA (antes de abrir el editor)
+  // así aunque el usuario salga sin guardar, el mes ya existe
+  const nuevoId = genId();
+  const plan = {
+    id:         nuevoId,
+    alumnoId:   currentAlumnoId,
+    tipoPlan:   'fuerza',
+    tipoPlanEstructura: 'semanal',
+    titulo:     nombre,
+    fecha:      fecha,
+    objetivo:   ciclo,
+    nivel:      ciclo,
+    diasData:   {},
+    semanasArray: [{ semana: 1, fechaInicio: fecha, dias: {} }],
+    createdAt:  new Date().toISOString()
+  };
+
+  const planes = getPlanificaciones();
+  planes.push(plan);
+  savePlanificaciones(planes);
+
+  closeModal('modal-crear-mes');
+  toast('✓ Mes "' + nombre + '" creado. Abriendo planificador...');
+
+  // Actualizar la lista inmediatamente
+  renderPerfilPlanificaciones(currentAlumnoId, 'fuerza');
+
+  // Abrir el planificador para ese mes
+  setTimeout(() => abrirPlanFuerzaExistente(nuevoId), 250);
 }
 
 function crearPlanRunning() {
@@ -15971,7 +16739,27 @@ function eliminarPlanificacion(id) {
   if (!confirm('¿Eliminar esta planificación?')) return;
   savePlanificaciones(getPlanificaciones().filter(x => x.id !== id));
   toast('Planificación eliminada');
-  if (currentAlumnoId) renderPerfilPlanificaciones(currentAlumnoId);
+  if (currentAlumnoId) {
+    renderPerfilPlanificaciones(currentAlumnoId, 'fuerza');
+    renderPerfilPlanificaciones(currentAlumnoId, 'running');
+  }
+}
+
+function renombrarPlanificacion(id) {
+  const planes = getPlanificaciones();
+  const p = planes.find(x => x.id === id);
+  if (!p) return;
+  const actual = p.titulo || '';
+  const nuevo = prompt('Nuevo nombre para este mes:', actual);
+  if (nuevo === null) return; // canceló
+  const nuevoTrimado = nuevo.trim();
+  if (!nuevoTrimado) { toast('El nombre no puede estar vacío', 'error'); return; }
+  p.titulo = nuevoTrimado;
+  savePlanificaciones(planes);
+  toast('Mes renombrado ✓');
+  if (currentAlumnoId) {
+    renderPerfilPlanificaciones(currentAlumnoId, p.tipoPlan || 'fuerza');
+  }
 }
 
 // ================================================
@@ -19086,14 +19874,29 @@ async function forzarSyncFirebase() {
   try {
     _syncStatusIcon('⏳', 'Guardando en la nube...');
     const ts = new Date().toISOString();
-    var data = {
-      alumnos:         JSON.parse(localStorage.getItem('LAB_ALUMNOS')         || '[]'),
-      planificaciones: JSON.parse(localStorage.getItem('LAB_PLANIFICACIONES') || '[]'),
-      objetivos:       JSON.parse(localStorage.getItem('LAB_OBJETIVOS')       || '[]'),
-      antropometria:   JSON.parse(localStorage.getItem('LAB_ANTROPOMETRIA')   || '[]'),
-      updatedAt: ts
-    };
-    await window._db.collection('backups').doc('main').set(data);
+    const alumnos        = JSON.parse(localStorage.getItem('LAB_ALUMNOS')         || '[]');
+    const planificaciones= JSON.parse(localStorage.getItem('LAB_PLANIFICACIONES') || '[]');
+    const objetivos      = JSON.parse(localStorage.getItem('LAB_OBJETIVOS')       || '[]');
+    const antropometria  = JSON.parse(localStorage.getItem('LAB_ANTROPOMETRIA')   || '[]');
+
+    // ── Backup general (coach) ────────────────────────────────────────────────
+    await window._db.collection('backups').doc('main').set({
+      alumnos, planificaciones, objetivos, antropometria, updatedAt: ts
+    });
+
+    // ── Documentos por alumno (portal del estudiante) ─────────────────────────
+    const batch = window._db.batch();
+    for (const al of alumnos) {
+      const ref = window._db.collection('alumnos').doc(al.id);
+      batch.set(ref, {
+        perfil:          al,
+        planificaciones: planificaciones.filter(p => p.alumnoId === al.id),
+        antropometria:   antropometria.filter(r => r.alumnoId === al.id),
+        updatedAt:       ts,
+      });
+    }
+    await batch.commit();
+
     localStorage.setItem('LAB_UPDATED_AT', ts);
     _syncStatusIcon('✓', 'Guardado en la nube');
   } catch(err) {
@@ -19776,9 +20579,9 @@ FORMATO PARA SEMANAS DE RUNNING:
 3. Nota de progresión para semanas siguientes`;
 
 // ── Gestión de API key ────────────────────────────────────────────────────────
-function soccGetApiKey()   { return localStorage.getItem('SOCC_CLAUDE_API_KEY') || ''; }
-function soccSetApiKey(k)  { if (k) localStorage.setItem('SOCC_CLAUDE_API_KEY', k.trim()); else localStorage.removeItem('SOCC_CLAUDE_API_KEY'); }
-function soccTieneApiKey() { return !!localStorage.getItem('SOCC_CLAUDE_API_KEY'); }
+function soccGetApiKey()   { return localStorage.getItem('SOCC_GEMINI_API_KEY') || ''; }
+function soccSetApiKey(k)  { if (k) localStorage.setItem('SOCC_GEMINI_API_KEY', k.trim()); else localStorage.removeItem('SOCC_GEMINI_API_KEY'); }
+function soccTieneApiKey() { return !!localStorage.getItem('SOCC_GEMINI_API_KEY'); }
 
 // ── Llamada a Claude API (sin streaming por compatibilidad browser) ────────────
 async function soccLlamarClaude(userMessage, onDone, onError) {
@@ -19810,6 +20613,38 @@ async function soccLlamarClaude(userMessage, onDone, onError) {
     }
     const data = await r.json();
     onDone(data.content?.[0]?.text || '');
+  } catch(e) {
+    onError('Error de red: ' + e.message);
+  }
+}
+
+// ── Llamada a Gemini API (gratuita) ──────────────────────────────────────────
+async function soccLlamarGemini(userMessage, onDone, onError) {
+  const apiKey = soccGetApiKey();
+  if (!apiKey) { onError('No hay API key configurada.'); return; }
+  try {
+    const r = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: SOCC_SYSTEM_PROMPT }] },
+          contents: [{ parts: [{ text: userMessage }] }],
+          generationConfig: { temperature: 0.3, maxOutputTokens: 2048 }
+        })
+      }
+    );
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      const msg = err?.error?.message || `Error ${r.status}`;
+      if (r.status === 400) onError('API key inválida. Verificá en aistudio.google.com.');
+      else if (r.status === 429) onError('Límite alcanzado. Esperá unos segundos.');
+      else onError('Error de API: ' + msg);
+      return;
+    }
+    const data = await r.json();
+    onDone(data.candidates?.[0]?.content?.parts?.[0]?.text || '');
   } catch(e) {
     onError('Error de red: ' + e.message);
   }
@@ -19848,19 +20683,19 @@ function soccAbrirConfigApi() {
   modal.id = 'socc-api-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:3000;display:flex;align-items:center;justify-content:center;font-family:"Segoe UI",Arial,sans-serif;';
   modal.innerHTML = `
-    <div style="background:#0d0d1a;border:1px solid #C9A84C44;border-radius:12px;padding:24px;width:360px;max-width:90vw;">
-      <div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:14px;">⚙️ Claude API Key — SOCC</div>
+    <div style="background:#0d0d1a;border:1px solid #22c55e44;border-radius:12px;padding:24px;width:380px;max-width:90vw;">
+      <div style="font-size:9px;font-weight:800;color:#86efac;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:14px;">⚙️ Gemini API Key — Secretario SOCC</div>
       <div style="font-size:11px;color:#9ca3af;line-height:1.6;margin-bottom:14px;">
-        Con tu API key el Copiloto usa el <strong style="color:#E8C96A;">SOCC completo como system prompt</strong> y Claude razona con toda tu metodología.<br><br>
-        Obtené tu key en <a href="https://console.anthropic.com" target="_blank" style="color:#C9A84C;">console.anthropic.com</a> → API Keys.<br>
-        Costo estimado: <strong style="color:#86efac;">~$3-5 USD/mes</strong> con uso normal.
+        El <strong style="color:#86efac;">Secretario</strong> usa Google Gemini 1.5 Flash para interpretar tu sesión y cargarla al planificador.<br><br>
+        ✅ <strong style="color:#86efac;">Completamente gratis</strong> — 1.500 usos por día, sin tarjeta de crédito.<br><br>
+        Obtené tu key gratis en <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#86efac;">aistudio.google.com</a> → Get API Key.
       </div>
-      <input id="socc-api-input" type="password" placeholder="sk-ant-api03-..."
+      <input id="socc-api-input" type="password" placeholder="AIzaSy..."
         style="width:100%;background:#ffffff10;border:1px solid #ffffff25;border-radius:7px;color:#fff;font-size:12px;font-family:monospace;padding:10px 12px;box-sizing:border-box;margin-bottom:8px;outline:none;"
-        oninput="this.style.borderColor=this.value.startsWith('sk-')?'#22c55e':'#ef4444'">
+        oninput="this.style.borderColor=this.value.startsWith('AIza')?'#22c55e':'#ef4444'">
       <div style="font-size:9px;color:#6b7280;margin-bottom:14px;">🔒 La key se guarda solo en este navegador (localStorage). Nunca se comparte.</div>
       <div style="display:flex;gap:8px;">
-        <button onclick="soccGuardarApiKey()" style="flex:1;background:#C9A84C;border:none;border-radius:7px;color:#0d0d1a;font-size:12px;font-weight:800;cursor:pointer;padding:10px;font-family:inherit;">Guardar</button>
+        <button onclick="soccGuardarApiKey()" style="flex:1;background:#22c55e;border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:800;cursor:pointer;padding:10px;font-family:inherit;">Guardar</button>
         ${actual ? '<button onclick="soccEliminarApiKey()" style="background:none;border:1px solid #ef444455;border-radius:7px;color:#fca5a5;font-size:11px;cursor:pointer;padding:10px 14px;font-family:inherit;">Eliminar</button>' : ''}
         <button onclick="document.getElementById(\'socc-api-modal\').remove()" style="background:none;border:1px solid #ffffff20;border-radius:7px;color:#888;font-size:11px;cursor:pointer;padding:10px 14px;font-family:inherit;">Cancelar</button>
       </div>
@@ -19872,14 +20707,14 @@ function soccAbrirConfigApi() {
 
 function soccGuardarApiKey() {
   const val = (document.getElementById('socc-api-input')?.value || '').trim();
-  if (!val.startsWith('sk-')) { alert('La key debe empezar con "sk-"'); return; }
+  if (!val.startsWith('AIza')) { alert('La key de Gemini debe empezar con "AIza". Copiala desde aistudio.google.com'); return; }
   soccSetApiKey(val);
   document.getElementById('socc-api-modal')?.remove();
   _soccActualizarBadge();
-  if (typeof toast === 'function') toast('✓ API key guardada. El SOCC está activo.');
+  if (typeof toast === 'function') toast('✓ Gemini API key guardada. El Secretario está activo.');
 }
 function soccEliminarApiKey() {
-  if (!confirm('¿Eliminar la API key? El Copiloto usará el generador de reglas.')) return;
+  if (!confirm('¿Eliminar la Gemini API key? El Secretario quedará desactivado.')) return;
   soccSetApiKey('');
   document.getElementById('socc-api-modal')?.remove();
   _soccActualizarBadge();
@@ -19889,7 +20724,7 @@ function _soccActualizarBadge() {
   const b = document.getElementById('socc-api-badge');
   if (!b) return;
   const tiene = soccTieneApiKey();
-  b.textContent = tiene ? '● SOCC activo' : '○ Sin API key';
+  b.textContent = tiene ? '● Secretario activo' : '○ Sin Gemini key';
   b.style.color  = tiene ? '#86efac' : '#6b7280';
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -20710,127 +21545,69 @@ function _copGruposComplementarios(grupos, principales) {
 }
 
 // ── UI: Interpretar sesión dictada por Christian y cargarla al planificador ───
-async function copilotoGenerarSesion() { return copilotoInterpretarSesion(); }
-
-async function copilotoInterpretarSesion() {
+function copilotoInterpretarSesion() {
   const input = document.getElementById('cop-gen-input');
   const textoSesion = (input?.value || '').trim();
   if (!textoSesion) {
-    _copChatAgregar('ai', '📝 Escribí o dictá tu sesión. Ej: "Bloque A activación: puente de glúteos 3x15. Bloque B: peso muerto 4x6 RIR 1. Bloque C biserie: remo 3x10 con curl 3x12"');
-    return;
-  }
-
-  if (!soccTieneApiKey()) {
-    _copChatAgregar('ai', '⚙️ Para interpretar sesiones necesitás la API key del SOCC activa. Configurala con el botón ⚙️ abajo.');
+    _copChatAgregar('ai', '📝 Podés dictar una sesión ("sentadilla 4x6 RIR 2, prensa 3x10") o pedirme que la arme ("piernas hipertrofia", "espalda y bíceps fuerza").');
     return;
   }
 
   const alumnoId = document.getElementById('plan-alumno-select')?.value || currentAlumnoId;
   const alumno   = alumnoId ? getAlumnos().find(a => a.id === alumnoId) : null;
-
   const previewZone = document.getElementById('cop-preview-zone');
-  if (previewZone) {
-    previewZone.style.display = 'block';
-    previewZone.innerHTML = `<div style="text-align:center;padding:24px;color:#888;font-size:11px;">
-      <div class="cop-spinner" style="margin:0 auto 10px;width:18px;height:18px;border:2px solid #C9A84C44;border-top-color:#C9A84C;border-radius:50%;animation:cop-spin 0.7s linear infinite;"></div>
-      Interpretando sesión...</div>`;
+
+  _copChatAgregar('user', textoSesion.substring(0, 80) + (textoSesion.length > 80 ? '...' : ''));
+
+  // Detectar modo
+  const esDictado = /\d\s*[xX×]\s*\d|\d+\s+series?/i.test(textoSesion);
+
+  try {
+    let sesionObj;
+
+    if (esDictado) {
+      // Parser: convierte lo que el entrenador dictó
+      const parsed = _parserarSesionTexto(textoSesion);
+      if (!parsed || !parsed.bloques.length) throw new Error('No detecté ejercicios. Formato: Sentadilla 4x6 RIR 2');
+      sesionObj = {
+        bloques: parsed.bloques.map(b => ({
+          nombre: b.nombre || 'Bloque',
+          tipo: b.tipo || 'Complementario 1',
+          serieTipo: b.serieTipo || 'Serie Simple',
+          ejercicios: (b.ejercicios || []).map(ej => ({
+            nombre: ej.nombre,
+            ctrl: { series: String(ej.series||'3'), reps: String(ej.reps||'10'), peso: '', pausa: ej.pausa||'90 seg', rir: String(ej.rir||'2') },
+            series: Array.from({length: parseInt(ej.series)||3}, (_,i) => ({
+              reps: String(ej.reps||'10'), peso: '', rir: String(ej.rir||'2'), pausa: ej.pausa||'90 seg',
+              comentarios: i===0 ? (ej.notas||'') : ''
+            })),
+            video: '', ficha: {}
+          }))
+        })),
+        meta: { ciclo: 'custom', grupos: [], alumno: alumno?.nombre||'—', intent: textoSesion }
+      };
+      const nb = sesionObj.bloques.length;
+      const ne = sesionObj.bloques.reduce((s,b) => s + (b.ejercicios?.length||0), 0);
+      _copChatAgregar('ai', `✓ ${nb} bloque${nb!==1?'s':''}, ${ne} ejercicio${ne!==1?'s':''} cargados desde tu dictado.`);
+    } else {
+      // Generador: construye la sesión con metodología SOCC
+      const tipo = _copParseIntent(textoSesion);
+      sesionObj = _copBuildSesion(tipo, alumno);
+      if (!sesionObj || !sesionObj.bloques?.length) throw new Error('No identifiqué el tipo de sesión. Probá: "piernas hipertrofia" o "espalda fuerza"');
+      const nb = sesionObj.bloques.length;
+      const ne = sesionObj.bloques.reduce((s,b) => s + (b.ejercicios?.length||0), 0);
+      _copChatAgregar('ai', `✓ Sesión generada: ${nb} bloques, ${ne} ejercicios. Metodología SOCC aplicada.`);
+    }
+
+    _copMostrarPreviewSesion(sesionObj, alumno);
+    if (input) input.value = '';
+
+  } catch(err) {
+    if (previewZone) previewZone.innerHTML = `<div style="padding:12px;color:#fca5a5;font-size:11px;">⚠️ ${err.message}</div>`;
+    _copChatAgregar('ai', '⚠️ ' + err.message);
   }
-  _copChatAgregar('user', '📋 ' + textoSesion.substring(0, 80) + (textoSesion.length > 80 ? '...' : ''));
-
-  const ctxAlumno = alumno
-    ? `Alumno: ${alumno.nombre} | Objetivo: ${alumno.objetivo||'—'} | Nivel: ${alumno.nivel||'—'} | Lesiones: ${alumno.lesiones||'ninguna'}\n\n`
-    : '';
-
-  const PARSE_PROMPT = `${ctxAlumno}El entrenador dictó la siguiente sesión. Convertila al formato JSON. NO inventes ejercicios ni modifiques nada — solo estructurá exactamente lo que está descrito.
-
-SESIÓN:
-${textoSesion}
-
-Respondé ÚNICAMENTE con JSON válido (sin markdown, sin texto extra):
-{
-  "bloques": [
-    {
-      "nombre": "Descripción del bloque",
-      "tipo": "Activación | Potencia | Fuerza Principal | Complementario 1 | Complementario 2 | Complementario 3 | Zona Media",
-      "serieTipo": "Serie Simple | Biserie | Triserie | Superserie | Circuito",
-      "ejercicios": [
-        {
-          "nombre": "Nombre exacto del ejercicio",
-          "series": "4",
-          "reps": "8-10",
-          "rir": "2",
-          "pausa": "2 min",
-          "notas": "cue técnico si se mencionó"
-        }
-      ]
-    }
-  ]
 }
-
-Reglas estrictas:
-- Respetá EXACTAMENTE los nombres de ejercicios. No los modifiques.
-- Si dice "biserie"/"superserie"/"triserie" → usalo. Si no → inferí por relación muscular.
-- RIR no indicado → activación=4, compuesto principal=1-2, complementario=2-3, aislamiento=3
-- Pausa no indicada → compuesto pesado=2-3 min, complementario=90 seg, aislamiento=60 seg, activación=30 seg
-- Si dice 4x8 → series="4", reps="8". Si dice 8-12 → reps="8-12"
-- tipo: inferí según posición en la sesión y característica del ejercicio`;
-
-  await soccLlamarClaude(PARSE_PROMPT,
-    (respuestaJSON) => {
-      try {
-        const jsonStr = respuestaJSON.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
-        const parsed = JSON.parse(jsonStr);
-
-        if (!parsed.bloques || !parsed.bloques.length) {
-          throw new Error('No se detectaron bloques. Revisá el formato del texto.');
-        }
-
-        const sesionObj = {
-          bloques: parsed.bloques.map(b => ({
-            nombre: b.nombre || 'Bloque',
-            tipo: b.tipo || 'Complementario 1',
-            serieTipo: b.serieTipo || 'Serie Simple',
-            ejercicios: (b.ejercicios || []).map(ej => ({
-              nombre: ej.nombre,
-              ctrl: {
-                series: String(ej.series||'3'),
-                reps: String(ej.reps||'10'),
-                peso: '',
-                pausa: ej.pausa||'90 seg',
-                rir: String(ej.rir||'2')
-              },
-              series: Array.from({length: parseInt(ej.series)||3}, (_,i) => ({
-                reps: String(ej.reps||'10'),
-                peso: '',
-                rir: String(ej.rir||'2'),
-                pausa: ej.pausa||'90 seg',
-                comentarios: i===0 ? (ej.notas||'') : ''
-              })),
-              video: '',
-              ficha: {}
-            }))
-          })),
-          meta: { ciclo: 'custom', grupos: [], alumno: alumno?.nombre||'—' }
-        };
-
-        _copMostrarPreviewSesion(sesionObj, alumno);
-        const nb = sesionObj.bloques.length;
-        const ne = sesionObj.bloques.reduce((s,b) => s + (b.ejercicios?.length||0), 0);
-        _copChatAgregar('ai', `✓ Sesión interpretada: ${nb} bloque${nb!==1?'s':''}, ${ne} ejercicio${ne!==1?'s':''}. Revisá la previsualización y cargá al planificador.`);
-        if (input) input.value = '';
-
-      } catch(parseErr) {
-        console.error('[SOCC] JSON parse error:', parseErr, respuestaJSON);
-        if (previewZone) previewZone.innerHTML = `<div style="padding:12px;color:#fca5a5;font-size:11px;">⚠️ No pude interpretar la sesión: ${parseErr.message}<br><br><small style="color:#6b7280;">${respuestaJSON.substring(0,300)}</small></div>`;
-        _copChatAgregar('ai', '⚠️ Error al interpretar: ' + parseErr.message + '. Intentá ser más explícito con los bloques.');
-      }
-    },
-    (err) => {
-      if (previewZone) previewZone.innerHTML = `<div style="padding:12px;color:#fca5a5;font-size:11px;">⚠️ ${err}</div>`;
-      _copChatAgregar('ai', '⚠️ ' + err);
-    }
-  );
-}
+async function copilotoGenerarSesion() { return copilotoInterpretarSesion(); }
 
 // ── Mostrar respuesta de Claude en el panel ──────────────────────────────────
 function _soccMostrarRespuesta(respuesta, alumno, intent) {
@@ -21519,11 +22296,11 @@ document.addEventListener('keydown', function(e) {
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <textarea id="cop-gen-input" class="cop-chat-input"
-          placeholder="Ej: Bloque A activación: puente de glúteos 3x15, clamshell 3x12. Bloque B principal: peso muerto rumano 4x8 RIR 2. Bloque C biserie: remo en polea 3x10 con curl de bíceps 3x12 RIR 3."
+          placeholder="Para generar: &quot;piernas hipertrofia&quot;, &quot;espalda fuerza&quot;, &quot;sentadilla libre tren inferior&quot;&#10;&#10;Para dictar: &quot;Bloque A: sentadilla 4x6 RIR 2. Bloque B biserie: remo 3x10 con curl 3x12&quot;"
           rows="6"
           onkeydown="if(event.key==='Enter'&&event.ctrlKey){event.preventDefault();copilotoInterpretarSesion();}"></textarea>
         <button onclick="copilotoInterpretarSesion()" class="cop-ctx-btn primary" style="margin-bottom:0;background:#1a5c38;">
-          📥 Interpretar y previsualizar
+          🤖 Generar / Cargar sesión
         </button>
       </div>
       <div style="margin-top:8px;font-size:9px;color:#6b7280;line-height:1.6;background:#ffffff06;border-radius:6px;padding:8px 10px;">

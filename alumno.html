@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Mi Portal — Lab. de Entrenamiento</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0d0d1a;--card:#13132a;--card2:#1a1a38;
+  --gold:#C9A84C;--gold-d:#9A7A28;--green:#22c55e;
+  --text:#e8e8f0;--muted:#8888aa;--border:rgba(255,255,255,.08);
+}
+html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;}
+
+#loading,#error-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:14px;padding:24px;text-align:center;}
+#error-screen{display:none;}
+.spinner{width:36px;height:36px;border:3px solid rgba(201,168,76,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .75s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+#app{display:none;flex-direction:column;max-width:480px;margin:0 auto;min-height:100vh;}
+
+.hdr{background:linear-gradient(180deg,#1a1a3a 0%,transparent 100%);padding:28px 20px 16px;}
+.hdr-row{display:flex;align-items:center;gap:14px;}
+.avatar{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#C9A84C,#7a5a10);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;flex-shrink:0;}
+.alumno-nombre{font-size:20px;font-weight:900;color:#fff;line-height:1.1;}
+.plan-badge{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin-top:3px;}
+.coach-tag{font-size:10px;color:var(--muted);margin-top:1px;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#13132a;border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0);}
+.nb{flex:1;padding:10px 4px 14px;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:9px;font-weight:800;letter-spacing:.6px;}
+.nb svg{width:22px;height:22px;stroke-width:1.8;}
+.nb.on{color:var(--gold);}
+
+.tab{padding:12px 16px 90px;display:none;}
+.tab.on{display:block;}
+
+.snav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.snav-btn{background:var(--card);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:18px;line-height:1;}
+.snav-btn:disabled{opacity:.25;cursor:default;}
+.snav-info{text-align:center;}
+.snav-num{font-size:12px;font-weight:900;color:var(--gold);}
+.snav-dates{font-size:9px;color:var(--muted);margin-top:1px;}
+
+.slabel{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--muted);margin-bottom:8px;}
+.dgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px;}
+.dchip{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;background:var(--card);border:1.5px solid var(--border);cursor:pointer;transition:all .15s;position:relative;user-select:none;}
+.dchip.has{border-color:rgba(201,168,76,.4);}
+.dchip.on{background:var(--gold);border-color:var(--gold);}
+.dchip.today{box-shadow:0 0 0 2px rgba(34,197,94,.35);border-color:var(--green);}
+.dchip .dl{font-size:8px;font-weight:800;color:var(--muted);letter-spacing:.5px;}
+.dchip.has .dl{color:var(--gold);}
+.dchip.on .dl{color:rgba(255,255,255,.65);}
+.dchip .dn{font-size:14px;font-weight:900;color:var(--text);}
+.dchip.on .dn{color:#fff;}
+.dchip.no{opacity:.3;pointer-events:none;}
+.ddot{position:absolute;top:4px;right:4px;width:5px;height:5px;background:var(--gold);border-radius:50%;}
+
+.scard{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;}
+.scard-name{font-size:13px;font-weight:900;color:var(--gold);margin-bottom:12px;letter-spacing:.3px;}
+.blk{margin-bottom:10px;}
+.blk-hdr{display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:2px;cursor:pointer;}
+.blk-letra{width:20px;height:20px;background:var(--gold);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#0d0d1a;flex-shrink:0;}
+.blk-txt{flex:1;}
+.blk-n{font-size:11px;font-weight:800;color:var(--text);}
+.blk-t{font-size:9px;color:var(--muted);}
+.blk-arr{margin-left:auto;font-size:9px;color:var(--muted);transition:transform .2s;}
+.blk-hdr.open .blk-arr{transform:rotate(180deg);}
+.blk-body{padding:0 2px 4px;}
+
+.ejrow{display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border-radius:7px;}
+.ejrow:nth-child(odd){background:rgba(255,255,255,.025);}
+.ej-n{font-size:12px;font-weight:600;color:var(--text);flex:1;line-height:1.3;}
+.ej-c{text-align:right;flex-shrink:0;}
+.cp{display:inline-block;background:rgba(201,168,76,.14);color:var(--gold);border-radius:4px;padding:2px 6px;font-size:9px;font-weight:700;margin-bottom:2px;}
+.cr{display:inline-block;background:rgba(34,197,94,.14);color:var(--green);border-radius:4px;padding:2px 6px;font-size:9px;font-weight:700;}
+.ej-rir{font-size:9px;color:#555;margin-top:2px;}
+
+.ccard{background:var(--card);border-radius:12px;padding:14px 16px;margin-bottom:9px;}
+.ccard-n{font-size:12px;font-weight:800;color:var(--text);margin-bottom:8px;}
+.sparkrow{display:flex;align-items:flex-end;gap:3px;height:42px;}
+.spark-grp{flex:1;display:flex;gap:1px;align-items:flex-end;height:42px;}
+.sp-bar{flex:1;border-radius:2px 2px 0 0;min-height:3px;}
+.sp-plan{background:rgba(201,168,76,.35);border:1px solid rgba(201,168,76,.6);}
+.sp-real{background:rgba(34,197,94,.5);border:1px solid rgba(34,197,94,.7);}
+.spark-labels{display:flex;gap:3px;margin-top:3px;}
+.spark-lbl{flex:1;text-align:center;font-size:8px;color:var(--muted);font-weight:700;}
+.legend-row{display:flex;gap:12px;margin-bottom:12px;font-size:9px;font-weight:700;color:var(--muted);align-items:center;}
+.leg-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+
+.mcard{background:var(--card);border-radius:12px;padding:13px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.micon{font-size:22px;flex-shrink:0;}
+.mlabel{font-size:9px;font-weight:800;letter-spacing:.5px;color:var(--muted);}
+.mval{font-size:22px;font-weight:900;color:var(--gold);line-height:1;}
+.munit{font-size:11px;color:var(--muted);}
+.mdelta{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;flex-shrink:0;}
+.md-up{background:rgba(239,68,68,.15);color:#f87171;}
+.md-dn{background:rgba(34,197,94,.15);color:var(--green);}
+.hist-row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:var(--card);border-radius:9px;margin-bottom:5px;}
+
+.stitle{font-size:9px;font-weight:900;letter-spacing:1px;color:var(--muted);margin:14px 0 8px;}
+.empty{text-align:center;padding:44px 20px;color:var(--muted);}
+.empty-ico{font-size:36px;margin-bottom:10px;}
+.empty-ttl{font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px;}
+.empty-txt{font-size:12px;line-height:1.5;}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <div style="font-size:12px;color:#666;">Cargando tu portal...</div>
+</div>
+
+<div id="error-screen">
+  <div style="font-size:44px;">🔒</div>
+  <div style="font-size:16px;font-weight:900;color:#fff;margin-top:4px;">Enlace no válido</div>
+  <div id="err-msg" style="font-size:13px;color:#888;max-width:300px;line-height:1.5;margin-top:8px;">
+    El enlace no es válido. Pedile a tu coach que te mande el tuyo.
+  </div>
+</div>
+
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-row">
+      <div class="avatar" id="av">?</div>
+      <div>
+        <div class="alumno-nombre" id="al-nombre">—</div>
+        <div class="plan-badge" id="al-plan"></div>
+        <div class="coach-tag">Coach: Christian Cattaneo · SOCC</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab on" id="tab-rutina">
+    <div class="snav">
+      <button class="snav-btn" id="btn-prev" onclick="movSem(-1)">&#8249;</button>
+      <div class="snav-info">
+        <div class="snav-num" id="sem-lbl">Semana 1</div>
+        <div class="snav-dates" id="sem-dates"></div>
+      </div>
+      <button class="snav-btn" id="btn-next" onclick="movSem(1)">&#8250;</button>
+    </div>
+    <div class="slabel">DÍAS DE ENTRENAMIENTO</div>
+    <div class="dgrid" id="dgrid"></div>
+    <div id="sesion-ctn"></div>
+  </div>
+
+  <div class="tab" id="tab-cargas">
+    <div id="cargas-ctn"></div>
+  </div>
+
+  <div class="tab" id="tab-medidas">
+    <div id="medidas-ctn"></div>
+  </div>
+
+  <nav class="bnav">
+    <button class="nb on" id="nb-rutina" onclick="goTab('rutina')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7h8M8 12h8M8 17h5"/></svg>
+      RUTINA
+    </button>
+    <button class="nb" id="nb-cargas" onclick="goTab('cargas')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      CARGAS
+    </button>
+    <button class="nb" id="nb-medidas" onclick="goTab('medidas')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      MEDIDAS
+    </button>
+  </nav>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+const CFG = {
+  apiKey:'AIzaSyDkSgbqAJJRdlLwzcn-2vSMjVIUJbkVUGQ',
+  authDomain:'entrenamiento-laboratorio.firebaseapp.com',
+  projectId:'entrenamiento-laboratorio',
+  storageBucket:'entrenamiento-laboratorio.firebasestorage.app',
+  messagingSenderId:'399177627945',
+  appId:'1:399177627945:web:2b4fef0894480f70dc1f38'
+};
+const DN = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const DS = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+
+let _data=null, _plan=null, _semIdx=0, _diaIdx=null;
+
+(async function(){
+  const id = new URLSearchParams(location.search).get('id');
+  if (!id) return showErr('No se encontró el identificador en el enlace.');
+  try {
+    firebase.initializeApp(CFG);
+    const db = firebase.firestore();
+    const doc = await db.collection('alumnos').doc(id).get();
+    if (!doc.exists) return showErr('Todavía no hay datos para este alumno. Pedile a tu coach que sincronice el portal desde su aplicación.');
+    _data = doc.data();
+    const planes = _data.planificaciones || [];
+    _plan = planes.length ? planes[planes.length-1] : null;
+    if (_plan) {
+      const hoy = new Date().toISOString().slice(0,10);
+      let found = 0;
+      (_plan.semanasArray||[]).forEach((s,i) => { if (s.fechaInicio && s.fechaInicio <= hoy) found = i; });
+      _semIdx = found;
+    }
+    render();
+  } catch(e) {
+    console.error(e);
+    showErr('Error de conexión. Verificá tu acceso a internet e intentá de nuevo.');
+  }
+})();
+
+function showErr(msg) {
+  document.getElementById('loading').style.display='none';
+  document.getElementById('error-screen').style.display='flex';
+  document.getElementById('err-msg').textContent=msg;
+}
+
+function render() {
+  document.getElementById('loading').style.display='none';
+  document.getElementById('app').style.display='flex';
+  const p = _data.perfil||{};
+  const nombre = p.nombre||p.name||'Alumno';
+  document.getElementById('al-nombre').textContent = nombre;
+  document.getElementById('av').textContent = nombre.charAt(0).toUpperCase();
+  document.title = nombre+' — Lab. de Entrenamiento';
+  if (_plan) document.getElementById('al-plan').textContent = (_plan.nombre||'Plan activo').toUpperCase();
+  renderRutina();
+}
+
+function goTab(t) {
+  ['rutina','cargas','medidas'].forEach(x => {
+    document.getElementById('tab-'+x).classList.toggle('on',x===t);
+    document.getElementById('nb-'+x).classList.toggle('on',x===t);
+  });
+  if (t==='cargas')  renderCargas();
+  if (t==='medidas') renderMedidas();
+}
+
+// ── RUTINA ────────────────────────────────────────────────────────────────
+function movSem(d) {
+  if (!_plan) return;
+  const n = _semIdx+d, max = (_plan.semanasArray||[]).length-1;
+  if (n<0||n>max) return;
+  _semIdx=n; _diaIdx=null; renderRutina();
+}
+
+function renderRutina() {
+  if (!_plan||!(_plan.semanasArray||[]).length) {
+    document.getElementById('dgrid').innerHTML='';
+    document.getElementById('sesion-ctn').innerHTML=noData('📋','Sin plan asignado','Tu coach aún no cargó tu planificación.');
+    return;
+  }
+  const sems=_plan.semanasArray, sem=sems[_semIdx];
+  document.getElementById('sem-lbl').textContent='Semana '+(_semIdx+1)+' de '+sems.length;
+  if (sem.fechaInicio) {
+    const lun=new Date(sem.fechaInicio+'T12:00:00');
+    const dom=new Date(lun); dom.setDate(dom.getDate()+6);
+    const f=d=>d.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+    document.getElementById('sem-dates').textContent=f(lun)+' — '+f(dom);
+  }
+  document.getElementById('btn-prev').disabled=_semIdx===0;
+  document.getElementById('btn-next').disabled=_semIdx>=sems.length-1;
+
+  const hoyStr = new Date().toISOString().slice(0,10);
+  const esHoy = i => {
+    if (!sem.fechaInicio) return false;
+    const d=new Date(sem.fechaInicio+'T12:00:00'); d.setDate(d.getDate()+i);
+    return d.toISOString().slice(0,10)===hoyStr;
+  };
+
+  document.getElementById('dgrid').innerHTML = DS.map((ds,i) => {
+    const has=!!(sem.dias?.[i]?.[0]?.bloques?.length);
+    const on=i===_diaIdx, hoy=esHoy(i);
+    const dayNum=sem.fechaInicio?(()=>{const d=new Date(sem.fechaInicio+'T12:00:00');d.setDate(d.getDate()+i);return d.getDate();})():i+1;
+    return '<div class="dchip '+(has?'has ':'')+( on?'on ':'')+( hoy?'today ':'')+( !has?'no':'')+'" onclick="selDia('+i+')">'+
+      '<span class="dl">'+ds+'</span>'+
+      '<span class="dn">'+dayNum+'</span>'+
+      (has&&!on?'<div class="ddot"></div>':'')+
+    '</div>';
+  }).join('');
+  renderSesion();
+}
+
+function selDia(i) { _diaIdx=_diaIdx===i?null:i; renderRutina(); }
+
+function renderSesion() {
+  const ctn=document.getElementById('sesion-ctn');
+  if (_diaIdx===null||!_plan) { ctn.innerHTML=''; return; }
+  const sem=_plan.semanasArray?.[_semIdx];
+  const ses=sem?.dias?.[_diaIdx]?.[0];
+  if (!ses?.bloques?.length) { ctn.innerHTML='<div class="empty" style="padding:20px"><div class="empty-txt">Sin sesión para el '+DN[_diaIdx]+'</div></div>'; return; }
+  ctn.innerHTML='<div class="scard"><div class="scard-name">'+(ses.nombre||DN[_diaIdx])+'</div>'+
+    ses.bloques.map((b,bi) => {
+      const letra='ABCDEFGHIJ'[bi]||(bi+1);
+      return '<div class="blk">'+
+        '<div class="blk-hdr open" onclick="this.classList.toggle(\'open\');var nx=this.nextElementSibling;nx.style.display=this.classList.contains(\'open\')?\'block\':\'none\'">'+
+          '<div class="blk-letra">'+letra+'</div>'+
+          '<div class="blk-txt"><div class="blk-n">'+(b.nombre||b.tipo||'Bloque')+'</div><div class="blk-t">'+(b.serieTipo||'')+'</div></div>'+
+          '<div class="blk-arr">&#9660;</div>'+
+        '</div>'+
+        '<div class="blk-body">'+
+          (b.ejercicios||[]).map(ej => {
+            const c=ej.ctrl||{}, r=ej.ctrl_real||{};
+            const hp=c.series||c.reps||c.peso, hr=r.series||r.reps||r.peso;
+            return '<div class="ejrow"><div class="ej-n">'+(ej.nombre||'—')+'</div><div class="ej-c">'+
+              (hp?'<div><span class="cp">'+(c.series||'?')+'x'+(c.reps||'?')+(c.peso?' · '+c.peso+'kg':'')+'</span></div>':'')+
+              (hr?'<div style="margin-top:3px;"><span class="cr">&#10003; '+(r.series||'?')+'x'+(r.reps||'?')+(r.peso?' · '+r.peso+'kg':'')+'</span></div>':'')+
+              (c.rir?'<div class="ej-rir">RIR '+c.rir+'</div>':'')+
+            '</div></div>';
+          }).join('')+
+        '</div>'+
+      '</div>';
+    }).join('')+'</div>';
+}
+
+// ── CARGAS ────────────────────────────────────────────────────────────────
+function renderCargas() {
+  const ctn=document.getElementById('cargas-ctn');
+  if (!_plan) { ctn.innerHTML=noData('📈','Sin datos de carga'); return; }
+  const sems=_plan.semanasArray||[], ejes=[];
+  for (let di=0; di<7; di++) {
+    const ref=sems.find(s=>s.dias?.[di]?.[0]?.bloques?.length);
+    if (!ref) continue;
+    ref.dias[di][0].bloques.forEach((b,bi) => {
+      (b.ejercicios||[]).forEach((ej,ei) => {
+        const pts=sems.map(s => {
+          const e2=s.dias?.[di]?.[0]?.bloques?.[bi]?.ejercicios?.[ei];
+          return {plan:parseFloat(e2?.ctrl?.peso)||null, real:parseFloat(e2?.ctrl_real?.peso)||null,
+            srP:e2?.ctrl?.series&&e2?.ctrl?.reps?e2.ctrl.series+'x'+e2.ctrl.reps:'',
+            srR:e2?.ctrl_real?.series&&e2?.ctrl_real?.reps?e2.ctrl_real.series+'x'+e2.ctrl_real.reps:''};
+        });
+        if (pts.some(p=>p.plan||p.real)) ejes.push({di,nombre:ej.nombre||'—',dia:DN[di],pts});
+      });
+    });
+  }
+  if (!ejes.length) { ctn.innerHTML=noData('📈','Sin cargas cargadas','Tu coach aún no registró los pesos planificados.'); return; }
+
+  const byDay={};
+  ejes.forEach(e=>{ if(!byDay[e.dia]) byDay[e.dia]=[]; byDay[e.dia].push(e); });
+
+  let html='<div class="legend-row">'+
+    '<span style="color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.5px;">REF</span>'+
+    '<span style="display:flex;align-items:center;gap:4px;"><div class="leg-dot" style="background:rgba(201,168,76,.35);border:1px solid rgba(201,168,76,.6);"></div>PLAN</span>'+
+    '<span style="display:flex;align-items:center;gap:4px;"><div class="leg-dot" style="background:rgba(34,197,94,.5);border:1px solid rgba(34,197,94,.7);"></div>REAL</span>'+
+  '</div>';
+
+  Object.entries(byDay).forEach(([dia,arr]) => {
+    html+='<div class="stitle">'+dia.toUpperCase()+'</div>';
+    arr.forEach(e => {
+      const all=e.pts.flatMap(p=>[p.plan,p.real]).filter(Boolean);
+      const maxV=all.length?Math.max(...all):1;
+      const lastP=[...e.pts].reverse().find(p=>p.plan);
+      const lastR=[...e.pts].reverse().find(p=>p.real);
+      const bars=e.pts.map((p,i) => {
+        const ph=p.plan?Math.max(3,(p.plan/maxV)*38):0;
+        const rh=p.real?Math.max(3,(p.real/maxV)*38):0;
+        return '<div class="spark-grp">'+
+          (ph?'<div class="sp-bar sp-plan" style="height:'+ph+'px;" title="Plan S'+(i+1)+': '+p.plan+'kg'+(p.srP?' '+p.srP:'')+'"></div>':'<div style="flex:1;"></div>')+
+          (rh?'<div class="sp-bar sp-real" style="height:'+rh+'px;" title="Real S'+(i+1)+': '+p.real+'kg'+(p.srR?' '+p.srR:'')+'"></div>':'<div style="flex:1;"></div>')+
+        '</div>';
+      }).join('');
+      html+='<div class="ccard">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">'+
+          '<div class="ccard-n">'+e.nombre+'</div>'+
+          '<div style="text-align:right;">'+
+            (lastP?'<div style="font-size:9px;color:var(--gold);font-weight:700;">'+lastP.plan+'kg'+(lastP.srP?' · '+lastP.srP:'')+'</div>':'')+
+            (lastR?'<div style="font-size:9px;color:var(--green);font-weight:700;">&#10003; '+lastR.real+'kg</div>':'')+
+          '</div>'+
+        '</div>'+
+        '<div class="sparkrow">'+bars+'</div>'+
+        '<div class="spark-labels">'+e.pts.map((_,i)=>'<div class="spark-lbl">S'+(i+1)+'</div>').join('')+'</div>'+
+      '</div>';
+    });
+  });
+  ctn.innerHTML=html;
+}
+
+// ── MEDIDAS ───────────────────────────────────────────────────────────────
+function renderMedidas() {
+  const ctn=document.getElementById('medidas-ctn');
+  const antro=_data.antropometria||[];
+  if (!antro.length) { ctn.innerHTML=noData('📏','Sin medidas','Tu coach aún no registró tus mediciones.'); return; }
+  const sorted=[...antro].sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+  const ult=sorted[sorted.length-1], ant=sorted.length>1?sorted[sorted.length-2]:null;
+  const ff=f=>f?new Date(f+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}):'';
+  const campos=[
+    {k:'peso',lb:'PESO CORPORAL',ic:'⚖️',u:'kg',lib:true},
+    {k:'grasaCorporal',lb:'% GRASA',ic:'📊',u:'%',lib:true},
+    {k:'masaMuscular',lb:'MASA MUSCULAR',ic:'💪',u:'kg',lib:false},
+    {k:'imc',lb:'IMC',ic:'📐',u:'',lib:true},
+    {k:'pecho',lb:'PECHO',ic:'📏',u:'cm',lib:false},
+    {k:'cintura',lb:'CINTURA',ic:'📏',u:'cm',lib:true},
+    {k:'cadera',lb:'CADERA',ic:'📏',u:'cm',lib:false},
+    {k:'brazo',lb:'BRAZO',ic:'📏',u:'cm',lib:false},
+    {k:'muslo',lb:'MUSLO',ic:'📏',u:'cm',lib:false},
+  ];
+  let html='<div class="stitle">ÚLTIMA MEDICIÓN — '+ff(ult.fecha)+'</div>';
+  campos.forEach(c => {
+    const v=ult[c.k]; if (!v) return;
+    const av=ant?.[c.k];
+    let delt='';
+    if (av&&av!=v) {
+      const d=(parseFloat(v)-parseFloat(av)).toFixed(1);
+      const cls=parseFloat(d)<0?(c.lib?'md-dn':'md-up'):(c.lib?'md-up':'md-dn');
+      delt='<span class="mdelta '+cls+'">'+(parseFloat(d)>0?'+':'')+d+c.u+'</span>';
+    }
+    html+='<div class="mcard"><div class="micon">'+c.ic+'</div><div style="flex:1;">'+
+      '<div class="mlabel">'+c.lb+'</div>'+
+      '<div style="display:flex;align-items:baseline;gap:4px;"><div class="mval">'+v+'</div><div class="munit">'+c.u+'</div></div>'+
+    '</div>'+delt+'</div>';
+  });
+  if (sorted.length>1) {
+    html+='<div class="stitle" style="margin-top:16px;">HISTORIAL</div>';
+    [...sorted].reverse().slice(1).forEach(r => {
+      html+='<div class="hist-row"><div style="font-size:11px;color:var(--muted);">'+ff(r.fecha)+'</div>'+
+        '<div style="display:flex;gap:12px;">'+
+          (r.peso?'<div style="font-size:12px;font-weight:800;color:var(--text);">'+r.peso+' kg</div>':'')+
+          (r.grasaCorporal?'<div style="font-size:11px;color:var(--muted);">'+r.grasaCorporal+'%</div>':'')+
+        '</div></div>';
+    });
+  }
+  ctn.innerHTML=html;
+}
+
+function noData(ico,ttl,txt) {
+  return '<div class="empty"><div class="empty-ico">'+ico+'</div><div class="empty-ttl">'+ttl+'</div>'+(txt?'<div class="empty-txt">'+txt+'</div>':'')+'</div>';
+}
+</script>
+</body>
+</html>
