@@ -301,12 +301,17 @@ function renderSesion() {
         '</div>'+
         '<div class="blk-body">'+
           (b.ejercicios||[]).map(ej => {
-            const c=ej.ctrl||{}, r=ej.ctrl_real||{};
-            const hp=c.series||c.reps||c.peso, hr=r.series||r.reps||r.peso;
+            // Soporta formato anidado {ctrl:{series,reps,peso,rir}} Y formato plano {ctrlSeries,ctrlReps,...}
+            const cs=ej.ctrl?.series||ej.ctrlSeries||'';
+            const cr=ej.ctrl?.reps  ||ej.ctrlReps  ||'';
+            const cp=ej.ctrl?.peso  ||ej.ctrlPeso  ||'';
+            const ci=ej.ctrl?.rir   ||ej.ctrlRir   ||'';
+            const r=ej.ctrl_real||{};
+            const hp=cs||cr||cp, hr=r.series||r.reps||r.peso;
             return '<div class="ejrow"><div class="ej-n">'+(ej.nombre||'—')+'</div><div class="ej-c">'+
-              (hp?'<div><span class="cp">'+(c.series||'?')+'x'+(c.reps||'?')+(c.peso?' · '+c.peso+'kg':'')+'</span></div>':'')+
+              (hp?'<div><span class="cp">'+(cs||'?')+'x'+(cr||'?')+(cp?' · '+cp+'kg':'')+'</span></div>':'')+
               (hr?'<div style="margin-top:3px;"><span class="cr">&#10003; '+(r.series||'?')+'x'+(r.reps||'?')+(r.peso?' · '+r.peso+'kg':'')+'</span></div>':'')+
-              (c.rir?'<div class="ej-rir">RIR '+c.rir+'</div>':'')+
+              (ci?'<div class="ej-rir">RIR '+ci+'</div>':'')+
             '</div></div>';
           }).join('')+
         '</div>'+
