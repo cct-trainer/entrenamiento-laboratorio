@@ -301,11 +301,15 @@ function renderSesion() {
         '</div>'+
         '<div class="blk-body">'+
           (b.ejercicios||[]).map(ej => {
-            // Soporta formato anidado {ctrl:{series,reps,peso,rir}} Y formato plano {ctrlSeries,ctrlReps,...}
-            const cs=ej.ctrl?.series||ej.ctrlSeries||'';
-            const cr=ej.ctrl?.reps  ||ej.ctrlReps  ||'';
-            const cp=ej.ctrl?.peso  ||ej.ctrlPeso  ||'';
-            const ci=ej.ctrl?.rir   ||ej.ctrlRir   ||'';
+            // 1. Formato anidado {ctrl:{series,reps,peso,rir}}
+            // 2. Formato plano {ctrlSeries,ctrlReps,...}
+            // 3. Fallback: array de series detallado {series:[{reps,peso,rir},...]}
+            const sArr=Array.isArray(ej.series)&&ej.series.length?ej.series:
+                       Array.isArray(ej.seriesApro)&&ej.seriesApro.length?ej.seriesApro:null;
+            const cs=ej.ctrl?.series||ej.ctrlSeries||(sArr?String(sArr.length):'');
+            const cr=ej.ctrl?.reps  ||ej.ctrlReps  ||(sArr?sArr[0]?.reps:'');
+            const cp=ej.ctrl?.peso  ||ej.ctrlPeso  ||(sArr?sArr[0]?.peso:'');
+            const ci=ej.ctrl?.rir   ||ej.ctrlRir   ||(sArr?sArr[0]?.rir:'');
             const r=ej.ctrl_real||{};
             const hp=cs||cr||cp, hr=r.series||r.reps||r.peso;
             return '<div class="ejrow"><div class="ej-n">'+(ej.nombre||'—')+'</div><div class="ej-c">'+
