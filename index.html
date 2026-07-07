@@ -17302,14 +17302,21 @@ function toggleSeriesSec(ejId, type) {
   if (icon)   icon.textContent = isOpen ? '▸' : '▾';
 }
 
-function _makeSerieRow(ejId, tbodyId, prefix, num) {
+// Defaults de RIR por posición
+const _RIR_APRO = ['3-4','2-3','2-1','2-1','2-1'];   // Apro 1,2,3,4,5+
+const _RIR_EFEC = ['2-3','2-1','1-2','1-0','1-0'];   // S 1,2,3,4,5+
+const _PAUSA_DEFAULT = '1:30';
+
+function _makeSerieRow(ejId, tbodyId, prefix, num, defaults) {
+  // defaults = { reps:'', peso:'', rir:'', pausa:'' }  (todos opcionales)
+  const d = defaults || {};
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td class="serie-num-cell">${prefix} ${num}</td>
-    <td><input type="text" placeholder="0"></td>
-    <td><input type="text" placeholder="0"></td>
-    <td><input type="text" placeholder="0"></td>
-    <td><input type="text" placeholder="60"></td>
+    <td><input type="text" placeholder="Reps" value="${d.reps||''}"></td>
+    <td><input type="text" placeholder="Kg"   value="${d.peso||''}"></td>
+    <td><input type="text" placeholder="RIR"  value="${d.rir||''}"></td>
+    <td><input type="text" placeholder="Pausa" value="${d.pausa||_PAUSA_DEFAULT}"></td>
     <td><button class="btn-del-row" onclick="this.closest('tr').remove();_renumRows('${tbodyId}','${prefix}')">×</button></td>`;
   return tr;
 }
@@ -17324,21 +17331,23 @@ function addSerieApro(ejId) {
   const tbody = document.getElementById(tbodyId);
   if (!tbody) return;
   const num = tbody.querySelectorAll('tr').length + 1;
-  tbody.appendChild(_makeSerieRow(ejId, tbodyId, 'Apro', num));
+  const rir = _RIR_APRO[Math.min(num-1, _RIR_APRO.length-1)];
+  tbody.appendChild(_makeSerieRow(ejId, tbodyId, 'Apro', num, { rir }));
 }
 function addSerieEfec(ejId) {
   const tbodyId = ejId+'-efec-tbody';
   const tbody = document.getElementById(tbodyId);
   if (!tbody) return;
   const num = tbody.querySelectorAll('tr').length + 1;
-  tbody.appendChild(_makeSerieRow(ejId, tbodyId, 'Serie', num));
+  const rir = _RIR_EFEC[Math.min(num-1, _RIR_EFEC.length-1)];
+  tbody.appendChild(_makeSerieRow(ejId, tbodyId, 'Serie', num, { rir }));
 }
 function addDropset(ejId) {
   const tbodyId = ejId+'-drop-tbody';
   const tbody = document.getElementById(tbodyId);
   if (!tbody) return;
   const num = tbody.querySelectorAll('tr').length + 1;
-  tbody.appendChild(_makeSerieRow(ejId, tbodyId, 'DS', num));
+  tbody.appendChild(_makeSerieRow(ejId, tbodyId, 'DS', num, {}));
 }
 // Backward compat
 function addSerie(ejId) { addSerieEfec(ejId); }
