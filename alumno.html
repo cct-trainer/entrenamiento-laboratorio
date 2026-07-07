@@ -291,7 +291,7 @@ function _playYt(id) {
   if (!thumb || !player) return;
   thumb.style.display = 'none';
   player.style.display = 'block';
-  player.innerHTML = '<iframe src="https://www.youtube.com/embed/'+id+'?autoplay=1" style="width:100%;height:100%;border:none;display:block;" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+  player.innerHTML = '<iframe src="https://www.youtube.com/embed/'+id+'?autoplay=1" width="100%" height="220" style="border:none;display:block;" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
 }
 
 // Extrae el ID de YouTube de cualquier formato de URL
@@ -372,7 +372,7 @@ function _ejCard(ej) {
         '</div>'+
         '<div style="position:absolute;bottom:8px;left:10px;background:rgba(0,0,0,.7);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:.5px;">▶ TOCÁ PARA VER</div>'+
       '</div>'+
-      '<div id="yt-player-'+ytId+'" style="display:none;aspect-ratio:16/9;"></div>'+
+      '<div id="yt-player-'+ytId+'" style="display:none;"></div>'+
     '</div>'
   ) : '';
 
