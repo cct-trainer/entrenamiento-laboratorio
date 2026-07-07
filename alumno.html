@@ -284,6 +284,16 @@ function renderRutina() {
 
 function selDia(i) { _diaIdx=_diaIdx===i?null:i; renderRutina(); }
 
+// Reproduce video de YouTube inline reemplazando la miniatura
+function _playYt(id) {
+  const thumb  = document.getElementById('yt-thumb-'+id);
+  const player = document.getElementById('yt-player-'+id);
+  if (!thumb || !player) return;
+  thumb.style.display = 'none';
+  player.style.display = 'block';
+  player.innerHTML = '<iframe src="https://www.youtube.com/embed/'+id+'?autoplay=1" style="width:100%;height:100%;border:none;display:block;" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+}
+
 // Extrae el ID de YouTube de cualquier formato de URL
 function _ytId(url) {
   if (!url) return '';
@@ -351,19 +361,18 @@ function _ejCard(ej) {
 
   // Video inline (thumbnail → iframe al hacer clic)
   const ytId = _ytId(ej.video||'');
-  const _vid = 'v'+Math.random().toString(36).slice(2,8);
   const videoHTML = ytId ? (
-    '<div id="'+_vid+'" style="margin:10px 0;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;" onclick="'+
-      'var d=document.getElementById(\''+_vid+'\');'+
-      'd.innerHTML=\'<iframe src="https://www.youtube.com/embed/'+ytId+'?autoplay=1" style="width:100%;aspect-ratio:16/9;border:none;display:block;" allow="autoplay;encrypted-media" allowfullscreen></iframe>\';'+
-    '">'+
-      '<img src="https://img.youtube.com/vi/'+ytId+'/hqdefault.jpg" alt="Video" style="width:100%;display:block;aspect-ratio:16/9;object-fit:cover;">'+
-      '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);">'+
-        '<div style="width:52px;height:52px;background:#ff0000;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(255,0,0,.5);">'+
-          '<svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>'+
+    '<div style="margin:10px 0;border-radius:10px;overflow:hidden;position:relative;">'+
+      '<div id="yt-thumb-'+ytId+'" style="cursor:pointer;position:relative;" onclick="_playYt(\''+ytId+'\')">'+
+        '<img src="https://img.youtube.com/vi/'+ytId+'/hqdefault.jpg" alt="Video" style="width:100%;display:block;aspect-ratio:16/9;object-fit:cover;">'+
+        '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);">'+
+          '<div style="width:52px;height:52px;background:#ff0000;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(255,0,0,.5);">'+
+            '<svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>'+
+          '</div>'+
         '</div>'+
+        '<div style="position:absolute;bottom:8px;left:10px;background:rgba(0,0,0,.7);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:.5px;">▶ TOCÁ PARA VER</div>'+
       '</div>'+
-      '<div style="position:absolute;bottom:8px;left:10px;background:rgba(0,0,0,.7);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:.5px;">▶ TOCÁ PARA VER</div>'+
+      '<div id="yt-player-'+ytId+'" style="display:none;aspect-ratio:16/9;"></div>'+
     '</div>'
   ) : '';
 
