@@ -161,10 +161,18 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
     <div id="medidas-ctn"></div>
   </div>
 
+  <div class="tab" id="tab-running">
+    <div id="running-ctn"></div>
+  </div>
+
   <nav class="bnav">
     <button class="nb on" id="nb-rutina" onclick="goTab('rutina')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7h8M8 12h8M8 17h5"/></svg>
       RUTINA
+    </button>
+    <button class="nb" id="nb-running" onclick="goTab('running')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="m7.5 13.5 2.5-3 3 2.5 2-2.5"/><path d="M17 17H7l-2-8h14l-2 8z"/></svg>
+      RUNNING
     </button>
     <button class="nb" id="nb-cargas" onclick="goTab('cargas')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -191,7 +199,20 @@ const CFG = {
 const DN = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 const DS = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
 
-let _data=null, _plan=null, _semIdx=0, _diaIdx=null;
+let _data=null, _plan=null, _planRun=null, _semIdx=0, _diaIdx=null, _runDiaIdx=null;
+
+const TIPOS_RUN = {
+  'pasadas':     {icon:'⚡', label:'Pasadas / Intervalos', color:'#f59e0b'},
+  'continua-l':  {icon:'🟢', label:'Carrera continua larga', color:'#22c55e'},
+  'continua-m':  {icon:'🔵', label:'Carrera continua media', color:'#3b82f6'},
+  'continua-c':  {icon:'🟡', label:'Carrera continua corta', color:'#eab308'},
+  'fartlek':     {icon:'🔶', label:'Fartlek', color:'#f97316'},
+  'tempo':       {icon:'🔴', label:'Tempo run', color:'#ef4444'},
+  'progresivos': {icon:'📈', label:'Progresivos', color:'#8b5cf6'},
+  'recuperacion':{icon:'⚪', label:'Trote suave / Recuperación', color:'#94a3b8'},
+  'descanso':    {icon:'😴', label:'Descanso activo', color:'#64748b'},
+  'custom':      {icon:'✏️', label:'Personalizado', color:'#C9A84C'},
+};
 
 (async function(){
   const id = new URLSearchParams(location.search).get('id');
@@ -221,7 +242,11 @@ let _data=null, _plan=null, _semIdx=0, _diaIdx=null;
     if (!doc.exists) return showErr('Todavía no hay datos para este alumno. Pedile a tu coach que sincronice el portal desde su aplicación.');
     _data = doc.data();
     const planes = _data.planificaciones || [];
-    _plan = planes.length ? planes[planes.length-1] : null;
+    // Separar planes de fuerza y running
+    const planesFuerza  = planes.filter(p => p.tipoPlan !== 'running');
+    const planesRunning = planes.filter(p => p.tipoPlan === 'running');
+    _plan    = planesFuerza.length  ? planesFuerza[planesFuerza.length-1]   : null;
+    _planRun = planesRunning.length ? planesRunning[planesRunning.length-1]  : null;
     if (_plan) {
       const hoy = new Date().toISOString().slice(0,10);
       let found = 0;
@@ -254,12 +279,13 @@ function render() {
 }
 
 function goTab(t) {
-  ['rutina','cargas','medidas'].forEach(x => {
+  ['rutina','running','cargas','medidas'].forEach(x => {
     document.getElementById('tab-'+x).classList.toggle('on',x===t);
     document.getElementById('nb-'+x).classList.toggle('on',x===t);
   });
   if (t==='cargas')  renderCargas();
   if (t==='medidas') renderMedidas();
+  if (t==='running') renderRunning();
 }
 
 // ── RUTINA ────────────────────────────────────────────────────────────────
@@ -532,6 +558,145 @@ function renderSesion() {
       '</button>'+
     '</div>'+
   '</div>';
+}
+
+// ── RUNNING ───────────────────────────────────────────────────────────────
+function renderRunning() {
+  const ctn = document.getElementById('running-ctn');
+  if (!_planRun) { ctn.innerHTML = noData('🏃','Sin plan de running','Tu coach aún no cargó un plan de running.'); return; }
+  const diasData = _planRun.diasData || {};
+  const hoyStr = new Date().toISOString().slice(0,10);
+
+  // Chips de días
+  const chips = DS.map((ds,i) => {
+    const bloques = diasData[i] || [];
+    const has = bloques.length > 0;
+    const on = i === _runDiaIdx;
+    const tipoObj = has ? (TIPOS_RUN[bloques[0].tipo] || {icon:'🏃',color:'#C9A84C'}) : null;
+    const dayNum = i+1;
+    return '<div class="dchip '+(has?'has ':'')+( on?'on ':'')+( !has?'no':'')+'" onclick="_selRunDia('+i+')" style="'+(has&&!on?'border-color:'+(tipoObj.color||'rgba(201,168,76,.4)')+'44;':'')+'">'+
+      '<span class="dl">'+ds+'</span>'+
+      '<span class="dn">'+(has ? tipoObj.icon : '—')+'</span>'+
+    '</div>';
+  }).join('');
+
+  const sesionHTML = _renderDiaRunning();
+
+  ctn.innerHTML =
+    '<div style="font-size:10px;font-weight:800;letter-spacing:.5px;color:var(--gold);margin-bottom:6px;">'+(_planRun.titulo||'Plan de Running').toUpperCase()+'</div>'+
+    '<div style="font-size:9px;color:var(--muted);margin-bottom:12px;">Semana '+(_planRun.semanaNum||1)+(  _planRun.fechaInicio?' · desde '+new Date(_planRun.fechaInicio+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}):'')+'</div>'+
+    '<div class="slabel">DÍAS DE ENTRENAMIENTO</div>'+
+    '<div class="dgrid">'+chips+'</div>'+
+    '<div id="run-sesion-ctn">'+sesionHTML+'</div>'+
+    '<div style="height:20px;"></div>';
+}
+
+function _selRunDia(i) {
+  _runDiaIdx = _runDiaIdx === i ? null : i;
+  renderRunning();
+}
+
+function _renderDiaRunning() {
+  if (_runDiaIdx === null || !_planRun) return '';
+  const diasData = _planRun.diasData || {};
+  const bloques = diasData[_runDiaIdx] || [];
+  if (!bloques.length) return '<div class="empty" style="padding:20px"><div class="empty-txt">Descanso — '+DN[_runDiaIdx]+'</div></div>';
+
+  return bloques.map((b,bi) => {
+    const tipoObj = TIPOS_RUN[b.tipo] || {icon:'🏃', label: b.label||b.tipo||'Sesión', color:'#C9A84C'};
+
+    // Warmup
+    const calent = b.calent && (b.calent.tipo||b.calent.duracion) ? (
+      '<div style="background:rgba(255,167,38,.07);border-left:3px solid #ffa726;border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:8px;">'+
+        '<div style="font-size:9px;font-weight:800;color:#ffa726;letter-spacing:1px;margin-bottom:6px;">🔥 ENTRADA EN CALOR</div>'+
+        (b.calent.tipo ? '<div style="font-size:12px;color:#fff;font-weight:600;">'+b.calent.tipo+'</div>' : '')+
+        (b.calent.duracion ? '<div style="font-size:11px;color:#aaa;margin-top:2px;">'+b.calent.duracion+'</div>' : '')+
+        (b.calent.ritmo ? '<div style="font-size:11px;color:#aaa;">Ritmo: '+b.calent.ritmo+'</div>' : '')+
+        (b.calent.ejercicios ? '<div style="font-size:11px;color:#aaa;margin-top:4px;line-height:1.4;">'+b.calent.ejercicios+'</div>' : '')+
+      '</div>'
+    ) : '';
+
+    // Cooldown
+    const vuelta = b.vuelta && (b.vuelta.tipo||b.vuelta.duracion) ? (
+      '<div style="background:rgba(66,165,245,.07);border-left:3px solid #42a5f5;border-radius:0 8px 8px 0;padding:10px 12px;margin-top:8px;">'+
+        '<div style="font-size:9px;font-weight:800;color:#42a5f5;letter-spacing:1px;margin-bottom:6px;">❄️ VUELTA A LA CALMA</div>'+
+        (b.vuelta.tipo ? '<div style="font-size:12px;color:#fff;font-weight:600;">'+b.vuelta.tipo+'</div>' : '')+
+        (b.vuelta.duracion ? '<div style="font-size:11px;color:#aaa;margin-top:2px;">'+b.vuelta.duracion+'</div>' : '')+
+        (b.vuelta.intensidad ? '<div style="font-size:11px;color:#aaa;">Intensidad: '+b.vuelta.intensidad+'</div>' : '')+
+        (b.vuelta.obs ? '<div style="font-size:11px;color:#aaa;margin-top:4px;line-height:1.4;">'+b.vuelta.obs+'</div>' : '')+
+      '</div>'
+    ) : '';
+
+    // Main content según tipo
+    let mainHTML = '';
+    if (b.tipo === 'pasadas' && b.pasadas?.length) {
+      const unidad = b.unidad||'m';
+      const rows = b.pasadas.map((p,pi) =>
+        '<tr>'+
+          '<td style="background:rgba(245,158,11,.1);color:#f59e0b;font-size:10px;font-weight:800;text-align:center;padding:7px 8px;border:1px solid rgba(255,255,255,.06);">'+(pi+1)+'</td>'+
+          '<td style="text-align:center;padding:7px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:#fff;">'+(p.distancia||'—')+' '+unidad+'</td>'+
+          '<td style="text-align:center;padding:7px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:#C9A84C;">'+(p.ritmo||'—')+'/km</td>'+
+          '<td style="text-align:center;padding:7px 8px;border:1px solid rgba(255,255,255,.06);font-size:11px;color:#888;">'+(p.pausa||'—')+'</td>'+
+        '</tr>'
+      ).join('');
+      mainHTML = '<div style="overflow-x:auto;margin:10px 0;"><table style="width:100%;border-collapse:collapse;">'+
+        '<thead><tr>'+
+          '<th style="background:rgba(255,255,255,.04);font-size:8px;color:#888;font-weight:800;padding:6px 8px;border:1px solid rgba(255,255,255,.06);letter-spacing:1px;">#</th>'+
+          '<th style="background:rgba(255,255,255,.04);font-size:8px;color:#888;font-weight:800;padding:6px 8px;border:1px solid rgba(255,255,255,.06);letter-spacing:1px;">DISTANCIA</th>'+
+          '<th style="background:rgba(255,255,255,.04);font-size:8px;color:#888;font-weight:800;padding:6px 8px;border:1px solid rgba(255,255,255,.06);letter-spacing:1px;">RITMO</th>'+
+          '<th style="background:rgba(255,255,255,.04);font-size:8px;color:#888;font-weight:800;padding:6px 8px;border:1px solid rgba(255,255,255,.06);letter-spacing:1px;">PAUSA</th>'+
+        '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+    } else {
+      // Continua, fartlek, tempo, progresivos, etc.
+      const fields = [
+        b.distancia ? ['DISTANCIA', b.distancia+(b.unidad||'')] : null,
+        b.duracion  ? ['DURACIÓN',  b.duracion]  : null,
+        b.ritmo     ? ['RITMO',     b.ritmo+'/km'] : null,
+        b.ritmoMin  ? ['RITMO MÍN', b.ritmoMin+'/km'] : null,
+        b.ritmoMax  ? ['RITMO MÁX', b.ritmoMax+'/km'] : null,
+        b.fc        ? ['FC OBJETIVO', b.fc+' bpm'] : null,
+        b.rpe       ? ['RPE', b.rpe] : null,
+      ].filter(Boolean);
+      if (fields.length) {
+        mainHTML = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0;">'+
+          fields.map(([k,v]) =>
+            '<div style="background:rgba(255,255,255,.04);border-radius:8px;padding:10px 12px;">'+
+              '<div style="font-size:8px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin-bottom:4px;">'+k+'</div>'+
+              '<div style="font-size:16px;font-weight:900;color:#fff;">'+v+'</div>'+
+            '</div>'
+          ).join('')+
+        '</div>';
+      }
+    }
+
+    // Progresivos
+    if (b.tipo === 'progresivos' && b.tramos?.length) {
+      mainHTML += '<div style="margin-top:8px;">'+
+        b.tramos.map((t,i) =>
+          '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:6px;margin-bottom:4px;">'+
+            '<span style="font-size:11px;font-weight:700;color:#8b5cf6;">Tramo '+(i+1)+'</span>'+
+            '<span style="font-size:11px;color:#fff;">'+(t.distancia||'')+' '+(t.ritmo?'· '+t.ritmo+'/km':'')+'</span>'+
+          '</div>'
+        ).join('')+
+      '</div>';
+    }
+
+    // Observaciones
+    const obs = b.obs ? '<div style="font-size:11px;color:#aaa;line-height:1.5;margin-top:8px;padding:10px 12px;background:rgba(255,255,255,.03);border-radius:8px;">'+b.obs+'</div>' : '';
+
+    return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-left:3px solid '+(tipoObj.color||'#C9A84C')+';border-radius:0 10px 10px 0;margin-bottom:12px;overflow:hidden;">'+
+      '<div style="padding:12px 14px;">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'+
+          '<span style="font-size:20px;">'+tipoObj.icon+'</span>'+
+          '<div>'+
+            '<div style="font-size:13px;font-weight:800;color:#fff;">'+tipoObj.label+'</div>'+
+            (b.nombre ? '<div style="font-size:10px;color:#888;">'+b.nombre+'</div>' : '')+
+          '</div>'+
+        '</div>'+
+        calent+mainHTML+vuelta+obs+
+      '</div>'+
+    '</div>';
+  }).join('');
 }
 
 // ── CARGAS ────────────────────────────────────────────────────────────────
