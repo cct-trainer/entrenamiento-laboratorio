@@ -425,17 +425,45 @@ function _ytId(url) {
 
 // Construye la card completa de un ejercicio
 function _ejCard(ej, uid) {
-  // Normalizar ctrl: soporta {ctrl:{...}} y {ctrlSeries,...}
-  const sArr = Array.isArray(ej.series)&&ej.series.length ? ej.series
-             : Array.isArray(ej.seriesApro)&&ej.seriesApro.length ? ej.seriesApro : null;
-  const cs  = ej.ctrl?.series || ej.ctrlSeries || (sArr ? String(sArr.length) : '');
-  const cr  = ej.ctrl?.reps   || ej.ctrlReps   || (sArr ? sArr[0]?.reps || '' : '');
-  const cp  = ej.ctrl?.peso   || ej.ctrlPeso   || (sArr ? sArr[0]?.peso || '' : '');
-  const cpa = ej.ctrl?.pausa  || ej.ctrlPausa  || (sArr ? sArr[0]?.pausa || '' : '');
-  const ci  = ej.ctrl?.rir    || ej.ctrlRir    || (sArr ? sArr[0]?.rir || '' : '');
+  // Referencias de ctrl (series efectivas)
+  const sEfec  = Array.isArray(ej.series)     && ej.series.length     ? ej.series     : null;
+  const sApro  = Array.isArray(ej.seriesApro) && ej.seriesApro.length ? ej.seriesApro : null;
+  const sDrop  = Array.isArray(ej.dropset)    && ej.dropset.length    ? ej.dropset    : null;
+
+  // Valores ctrl → prioriza series efectivas para el resumen
+  const cs  = ej.ctrl?.series || ej.ctrlSeries || (sEfec ? String(sEfec.length) : (sApro ? String(sApro.length) : ''));
+  const cr  = ej.ctrl?.reps   || ej.ctrlReps   || (sEfec ? sEfec[0]?.reps  || '' : '');
+  const cp  = ej.ctrl?.peso   || ej.ctrlPeso   || (sEfec ? sEfec[0]?.peso  || '' : '');
+  const cpa = ej.ctrl?.pausa  || ej.ctrlPausa  || (sEfec ? sEfec[0]?.pausa || '' : '');
+  const ci  = ej.ctrl?.rir    || ej.ctrlRir    || (sEfec ? sEfec[0]?.rir   || '' : '');
   const hasCtrl = cs || cr || cpa || ci;
 
-  // Grid SERIES / REPS / PAUSA / RIR
+  // Helper: tabla de series con prefijo de etiqueta
+  function _seriesTable(arr, prefijo, accentColor) {
+    if (!arr || !arr.length) return '';
+    const hasPeso  = arr.some(s=>s.peso);
+    const hasRir   = arr.some(s=>s.rir);
+    const hasPausa = arr.some(s=>s.pausa);
+    const head = '<tr>'+
+      '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">'+prefijo.toUpperCase()+'</th>'+
+      '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">REPS</th>'+
+      (hasPeso  ? '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">PESO</th>' : '')+
+      (hasRir   ? '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">RIR</th>' : '')+
+      (hasPausa ? '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">PAUSA</th>' : '')+
+    '</tr>';
+    const rows = arr.map((s,i) =>
+      '<tr>'+
+        '<td style="background:rgba('+accentColor+',.08);color:rgb('+accentColor+');font-size:10px;font-weight:800;text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);">'+prefijo.toUpperCase()+' '+(i+1)+'</td>'+
+        '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:#fff;">'+(s.reps||'—')+'</td>'+
+        (hasPeso  ? '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:rgb('+accentColor+');">'+(s.peso ? s.peso+'kg' : '—')+'</td>' : '')+
+        (hasRir   ? '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:11px;color:#888;">'+(s.rir ? 'RIR '+s.rir : '—')+'</td>' : '')+
+        (hasPausa ? '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:11px;color:#888;">'+(s.pausa||'—')+'</td>' : '')+
+      '</tr>'
+    ).join('');
+    return '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div>';
+  }
+
+  // Grid SERIES / REPS / PAUSA / RIR  (resumen de series efectivas)
   const ctrlGrid = hasCtrl ? (() => {
     const cols = [
       cs  ? ['SERIES', cs]  : null,
@@ -453,33 +481,28 @@ function _ejCard(ej, uid) {
     '</div>';
   })() : '';
 
-  // Peso referencia
+  // Peso referencia (de series efectivas)
   const pesoRef = cp ? '<div style="font-size:10px;color:#888;margin-bottom:8px;">Ref. peso: <span style="color:#C9A84C;font-weight:700;">'+cp+' kg</span></div>' : '';
 
-  // Tabla de series detalladas
-  const seriesTable = (sArr && sArr.length) ? (() => {
-    const rows = sArr.map((s,i) =>
-      '<tr>'+
-        '<td style="background:rgba(201,168,76,.08);color:#C9A84C;font-size:10px;font-weight:800;text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);">S'+(i+1)+'</td>'+
-        (s.reps  ? '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:#fff;">'+s.reps+'</td>' : '')+
-        (s.peso  ? '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:#C9A84C;">'+s.peso+'kg</td>' : '')+
-        (s.rir   ? '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:11px;color:#888;">RIR '+s.rir+'</td>' : '')+
-        (s.pausa ? '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:11px;color:#888;">'+s.pausa+'</td>' : '')+
-      '</tr>'
-    ).join('');
-    // cabecera dinámica
-    const hasPeso  = sArr.some(s=>s.peso);
-    const hasRir   = sArr.some(s=>s.rir);
-    const hasPausa = sArr.some(s=>s.pausa);
-    const head = '<tr>'+
-      '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">SERIE</th>'+
-      '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">REPS</th>'+
-      (hasPeso  ? '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">PESO</th>' : '')+
-      (hasRir   ? '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">RIR</th>' : '')+
-      (hasPausa ? '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">PAUSA</th>' : '')+
-    '</tr>';
-    return '<div style="margin:10px 0;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div>';
-  })() : '';
+  // Sección de aproximación
+  const aproSection = sApro ? (
+    '<div style="font-size:9px;font-weight:800;color:#f97316;letter-spacing:1px;margin:10px 0 4px;">SERIES DE APROXIMACIÓN</div>'+
+    _seriesTable(sApro, 'Apro', '249,115,22')
+  ) : '';
+
+  // Sección de series efectivas (tabla detallada)
+  const efecSection = sEfec ? (
+    '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">SERIES EFECTIVAS</div>'+
+    _seriesTable(sEfec, 'S', '201,168,76')
+  ) : '';
+
+  // Sección de dropsets
+  const dropSection = sDrop ? (
+    '<div style="font-size:9px;font-weight:800;color:#a78bfa;letter-spacing:1px;margin:10px 0 4px;">DROPSETS</div>'+
+    _seriesTable(sDrop, 'DS', '167,139,250')
+  ) : '';
+
+  const seriesTable = aproSection + efecSection + dropSection;
 
   // Video inline (thumbnail → iframe al hacer clic)
   const ytId = _ytId(ej.video||'');

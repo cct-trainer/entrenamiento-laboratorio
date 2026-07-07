@@ -10832,6 +10832,7 @@ function agregarSemana() {
 }
 function copiarSemana(semIdx) {
   guardarEstadoDiaActual();
+  _guardarUndoSnapshot('semana copiada');
   const src  = planSemanasArray[semIdx];
   const last = planSemanasArray[planSemanasArray.length - 1];
   const base = last.fechaInicio || new Date().toISOString().split('T')[0];
@@ -10840,7 +10841,11 @@ function copiarSemana(semIdx) {
   planSemanasArray.push({ semana: planSemanasArray.length + 1, fechaInicio: next.toISOString().split('T')[0], dias: JSON.parse(JSON.stringify(src.dias)) });
   renderPlanMes();
   setTimeout(() => { const el=document.getElementById('mes-sem-bloque-'+(planSemanasArray.length-1)); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }, 80);
-  toast('Semana copiada');
+  const _t = document.createElement('div');
+  _t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.35);';
+  _t.innerHTML='<span>📋 Semana copiada</span><button onclick="deshacerUltimaEliminacion();this.closest(\'div\').remove();" style="background:#C9A84C;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:800;cursor:pointer;">DESHACER</button>';
+  document.body.appendChild(_t);
+  setTimeout(()=>{ if(_t.parentNode) _t.remove(); }, 7000);
 }
 function eliminarSemana(semIdx) {
   if(!confirm('Eliminar esta semana?')) return;
@@ -10898,6 +10903,36 @@ function deshacerUltimaEliminacion() {
   _undoSnapshot = null;
   renderPlanMes();
   toast('✓ Sesión restaurada');
+}
+
+// ── Undo para copias entre alumnos ─────────────────────────────────────
+let _undoCopiaSnapshot = null; // { alumnoId, planes: [...] }
+
+function _guardarUndoCopiaSnapshot(label, alumnoId) {
+  _undoCopiaSnapshot = {
+    label,
+    alumnoId,
+    planes: JSON.parse(JSON.stringify(getPlanificaciones()))
+  };
+}
+
+function deshacerUltimaCopiaAlumno() {
+  if (!_undoCopiaSnapshot) return;
+  const todas = getPlanificaciones();
+  // Reemplazar solo los planes del alumno afectado
+  const otrasPlanificaciones = todas.filter(p => p.alumnoId !== _undoCopiaSnapshot.alumnoId);
+  const planesAlumnoOrig = _undoCopiaSnapshot.planes.filter(p => p.alumnoId === _undoCopiaSnapshot.alumnoId);
+  savePlanificaciones([...otrasPlanificaciones, ...planesAlumnoOrig]);
+  _undoCopiaSnapshot = null;
+  toast('✓ Copia deshecha · datos restaurados');
+}
+
+function _mostrarToastDeshacer(msg, fnDeshacer) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.35);max-width:90vw;';
+  t.innerHTML = `<span>${msg}</span><button onclick="${fnDeshacer}();this.closest('div').remove();" style="background:#C9A84C;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">DESHACER</button>`;
+  document.body.appendChild(t);
+  setTimeout(() => { if (t.parentNode) t.remove(); }, 8000);
 }
 
 function eliminarSesionDia(diaIdx, semIdx, sesionIdx) {
@@ -18991,7 +19026,6 @@ function confirmarCopiarDia() {
   const existing = _buscarPlanExistente(planes, alumnoId, fechaLunesDestino);
 
   if (existing) {
-    // Merge en plan existente
     if (!existing.semanasArray) existing.semanasArray = [];
     let semIdx = existing.semanasArray.findIndex(s => s.fechaInicio === fechaLunesDestino);
     if (semIdx === -1) {
@@ -18999,13 +19033,24 @@ function confirmarCopiarDia() {
       semIdx = existing.semanasArray.length - 1;
     }
     if (!existing.semanasArray[semIdx].dias) existing.semanasArray[semIdx].dias = {};
+
+    // ⚠️ Aviso si hay sesión existente que se va a pisar
+    const sesionExistente = existing.semanasArray[semIdx].dias[diaIdx];
+    if (sesionExistente && sesionExistente.length > 0) {
+      const nomExistente = sesionExistente[0]?.nombre || DIAS[diaIdx];
+      if (!confirm(`⚠️ ${dest?.nombre || 'El alumno'} ya tiene sesión el ${DIAS[diaIdx]} ("${nomExistente}").\n\nEsto la va a REEMPLAZAR. ¿Continuar?`)) return;
+    }
+
+    // Guardar snapshot para poder deshacer
+    _guardarUndoCopiaSnapshot(`${DIAS[diaIdx]} de ${dest?.nombre || 'alumno'}`, alumnoId);
+
     existing.semanasArray[semIdx].dias[diaIdx] = JSON.parse(JSON.stringify(diaData));
     savePlanificaciones(planes);
     const fechaLabel = new Date(fechaLunesDestino + 'T12:00:00').toLocaleDateString('es-AR', { day:'numeric', month:'long' });
-    toast(`✓ ${DIAS[diaIdx]} copiado a la semana del ${fechaLabel} (${dest?.nombre || 'alumno'})`);
+    _mostrarToastDeshacer(`✓ ${DIAS[diaIdx]} copiado a ${dest?.nombre || 'alumno'} · ${fechaLabel}`, 'deshacerUltimaCopiaAlumno');
   } else {
     // No hay plan para esa semana → crear uno nuevo
-    if (confirm(`${dest?.nombre || 'El alumno'} no tiene planificación para esa semana.\n¿Creamos una nueva semana de entrenamiento?`)) {
+    if (confirm(`${dest?.nombre || 'El alumno'} no tiene planificación para esa semana.\n¿Creamos una nueva?`)) {
       planes.push({
         id: 'plan_' + Date.now() + '_' + alumnoId.slice(-4),
         alumnoId, tipoPlan: plan.tipoPlan || 'fuerza',
@@ -19027,6 +19072,7 @@ function confirmarCopiarSemana() {
   const alumnoId = _copiaInlineAlumnoId;
   if (!plan || !alumnoId) { toast('Error: datos perdidos', 'error'); return; }
   const dest = getAlumnos().find(a => a.id === alumnoId);
+  const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
   const fechaLunes = (plan.semanasArray && plan.semanasArray[0]?.fechaInicio) || plan.fecha || '';
   const existing = _buscarPlanExistente(planes, alumnoId, fechaLunes);
 
@@ -19039,11 +19085,27 @@ function confirmarCopiarSemana() {
         semIdx = existing.semanasArray.length - 1;
       }
       if (!existing.semanasArray[semIdx].dias) existing.semanasArray[semIdx].dias = {};
+
+      // ⚠️ Detectar días que se van a pisar
+      const diasAReemplazar = Object.keys(semOrigen.dias).filter(d =>
+        existing.semanasArray[semIdx].dias[d] && existing.semanasArray[semIdx].dias[d].length > 0
+      );
+      if (diasAReemplazar.length > 0) {
+        const nombresReemplazar = diasAReemplazar.map(d => {
+          const nom = existing.semanasArray[semIdx].dias[d][0]?.nombre;
+          return DIAS[d] + (nom ? ` ("${nom}")` : '');
+        }).join('\n  · ');
+        if (!confirm(`⚠️ Esto va a REEMPLAZAR ${diasAReemplazar.length} sesión/es existente/s de ${dest?.nombre || 'el alumno'}:\n  · ${nombresReemplazar}\n\n¿Continuar?`)) return;
+      }
+
+      // Guardar snapshot para deshacer
+      _guardarUndoCopiaSnapshot(`semana de ${dest?.nombre || 'alumno'}`, alumnoId);
+
       Object.keys(semOrigen.dias).forEach(d => {
         existing.semanasArray[semIdx].dias[d] = JSON.parse(JSON.stringify(semOrigen.dias[d]));
       });
       savePlanificaciones(planes);
-      toast(`✓ Semana copiada al plan de ${dest?.nombre || 'alumno'}`);
+      _mostrarToastDeshacer(`✓ Semana copiada a ${dest?.nombre || 'alumno'}`, 'deshacerUltimaCopiaAlumno');
     }
   } else {
     const copia = JSON.parse(JSON.stringify(plan));
