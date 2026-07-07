@@ -439,27 +439,33 @@ function _ejCard(ej, uid) {
   const hasCtrl = cs || cr || cpa || ci;
 
   // Helper: tabla de series con prefijo de etiqueta
-  function _seriesTable(arr, prefijo, accentColor) {
+  function _seriesTable(arr, prefijoLabel) {
     if (!arr || !arr.length) return '';
     const hasPeso  = arr.some(s=>s.peso);
     const hasRir   = arr.some(s=>s.rir);
     const hasPausa = arr.some(s=>s.pausa);
+    const cellBg   = 'background:#0d0d1a;';
+    const thStyle  = cellBg+'font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.08);text-align:center;';
+    const tdBase   = cellBg+'text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.08);';
     const head = '<tr>'+
-      '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">'+prefijo.toUpperCase()+'</th>'+
-      '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">REPS</th>'+
-      (hasPeso  ? '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">PESO</th>' : '')+
-      (hasRir   ? '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">RIR</th>' : '')+
-      (hasPausa ? '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">PAUSA</th>' : '')+
+      '<th style="'+thStyle+'">SERIE</th>'+
+      '<th style="'+thStyle+'">REPS</th>'+
+      (hasPeso  ? '<th style="'+thStyle+'">PESO</th>' : '')+
+      (hasRir   ? '<th style="'+thStyle+'">RIR</th>'  : '')+
+      (hasPausa ? '<th style="'+thStyle+'">PAUSA</th>': '')+
     '</tr>';
-    const rows = arr.map((s,i) =>
-      '<tr>'+
-        '<td style="background:rgba('+accentColor+',.08);color:rgb('+accentColor+');font-size:10px;font-weight:800;text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);">'+prefijo.toUpperCase()+' '+(i+1)+'</td>'+
-        '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:#fff;">'+(s.reps||'—')+'</td>'+
-        (hasPeso  ? '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:rgb('+accentColor+');">'+(s.peso ? s.peso+'kg' : '—')+'</td>' : '')+
-        (hasRir   ? '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:11px;color:#888;">'+(s.rir ? 'RIR '+s.rir : '—')+'</td>' : '')+
-        (hasPausa ? '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:11px;color:#888;">'+(s.pausa||'—')+'</td>' : '')+
-      '</tr>'
-    ).join('');
+    const rows = arr.map((s,i) => {
+      // Limpiar "kg/Kg" duplicado: si el valor ya contiene "kg" no agregar más
+      const pesoVal = s.peso ? String(s.peso).replace(/kg$/i,'').trim() : null;
+      const pesoStr = pesoVal ? pesoVal+' kg' : '—';
+      return '<tr>'+
+        '<td style="'+tdBase+'font-size:11px;font-weight:800;color:#fff;">'+prefijoLabel+' '+(i+1)+'</td>'+
+        '<td style="'+tdBase+'font-size:13px;font-weight:700;color:#fff;">'+(s.reps||'—')+'</td>'+
+        (hasPeso  ? '<td style="'+tdBase+'font-size:13px;font-weight:700;color:#fff;">'+pesoStr+'</td>' : '')+
+        (hasRir   ? '<td style="'+tdBase+'font-size:11px;color:#fff;">'+(s.rir ? 'RIR '+s.rir : '—')+'</td>' : '')+
+        (hasPausa ? '<td style="'+tdBase+'font-size:11px;color:#fff;">'+(s.pausa||'—')+'</td>' : '')+
+      '</tr>';
+    }).join('');
     return '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div>';
   }
 
@@ -481,25 +487,26 @@ function _ejCard(ej, uid) {
     '</div>';
   })() : '';
 
-  // Peso referencia (de series efectivas)
-  const pesoRef = cp ? '<div style="font-size:10px;color:#888;margin-bottom:8px;">Ref. peso: <span style="color:#C9A84C;font-weight:700;">'+cp+' kg</span></div>' : '';
+  // Peso referencia (limpiar "Kg" duplicado)
+  const cpClean = cp ? String(cp).replace(/kg$/i,'').trim() : '';
+  const pesoRef = cpClean ? '<div style="font-size:10px;color:#888;margin-bottom:8px;">Ref. peso: <span style="color:#C9A84C;font-weight:700;">'+cpClean+' kg</span></div>' : '';
 
   // Sección de aproximación
   const aproSection = sApro ? (
-    '<div style="font-size:9px;font-weight:800;color:#f97316;letter-spacing:1px;margin:10px 0 4px;">SERIES DE APROXIMACIÓN</div>'+
-    _seriesTable(sApro, 'Apro', '249,115,22')
+    '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">SERIES DE APROXIMACIÓN</div>'+
+    _seriesTable(sApro, 'S. Aprox')
   ) : '';
 
   // Sección de series efectivas (tabla detallada)
   const efecSection = sEfec ? (
     '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">SERIES EFECTIVAS</div>'+
-    _seriesTable(sEfec, 'S', '201,168,76')
+    _seriesTable(sEfec, 'S. Efectiva')
   ) : '';
 
   // Sección de dropsets
   const dropSection = sDrop ? (
-    '<div style="font-size:9px;font-weight:800;color:#a78bfa;letter-spacing:1px;margin:10px 0 4px;">DROPSETS</div>'+
-    _seriesTable(sDrop, 'DS', '167,139,250')
+    '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">DROPSETS</div>'+
+    _seriesTable(sDrop, 'DS')
   ) : '';
 
   const seriesTable = aproSection + efecSection + dropSection;
