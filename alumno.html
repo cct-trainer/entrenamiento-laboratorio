@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Mi Portal — Christian Cattaneo</title>
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" id="pwa-manifest">
 <meta name="theme-color" content="#C9A84C">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -196,6 +196,24 @@ let _data=null, _plan=null, _semIdx=0, _diaIdx=null;
 (async function(){
   const id = new URLSearchParams(location.search).get('id');
   if (!id) return showErr('No se encontró el identificador en el enlace.');
+
+  // Manifest dinámico con start_url que incluye el ID del alumno
+  const manifest = {
+    name: 'Mi Portal — Christian Cattaneo',
+    short_name: 'Mi Portal',
+    description: 'Portal de entrenamiento personalizado',
+    start_url: 'https://cct-trainer.github.io/entrenamiento-laboratorio/alumno.html?id=' + encodeURIComponent(id),
+    display: 'standalone',
+    background_color: '#0d0d1a',
+    theme_color: '#C9A84C',
+    orientation: 'portrait',
+    icons: [
+      { src: 'https://cct-trainer.github.io/entrenamiento-laboratorio/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+      { src: 'https://cct-trainer.github.io/entrenamiento-laboratorio/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
   try {
     firebase.initializeApp(CFG);
     const db = firebase.firestore();
