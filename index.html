@@ -3160,9 +3160,24 @@ select.toolbox-input option:disabled { color: #888; }
         <input id="blog-art-titulo" type="text" placeholder="Título del artículo..." style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;box-sizing:border-box;">
       </div>
 
+      <!-- IMAGEN DE PORTADA (todos los tipos) -->
+      <div style="margin-bottom:12px;">
+        <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">IMAGEN DE PORTADA <span style="font-weight:400;color:#aaa;">(URL, opcional)</span></label>
+        <input id="blog-art-portada" type="url" placeholder="https://i.imgur.com/..." style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;box-sizing:border-box;" oninput="blogPreviewPortada()">
+        <div id="blog-portada-preview" style="margin-top:6px;display:none;">
+          <img id="blog-portada-img" src="" alt="Portada" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0;">
+        </div>
+      </div>
+
       <div id="blog-campo-contenido" style="margin-bottom:12px;">
         <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">CONTENIDO</label>
         <textarea id="blog-art-contenido" rows="8" placeholder="Escribí el contenido del artículo..." style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box;line-height:1.6;"></textarea>
+        <!-- Imágenes adicionales dentro del artículo -->
+        <div style="margin-top:10px;">
+          <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:6px;">IMÁGENES DEL ARTÍCULO <span style="font-weight:400;color:#aaa;">(URLs adicionales)</span></label>
+          <div id="blog-imgs-lista"></div>
+          <button type="button" onclick="blogAgregarImagen()" style="background:#f4f6fa;border:1px dashed #ccc;border-radius:8px;padding:8px 16px;font-size:12px;cursor:pointer;color:#555;font-weight:700;margin-top:6px;">＋ Agregar imagen</button>
+        </div>
       </div>
 
       <div id="blog-campo-url" style="margin-bottom:12px;display:none;">
@@ -22095,10 +22110,34 @@ function renderBlogLista() {
 }
 
 // ── Nuevo / Editar ───────────────────────────────────────────────
+function blogPreviewPortada() {
+  const url = document.getElementById('blog-art-portada').value.trim();
+  const prev = document.getElementById('blog-portada-preview');
+  const img  = document.getElementById('blog-portada-img');
+  if (url) { img.src = url; prev.style.display = ''; }
+  else { prev.style.display = 'none'; }
+}
+
+function blogAgregarImagen(url) {
+  const lista = document.getElementById('blog-imgs-lista');
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:6px;';
+  div.innerHTML = `<input type="url" placeholder="https://i.imgur.com/..." value="${url||''}" style="flex:1;border:1px solid #e0e0e0;border-radius:8px;padding:7px 10px;font-size:12px;font-family:inherit;">
+    <button type="button" onclick="this.parentElement.remove()" style="background:#fff0f0;border:1px solid #fecaca;border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer;color:#ef4444;font-weight:700;">×</button>`;
+  lista.appendChild(div);
+}
+
+function _blogLeerImagenes() {
+  return [...document.querySelectorAll('#blog-imgs-lista input')].map(i=>i.value.trim()).filter(Boolean);
+}
+
 function blogNuevoArticulo() {
   document.getElementById('blog-art-id').value = '';
   document.getElementById('blog-art-titulo').value = '';
+  document.getElementById('blog-art-portada').value = '';
+  document.getElementById('blog-portada-preview').style.display = 'none';
   document.getElementById('blog-art-contenido').value = '';
+  document.getElementById('blog-imgs-lista').innerHTML = '';
   document.getElementById('blog-art-url').value = '';
   document.getElementById('blog-art-yt').value = '';
   document.getElementById('blog-art-cat').value = 'Hipertrofia';
@@ -22114,6 +22153,7 @@ function blogEditarArticulo(idx) {
   if (!a) return;
   document.getElementById('blog-art-id').value = a.id || '';
   document.getElementById('blog-art-titulo').value = a.titulo || '';
+  document.getElementById('blog-art-portada').value = a.portada || '';
   document.getElementById('blog-art-cat').value = a.categoria || 'General';
   document.getElementById('blog-art-tipo').value = a.tipo || 'articulo';
   document.getElementById('blog-art-contenido').value = a.contenido || '';
@@ -22121,6 +22161,11 @@ function blogEditarArticulo(idx) {
   document.getElementById('blog-art-yt').value = a.ytId ? 'https://youtube.com/watch?v='+a.ytId : '';
   document.getElementById('blog-art-pub').checked = a.publicado !== false;
   document.getElementById('blog-editor-titulo').textContent = 'Editar artículo';
+  // Cargar imágenes adicionales
+  document.getElementById('blog-imgs-lista').innerHTML = '';
+  (a.imagenes || []).forEach(url => blogAgregarImagen(url));
+  // Preview portada
+  blogPreviewPortada();
   blogToggleCampos();
   document.getElementById('modal-blog-editor').style.display = 'flex';
 }
@@ -22143,15 +22188,17 @@ function blogGuardarArticulo() {
   const arts = getArticulos();
   const idExistente = document.getElementById('blog-art-id').value;
   const art = {
-    id:         idExistente || 'art_' + Date.now(),
+    id:        idExistente || 'art_' + Date.now(),
     titulo,
-    categoria:  document.getElementById('blog-art-cat').value,
+    categoria: document.getElementById('blog-art-cat').value,
     tipo,
-    contenido:  tipo === 'articulo' ? document.getElementById('blog-art-contenido').value.trim() : '',
-    url:        tipo === 'link'     ? document.getElementById('blog-art-url').value.trim()       : '',
-    ytId:       tipo === 'video'    ? _ytIdBlog(document.getElementById('blog-art-yt').value.trim()) : '',
-    fecha:      new Date().toLocaleDateString('es-AR', {day:'numeric',month:'long',year:'numeric'}),
-    publicado:  document.getElementById('blog-art-pub').checked,
+    portada:   document.getElementById('blog-art-portada').value.trim(),
+    contenido: tipo === 'articulo' ? document.getElementById('blog-art-contenido').value.trim() : '',
+    imagenes:  tipo === 'articulo' ? _blogLeerImagenes() : [],
+    url:       tipo === 'link'  ? document.getElementById('blog-art-url').value.trim() : '',
+    ytId:      tipo === 'video' ? _ytIdBlog(document.getElementById('blog-art-yt').value.trim()) : '',
+    fecha:     new Date().toLocaleDateString('es-AR', {day:'numeric',month:'long',year:'numeric'}),
+    publicado: document.getElementById('blog-art-pub').checked,
   };
   if (idExistente) {
     const idx = arts.findIndex(a => a.id === idExistente);
