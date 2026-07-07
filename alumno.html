@@ -284,41 +284,114 @@ function renderRutina() {
 
 function selDia(i) { _diaIdx=_diaIdx===i?null:i; renderRutina(); }
 
+// Extrae el ID de YouTube de cualquier formato de URL
+function _ytId(url) {
+  if (!url) return '';
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([^&?/\s]{11})/);
+  return m ? m[1] : '';
+}
+
+// Construye la card completa de un ejercicio
+function _ejCard(ej) {
+  // Normalizar ctrl: soporta {ctrl:{...}} y {ctrlSeries,...}
+  const sArr = Array.isArray(ej.series)&&ej.series.length ? ej.series
+             : Array.isArray(ej.seriesApro)&&ej.seriesApro.length ? ej.seriesApro : null;
+  const cs  = ej.ctrl?.series || ej.ctrlSeries || (sArr ? String(sArr.length) : '');
+  const cr  = ej.ctrl?.reps   || ej.ctrlReps   || (sArr ? sArr[0]?.reps || '' : '');
+  const cp  = ej.ctrl?.peso   || ej.ctrlPeso   || (sArr ? sArr[0]?.peso || '' : '');
+  const cpa = ej.ctrl?.pausa  || ej.ctrlPausa  || (sArr ? sArr[0]?.pausa || '' : '');
+  const ci  = ej.ctrl?.rir    || ej.ctrlRir    || (sArr ? sArr[0]?.rir || '' : '');
+  const hasCtrl = cs || cr || cpa || ci;
+
+  // Grid SERIES / REPS / PAUSA / RIR
+  const ctrlGrid = hasCtrl ? (() => {
+    const cols = [
+      cs  ? ['SERIES', cs]  : null,
+      cr  ? ['REPS',   cr]  : null,
+      cpa ? ['PAUSA',  cpa] : null,
+      ci  ? ['RIR',    ci]  : null,
+    ].filter(Boolean);
+    return '<div style="display:grid;grid-template-columns:repeat('+cols.length+',1fr);border:1px solid rgba(201,168,76,.25);border-radius:8px;overflow:hidden;margin:10px 0;">'+
+      cols.map((c,i) =>
+        '<div style="padding:8px 6px;text-align:center;'+(i<cols.length-1?'border-right:1px solid rgba(201,168,76,.15);':'')+'">'+
+          '<div style="font-size:8px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin-bottom:3px;">'+c[0]+'</div>'+
+          '<div style="font-size:18px;font-weight:900;color:#fff;line-height:1;">'+c[1]+'</div>'+
+        '</div>'
+      ).join('')+
+    '</div>';
+  })() : '';
+
+  // Peso referencia
+  const pesoRef = cp ? '<div style="font-size:10px;color:#888;margin-bottom:8px;">Ref. peso: <span style="color:#C9A84C;font-weight:700;">'+cp+' kg</span></div>' : '';
+
+  // Tabla de series detalladas
+  const seriesTable = (sArr && sArr.length) ? (() => {
+    const rows = sArr.map((s,i) =>
+      '<tr>'+
+        '<td style="background:rgba(201,168,76,.08);color:#C9A84C;font-size:10px;font-weight:800;text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);">S'+(i+1)+'</td>'+
+        (s.reps  ? '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:#fff;">'+s.reps+'</td>' : '')+
+        (s.peso  ? '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:#C9A84C;">'+s.peso+'kg</td>' : '')+
+        (s.rir   ? '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:11px;color:#888;">RIR '+s.rir+'</td>' : '')+
+        (s.pausa ? '<td style="text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.06);font-size:11px;color:#888;">'+s.pausa+'</td>' : '')+
+      '</tr>'
+    ).join('');
+    // cabecera dinámica
+    const hasPeso  = sArr.some(s=>s.peso);
+    const hasRir   = sArr.some(s=>s.rir);
+    const hasPausa = sArr.some(s=>s.pausa);
+    const head = '<tr>'+
+      '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">SERIE</th>'+
+      '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">REPS</th>'+
+      (hasPeso  ? '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">PESO</th>' : '')+
+      (hasRir   ? '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">RIR</th>' : '')+
+      (hasPausa ? '<th style="background:rgba(255,255,255,.04);font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.06);">PAUSA</th>' : '')+
+    '</tr>';
+    return '<div style="margin:10px 0;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div>';
+  })() : '';
+
+  // Video thumbnail
+  const ytId = _ytId(ej.video||'');
+  const videoHTML = ytId ? (
+    '<a href="'+ej.video+'" target="_blank" rel="noopener" style="display:block;margin:10px 0;border-radius:10px;overflow:hidden;position:relative;text-decoration:none;">'+
+      '<img src="https://img.youtube.com/vi/'+ytId+'/hqdefault.jpg" alt="Video" style="width:100%;display:block;aspect-ratio:16/9;object-fit:cover;">'+
+      '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);">'+
+        '<div style="width:48px;height:48px;background:#ff0000;border-radius:50%;display:flex;align-items:center;justify-content:center;">'+
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>'+
+        '</div>'+
+      '</div>'+
+      '<div style="position:absolute;bottom:8px;left:10px;background:rgba(0,0,0,.7);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:.5px;">▶ VER TUTORIAL</div>'+
+    '</a>'
+  ) : '';
+
+  return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:10px;overflow:hidden;">'+
+    '<div style="padding:12px 14px 0;">'+
+      '<div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:2px;">'+(ej.nombre||'—')+'</div>'+
+      (ej.musculos ? '<div style="font-size:10px;color:#888;margin-bottom:4px;">'+ej.musculos+'</div>' : '')+
+      ctrlGrid+
+      pesoRef+
+      seriesTable+
+      videoHTML+
+    '</div>'+
+  '</div>';
+}
+
 function renderSesion() {
   const ctn=document.getElementById('sesion-ctn');
   if (_diaIdx===null||!_plan) { ctn.innerHTML=''; return; }
   const sem=_plan.semanasArray?.[_semIdx];
   const ses=sem?.dias?.[_diaIdx]?.[0];
   if (!ses?.bloques?.length) { ctn.innerHTML='<div class="empty" style="padding:20px"><div class="empty-txt">Sin sesión para el '+DN[_diaIdx]+'</div></div>'; return; }
-  ctn.innerHTML='<div class="scard"><div class="scard-name">'+(ses.nombre||DN[_diaIdx])+'</div>'+
+  ctn.innerHTML='<div style="padding-bottom:4px;"><div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--gold);margin-bottom:12px;">'+(ses.nombre||DN[_diaIdx]).toUpperCase()+'</div>'+
     ses.bloques.map((b,bi) => {
       const letra='ABCDEFGHIJ'[bi]||(bi+1);
-      return '<div class="blk">'+
+      const ejesHTML = (b.ejercicios||[]).map(_ejCard).join('');
+      return '<div class="blk" style="margin-bottom:14px;">'+
         '<div class="blk-hdr open" onclick="this.classList.toggle(\'open\');var nx=this.nextElementSibling;nx.style.display=this.classList.contains(\'open\')?\'block\':\'none\'">'+
           '<div class="blk-letra">'+letra+'</div>'+
           '<div class="blk-txt"><div class="blk-n">'+(b.nombre||b.tipo||'Bloque')+'</div><div class="blk-t">'+(b.serieTipo||'')+'</div></div>'+
           '<div class="blk-arr">&#9660;</div>'+
         '</div>'+
-        '<div class="blk-body">'+
-          (b.ejercicios||[]).map(ej => {
-            // 1. Formato anidado {ctrl:{series,reps,peso,rir}}
-            // 2. Formato plano {ctrlSeries,ctrlReps,...}
-            // 3. Fallback: array de series detallado {series:[{reps,peso,rir},...]}
-            const sArr=Array.isArray(ej.series)&&ej.series.length?ej.series:
-                       Array.isArray(ej.seriesApro)&&ej.seriesApro.length?ej.seriesApro:null;
-            const cs=ej.ctrl?.series||ej.ctrlSeries||(sArr?String(sArr.length):'');
-            const cr=ej.ctrl?.reps  ||ej.ctrlReps  ||(sArr?sArr[0]?.reps:'');
-            const cp=ej.ctrl?.peso  ||ej.ctrlPeso  ||(sArr?sArr[0]?.peso:'');
-            const ci=ej.ctrl?.rir   ||ej.ctrlRir   ||(sArr?sArr[0]?.rir:'');
-            const r=ej.ctrl_real||{};
-            const hp=cs||cr||cp, hr=r.series||r.reps||r.peso;
-            return '<div class="ejrow"><div class="ej-n">'+(ej.nombre||'—')+'</div><div class="ej-c">'+
-              (hp?'<div><span class="cp">'+(cs||'?')+'x'+(cr||'?')+(cp?' · '+cp+'kg':'')+'</span></div>':'')+
-              (hr?'<div style="margin-top:3px;"><span class="cr">&#10003; '+(r.series||'?')+'x'+(r.reps||'?')+(r.peso?' · '+r.peso+'kg':'')+'</span></div>':'')+
-              (ci?'<div class="ej-rir">RIR '+ci+'</div>':'')+
-            '</div></div>';
-          }).join('')+
-        '</div>'+
+        '<div class="blk-body" style="padding:8px 4px 4px;">'+ejesHTML+'</div>'+
       '</div>';
     }).join('')+'</div>';
 }
