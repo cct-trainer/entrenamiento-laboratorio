@@ -310,13 +310,84 @@ function renderRutina() {
 function selDia(i) { _diaIdx=_diaIdx===i?null:i; renderRutina(); }
 
 // Reproduce video de YouTube inline reemplazando la miniatura
-function _playYt(id) {
-  const thumb  = document.getElementById('yt-thumb-'+id);
-  const player = document.getElementById('yt-player-'+id);
+function _playYt(uid, ytId) {
+  const thumb  = document.getElementById('yt-thumb-'+uid);
+  const player = document.getElementById('yt-player-'+uid);
   if (!thumb || !player) return;
   thumb.style.display = 'none';
   player.style.display = 'block';
-  player.innerHTML = '<iframe src="https://www.youtube.com/embed/'+id+'?autoplay=1" width="100%" height="220" style="border:none;display:block;" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+  player.innerHTML = '<iframe src="https://www.youtube.com/embed/'+ytId+'?autoplay=1" width="100%" height="220" style="border:none;display:block;" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+}
+
+function _toggleStatus(uid, state) {
+  const ok = document.getElementById(uid+'-ok');
+  const no = document.getElementById(uid+'-no');
+  const card = document.getElementById(uid+'-card');
+  if (!ok||!no) return;
+  const wasActive = document.getElementById(uid+'-'+state).classList.contains('active');
+  ok.classList.remove('active'); no.classList.remove('active');
+  ok.style.cssText='flex:1;padding:9px;border-radius:8px;border:1.5px solid rgba(34,197,94,.3);background:rgba(34,197,94,.1);color:#22c55e;font-size:12px;font-weight:800;cursor:pointer;';
+  no.style.cssText='flex:1;padding:9px;border-radius:8px;border:1.5px solid rgba(239,68,68,.3);background:rgba(239,68,68,.1);color:#f87171;font-size:12px;font-weight:800;cursor:pointer;';
+  if (card) { card.style.borderColor='rgba(255,255,255,.08)'; card.style.background='rgba(255,255,255,.03)'; }
+  if (!wasActive) {
+    const btn = document.getElementById(uid+'-'+state);
+    btn.classList.add('active');
+    if (state==='ok') {
+      btn.style.cssText='flex:1;padding:9px;border-radius:8px;border:1.5px solid #16a34a;background:#16a34a;color:#fff;font-size:12px;font-weight:800;cursor:pointer;';
+      if (card) { card.style.borderColor='#22c55e'; card.style.background='rgba(34,197,94,.06)'; }
+    } else {
+      btn.style.cssText='flex:1;padding:9px;border-radius:8px;border:1.5px solid #c62828;background:#c62828;color:#fff;font-size:12px;font-weight:800;cursor:pointer;';
+      if (card) { card.style.borderColor='#ef4444'; card.style.background='rgba(239,68,68,.06)'; }
+    }
+  }
+}
+
+function _compilarFeedback() {
+  if (_diaIdx===null||!_plan) return '';
+  const sem = _plan.semanasArray?.[_semIdx];
+  const ses = sem?.dias?.[_diaIdx]?.[0];
+  if (!ses?.bloques?.length) return '';
+  const nombre = _data?.perfil?.nombre || _data?.perfil?.name || 'Alumno';
+  const fecha = new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+  let txt = 'FEEDBACK DE ENTRENAMIENTO\n';
+  txt += 'Alumno: '+nombre+'\n';
+  txt += 'Fecha: '+fecha+' - Semana '+(_semIdx+1)+'\n';
+  txt += 'Sesion: '+(ses.nombre||DN[_diaIdx])+'\n\n';
+  ses.bloques.forEach((b,bi) => {
+    const letra='ABCDEFGHIJ'[bi]||(bi+1);
+    txt += 'BLOQUE '+letra+' - '+(b.nombre||'Bloque')+'\n';
+    (b.ejercicios||[]).forEach((ej,ei) => {
+      const uid='b'+bi+'e'+ei;
+      const sArr=Array.isArray(ej.series)&&ej.series.length?ej.series:null;
+      const cs=ej.ctrl?.series||ej.ctrlSeries||(sArr?String(sArr.length):'');
+      const cr=ej.ctrl?.reps||ej.ctrlReps||(sArr?sArr[0]?.reps||'':'');
+      const cp=ej.ctrl?.peso||ej.ctrlPeso||'';
+      const rr=document.getElementById(uid+'-rr')?.value.trim()||'';
+      const pr=document.getElementById(uid+'-pr')?.value.trim()||'';
+      const cm=document.getElementById(uid+'-cm')?.value.trim()||'';
+      const isOk=document.getElementById(uid+'-ok')?.classList.contains('active');
+      const isNo=document.getElementById(uid+'-no')?.classList.contains('active');
+      txt += '- '+(ej.nombre||'?')+'\n';
+      if (cs||cr) txt += '  Plan: '+(cs?cs+'x':'')+cr+(cp?' | '+cp+'kg':'')+'\n';
+      if (rr||pr) txt += '  Real: '+(rr?rr+' reps':'')+( pr?' | '+pr+' kg':'')+'\n';
+      if (isOk)   txt += '  COMPLETADO\n';
+      if (isNo)   txt += '  NO PUDE\n';
+      if (cm)     txt += '  Nota: '+cm+'\n';
+    });
+    txt += '\n';
+  });
+  return txt.trim();
+}
+
+function _enviarWA() {
+  const txt = _compilarFeedback();
+  if (!txt) return;
+  const url = 'https://wa.me/?text='+encodeURIComponent(txt);
+  if (navigator.share) {
+    navigator.share({text:txt}).catch(()=>window.open(url,'_blank'));
+  } else {
+    window.open(url,'_blank');
+  }
 }
 
 // Extrae el ID de YouTube de cualquier formato de URL
@@ -327,7 +398,7 @@ function _ytId(url) {
 }
 
 // Construye la card completa de un ejercicio
-function _ejCard(ej) {
+function _ejCard(ej, uid) {
   // Normalizar ctrl: soporta {ctrl:{...}} y {ctrlSeries,...}
   const sArr = Array.isArray(ej.series)&&ej.series.length ? ej.series
              : Array.isArray(ej.seriesApro)&&ej.seriesApro.length ? ej.seriesApro : null;
@@ -388,7 +459,7 @@ function _ejCard(ej) {
   const ytId = _ytId(ej.video||'');
   const videoHTML = ytId ? (
     '<div style="margin:10px 0;border-radius:10px;overflow:hidden;position:relative;">'+
-      '<div id="yt-thumb-'+ytId+'" style="cursor:pointer;position:relative;" onclick="_playYt(\''+ytId+'\')">'+
+      '<div id="yt-thumb-'+uid+'" style="cursor:pointer;position:relative;" onclick="_playYt(\''+uid+'\',\''+ytId+'\')">'+
         '<img src="https://img.youtube.com/vi/'+ytId+'/hqdefault.jpg" alt="Video" style="width:100%;display:block;aspect-ratio:16/9;object-fit:cover;">'+
         '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);">'+
           '<div style="width:52px;height:52px;background:#ff0000;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(255,0,0,.5);">'+
@@ -397,18 +468,40 @@ function _ejCard(ej) {
         '</div>'+
         '<div style="position:absolute;bottom:8px;left:10px;background:rgba(0,0,0,.7);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:.5px;">▶ TOCÁ PARA VER</div>'+
       '</div>'+
-      '<div id="yt-player-'+ytId+'" style="display:none;"></div>'+
+      '<div id="yt-player-'+uid+'" style="display:none;"></div>'+
     '</div>'
   ) : '';
 
-  return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:10px;overflow:hidden;">'+
-    '<div style="padding:12px 14px 0;">'+
+  // Inputs REAL + comentario + estado
+  const feedbackHTML =
+    '<div style="border-top:1px solid rgba(255,255,255,.06);margin-top:10px;padding:10px 0 4px;">'+
+      '<div style="font-size:8px;font-weight:800;color:#22c55e;letter-spacing:1px;margin-bottom:8px;">TU REGISTRO</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">'+
+        '<div>'+
+          '<div style="font-size:8px;color:#888;font-weight:700;margin-bottom:3px;">REPS REALES</div>'+
+          '<input id="'+uid+'-rr" type="number" placeholder="'+(cr||'—')+'" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:8px 10px;color:#fff;font-size:14px;font-weight:700;outline:none;font-family:inherit;">'+
+        '</div>'+
+        '<div>'+
+          '<div style="font-size:8px;color:#888;font-weight:700;margin-bottom:3px;">PESO REAL (kg)</div>'+
+          '<input id="'+uid+'-pr" type="number" placeholder="'+(cp||'—')+'" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:8px 10px;color:#fff;font-size:14px;font-weight:700;outline:none;font-family:inherit;">'+
+        '</div>'+
+      '</div>'+
+      '<textarea id="'+uid+'-cm" placeholder="Comentario..." rows="2" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:8px 10px;color:#fff;font-size:12px;resize:none;outline:none;font-family:inherit;margin-bottom:8px;"></textarea>'+
+      '<div style="display:flex;gap:6px;">'+
+        '<button id="'+uid+'-ok" onclick="_toggleStatus(\''+uid+'\',\'ok\')" style="flex:1;padding:9px;border-radius:8px;border:1.5px solid rgba(34,197,94,.3);background:rgba(34,197,94,.1);color:#22c55e;font-size:12px;font-weight:800;cursor:pointer;">✓ HECHO</button>'+
+        '<button id="'+uid+'-no" onclick="_toggleStatus(\''+uid+'\',\'no\')" style="flex:1;padding:9px;border-radius:8px;border:1.5px solid rgba(239,68,68,.3);background:rgba(239,68,68,.1);color:#f87171;font-size:12px;font-weight:800;cursor:pointer;">✗ NO PUDE</button>'+
+      '</div>'+
+    '</div>';
+
+  return '<div id="'+uid+'-card" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .2s;">'+
+    '<div style="padding:12px 14px 12px;">'+
       '<div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:2px;">'+(ej.nombre||'—')+'</div>'+
       (ej.musculos ? '<div style="font-size:10px;color:#888;margin-bottom:4px;">'+ej.musculos+'</div>' : '')+
       ctrlGrid+
       pesoRef+
       seriesTable+
       videoHTML+
+      feedbackHTML+
     '</div>'+
   '</div>';
 }
@@ -422,7 +515,7 @@ function renderSesion() {
   ctn.innerHTML='<div style="padding-bottom:4px;"><div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--gold);margin-bottom:12px;">'+(ses.nombre||DN[_diaIdx]).toUpperCase()+'</div>'+
     ses.bloques.map((b,bi) => {
       const letra='ABCDEFGHIJ'[bi]||(bi+1);
-      const ejesHTML = (b.ejercicios||[]).map(_ejCard).join('');
+      const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>_ejCard(ej,'b'+bi+'e'+ei)).join('');
       return '<div class="blk" style="margin-bottom:14px;">'+
         '<div class="blk-hdr open" onclick="this.classList.toggle(\'open\');var nx=this.nextElementSibling;nx.style.display=this.classList.contains(\'open\')?\'block\':\'none\'">'+
           '<div class="blk-letra">'+letra+'</div>'+
@@ -431,7 +524,14 @@ function renderSesion() {
         '</div>'+
         '<div class="blk-body" style="padding:8px 4px 4px;">'+ejesHTML+'</div>'+
       '</div>';
-    }).join('')+'</div>';
+    }).join('')+
+    '<div style="height:80px;"></div>'+
+    '<div style="position:fixed;bottom:calc(70px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:448px;z-index:200;">'+
+      '<button onclick="_enviarWA()" style="width:100%;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 6px 24px rgba(37,211,102,.4);letter-spacing:.3px;">'+
+        '📲 Enviar feedback al entrenador'+
+      '</button>'+
+    '</div>'+
+  '</div>';
 }
 
 // ── CARGAS ────────────────────────────────────────────────────────────────
