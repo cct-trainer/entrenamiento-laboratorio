@@ -2991,6 +2991,8 @@ select.toolbox-input option:disabled { color: #888; }
   <!-- Siempre visibles -->
   <button id="nav-btn-inicio" class="nav-btn active" onclick="showView('inicio')">Inicio</button>
   <div class="nav-sep"></div>
+  <button id="nav-btn-blog" class="nav-btn" onclick="showView('blog')">📝 Blog</button>
+  <div class="nav-sep"></div>
   <div class="nav-dropdown-wrap">
     <button id="nav-btn-planificador" class="nav-dropdown-trigger" onclick="toggleNavDropdown()">
       Planificador <span class="nav-chevron">▾</span>
@@ -3108,6 +3110,83 @@ select.toolbox-input option:disabled { color: #888; }
 <main>
 
   <!-- ======= INICIO ======= -->
+  <!-- ─────────────── BLOG / ARTÍCULOS ─────────────── -->
+  <div id="view-blog" class="view">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:8px;border-bottom:1px solid #e0e0e0;">
+      <div class="section-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">📝 BLOG / INFO</div>
+      <button class="btn btn-primary" onclick="blogNuevoArticulo()" style="display:flex;align-items:center;gap:6px;font-size:12px;">＋ Nuevo artículo</button>
+    </div>
+    <p style="font-size:12px;color:#888;margin-bottom:20px;">Contenido que verán tus alumnos en el tab INFO de su portal.</p>
+    <div id="blog-lista"></div>
+  </div>
+
+  <!-- Modal editor de artículo -->
+  <div class="modal-overlay" id="modal-blog-editor" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;display:flex!important;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;">
+    <div style="background:#fff;border-radius:14px;padding:24px;width:100%;max-width:620px;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <h2 id="blog-editor-titulo" style="font-size:16px;font-weight:800;color:#1a1a2e;margin:0;">Nuevo artículo</h2>
+        <button onclick="blogCerrarEditor()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;line-height:1;">×</button>
+      </div>
+
+      <input type="hidden" id="blog-art-id">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">CATEGORÍA</label>
+          <select id="blog-art-cat" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;">
+            <option>Hipertrofia</option>
+            <option>Fuerza</option>
+            <option>Running</option>
+            <option>Nutrición</option>
+            <option>Recuperación</option>
+            <option>Movilidad</option>
+            <option>Ciencia del entrenamiento</option>
+            <option>Mental / Hábitos</option>
+            <option>General</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">TIPO</label>
+          <select id="blog-art-tipo" onchange="blogToggleCampos()" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;">
+            <option value="articulo">📄 Artículo</option>
+            <option value="link">🔗 Link externo</option>
+            <option value="video">▶ Video YouTube</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">TÍTULO</label>
+        <input id="blog-art-titulo" type="text" placeholder="Título del artículo..." style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;box-sizing:border-box;">
+      </div>
+
+      <div id="blog-campo-contenido" style="margin-bottom:12px;">
+        <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">CONTENIDO</label>
+        <textarea id="blog-art-contenido" rows="8" placeholder="Escribí el contenido del artículo..." style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box;line-height:1.6;"></textarea>
+      </div>
+
+      <div id="blog-campo-url" style="margin-bottom:12px;display:none;">
+        <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">URL</label>
+        <input id="blog-art-url" type="url" placeholder="https://..." style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+      </div>
+
+      <div id="blog-campo-yt" style="margin-bottom:12px;display:none;">
+        <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">URL DE YOUTUBE</label>
+        <input id="blog-art-yt" type="url" placeholder="https://youtube.com/watch?v=..." style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+        <input type="checkbox" id="blog-art-pub" checked style="width:16px;height:16px;cursor:pointer;">
+        <label for="blog-art-pub" style="font-size:13px;font-weight:600;color:#333;cursor:pointer;">Publicado (visible para los alumnos)</label>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="blogCerrarEditor()">Cancelar</button>
+        <button class="btn btn-primary" onclick="blogGuardarArticulo()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="view-inicio" class="view active">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:8px;border-bottom:1px solid #e0e0e0;">
       <div class="section-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">ALUMNOS</div>
@@ -12357,6 +12436,10 @@ function showView(v) {
     document.getElementById('nav-btn-antropometria')?.classList.add('active');
     antroInit();
   }
+  if (v === 'blog') {
+    document.getElementById('nav-btn-blog')?.classList.add('active');
+    renderBlogLista();
+  }
 }
 
 function toggleNavDropdown() {
@@ -19920,6 +20003,7 @@ async function cargarDesdeFirestore() {
         if (data.planificaciones) localStorage.setItem('LAB_PLANIFICACIONES', JSON.stringify(data.planificaciones));
         if (data.objetivos)       localStorage.setItem('LAB_OBJETIVOS',       JSON.stringify(data.objetivos));
         if (data.antropometria)   localStorage.setItem('LAB_ANTROPOMETRIA',   JSON.stringify(data.antropometria));
+        if (data.articulos)       localStorage.setItem('LAB_ARTICULOS',       JSON.stringify(data.articulos));
         if (data.updatedAt)       localStorage.setItem('LAB_UPDATED_AT',      data.updatedAt);
         renderAlumnosGrid();
         _syncStatusIcon('✓', 'Datos cargados desde la nube');
@@ -19949,20 +20033,23 @@ async function forzarSyncFirebase() {
     const planificaciones= JSON.parse(localStorage.getItem('LAB_PLANIFICACIONES') || '[]');
     const objetivos      = JSON.parse(localStorage.getItem('LAB_OBJETIVOS')       || '[]');
     const antropometria  = JSON.parse(localStorage.getItem('LAB_ANTROPOMETRIA')   || '[]');
+    const articulos      = JSON.parse(localStorage.getItem('LAB_ARTICULOS')       || '[]');
 
     // ── Backup general (coach) ────────────────────────────────────────────────
     await window._db.collection('backups').doc('main').set({
-      alumnos, planificaciones, objetivos, antropometria, updatedAt: ts
+      alumnos, planificaciones, objetivos, antropometria, articulos, updatedAt: ts
     });
 
     // ── Documentos por alumno (portal del estudiante) ─────────────────────────
     const batch = window._db.batch();
+    const articulosPublicados = articulos.filter(a => a.publicado !== false);
     for (const al of alumnos) {
       const ref = window._db.collection('alumnos').doc(al.id);
       batch.set(ref, {
         perfil:          al,
         planificaciones: planificaciones.filter(p => p.alumnoId === al.id),
         antropometria:   antropometria.filter(r => r.alumnoId === al.id),
+        articulos:       articulosPublicados,
         updatedAt:       ts,
       });
     }
@@ -21943,6 +22030,149 @@ document.addEventListener('keydown', function(e) {
     src = null;
   });
 })();
+
+// ══════════════════════════════════════════════════════════════════
+// BLOG / ARTÍCULOS
+// ══════════════════════════════════════════════════════════════════
+
+const BLOG_CATS_COLORS = {
+  'Hipertrofia':              '#C9A84C',
+  'Fuerza':                   '#ef4444',
+  'Running':                  '#22c55e',
+  'Nutrición':                '#f97316',
+  'Recuperación':             '#3b82f6',
+  'Movilidad':                '#a78bfa',
+  'Ciencia del entrenamiento':'#06b6d4',
+  'Mental / Hábitos':         '#ec4899',
+  'General':                  '#94a3b8',
+};
+
+function getArticulos() {
+  return JSON.parse(localStorage.getItem('LAB_ARTICULOS') || '[]');
+}
+function saveArticulos(arr) {
+  localStorage.setItem('LAB_ARTICULOS', JSON.stringify(arr));
+  _autoSyncFirebase();
+}
+
+function _ytIdBlog(url) {
+  if (!url) return '';
+  const m = url.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : '';
+}
+
+// ── Renderizar lista (vista coach) ───────────────────────────────
+function renderBlogLista() {
+  const arts = getArticulos();
+  const el = document.getElementById('blog-lista');
+  if (!el) return;
+  if (!arts.length) {
+    el.innerHTML = '<div style="text-align:center;padding:48px 20px;color:#aaa;"><div style="font-size:32px;margin-bottom:10px;">📝</div><div>Todavía no publicaste ningún artículo.</div></div>';
+    return;
+  }
+  const tipoIcon = { articulo:'📄', link:'🔗', video:'▶' };
+  el.innerHTML = arts.map((a,i) => {
+    const color = BLOG_CATS_COLORS[a.categoria] || '#888';
+    return `<div style="border:1px solid #e0e0e0;border-radius:12px;padding:16px 18px;margin-bottom:12px;display:flex;align-items:flex-start;gap:14px;background:${a.publicado?'#fff':'#fafafa'};">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+          <span style="background:${color}22;color:${color};border:1px solid ${color}44;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:.5px;">${a.categoria||'General'}</span>
+          <span style="font-size:11px;color:#aaa;">${tipoIcon[a.tipo]||'📄'} ${a.tipo||'articulo'}</span>
+          ${!a.publicado ? '<span style="font-size:10px;color:#f59e0b;font-weight:700;">⚠ Borrador</span>' : ''}
+        </div>
+        <div style="font-size:15px;font-weight:800;color:#1a1a2e;margin-bottom:4px;">${a.titulo||'Sin título'}</div>
+        <div style="font-size:11px;color:#888;">${a.fecha||''}</div>
+        ${a.tipo==='articulo' && a.contenido ? `<div style="font-size:12px;color:#666;margin-top:6px;line-height:1.5;max-height:36px;overflow:hidden;">${a.contenido.slice(0,120)}${a.contenido.length>120?'…':''}</div>` : ''}
+        ${a.tipo==='link' && a.url ? `<div style="font-size:11px;color:#3b82f6;margin-top:4px;word-break:break-all;">${a.url}</div>` : ''}
+        ${a.tipo==='video' && a.ytId ? `<div style="font-size:11px;color:#888;margin-top:4px;">youtu.be/${a.ytId}</div>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+        <button onclick="blogEditarArticulo(${i})" style="background:#f4f6fa;border:1px solid #e0e0e0;border-radius:7px;padding:6px 12px;font-size:12px;cursor:pointer;font-weight:700;">✏ Editar</button>
+        <button onclick="blogEliminarArticulo(${i})" style="background:#fff0f0;border:1px solid #fecaca;border-radius:7px;padding:6px 12px;font-size:12px;cursor:pointer;font-weight:700;color:#ef4444;">🗑 Borrar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Nuevo / Editar ───────────────────────────────────────────────
+function blogNuevoArticulo() {
+  document.getElementById('blog-art-id').value = '';
+  document.getElementById('blog-art-titulo').value = '';
+  document.getElementById('blog-art-contenido').value = '';
+  document.getElementById('blog-art-url').value = '';
+  document.getElementById('blog-art-yt').value = '';
+  document.getElementById('blog-art-cat').value = 'Hipertrofia';
+  document.getElementById('blog-art-tipo').value = 'articulo';
+  document.getElementById('blog-art-pub').checked = true;
+  document.getElementById('blog-editor-titulo').textContent = 'Nuevo artículo';
+  blogToggleCampos();
+  document.getElementById('modal-blog-editor').style.display = 'flex';
+}
+
+function blogEditarArticulo(idx) {
+  const a = getArticulos()[idx];
+  if (!a) return;
+  document.getElementById('blog-art-id').value = a.id || '';
+  document.getElementById('blog-art-titulo').value = a.titulo || '';
+  document.getElementById('blog-art-cat').value = a.categoria || 'General';
+  document.getElementById('blog-art-tipo').value = a.tipo || 'articulo';
+  document.getElementById('blog-art-contenido').value = a.contenido || '';
+  document.getElementById('blog-art-url').value = a.url || '';
+  document.getElementById('blog-art-yt').value = a.ytId ? 'https://youtube.com/watch?v='+a.ytId : '';
+  document.getElementById('blog-art-pub').checked = a.publicado !== false;
+  document.getElementById('blog-editor-titulo').textContent = 'Editar artículo';
+  blogToggleCampos();
+  document.getElementById('modal-blog-editor').style.display = 'flex';
+}
+
+function blogCerrarEditor() {
+  document.getElementById('modal-blog-editor').style.display = 'none';
+}
+
+function blogToggleCampos() {
+  const tipo = document.getElementById('blog-art-tipo').value;
+  document.getElementById('blog-campo-contenido').style.display = tipo === 'articulo' ? '' : 'none';
+  document.getElementById('blog-campo-url').style.display       = tipo === 'link'     ? '' : 'none';
+  document.getElementById('blog-campo-yt').style.display        = tipo === 'video'    ? '' : 'none';
+}
+
+function blogGuardarArticulo() {
+  const titulo = document.getElementById('blog-art-titulo').value.trim();
+  if (!titulo) { toast('El artículo necesita un título', 'error'); return; }
+  const tipo = document.getElementById('blog-art-tipo').value;
+  const arts = getArticulos();
+  const idExistente = document.getElementById('blog-art-id').value;
+  const art = {
+    id:         idExistente || 'art_' + Date.now(),
+    titulo,
+    categoria:  document.getElementById('blog-art-cat').value,
+    tipo,
+    contenido:  tipo === 'articulo' ? document.getElementById('blog-art-contenido').value.trim() : '',
+    url:        tipo === 'link'     ? document.getElementById('blog-art-url').value.trim()       : '',
+    ytId:       tipo === 'video'    ? _ytIdBlog(document.getElementById('blog-art-yt').value.trim()) : '',
+    fecha:      new Date().toLocaleDateString('es-AR', {day:'numeric',month:'long',year:'numeric'}),
+    publicado:  document.getElementById('blog-art-pub').checked,
+  };
+  if (idExistente) {
+    const idx = arts.findIndex(a => a.id === idExistente);
+    if (idx !== -1) arts[idx] = art; else arts.unshift(art);
+  } else {
+    arts.unshift(art);
+  }
+  saveArticulos(arts);
+  blogCerrarEditor();
+  renderBlogLista();
+  toast('✓ Artículo guardado');
+}
+
+function blogEliminarArticulo(idx) {
+  if (!confirm('¿Eliminar este artículo?')) return;
+  const arts = getArticulos();
+  arts.splice(idx, 1);
+  saveArticulos(arts);
+  renderBlogLista();
+  toast('Artículo eliminado');
+}
 
 </script>
 
