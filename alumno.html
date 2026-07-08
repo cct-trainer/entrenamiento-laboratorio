@@ -543,7 +543,8 @@ function _ejCard(ej, uid) {
   const hasCtrl = cs || cr || cpa || ci;
 
   // Helper: tabla de series con prefijo de etiqueta
-  function _seriesTable(arr, prefijoLabel, savePrefix, uid) {
+  function _seriesTable(arr, prefijoLabel, savePrefix, uid, offset) {
+    offset = offset || 0;
     if (!arr || !arr.length) return '';
     const hasPeso  = arr.some(s=>s.peso);
     const hasRir   = arr.some(s=>s.rir);
@@ -598,7 +599,7 @@ function _ejCard(ej, uid) {
         ? 'ontouchstart="_lpStart(event,\''+sp+'\',\''+uid_safe+'\')" ontouchend="_lpEnd()" ontouchmove="_lpEnd()" oncontextmenu="_showCtxMenu(event,\''+sp+'\',\''+uid_safe+'\');return false"'
         : '';
       return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+'" '+touch+'>'+
-        '<td style="'+tdBase+'font-size:11px;font-weight:800;color:#fff;">'+prefijoLabel+' '+(i+1)+tipoBadge+'</td>'+
+        '<td style="'+tdBase+'font-size:11px;font-weight:800;color:#fff;">S'+(offset+i+1)+tipoBadge+'</td>'+
         '<td style="'+tdBase+'">'+repsCel+'</td>'+
         (hasPeso  ? '<td style="'+tdBase+'">'+pesoCel+'</td>' : '')+
         (hasRir   ? '<td style="'+tdBase+'">'+rirCel+'</td>' : '')+
@@ -633,22 +634,26 @@ function _ejCard(ej, uid) {
   // Prefijo único por sesión+ejercicio para guardar ediciones del alumno
   const _sp = (_semIdx||0)+'_'+(_diaIdx||0)+'_'+uid;
 
+  // Numeración continua a través de todas las secciones
+  const nApro = sApro ? sApro.length : 0;
+  const nEfec = sEfec ? sEfec.length : 0;
+
   // Sección de aproximación
   const aproSection = sApro ? (
     '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">SERIES DE APROXIMACIÓN</div>'+
-    _seriesTable(sApro, 'S. Aprox', _sp+'_apro', uid)
+    _seriesTable(sApro, 'S', _sp+'_apro', uid, 0)
   ) : '';
 
   // Sección de series efectivas (tabla detallada)
   const efecSection = sEfec ? (
     '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">SERIES EFECTIVAS</div>'+
-    _seriesTable(sEfec, 'S. Efectiva', _sp+'_efec', uid)
+    _seriesTable(sEfec, 'S', _sp+'_efec', uid, nApro)
   ) : '';
 
   // Sección de dropsets
   const dropSection = sDrop ? (
     '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">DROPSETS</div>'+
-    _seriesTable(sDrop, 'DS', _sp+'_drop', uid)
+    _seriesTable(sDrop, 'S', _sp+'_drop', uid, nApro + nEfec)
   ) : '';
 
   // Badge de progresión (basado en historial guardado o ctrlPeso+2.5)
