@@ -61,7 +61,7 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 .hdr{background:var(--hdr-bg);padding:28px 20px 16px;transition:background .25s;}
 .hdr-row{display:flex;align-items:center;gap:14px;}
 .avatar{width:50px;height:50px;border-radius:50%;background:var(--avatar-grad);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;flex-shrink:0;transition:background .25s;}
-.alumno-nombre{font-size:20px;font-weight:900;color:#fff;line-height:1.1;}
+.alumno-nombre{font-size:20px;font-weight:900;color:var(--text);line-height:1.1;}
 .plan-badge{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin-top:3px;}
 .coach-tag{font-size:10px;color:var(--muted);margin-top:1px;}
 
@@ -167,7 +167,7 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 #feedback-overlay{position:fixed;inset:0;z-index:10000;background:var(--bg);overflow-y:auto;display:none;-webkit-overflow-scrolling:touch;}
 .fb-wrap{padding:20px 16px 100px;max-width:480px;margin:0 auto;}
 .fb-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
-.fb-hdr-ttl{font-size:16px;font-weight:900;color:#fff;}
+.fb-hdr-ttl{font-size:16px;font-weight:900;color:var(--text);}
 .fb-section{margin-bottom:22px;}
 .fb-ttl{font-size:9px;font-weight:900;color:var(--gold);letter-spacing:1.5px;margin-bottom:10px;}
 .fb-opts{display:flex;flex-wrap:wrap;gap:7px;}
@@ -179,6 +179,22 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 .fb-input{width:100%;background:var(--input-bg);border:1.5px solid var(--input-border);border-radius:10px;color:var(--text);font-size:13px;padding:10px 12px;outline:none;font-family:inherit;}
 .fb-input:focus{border-color:color-mix(in srgb,var(--gold) 50%,transparent);}
 .fb-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ── AJUSTES EXTRA MODO CLARO ─────────────────────────────────────── */
+html.light .scard { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+html.light .scard-name { color: var(--gold); }
+html.light .snav-btn { background: var(--card); color: var(--text); }
+html.light .dchip .dn { color: var(--text); }
+html.light .dchip.on .dn { color: #fff; }
+html.light .dchip.on .dl { color: rgba(255,255,255,.7); }
+html.light .hist-row { background: var(--card); }
+html.light .mcard { box-shadow: 0 1px 8px rgba(0,0,0,.06); }
+html.light #feedback-overlay { background: var(--bg); }
+html.light .cm-item:active { background: rgba(0,0,0,.05); }
+/* Bordes azules en la tabla de series en modo claro */
+html.light .scard table { border: 1px solid color-mix(in srgb, var(--gold) 20%, transparent); border-radius: 8px; overflow: hidden; }
+html.light .scard table th { background: color-mix(in srgb, var(--gold) 8%, white) !important; color: var(--gold) !important; }
+html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, transparent) !important; }
 </style>
 </head>
 <body>
@@ -608,11 +624,11 @@ function _ejCard(ej, uid) {
     const hasPeso  = arr.some(s=>s.peso);
     const hasRir   = arr.some(s=>s.rir);
     const hasPausa = arr.some(s=>s.pausa);
-    const cellBg   = 'background:#0d0d1a;';
-    const thStyle  = cellBg+'font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.08);text-align:center;';
-    const tdBase   = cellBg+'text-align:center;padding:4px 6px;border:1px solid rgba(255,255,255,.08);vertical-align:middle;';
-    const inpStyle = 'background:transparent;border:none;border-bottom:1px solid rgba(201,168,76,.35);'+
-                     'color:#fff;font-size:13px;font-weight:700;text-align:center;'+
+    const cellBg   = 'background:var(--card);';
+    const thStyle  = cellBg+'font-size:8px;font-weight:800;color:var(--muted);padding:5px 8px;letter-spacing:1px;border:1px solid var(--border);text-align:center;';
+    const tdBase   = cellBg+'text-align:center;padding:4px 6px;border:1px solid var(--border);vertical-align:middle;color:var(--text);';
+    const inpStyle = 'background:transparent;border:none;border-bottom:1px solid color-mix(in srgb,var(--gold) 35%,transparent);'+
+                     'color:var(--text);font-size:13px;font-weight:700;text-align:center;'+
                      'width:100%;min-width:44px;max-width:70px;outline:none;'+
                      'padding:2px 0;-webkit-appearance:none;';
     const head = '<tr>'+
@@ -658,11 +674,11 @@ function _ejCard(ej, uid) {
         ? 'ontouchstart="_lpStart(event,\''+sp+'\',\''+uid_safe+'\')" ontouchend="_lpEnd()" ontouchmove="_lpEnd()" oncontextmenu="_showCtxMenu(event,\''+sp+'\',\''+uid_safe+'\');return false"'
         : '';
       return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+'" '+touch+'>'+
-        '<td style="'+tdBase+'font-size:11px;font-weight:800;color:#fff;">S'+(offset+i+1)+tipoBadge+'</td>'+
+        '<td style="'+tdBase+'font-size:11px;font-weight:800;">S'+(offset+i+1)+tipoBadge+'</td>'+
         '<td style="'+tdBase+'">'+repsCel+'</td>'+
         (hasPeso  ? '<td style="'+tdBase+'">'+pesoCel+'</td>' : '')+
         (hasRir   ? '<td style="'+tdBase+'">'+rirCel+'</td>' : '')+
-        (hasPausa ? '<td style="'+tdBase+'font-size:11px;color:#fff;">'+(s.pausa||'—')+'</td>' : '')+
+        (hasPausa ? '<td style="'+tdBase+'font-size:11px;">'+(s.pausa||'—')+'</td>' : '')+
       '</tr>';
     }).join('');
     return '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div>';
@@ -748,14 +764,14 @@ function _ejCard(ej, uid) {
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">'+
         '<div>'+
           '<div style="font-size:8px;color:#888;font-weight:700;margin-bottom:3px;">REPS REALES</div>'+
-          '<input id="'+uid+'-rr" type="number" placeholder="'+(cr||'—')+'" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:8px 10px;color:#fff;font-size:14px;font-weight:700;outline:none;font-family:inherit;">'+
+          '<input id="'+uid+'-rr" type="number" placeholder="'+(cr||'—')+'" style="width:100%;background:var(--input-bg);border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:8px 10px;color:var(--text);font-size:14px;font-weight:700;outline:none;font-family:inherit;">'+
         '</div>'+
         '<div>'+
           '<div style="font-size:8px;color:#888;font-weight:700;margin-bottom:3px;">PESO REAL (kg)</div>'+
-          '<input id="'+uid+'-pr" type="number" placeholder="'+(cp||'—')+'" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:8px 10px;color:#fff;font-size:14px;font-weight:700;outline:none;font-family:inherit;">'+
+          '<input id="'+uid+'-pr" type="number" placeholder="'+(cp||'—')+'" style="width:100%;background:var(--input-bg);border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:8px 10px;color:var(--text);font-size:14px;font-weight:700;outline:none;font-family:inherit;">'+
         '</div>'+
       '</div>'+
-      '<textarea id="'+uid+'-cm" placeholder="Comentario..." rows="2" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:8px 10px;color:#fff;font-size:12px;resize:none;outline:none;font-family:inherit;margin-bottom:8px;"></textarea>'+
+      '<textarea id="'+uid+'-cm" placeholder="Comentario..." rows="2" style="width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text);font-size:12px;resize:none;outline:none;font-family:inherit;margin-bottom:8px;"></textarea>'+
       '<div style="display:flex;gap:6px;">'+
         '<button id="'+uid+'-ok" onclick="_toggleStatus(\''+uid+'\',\'ok\')" style="flex:1;padding:9px;border-radius:8px;border:1.5px solid rgba(34,197,94,.3);background:rgba(34,197,94,.1);color:#22c55e;font-size:12px;font-weight:800;cursor:pointer;">✓ HECHO</button>'+
         '<button id="'+uid+'-no" onclick="_toggleStatus(\''+uid+'\',\'no\')" style="flex:1;padding:9px;border-radius:8px;border:1.5px solid rgba(239,68,68,.3);background:rgba(239,68,68,.1);color:#f87171;font-size:12px;font-weight:800;cursor:pointer;">✗ NO PUDE</button>'+
@@ -814,9 +830,9 @@ function _ejCard(ej, uid) {
     );
   })();
 
-  return '<div id="'+uid+'-card" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .2s;">'+
+  return '<div id="'+uid+'-card" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .2s;">'+
     '<div style="padding:12px 14px 12px;">'+
-      '<div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:2px;">'+(ej.nombre||'—')+'</div>'+
+      '<div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:2px;">'+(ej.nombre||'—')+'</div>'+
       (ej.musculos ? '<div style="font-size:10px;color:#888;margin-bottom:4px;">'+ej.musculos+'</div>' : '')+
       ctrlGrid+
       pesoRef+
@@ -915,7 +931,7 @@ function _renderDiaRunning() {
     const calent = b.calent && (b.calent.tipo||b.calent.duracion) ? (
       '<div style="background:rgba(255,167,38,.07);border-left:3px solid #ffa726;border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:8px;">'+
         '<div style="font-size:9px;font-weight:800;color:#ffa726;letter-spacing:1px;margin-bottom:6px;">🔥 ENTRADA EN CALOR</div>'+
-        (b.calent.tipo ? '<div style="font-size:12px;color:#fff;font-weight:600;">'+b.calent.tipo+'</div>' : '')+
+        (b.calent.tipo ? '<div style="font-size:12px;color:var(--text);font-weight:600;">'+b.calent.tipo+'</div>' : '')+
         (b.calent.duracion ? '<div style="font-size:11px;color:#aaa;margin-top:2px;">'+b.calent.duracion+'</div>' : '')+
         (b.calent.ritmo ? '<div style="font-size:11px;color:#aaa;">Ritmo: '+b.calent.ritmo+'</div>' : '')+
         (b.calent.ejercicios ? '<div style="font-size:11px;color:#aaa;margin-top:4px;line-height:1.4;">'+b.calent.ejercicios+'</div>' : '')+
@@ -926,7 +942,7 @@ function _renderDiaRunning() {
     const vuelta = b.vuelta && (b.vuelta.tipo||b.vuelta.duracion) ? (
       '<div style="background:rgba(66,165,245,.07);border-left:3px solid #42a5f5;border-radius:0 8px 8px 0;padding:10px 12px;margin-top:8px;">'+
         '<div style="font-size:9px;font-weight:800;color:#42a5f5;letter-spacing:1px;margin-bottom:6px;">❄️ VUELTA A LA CALMA</div>'+
-        (b.vuelta.tipo ? '<div style="font-size:12px;color:#fff;font-weight:600;">'+b.vuelta.tipo+'</div>' : '')+
+        (b.vuelta.tipo ? '<div style="font-size:12px;color:var(--text);font-weight:600;">'+b.vuelta.tipo+'</div>' : '')+
         (b.vuelta.duracion ? '<div style="font-size:11px;color:#aaa;margin-top:2px;">'+b.vuelta.duracion+'</div>' : '')+
         (b.vuelta.intensidad ? '<div style="font-size:11px;color:#aaa;">Intensidad: '+b.vuelta.intensidad+'</div>' : '')+
         (b.vuelta.obs ? '<div style="font-size:11px;color:#aaa;margin-top:4px;line-height:1.4;">'+b.vuelta.obs+'</div>' : '')+
@@ -1529,7 +1545,7 @@ function renderStats() {
   if (!prs.length) {
     h += '<div style="background:rgba(255,255,255,.04);border-radius:14px;padding:24px 16px;text-align:center;">'
       + '<div style="font-size:32px;margin-bottom:10px;">🎯</div>'
-      + '<div style="color:#e8e8f0;font-weight:700;font-size:14px;margin-bottom:6px;">Tus PRs van a aparecer acá</div>'
+      + '<div style="color:var(--text);font-weight:700;font-size:14px;margin-bottom:6px;">Tus PRs van a aparecer acá</div>'
       + '<div style="color:var(--muted);font-size:12px;line-height:1.5;">Modificá los pesos en el entrenamiento<br>y se van a guardar automáticamente.</div>'
       + '</div>';
   } else {
@@ -1538,7 +1554,7 @@ function renderStats() {
       const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
       h += `<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
         <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:800;color:#e8e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${medal} ${pr.nombre}</div>
+          <div style="font-size:13px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${medal} ${pr.nombre}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px;">${pr.reps} reps</div>
         </div>
         <div style="font-size:20px;font-weight:900;color:var(--gold);margin-left:12px;">${pr.peso} kg</div>
@@ -1569,7 +1585,7 @@ function renderStats() {
       if (!last[k]) return;
       h += `<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:14px;text-align:center;">
         <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">${ico} ${k}</div>
-        <div style="font-size:22px;font-weight:900;color:#e8e8f0;margin-top:4px;">${last[k]}<span style="font-size:12px;color:var(--muted);"> ${unit}</span></div>
+        <div style="font-size:22px;font-weight:900;color:var(--text);margin-top:4px;">${last[k]}<span style="font-size:12px;color:var(--muted);"> ${unit}</span></div>
       </div>`;
     });
     if (last.fecha) {
