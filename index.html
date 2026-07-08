@@ -20063,14 +20063,40 @@ async function forzarSyncFirebase() {
       alumnos, planificaciones, objetivos, antropometria, articulos, updatedAt: ts
     });
 
+    // ── Enriquecer ejercicios con datos de la biblioteca ─────────────────────
+    // Agrega ejecucion/musculos/tipo a cada ejercicio para que alumno.html
+    // pueda mostrar la solapa "INFORMACIÓN TÉCNICA" sin re-guardar cada plan
+    function _enrichPlanes(planes) {
+      if (!planes || !planes.length) return planes;
+      const lib = (typeof getEjerciciosCompletos === 'function') ? getEjerciciosCompletos() : [];
+      return planes.map(plan => {
+        if (!plan.bloques || !plan.bloques.length) return plan;
+        const bloques = plan.bloques.map(bloque => {
+          if (!bloque.ejercicios || !bloque.ejercicios.length) return bloque;
+          const ejercicios = bloque.ejercicios.map(ej => {
+            // Solo enriquecer si faltan los campos
+            if (ej.ejecucion || ej.musculos) return ej;
+            const libEj = lib.find(e => e.nombre && e.nombre.toLowerCase() === (ej.nombre||'').toLowerCase()) || {};
+            const ejecucion = (ej.ficha && (ej.ficha['Descripción'] || ej.ficha['DESCRIPCIÓN'])) || libEj.ejecucion || libEj.desc || '';
+            const musculos  = (ej.ficha && ej.ficha['MÚSCULOS']) || (libEj.musculos || libEj.principales || []).join(', ') || '';
+            const tipo      = (ej.ficha && ej.ficha['TIPO']) || libEj.tipoTrabajo || libEj.cat || '';
+            return { ...ej, ejecucion, musculos, tipo };
+          });
+          return { ...bloque, ejercicios };
+        });
+        return { ...plan, bloques };
+      });
+    }
+
     // ── Documentos por alumno (portal del estudiante) ─────────────────────────
     const batch = window._db.batch();
     const articulosPublicados = articulos.filter(a => a.publicado !== false);
     for (const al of alumnos) {
       const ref = window._db.collection('alumnos').doc(al.id);
+      const planesAlumno = _enrichPlanes(planificaciones.filter(p => p.alumnoId === al.id));
       batch.set(ref, {
         perfil:          al,
-        planificaciones: planificaciones.filter(p => p.alumnoId === al.id),
+        planificaciones: planesAlumno,
         antropometria:   antropometria.filter(r => r.alumnoId === al.id),
         articulos:       articulosPublicados,
         updatedAt:       ts,
