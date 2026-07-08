@@ -110,6 +110,44 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 .empty-ico{font-size:36px;margin-bottom:10px;}
 .empty-ttl{font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px;}
 .empty-txt{font-size:12px;line-height:1.5;}
+
+/* ── CONTEXT MENU ─────────────────────────────────────────────────── */
+#ctx-backdrop{position:fixed;inset:0;z-index:9998;display:none;}
+#ctx-menu{position:fixed;z-index:9999;background:#14142b;border:1px solid rgba(201,168,76,.3);border-radius:16px;min-width:220px;max-width:280px;box-shadow:0 20px 60px rgba(0,0,0,.9);overflow:hidden;display:none;}
+.cm-title{padding:10px 14px 8px;font-size:9px;font-weight:900;color:var(--gold);letter-spacing:1.5px;border-bottom:1px solid rgba(255,255,255,.07);}
+.cm-item{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#e8e8f0;border-bottom:1px solid rgba(255,255,255,.04);}
+.cm-item:active{background:rgba(255,255,255,.07);}
+.cm-ico{font-size:16px;width:22px;text-align:center;}
+.cm-item.danger{color:#f87171;}
+.cm-tipos{padding:8px;display:flex;flex-wrap:wrap;gap:4px;max-height:200px;overflow-y:auto;}
+.cm-tipo-btn{padding:4px 8px;border-radius:6px;border:none;font-size:9px;font-weight:800;cursor:pointer;letter-spacing:.3px;}
+
+/* ── SERIE TYPE BADGE ─────────────────────────────────────────────── */
+.s-tipo{display:inline-block;font-size:8px;font-weight:800;padding:1px 5px;border-radius:4px;margin-left:3px;vertical-align:middle;letter-spacing:.3px;cursor:pointer;user-select:none;}
+.serie-row{cursor:pointer;transition:background .1s;}
+.serie-row.lp-active{background:rgba(201,168,76,.12)!important;}
+.s-omitida{opacity:.3;}
+.s-omitida td{text-decoration:line-through;}
+
+/* ── PROGRESIÓN BADGE ─────────────────────────────────────────────── */
+.prog-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.22);border-radius:8px;padding:5px 10px;font-size:10px;font-weight:700;color:#86efac;margin:8px 0 0;}
+
+/* ── FEEDBACK OVERLAY ─────────────────────────────────────────────── */
+#feedback-overlay{position:fixed;inset:0;z-index:10000;background:var(--bg);overflow-y:auto;display:none;-webkit-overflow-scrolling:touch;}
+.fb-wrap{padding:20px 16px 100px;max-width:480px;margin:0 auto;}
+.fb-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.fb-hdr-ttl{font-size:16px;font-weight:900;color:#fff;}
+.fb-section{margin-bottom:22px;}
+.fb-ttl{font-size:9px;font-weight:900;color:var(--gold);letter-spacing:1.5px;margin-bottom:10px;}
+.fb-opts{display:flex;flex-wrap:wrap;gap:7px;}
+.fb-opt{padding:8px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
+.fb-opt.sel{border-color:var(--gold);background:rgba(201,168,76,.12);color:var(--gold);}
+.fb-scale{display:flex;gap:5px;flex-wrap:wrap;}
+.fb-num{width:36px;height:36px;border-radius:9px;border:1.5px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.fb-num.sel{border-color:var(--gold);background:rgba(201,168,76,.15);color:var(--gold);}
+.fb-input{width:100%;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:13px;padding:10px 12px;outline:none;font-family:inherit;}
+.fb-input:focus{border-color:rgba(201,168,76,.5);}
+.fb-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 </style>
 </head>
 <body>
@@ -165,6 +203,21 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
     <div id="running-ctn"></div>
   </div>
 
+  <!-- Menú contextual de series -->
+  <div id="ctx-backdrop" onclick="_hideCtxMenu()"></div>
+  <div id="ctx-menu"></div>
+
+  <!-- Feedback post-entrenamiento -->
+  <div id="feedback-overlay">
+    <div class="fb-wrap">
+      <div class="fb-hdr">
+        <div class="fb-hdr-ttl">📋 Feedback del entrenamiento</div>
+        <button onclick="_cerrarFeedback()" style="background:rgba(255,255,255,.07);border:none;border-radius:10px;color:#fff;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">Cerrar</button>
+      </div>
+      <div id="fb-body"></div>
+    </div>
+  </div>
+
   <nav class="bnav">
     <button class="nb on" id="nb-rutina" onclick="goTab('rutina')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7h8M8 12h8M8 17h5"/></svg>
@@ -197,9 +250,46 @@ const CFG = {
   appId:'1:399177627945:web:2b4fef0894480f70dc1f38'
 };
 const DN = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+let _db = null; // referencia global a Firestore
+
+const SERIE_TIPOS = {
+  calentamiento: { icon:'🔥', label:'Calentamiento',    color:'#f97316' },
+  aproximacion:  { icon:'🎯', label:'Aproximación',     color:'#eab308' },
+  regular:       { icon:'⚡', label:'Regular',           color:'#94a3b8' },
+  topset:        { icon:'👑', label:'Top Set',           color:'#C9A84C' },
+  backoff:       { icon:'📉', label:'Back Off',          color:'#60a5fa' },
+  dropset:       { icon:'⬇️', label:'Drop Set',          color:'#f87171' },
+  restpause:     { icon:'⏸', label:'Rest Pause',        color:'#c084fc' },
+  myoreps:       { icon:'🔄', label:'Myo Reps',          color:'#22d3ee' },
+  cluster:       { icon:'🔢', label:'Cluster',           color:'#4ade80' },
+  isometrica:    { icon:'🧱', label:'Isométrica',        color:'#a78bfa' },
+  excentrica:    { icon:'↘️', label:'Excéntrica',        color:'#818cf8' },
+  parciales:     { icon:'✂️', label:'Parciales',         color:'#f472b6' },
+  amrap:         { icon:'💀', label:'AMRAP',             color:'#fca5a5' },
+  emom:          { icon:'⏱', label:'EMOM',               color:'#5eead4' },
+  superserie:    { icon:'🔗', label:'Superserie',        color:'#e879f9' },
+  triserie:      { icon:'⛓', label:'Triserie',           color:'#a855f7' },
+  serieGigante:  { icon:'🏋️', label:'Serie Gigante',    color:'#6366f1' },
+  preago:        { icon:'⚡', label:'Preagotamiento',    color:'#fb923c' },
+  postago:       { icon:'🔋', label:'Postagotamiento',   color:'#86efac' },
+};
 const DS = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
 
 let _data=null, _plan=null, _planRun=null, _semIdx=0, _diaIdx=null, _runDiaIdx=null;
+let _ejStore = {};   // { uid: ej }  — para re-render de cards
+let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificadas
+let _alumnoId='', _pesoEdits={};
+
+function _initEdits(alumnoId) {
+  _alumnoId = alumnoId || '';
+  try { _pesoEdits = JSON.parse(localStorage.getItem('SOCC_EDITS_'+_alumnoId) || '{}'); } catch(e) { _pesoEdits = {}; }
+}
+function _guardarEdit(key, campo, val) {
+  if (!_pesoEdits[key]) _pesoEdits[key] = {};
+  _pesoEdits[key][campo] = String(val).replace(/kg$/i,'').trim();
+  try { localStorage.setItem('SOCC_EDITS_'+_alumnoId, JSON.stringify(_pesoEdits)); } catch(e) {}
+}
+function _getEdit(key, campo) { return (_pesoEdits[key] && _pesoEdits[key][campo]) || ''; }
 
 const TIPOS_RUN = {
   'pasadas':     {icon:'⚡', label:'Pasadas / Intervalos', color:'#f59e0b'},
@@ -217,6 +307,7 @@ const TIPOS_RUN = {
 (async function(){
   const id = new URLSearchParams(location.search).get('id');
   if (!id) return showErr('No se encontró el identificador en el enlace.');
+  _initEdits(id);
 
   // Manifest dinámico con start_url que incluye el ID del alumno
   const manifest = {
@@ -237,7 +328,8 @@ const TIPOS_RUN = {
   document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
   try {
     firebase.initializeApp(CFG);
-    const db = firebase.firestore();
+    _db = firebase.firestore();
+    const db = _db;
     const doc = await db.collection('alumnos').doc(id).get();
     if (!doc.exists) return showErr('Todavía no hay datos para este alumno. Pedile a tu coach que sincronice el portal desde su aplicación.');
     _data = doc.data();
@@ -423,12 +515,24 @@ function _ytId(url) {
   return m ? m[1] : '';
 }
 
+// Re-render de una exercise card (sin recargar toda la sesión)
+function _rerenderEjCard(uid) {
+  const ej = _ejStore[uid]; if (!ej) return;
+  const card = document.getElementById(uid+'-card'); if (!card) return;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = _ejCard(ej, uid);
+  card.replaceWith(tmp.firstElementChild);
+}
+
 // Construye la card completa de un ejercicio
 function _ejCard(ej, uid) {
-  // Referencias de ctrl (series efectivas)
-  const sEfec  = Array.isArray(ej.series)     && ej.series.length     ? ej.series     : null;
-  const sApro  = Array.isArray(ej.seriesApro) && ej.seriesApro.length ? ej.seriesApro : null;
-  const sDrop  = Array.isArray(ej.dropset)    && ej.dropset.length    ? ej.dropset    : null;
+  _ejStore[uid] = ej; // guardar para re-render posterior
+
+  // Usar series vivas (modificadas por menú contextual) si existen
+  const live = _liveData[uid];
+  const sEfec  = live?.efec || (Array.isArray(ej.series)     && ej.series.length     ? ej.series     : null);
+  const sApro  = live?.apro || (Array.isArray(ej.seriesApro) && ej.seriesApro.length ? ej.seriesApro : null);
+  const sDrop  = live?.drop || (Array.isArray(ej.dropset)    && ej.dropset.length    ? ej.dropset    : null);
 
   // Valores ctrl → prioriza series efectivas para el resumen
   const cs  = ej.ctrl?.series || ej.ctrlSeries || (sEfec ? String(sEfec.length) : (sApro ? String(sApro.length) : ''));
@@ -439,30 +543,65 @@ function _ejCard(ej, uid) {
   const hasCtrl = cs || cr || cpa || ci;
 
   // Helper: tabla de series con prefijo de etiqueta
-  function _seriesTable(arr, prefijoLabel) {
+  function _seriesTable(arr, prefijoLabel, savePrefix, uid) {
     if (!arr || !arr.length) return '';
     const hasPeso  = arr.some(s=>s.peso);
     const hasRir   = arr.some(s=>s.rir);
     const hasPausa = arr.some(s=>s.pausa);
     const cellBg   = 'background:#0d0d1a;';
     const thStyle  = cellBg+'font-size:8px;font-weight:800;color:#888;padding:5px 8px;letter-spacing:1px;border:1px solid rgba(255,255,255,.08);text-align:center;';
-    const tdBase   = cellBg+'text-align:center;padding:6px 8px;border:1px solid rgba(255,255,255,.08);';
+    const tdBase   = cellBg+'text-align:center;padding:4px 6px;border:1px solid rgba(255,255,255,.08);vertical-align:middle;';
+    const inpStyle = 'background:transparent;border:none;border-bottom:1px solid rgba(201,168,76,.35);'+
+                     'color:#fff;font-size:13px;font-weight:700;text-align:center;'+
+                     'width:100%;min-width:44px;max-width:70px;outline:none;'+
+                     'padding:2px 0;-webkit-appearance:none;';
     const head = '<tr>'+
       '<th style="'+thStyle+'">SERIE</th>'+
       '<th style="'+thStyle+'">REPS</th>'+
-      (hasPeso  ? '<th style="'+thStyle+'">PESO</th>' : '')+
+      (hasPeso  ? '<th style="'+thStyle+'">PESO ✏️</th>' : '')+
       (hasRir   ? '<th style="'+thStyle+'">RIR</th>'  : '')+
       (hasPausa ? '<th style="'+thStyle+'">PAUSA</th>': '')+
     '</tr>';
     const rows = arr.map((s,i) => {
-      // Limpiar "kg/Kg" duplicado: si el valor ya contiene "kg" no agregar más
-      const pesoVal = s.peso ? String(s.peso).replace(/kg$/i,'').trim() : null;
-      const pesoStr = pesoVal ? pesoVal+' kg' : '—';
-      return '<tr>'+
-        '<td style="'+tdBase+'font-size:11px;font-weight:800;color:#fff;">'+prefijoLabel+' '+(i+1)+'</td>'+
-        '<td style="'+tdBase+'font-size:13px;font-weight:700;color:#fff;">'+(s.reps||'—')+'</td>'+
-        (hasPeso  ? '<td style="'+tdBase+'font-size:13px;font-weight:700;color:#fff;">'+pesoStr+'</td>' : '')+
-        (hasRir   ? '<td style="'+tdBase+'font-size:11px;color:#fff;">'+(s.rir ? 'RIR '+s.rir : '—')+'</td>' : '')+
+      const sp = savePrefix ? savePrefix+'_'+i : '';
+      // Valores editados o del plan
+      const repsVal = (sp ? _getEdit(sp,'reps') : '') || s.reps || '';
+      const pesoRaw = (sp ? _getEdit(sp,'peso') : '') || (s.peso ? String(s.peso).replace(/kg$/i,'').trim() : '');
+      const omitida = sp ? _getEdit(sp,'omitida')==='1' : false;
+      // Badge de tipo
+      const tipoKey = sp ? _getEdit(sp,'tipo') : '';
+      const tipoInfo = tipoKey && SERIE_TIPOS[tipoKey] ? SERIE_TIPOS[tipoKey] : null;
+      const tipoBadge = tipoInfo
+        ? '<span class="s-tipo" style="color:'+tipoInfo.color+';background:'+tipoInfo.color+'22;" onclick="event.stopPropagation();_showCtxMenu(event,\''+sp+'\',\''+uid+'\')">'+tipoInfo.icon+' '+tipoInfo.label+'</span>'
+        : '';
+      // Inputs editables
+      const repsCel = sp
+        ? '<input id="inp_'+sp+'_reps" type="text" inputmode="decimal" value="'+repsVal+'" placeholder="—" '+
+          'onchange="_guardarEdit(\''+sp+'\',\'reps\',this.value)" onclick="event.stopPropagation()" '+
+          'style="'+inpStyle+'font-size:13px;">'
+        : (repsVal||'—');
+      const pesoCel = sp
+        ? '<input id="inp_'+sp+'_peso" type="text" inputmode="decimal" value="'+pesoRaw+'" placeholder="—" '+
+          'onchange="_guardarEdit(\''+sp+'\',\'peso\',this.value)" onclick="event.stopPropagation()" '+
+          'style="'+inpStyle+'">'
+        : (pesoRaw ? pesoRaw+' kg' : '—');
+      // RIR editable
+      const rirRaw = (sp ? _getEdit(sp,'rir') : '') || s.rir || '';
+      const rirCel = sp
+        ? '<input id="inp_'+sp+'_rir" type="text" inputmode="text" value="'+rirRaw+'" placeholder="—" '+
+          'onchange="_guardarEdit(\''+sp+'\',\'rir\',this.value)" onclick="event.stopPropagation()" '+
+          'style="'+inpStyle+'font-size:11px;">'
+        : (rirRaw ? 'RIR '+rirRaw : '—');
+      // Long press touch handlers
+      const uid_safe = uid || '';
+      const touch = sp
+        ? 'ontouchstart="_lpStart(event,\''+sp+'\',\''+uid_safe+'\')" ontouchend="_lpEnd()" ontouchmove="_lpEnd()" oncontextmenu="_showCtxMenu(event,\''+sp+'\',\''+uid_safe+'\');return false"'
+        : '';
+      return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+'" '+touch+'>'+
+        '<td style="'+tdBase+'font-size:11px;font-weight:800;color:#fff;">'+prefijoLabel+' '+(i+1)+tipoBadge+'</td>'+
+        '<td style="'+tdBase+'">'+repsCel+'</td>'+
+        (hasPeso  ? '<td style="'+tdBase+'">'+pesoCel+'</td>' : '')+
+        (hasRir   ? '<td style="'+tdBase+'">'+rirCel+'</td>' : '')+
         (hasPausa ? '<td style="'+tdBase+'font-size:11px;color:#fff;">'+(s.pausa||'—')+'</td>' : '')+
       '</tr>';
     }).join('');
@@ -491,25 +630,35 @@ function _ejCard(ej, uid) {
   const cpClean = cp ? String(cp).replace(/kg$/i,'').trim() : '';
   const pesoRef = cpClean ? '<div style="font-size:10px;color:#888;margin-bottom:8px;">Ref. peso: <span style="color:#C9A84C;font-weight:700;">'+cpClean+' kg</span></div>' : '';
 
+  // Prefijo único por sesión+ejercicio para guardar ediciones del alumno
+  const _sp = (_semIdx||0)+'_'+(_diaIdx||0)+'_'+uid;
+
   // Sección de aproximación
   const aproSection = sApro ? (
     '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">SERIES DE APROXIMACIÓN</div>'+
-    _seriesTable(sApro, 'S. Aprox')
+    _seriesTable(sApro, 'S. Aprox', _sp+'_apro', uid)
   ) : '';
 
   // Sección de series efectivas (tabla detallada)
   const efecSection = sEfec ? (
     '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">SERIES EFECTIVAS</div>'+
-    _seriesTable(sEfec, 'S. Efectiva')
+    _seriesTable(sEfec, 'S. Efectiva', _sp+'_efec', uid)
   ) : '';
 
   // Sección de dropsets
   const dropSection = sDrop ? (
     '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">DROPSETS</div>'+
-    _seriesTable(sDrop, 'DS')
+    _seriesTable(sDrop, 'DS', _sp+'_drop', uid)
   ) : '';
 
-  const seriesTable = aproSection + efecSection + dropSection;
+  // Badge de progresión (basado en historial guardado o ctrlPeso+2.5)
+  const progBadge = (() => {
+    const progData = _calcProgresion(uid, _sp);
+    if (!progData) return '';
+    return '<div class="prog-badge">📈 Próxima sesión: <strong>'+progData.sugerido+' kg</strong>'+(progData.fromHistory?' (historial)':' (estimado)')+'</div>';
+  })();
+
+  const seriesTable = aproSection + efecSection + dropSection + progBadge;
 
   // Video inline (thumbnail → iframe al hacer clic)
   const ytId = _ytId(ej.video||'');
@@ -645,9 +794,10 @@ function renderSesion() {
     }).join('')+
     '<div style="height:80px;"></div>'+
     '<div style="position:fixed;bottom:calc(70px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:448px;z-index:200;">'+
-      '<button onclick="_enviarWA()" style="width:100%;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 6px 24px rgba(37,211,102,.4);letter-spacing:.3px;">'+
-        '📲 Enviar feedback al entrenador'+
-      '</button>'+
+      '<div style="display:flex;gap:8px;">'+
+        '<button onclick="_abrirFeedback()" style="flex:1;background:linear-gradient(135deg,#C9A84C,#9A7A28);color:#fff;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">📋 Feedback</button>'+
+        '<button onclick="_enviarWA()" style="flex:1;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">📲 WhatsApp</button>'+
+      '</div>'+
     '</div>'+
   '</div>';
 }
@@ -969,6 +1119,277 @@ function renderMedidas() {
 
 function noData(ico,ttl,txt) {
   return '<div class="empty"><div class="empty-ico">'+ico+'</div><div class="empty-ttl">'+ttl+'</div>'+(txt?'<div class="empty-txt">'+txt+'</div>':'')+'</div>';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// LIVE DATA — manejo de series modificadas en tiempo real
+// ════════════════════════════════════════════════════════════════════════════
+function _getLiveArr(uid, tipo) {
+  if (!_liveData[uid]) {
+    const ej = _ejStore[uid] || {};
+    _liveData[uid] = {
+      apro: ej.seriesApro ? JSON.parse(JSON.stringify(ej.seriesApro)) : [],
+      efec: ej.series     ? JSON.parse(JSON.stringify(ej.series))     : [],
+      drop: ej.dropset    ? JSON.parse(JSON.stringify(ej.dropset))    : [],
+    };
+  }
+  return _liveData[uid][tipo] || [];
+}
+function _setLiveArr(uid, tipo, arr) {
+  if (!_liveData[uid]) _getLiveArr(uid, tipo);
+  _liveData[uid][tipo] = arr;
+}
+
+// Parsear sp → { idx, tipo, uid }
+function _parseSp(sp) {
+  const p = sp.split('_');
+  return { idx: parseInt(p[p.length-1]), tipo: p[p.length-2], uid: p[p.length-3] };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// LONG PRESS — menú contextual de series
+// ════════════════════════════════════════════════════════════════════════════
+let _lpTimer = null, _lpSp = '', _lpUid = '', _lpX = 0, _lpY = 0;
+
+function _lpStart(e, sp, uid) {
+  _lpSp = sp; _lpUid = uid;
+  const t = e.touches ? e.touches[0] : e;
+  _lpX = t.clientX; _lpY = t.clientY;
+  const row = document.getElementById('sr_'+sp);
+  if (row) row.classList.add('lp-active');
+  _lpTimer = setTimeout(() => { _showCtxMenu(null, sp, uid, _lpX, _lpY); }, 500);
+}
+function _lpEnd() {
+  clearTimeout(_lpTimer);
+  if (_lpSp) { const r = document.getElementById('sr_'+_lpSp); if (r) r.classList.remove('lp-active'); }
+}
+
+function _showCtxMenu(e, sp, uid, x, y) {
+  clearTimeout(_lpTimer);
+  _lpEnd();
+  _lpSp = sp; _lpUid = uid;
+  if (e) { const t = e.touches ? e.touches[0] : e; x = t.clientX; y = t.clientY; }
+  const { idx, tipo } = _parseSp(sp);
+  const omitida = _getEdit(sp,'omitida')==='1';
+  const menu = document.getElementById('ctx-menu');
+  const tipoInfo = SERIE_TIPOS[_getEdit(sp,'tipo')||''] || null;
+  menu.innerHTML =
+    '<div class="cm-title">SERIE '+(idx+1)+'</div>'+
+    '<div class="cm-item" onclick="_ctxAddSerie()"><div class="cm-ico">➕</div>Agregar serie debajo</div>'+
+    '<div class="cm-item" onclick="_ctxDupSerie()"><div class="cm-ico">📋</div>Duplicar serie</div>'+
+    '<div class="cm-item" onclick="_ctxOmitSerie()">'+(omitida?'<div class="cm-ico">✅</div>Desmarcar omitida':'<div class="cm-ico">🚫</div>Marcar como omitida')+'</div>'+
+    '<div class="cm-item" onclick="_ctxShowTipos()"><div class="cm-ico">'+(tipoInfo?tipoInfo.icon:'🏷')+'</div>Cambiar tipo de serie</div>'+
+    '<div class="cm-item" onclick="_ctxEditField(\'peso\')"><div class="cm-ico">⚖️</div>Editar peso</div>'+
+    '<div class="cm-item" onclick="_ctxEditField(\'reps\')"><div class="cm-ico">🔢</div>Editar repeticiones</div>'+
+    '<div class="cm-item" onclick="_ctxEditField(\'rir\')"><div class="cm-ico">📊</div>Editar RIR</div>'+
+    '<div class="cm-item danger" onclick="_ctxDelSerie()"><div class="cm-ico">🗑</div>Eliminar serie</div>';
+  // Posicionamiento
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const mw = 240, mh = 320;
+  let left = Math.min(x, vw - mw - 8);
+  let top  = Math.min(y, vh - mh - 8);
+  if (left < 8) left = 8;
+  if (top  < 8) top  = 8;
+  menu.style.left = left+'px';
+  menu.style.top  = top+'px';
+  menu.style.display = 'block';
+  document.getElementById('ctx-backdrop').style.display = 'block';
+}
+function _hideCtxMenu() {
+  document.getElementById('ctx-menu').style.display = 'none';
+  document.getElementById('ctx-backdrop').style.display = 'none';
+}
+
+// ── Acciones del menú contextual ──────────────────────────────────────────
+function _ctxAddSerie() {
+  _hideCtxMenu();
+  const { idx, tipo, uid } = _parseSp(_lpSp);
+  const arr = _getLiveArr(uid, tipo);
+  const base = arr[idx] ? {...arr[idx]} : { reps:'', peso:'', rir:'', pausa:'', comentarios:'' };
+  arr.splice(idx+1, 0, {...base});
+  _setLiveArr(uid, tipo, arr);
+  _rerenderEjCard(uid);
+}
+function _ctxDupSerie() {
+  _ctxAddSerie(); // duplicar = agregar debajo con mismos valores (mismo índice source)
+}
+function _ctxDelSerie() {
+  _hideCtxMenu();
+  if (!confirm('¿Eliminar esta serie?')) return;
+  const { idx, tipo, uid } = _parseSp(_lpSp);
+  const arr = _getLiveArr(uid, tipo);
+  arr.splice(idx, 1);
+  _setLiveArr(uid, tipo, arr);
+  _rerenderEjCard(uid);
+}
+function _ctxOmitSerie() {
+  _hideCtxMenu();
+  const val = _getEdit(_lpSp,'omitida')==='1' ? '0' : '1';
+  _guardarEdit(_lpSp,'omitida',val);
+  const row = document.getElementById('sr_'+_lpSp);
+  if (row) {
+    row.classList.toggle('s-omitida', val==='1');
+  }
+}
+function _ctxEditField(campo) {
+  _hideCtxMenu();
+  const inp = document.getElementById('inp_'+_lpSp+'_'+campo);
+  if (inp) { inp.focus(); inp.select(); }
+}
+function _ctxShowTipos() {
+  const menu = document.getElementById('ctx-menu');
+  let html = '<div class="cm-title">TIPO DE SERIE</div><div class="cm-tipos">';
+  Object.entries(SERIE_TIPOS).forEach(([key, t]) => {
+    html += '<button class="cm-tipo-btn" style="color:'+t.color+';background:'+t.color+'22;" onclick="_ctxSetTipo(\''+key+'\')" >'+t.icon+' '+t.label+'</button>';
+  });
+  html += '</div><div class="cm-item" onclick="_ctxSetTipo(\'\')"><div class="cm-ico">✖️</div>Sin tipo</div>';
+  menu.innerHTML = html;
+}
+function _ctxSetTipo(key) {
+  _hideCtxMenu();
+  _guardarEdit(_lpSp,'tipo',key);
+  const { uid } = _parseSp(_lpSp);
+  _rerenderEjCard(uid);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PROGRESIÓN AUTOMÁTICA
+// ════════════════════════════════════════════════════════════════════════════
+function _calcProgresion(uid, sp_base) {
+  // Buscar el máximo peso guardado en series efectivas de la sesión ANTERIOR
+  // O usar el peso del plan como base si no hay historial
+  const ej = _ejStore[uid];
+
+  // Buscar en historial: sesiones previas (semanas anteriores, mismo uid)
+  let maxPeso = 0, avgRir = 0, count = 0;
+  const today_sp = sp_base + '_efec';
+  // Iterar todas las keys guardadas buscando este ejercicio en sesiones pasadas
+  for (const key of Object.keys(_pesoEdits)) {
+    if (key.includes('_'+uid+'_efec_') && !key.startsWith(sp_base)) {
+      const val = _pesoEdits[key];
+      if (val.peso) {
+        const p = parseFloat(val.peso);
+        if (p > 0) {
+          maxPeso = Math.max(maxPeso, p);
+          if (val.rir) {
+            const r = parseFloat(String(val.rir).replace(/[^0-9.]/g,''));
+            if (!isNaN(r)) { avgRir += r; count++; }
+          }
+        }
+      }
+    }
+  }
+  const fromHistory = maxPeso > 0;
+  if (!fromHistory) {
+    // Caer al ctrlPeso del plan como referencia
+    const cp = ej?.ctrlPeso || '';
+    const base = parseFloat(String(cp).replace(/kg/i,'').trim());
+    if (!base || isNaN(base)) return null;
+    maxPeso = base;
+    avgRir = 2; count = 1;
+  }
+  const avgRirVal = count > 0 ? avgRir / count : 2;
+  let inc = 0;
+  if (avgRirVal > 3)      inc = Math.round(maxPeso * 0.05 * 4) / 4;
+  else if (avgRirVal > 1) inc = 2.5;
+  else if (avgRirVal > 0) inc = 1.25;
+  else                    inc = 0;
+  const sugerido = Math.round((maxPeso + inc) * 4) / 4;
+  if (sugerido <= 0) return null;
+  return { sugerido, maxPeso, fromHistory };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// FEEDBACK POST-ENTRENAMIENTO
+// ════════════════════════════════════════════════════════════════════════════
+const _FB = {
+  dolor:        { label:'DOLOR ARTICULAR',     opts:['Sin dolor','Dolor leve','Dolor moderado','Mucho dolor'] },
+  recuperacion: { label:'RECUPERACIÓN MUSCULAR', opts:['No tuve dolor','Recuperé rápido','Recuperé justo','Todavía dolorido'] },
+  pump:         { label:'PUMP',                opts:['Bajo','Medio','Alto'] },
+  volumen:      { label:'VOLUMEN',             opts:['Poco','Adecuado','Muy exigente','Excesivo'] },
+};
+let _fbState = {};
+
+function _abrirFeedback() {
+  _fbState = {};
+  const ses = _plan?.semanasArray?.[_semIdx]?.dias?.[_diaIdx]?.[0];
+  const sesNombre = ses?.nombre || DN[_diaIdx] || 'Entrenamiento';
+  document.getElementById('fb-body').innerHTML = _buildFeedbackHTML(sesNombre);
+  document.getElementById('feedback-overlay').style.display = 'block';
+}
+function _cerrarFeedback() {
+  document.getElementById('feedback-overlay').style.display = 'none';
+}
+function _buildFeedbackHTML(sesNombre) {
+  let h = '<div style="font-size:12px;color:var(--muted);margin-bottom:20px;">'+sesNombre+'</div>';
+  // Secciones de opciones múltiples
+  Object.entries(_FB).forEach(([key, sec]) => {
+    h += '<div class="fb-section"><div class="fb-ttl">'+sec.label+'</div><div class="fb-opts" id="fb_'+key+'">';
+    sec.opts.forEach(opt => {
+      h += '<button class="fb-opt" onclick="_fbSel(\''+key+'\',\''+opt+'\',this)">'+opt+'</button>';
+    });
+    h += '</div></div>';
+  });
+  // Escalas numéricas
+  ['energía','estrés','motivación'].forEach(k => {
+    h += '<div class="fb-section"><div class="fb-ttl">'+k.toUpperCase()+' (1-10)</div><div class="fb-scale" id="fb_'+k+'">';
+    for (let n=1;n<=10;n++) h += '<button class="fb-num" onclick="_fbSel(\''+k+'\','+n+',this)">'+n+'</button>';
+    h += '</div></div>';
+  });
+  // Sueño
+  h += '<div class="fb-section"><div class="fb-ttl">SUEÑO</div><div class="fb-row2">'+
+    '<div><div style="font-size:9px;color:var(--muted);margin-bottom:6px;">HORAS</div>'+
+    '<input class="fb-input" id="fb_sueño_h" type="number" min="0" max="24" step=".5" placeholder="Hs dormidas" oninput="_fbVal(\'sueño_h\',this.value)"></div>'+
+    '<div><div style="font-size:9px;color:var(--muted);margin-bottom:6px;">CALIDAD (1-10)</div>'+
+    '<div class="fb-scale" id="fb_sueño_q" style="gap:3px;">';
+  for (let n=1;n<=10;n++) h += '<button class="fb-num" style="width:30px;height:30px;font-size:11px;" onclick="_fbSel(\'sueño_q\','+n+',this)">'+n+'</button>';
+  h += '</div></div></div></div>';
+  // Observaciones
+  h += '<div class="fb-section"><div class="fb-ttl">OBSERVACIONES</div>'+
+    '<textarea class="fb-input" rows="3" placeholder="Notas libres sobre el entrenamiento..." oninput="_fbVal(\'obs\',this.value)" style="resize:none;"></textarea></div>';
+  // Botón guardar
+  h += '<button onclick="_guardarFeedback()" style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-d));color:#0d0d1a;border:none;border-radius:14px;padding:16px;font-size:15px;font-weight:900;cursor:pointer;margin-top:4px;">💾 Guardar feedback</button>'+
+       '<button onclick="_cerrarFeedback()" style="width:100%;background:transparent;border:1.5px solid rgba(255,255,255,.1);color:var(--muted);border-radius:14px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;">Cancelar</button>';
+  return h;
+}
+function _fbSel(key, val, btn) {
+  _fbState[key] = val;
+  // Deseleccionar hermanos
+  btn.closest('.fb-opts, .fb-scale')?.querySelectorAll('.fb-opt,.fb-num').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+function _fbVal(key, val) { _fbState[key] = val; }
+
+async function _guardarFeedback() {
+  const datos = {
+    ..._fbState,
+    alumnoId: _alumnoId,
+    semana: _semIdx,
+    dia: _diaIdx,
+    sesion: _plan?.semanasArray?.[_semIdx]?.dias?.[_diaIdx]?.[0]?.nombre || '',
+    fecha: new Date().toISOString(),
+  };
+  // Guardar localmente
+  try {
+    const hist = JSON.parse(localStorage.getItem('SOCC_FEEDBACK_'+_alumnoId)||'[]');
+    hist.push(datos);
+    localStorage.setItem('SOCC_FEEDBACK_'+_alumnoId, JSON.stringify(hist));
+  } catch(e) {}
+  // Intentar guardar en Firebase
+  try {
+    if (_db && _alumnoId) {
+      await _db.collection('alumnos').doc(_alumnoId).update({
+        feedbackHistorial: firebase.firestore.FieldValue.arrayUnion(datos)
+      });
+    }
+  } catch(e) { console.warn('Feedback Firebase:', e); }
+  _cerrarFeedback();
+  // Toast de confirmación
+  const t = document.createElement('div');
+  t.textContent = '✓ Feedback guardado';
+  t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:10px 20px;border-radius:10px;font-weight:800;font-size:13px;z-index:20000;';
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2500);
 }
 </script>
 </body>
