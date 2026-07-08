@@ -1423,6 +1423,10 @@ function renderStats() {
   _destroyStatsCharts();
   const ctn = document.getElementById('stats-ctn');
   if (!ctn) return;
+  if (!_data) {
+    ctn.innerHTML = '<div style="padding:40px 16px;text-align:center;color:var(--muted);font-size:14px;">⏳ Cargando datos...</div>';
+    return;
+  }
 
   // ── 1. Recopilar PRs desde _pesoEdits ──────────────────────────────────
   // Clave: semIdx_diaIdx_b0e0_tipo_serieIdx → {peso, reps, rir, tipo, omitida}
@@ -1466,7 +1470,7 @@ function renderStats() {
   }).sort((a,b) => b.peso - a.peso).slice(0, 10);
 
   // ── 2. Peso corporal desde antropometría ──────────────────────────────
-  const antro = (_data.antropometria||[]).slice().sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+  const antro = ((_data && _data.antropometria)||[]).slice().sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
   const pesoData = antro.filter(r => r.peso && parseFloat(r.peso) > 0);
 
   // ── 3. HTML ────────────────────────────────────────────────────────────
@@ -1476,7 +1480,11 @@ function renderStats() {
   h += '<h3 style="color:var(--gold);font-size:14px;font-weight:900;letter-spacing:.08em;margin:0 0 12px;text-transform:uppercase;">🏆 Records personales</h3>';
 
   if (!prs.length) {
-    h += '<div style="background:rgba(255,255,255,.04);border-radius:14px;padding:20px;text-align:center;color:var(--muted);font-size:13px;">Completá sesiones para ver tus PRs aquí</div>';
+    h += '<div style="background:rgba(255,255,255,.04);border-radius:14px;padding:24px 16px;text-align:center;">'
+      + '<div style="font-size:32px;margin-bottom:10px;">🎯</div>'
+      + '<div style="color:#e8e8f0;font-weight:700;font-size:14px;margin-bottom:6px;">Tus PRs van a aparecer acá</div>'
+      + '<div style="color:var(--muted);font-size:12px;line-height:1.5;">Modificá los pesos en el entrenamiento<br>y se van a guardar automáticamente.</div>'
+      + '</div>';
   } else {
     h += '<div style="display:flex;flex-direction:column;gap:8px;">';
     prs.forEach((pr, i) => {
