@@ -203,6 +203,10 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
     <div id="running-ctn"></div>
   </div>
 
+  <div class="tab" id="tab-stats">
+    <div id="stats-ctn"></div>
+  </div>
+
   <!-- Menú contextual de series -->
   <div id="ctx-backdrop" onclick="_hideCtxMenu()"></div>
   <div id="ctx-menu"></div>
@@ -231,6 +235,10 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
       INFO
     </button>
+    <button class="nb" id="nb-stats" onclick="goTab('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      STATS
+    </button>
     <button class="nb" id="nb-medidas" onclick="goTab('medidas')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
       MEDIDAS
@@ -238,6 +246,7 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
   </nav>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
@@ -371,13 +380,16 @@ function render() {
 }
 
 function goTab(t) {
-  ['rutina','running','cargas','medidas'].forEach(x => {
-    document.getElementById('tab-'+x).classList.toggle('on',x===t);
-    document.getElementById('nb-'+x).classList.toggle('on',x===t);
+  ['rutina','running','cargas','stats','medidas'].forEach(x => {
+    const tab = document.getElementById('tab-'+x);
+    const btn = document.getElementById('nb-'+x);
+    if (tab) tab.classList.toggle('on',x===t);
+    if (btn) btn.classList.toggle('on',x===t);
   });
   if (t==='cargas')  renderInfo();
   if (t==='medidas') renderMedidas();
   if (t==='running') renderRunning();
+  if (t==='stats')   renderStats();
 }
 
 // ── RUTINA ────────────────────────────────────────────────────────────────
@@ -1395,6 +1407,170 @@ async function _guardarFeedback() {
   t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:10px 20px;border-radius:10px;font-weight:800;font-size:13px;z-index:20000;';
   document.body.appendChild(t);
   setTimeout(()=>t.remove(), 2500);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TAB STATS — PRs + Peso corporal
+// ════════════════════════════════════════════════════════════════════════════
+let _statsCharts = [];
+
+function _destroyStatsCharts() {
+  _statsCharts.forEach(c => { try { c.destroy(); } catch(e){} });
+  _statsCharts = [];
+}
+
+function renderStats() {
+  _destroyStatsCharts();
+  const ctn = document.getElementById('stats-ctn');
+  if (!ctn) return;
+
+  // ── 1. Recopilar PRs desde _pesoEdits ──────────────────────────────────
+  // Clave: semIdx_diaIdx_b0e0_tipo_serieIdx → {peso, reps, rir, tipo, omitida}
+  // Agrupamos por ejercicio (uid = bXeX) y buscamos el peso más alto por reps
+  const prMap = {}; // uid → [{reps, peso, label}]
+  const ejNames = {}; // uid → nombre
+
+  // Recopilar nombres de ejercicios del plan actual
+  if (_plan) {
+    (_plan.semanasArray||[]).forEach((sem,si) => {
+      (sem.dias||[]).forEach((dia,di) => {
+        (dia.bloques||[]).forEach((blq,bi) => {
+          (blq.ejercicios||[]).forEach((ej,ei) => {
+            const uid = 'b'+bi+'e'+ei;
+            ejNames[uid] = ej.nombre || uid;
+          });
+        });
+      });
+    });
+  }
+
+  // Iterar localStorage para encontrar ediciones
+  for (let k in _pesoEdits) {
+    // k = semIdx_diaIdx_b0e0_tipo_serieIdx
+    const parts = k.split('_');
+    if (parts.length < 5) continue;
+    const uid = parts[2]; // b0e0
+    const v = _pesoEdits[k];
+    if (!v || v.omitida === '1') continue;
+    const peso = parseFloat(String(v.peso).replace(/[^0-9.]/g,''));
+    const reps = parseInt(v.reps)||0;
+    if (!peso || !reps) continue;
+    if (!prMap[uid]) prMap[uid] = [];
+    prMap[uid].push({ reps, peso, key: k });
+  }
+
+  // Calcular PR por ejercicio (máximo peso)
+  const prs = Object.entries(prMap).map(([uid, arr]) => {
+    const best = arr.reduce((a,b) => b.peso > a.peso ? b : a);
+    return { uid, nombre: ejNames[uid]||uid, reps: best.reps, peso: best.peso };
+  }).sort((a,b) => b.peso - a.peso).slice(0, 10);
+
+  // ── 2. Peso corporal desde antropometría ──────────────────────────────
+  const antro = (_data.antropometria||[]).slice().sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+  const pesoData = antro.filter(r => r.peso && parseFloat(r.peso) > 0);
+
+  // ── 3. HTML ────────────────────────────────────────────────────────────
+  let h = '<div style="padding:16px 12px 100px;">';
+
+  // Sección PRs
+  h += '<h3 style="color:var(--gold);font-size:14px;font-weight:900;letter-spacing:.08em;margin:0 0 12px;text-transform:uppercase;">🏆 Records personales</h3>';
+
+  if (!prs.length) {
+    h += '<div style="background:rgba(255,255,255,.04);border-radius:14px;padding:20px;text-align:center;color:var(--muted);font-size:13px;">Completá sesiones para ver tus PRs aquí</div>';
+  } else {
+    h += '<div style="display:flex;flex-direction:column;gap:8px;">';
+    prs.forEach((pr, i) => {
+      const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+      h += `<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:800;color:#e8e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${medal} ${pr.nombre}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${pr.reps} reps</div>
+        </div>
+        <div style="font-size:20px;font-weight:900;color:var(--gold);margin-left:12px;">${pr.peso} kg</div>
+      </div>`;
+    });
+    h += '</div>';
+  }
+
+  // Sección peso corporal
+  h += '<h3 style="color:var(--gold);font-size:14px;font-weight:900;letter-spacing:.08em;margin:28px 0 12px;text-transform:uppercase;">⚖️ Evolución del peso corporal</h3>';
+
+  if (pesoData.length < 2) {
+    h += '<div style="background:rgba(255,255,255,.04);border-radius:14px;padding:20px;text-align:center;color:var(--muted);font-size:13px;">Necesitás al menos 2 mediciones para ver el gráfico</div>';
+  } else {
+    h += '<div style="background:rgba(255,255,255,.04);border-radius:16px;padding:16px;"><canvas id="stats-peso-chart" height="180"></canvas></div>';
+  }
+
+  // KPIs de antropometría (última medición)
+  if (antro.length) {
+    const last = antro[antro.length-1];
+    h += '<h3 style="color:var(--gold);font-size:14px;font-weight:900;letter-spacing:.08em;margin:28px 0 12px;text-transform:uppercase;">📏 Última medición</h3>';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+    const campos = [
+      ['peso','⚖️','kg'], ['grasa','🔥','%'], ['musculo','💪','%'],
+      ['cintura','📐','cm'], ['cadera','📐','cm'], ['brazo','💪','cm']
+    ];
+    campos.forEach(([k, ico, unit]) => {
+      if (!last[k]) return;
+      h += `<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:14px;text-align:center;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">${ico} ${k}</div>
+        <div style="font-size:22px;font-weight:900;color:#e8e8f0;margin-top:4px;">${last[k]}<span style="font-size:12px;color:var(--muted);"> ${unit}</span></div>
+      </div>`;
+    });
+    if (last.fecha) {
+      h += `<div style="grid-column:1/-1;text-align:center;font-size:11px;color:var(--muted);margin-top:4px;">Registrado: ${last.fecha}</div>`;
+    }
+    h += '</div>';
+  }
+
+  h += '</div>'; // end padding div
+  ctn.innerHTML = h;
+
+  // Renderizar gráfico peso corporal
+  if (pesoData.length >= 2) {
+    requestAnimationFrame(() => {
+      const canvas = document.getElementById('stats-peso-chart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: pesoData.map(r => {
+            const d = new Date(r.fecha);
+            return isNaN(d) ? r.fecha : d.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+          }),
+          datasets: [{
+            label: 'Peso (kg)',
+            data: pesoData.map(r => parseFloat(r.peso)),
+            borderColor: '#f0c040',
+            backgroundColor: 'rgba(240,192,64,.12)',
+            borderWidth: 2.5,
+            pointBackgroundColor: '#f0c040',
+            pointRadius: 4,
+            fill: true,
+            tension: 0.35
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(20,20,40,.95)',
+              bodyColor: '#e8e8f0',
+              titleColor: '#f0c040',
+              callbacks: { label: ctx => ctx.parsed.y + ' kg' }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#888', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,.05)' } },
+            y: { ticks: { color: '#888', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,.05)' } }
+          }
+        }
+      });
+      _statsCharts.push(chart);
+    });
+  }
 }
 </script>
 </body>

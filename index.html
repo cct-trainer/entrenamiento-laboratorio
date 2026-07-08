@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Laboratorio de Entrenamiento</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -3092,6 +3093,12 @@ select.toolbox-input option:disabled { color: #888; }
       </div>
     </div>
 
+    <!-- Dashboard -->
+    <div class="nav-sep"></div>
+    <button class="perfil-nav-plan-trigger" id="perfil-dash-trigger" onclick="perfilIrDashboard()" style="background:none;border:none;cursor:pointer;font-weight:700;">
+      📊 Dashboard
+    </button>
+
     <!-- Evolución mega menú -->
     <div class="perfil-nav-plan-wrap" id="perfil-evo-wrap">
       <button class="perfil-nav-plan-trigger" id="perfil-evo-trigger" onclick="togglePerfilMM(event,'evo')">
@@ -3384,7 +3391,36 @@ select.toolbox-input option:disabled { color: #888; }
         </div>
       </div>
 
-      <!-- 6. EVOLUCIÓN -->
+      <!-- 6. DASHBOARD -->
+      <div id="perfil-sec-dashboard" class="perfil-section">
+        <div class="module-header">
+          <div class="mh-left">
+            <h2 class="mh-title">📊 Dashboard</h2>
+            <p class="mh-sub" id="mh-sub-dash">Resumen integral del alumno</p>
+          </div>
+          <div class="mh-actions" id="mh-actions-dash">
+            <button class="btn btn-primary" onclick="renderDashboardAlumno(currentAlumnoId,true)" style="font-size:12px;">🔄 Actualizar</button>
+          </div>
+        </div>
+        <div class="module-content">
+          <div class="perfil-subtabs">
+            <button class="perfil-subtab active" onclick="switchDashTab('resumen')">Resumen</button>
+            <button class="perfil-subtab" onclick="switchDashTab('feedback')">Feedback</button>
+            <button class="perfil-subtab" onclick="switchDashTab('volumen')">Volumen</button>
+          </div>
+          <div id="dash-sub-resumen" class="perfil-subcontent active">
+            <div id="dash-resumen-content"></div>
+          </div>
+          <div id="dash-sub-feedback" class="perfil-subcontent">
+            <div id="dash-feedback-content"></div>
+          </div>
+          <div id="dash-sub-volumen" class="perfil-subcontent">
+            <div id="dash-volumen-content"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. EVOLUCIÓN -->
       <div id="perfil-sec-evolucion" class="perfil-section">
         <div class="module-header">
           <div class="mh-left">
@@ -22863,6 +22899,298 @@ function blogEliminarArticulo(idx) {
     _src = null;
   });
 })();
+
+// ════════════════════════════════════════════════════════════════════════════
+// DASHBOARD — Fase 2
+// ════════════════════════════════════════════════════════════════════════════
+
+let _dashCharts = {}; // cache de instancias Chart.js
+
+function _destroyChart(id) {
+  if (_dashCharts[id]) { try { _dashCharts[id].destroy(); } catch(e) {} delete _dashCharts[id]; }
+}
+
+function perfilIrDashboard() {
+  if (!currentAlumnoId) { toast('Seleccioná un alumno primero', 'error'); return; }
+  document.querySelectorAll('.perfil-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('perfil-sec-dashboard').classList.add('active');
+  renderDashboardAlumno(currentAlumnoId);
+}
+
+function switchDashTab(tab) {
+  const sec = document.getElementById('perfil-sec-dashboard');
+  if (!sec) return;
+  sec.querySelectorAll('.perfil-subtab').forEach(b => b.classList.remove('active'));
+  sec.querySelectorAll('.perfil-subcontent').forEach(c => c.classList.remove('active'));
+  const btn = [...sec.querySelectorAll('.perfil-subtab')].find(b => b.onclick?.toString().includes("'"+tab+"'"));
+  if (btn) btn.classList.add('active');
+  const el = document.getElementById('dash-sub-'+tab);
+  if (el) el.classList.add('active');
+  if (!currentAlumnoId) return;
+  if (tab === 'resumen')  _renderDashResumen(currentAlumnoId);
+  if (tab === 'feedback') _renderDashFeedback(currentAlumnoId);
+  if (tab === 'volumen')  _renderDashVolumen(currentAlumnoId);
+}
+
+async function renderDashboardAlumno(id, forceRefresh) {
+  if (!id) return;
+  // Intentar cargar feedback de Firebase si está disponible
+  if (window._db) {
+    try {
+      const doc = await window._db.collection('alumnos').doc(id).get();
+      if (doc.exists) {
+        const d = doc.data();
+        if (d.feedbackHistorial) {
+          // Guardar en localStorage del coach para uso offline
+          localStorage.setItem('SOCC_FB_'+id, JSON.stringify(d.feedbackHistorial));
+        }
+      }
+    } catch(e) {}
+  }
+  _renderDashResumen(id);
+}
+
+// ── RESUMEN ────────────────────────────────────────────────────────────────
+function _renderDashResumen(id) {
+  const el = document.getElementById('dash-resumen-content');
+  if (!el) return;
+  const a = getAlumnos().find(x => x.id === id) || {};
+  const historial = buildHistorialEjercicios(id);
+  const antro = JSON.parse(localStorage.getItem('LAB_ANTROPOMETRIA')||'[]').filter(r=>r.alumnoId===id).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const feedback = _getFeedback(id);
+
+  // KPIs
+  const totalSesiones = new Set(historial.map(h=>h.fecha||h.planId)).size;
+  const ultimaFecha = historial.reduce((m,h)=>h.fecha>m?h.fecha:m,'');
+  const ultimaPeso = antro.length ? antro[antro.length-1].peso : null;
+  const avgEnerg = feedback.length ? (feedback.reduce((s,f)=>s+(parseFloat(f['energía'])||parseFloat(f.energia)||0),0)/feedback.filter(f=>f['energía']||f.energia).length).toFixed(1) : null;
+
+  // PRs
+  const prsMap = {};
+  historial.forEach(h => {
+    if (h.pesoMax > 0) {
+      if (!prsMap[h.nombre] || h.pesoMax > prsMap[h.nombre].peso) {
+        prsMap[h.nombre] = { peso: h.pesoMax, fecha: h.fecha };
+      }
+    }
+  });
+  const prs = Object.entries(prsMap).sort((a,b)=>b[1].peso-a[1].peso).slice(0,8);
+
+  el.innerHTML = `
+    <!-- KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px;">
+      ${_kpi('🏋️', 'SESIONES', totalSesiones||0, '')}
+      ${ultimaPeso ? _kpi('⚖️', 'PESO ACTUAL', ultimaPeso, 'kg') : ''}
+      ${avgEnerg ? _kpi('⚡', 'ENERGÍA MEDIA', avgEnerg, '/10') : ''}
+      ${feedback.length ? _kpi('📋', 'FEEDBACKS', feedback.length, '') : ''}
+      ${ultimaFecha ? _kpi('📅', 'ÚLTIMA SESIÓN', _fechaCort(ultimaFecha), '') : ''}
+    </div>
+
+    <!-- PRs -->
+    ${prs.length ? `
+    <div style="font-size:11px;font-weight:900;color:#1a1a1a;letter-spacing:1px;margin-bottom:12px;">🏆 RÉCORDS PERSONALES (PESO MÁX.)</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:24px;">
+      ${prs.map(([nombre,d],i)=>`
+        <div style="background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;">
+          <div style="font-size:18px;font-weight:900;color:#C9A84C;min-width:26px;text-align:right;">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:11px;font-weight:800;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nombre}</div>
+            <div style="font-size:10px;color:#888;">${d.fecha?_fechaCort(d.fecha):''}</div>
+          </div>
+          <div style="font-size:17px;font-weight:900;color:#1a3a6a;">${d.peso} kg</div>
+        </div>
+      `).join('')}
+    </div>` : `<div style="color:#aaa;font-size:13px;padding:20px 0;">Sin datos de cargas cargados aún.</div>`}
+
+    <!-- Gráfico de peso corporal -->
+    ${antro.length >= 2 ? `
+    <div style="font-size:11px;font-weight:900;color:#1a1a1a;letter-spacing:1px;margin-bottom:12px;">⚖️ EVOLUCIÓN DE PESO CORPORAL</div>
+    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:16px;margin-bottom:24px;">
+      <canvas id="chart-peso-dash" height="80"></canvas>
+    </div>` : ''}
+  `;
+
+  // Render chart de peso corporal
+  if (antro.length >= 2) {
+    _destroyChart('peso-dash');
+    const ctx = document.getElementById('chart-peso-dash').getContext('2d');
+    _dashCharts['peso-dash'] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: antro.map(r=>_fechaCort(r.fecha)),
+        datasets: [{
+          label: 'Peso (kg)',
+          data: antro.map(r=>parseFloat(r.peso)),
+          borderColor:'#C9A84C', backgroundColor:'rgba(201,168,76,.1)',
+          fill:true, tension:.4, pointRadius:4, pointBackgroundColor:'#C9A84C'
+        }]
+      },
+      options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:false}} }
+    });
+  }
+}
+
+// ── FEEDBACK ────────────────────────────────────────────────────────────────
+function _getFeedback(id) {
+  try { return JSON.parse(localStorage.getItem('SOCC_FB_'+id)||'[]'); } catch(e) { return []; }
+}
+
+function _renderDashFeedback(id) {
+  const el = document.getElementById('dash-feedback-content');
+  if (!el) return;
+  const fb = _getFeedback(id);
+  if (!fb.length) {
+    el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#aaa;">
+      <div style="font-size:40px;margin-bottom:12px;">📋</div>
+      <div style="font-weight:700;color:#555;margin-bottom:6px;">Sin feedback registrado</div>
+      <div style="font-size:12px;">Cuando el alumno complete el formulario de feedback, verás los datos aquí.</div>
+    </div>`;
+    return;
+  }
+  const sorted = [...fb].sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+  const labels = sorted.map(f=>_fechaCort(f.fecha));
+
+  const toNum = (v) => parseFloat(v)||0;
+  const dolorMap = {'Sin dolor':0,'Dolor leve':1,'Dolor moderado':2,'Mucho dolor':3};
+  const recupMap = {'No tuve dolor':0,'Recuperé rápido':1,'Recuperé justo':2,'Todavía dolorido':3};
+  const pumpMap  = {'Bajo':1,'Medio':2,'Alto':3};
+
+  el.innerHTML = `
+    <div style="display:grid;gap:20px;">
+      <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:16px;">
+        <div style="font-size:10px;font-weight:800;color:#555;margin-bottom:10px;">⚡ ENERGÍA / 😤 ESTRÉS / 💪 MOTIVACIÓN</div>
+        <canvas id="chart-fb-nums" height="90"></canvas>
+      </div>
+      <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:16px;">
+        <div style="font-size:10px;font-weight:800;color:#555;margin-bottom:10px;">😣 DOLOR / 🔄 RECUPERACIÓN / 💊 PUMP</div>
+        <canvas id="chart-fb-cat" height="90"></canvas>
+      </div>
+      <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:16px;">
+        <div style="font-size:10px;font-weight:800;color:#555;margin-bottom:10px;">😴 SUEÑO (horas)</div>
+        <canvas id="chart-fb-sueno" height="70"></canvas>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:800;color:#1a1a1a;letter-spacing:1px;margin-bottom:10px;">ÚLTIMOS FEEDBACKS</div>
+        ${sorted.slice(-5).reverse().map(f=>`
+          <div style="background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:10px 14px;margin-bottom:6px;font-size:12px;">
+            <div style="font-weight:700;color:#555;margin-bottom:4px;">${_fechaCort(f.fecha)||'Sin fecha'} — ${f.sesion||'Sesión'}</div>
+            ${f.obs ? `<div style="color:#333;font-style:italic;">"${f.obs}"</div>` : ''}
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+              ${f.dolor?`<span style="background:#fee2e2;color:#dc2626;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;">${f.dolor}</span>`:''}
+              ${f['energía']||f.energia?`<span style="background:#fef9c3;color:#ca8a04;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;">Energía ${f['energía']||f.energia}/10</span>`:''}
+              ${f['motivación']||f.motivacion?`<span style="background:#dcfce7;color:#16a34a;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;">Motivación ${f['motivación']||f.motivacion}/10</span>`:''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  // Charts
+  setTimeout(() => {
+    _destroyChart('fb-nums');
+    _destroyChart('fb-cat');
+    _destroyChart('fb-sueno');
+    const ctxN = document.getElementById('chart-fb-nums')?.getContext('2d');
+    if (ctxN) _dashCharts['fb-nums'] = new Chart(ctxN, {
+      type:'line',
+      data:{ labels,
+        datasets:[
+          { label:'Energía', data:sorted.map(f=>toNum(f['energía']||f.energia)), borderColor:'#f59e0b', tension:.4, pointRadius:3 },
+          { label:'Estrés',  data:sorted.map(f=>toNum(f['estrés']||f.estres)),  borderColor:'#ef4444', tension:.4, pointRadius:3 },
+          { label:'Motivación',data:sorted.map(f=>toNum(f['motivación']||f.motivacion)), borderColor:'#22c55e', tension:.4, pointRadius:3 },
+        ]
+      },
+      options:{ responsive:true, plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}}, scales:{y:{min:0,max:10}} }
+    });
+    const ctxC = document.getElementById('chart-fb-cat')?.getContext('2d');
+    if (ctxC) _dashCharts['fb-cat'] = new Chart(ctxC, {
+      type:'bar',
+      data:{ labels,
+        datasets:[
+          { label:'Dolor',       data:sorted.map(f=>dolorMap[f.dolor]||0), backgroundColor:'rgba(239,68,68,.6)' },
+          { label:'Recuperación',data:sorted.map(f=>recupMap[f.recuperacion]||0), backgroundColor:'rgba(59,130,246,.6)' },
+          { label:'Pump',        data:sorted.map(f=>pumpMap[f.pump]||0), backgroundColor:'rgba(168,85,247,.6)' },
+        ]
+      },
+      options:{ responsive:true, plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}}, scales:{y:{min:0,max:3,ticks:{stepSize:1,callback:v=>['Ninguno','Bajo','Medio','Alto'][v]||v}}} }
+    });
+    const ctxS = document.getElementById('chart-fb-sueno')?.getContext('2d');
+    if (ctxS) _dashCharts['fb-sueno'] = new Chart(ctxS, {
+      type:'bar',
+      data:{ labels,
+        datasets:[{ label:'Horas', data:sorted.map(f=>toNum(f['sueño_h']||f.sueno_h)), backgroundColor:'rgba(99,102,241,.5)' }]
+      },
+      options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{min:0,max:12,title:{display:true,text:'hs',font:{size:10}}}} }
+    });
+  }, 50);
+}
+
+// ── VOLUMEN POR MÚSCULO ─────────────────────────────────────────────────────
+function _renderDashVolumen(id) {
+  const el = document.getElementById('dash-volumen-content');
+  if (!el) return;
+  const hist = buildHistorialEjercicios(id);
+  if (!hist.length) {
+    el.innerHTML = '<div style="color:#aaa;padding:40px 20px;text-align:center;">Sin datos de planificación.</div>';
+    return;
+  }
+  // Agrupar volumen por músculo (series × reps)
+  const musMap = {};
+  hist.forEach(h => {
+    const musc = h.musculos || h.principales || '';
+    const musList = typeof musc === 'string' ? musc.split(',').map(m=>m.trim()).filter(Boolean) : (Array.isArray(musc)?musc:[]);
+    const vol = (h.totalSeries||1) * (h.repsMedia||10);
+    musList.forEach(m => { musMap[m] = (musMap[m]||0) + vol; });
+  });
+  const sorted = Object.entries(musMap).filter(([k])=>k).sort((a,b)=>b[1]-a[1]).slice(0,12);
+
+  el.innerHTML = sorted.length
+    ? `<div style="font-size:11px;font-weight:900;color:#1a1a1a;letter-spacing:1px;margin-bottom:12px;">📊 VOLUMEN TOTAL POR GRUPO MUSCULAR</div>
+       <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:16px;margin-bottom:20px;">
+         <canvas id="chart-vol-musc" height="120"></canvas>
+       </div>
+       <div style="font-size:11px;font-weight:900;color:#1a1a1a;letter-spacing:1px;margin-bottom:10px;">DETALLE</div>
+       ${sorted.map(([m,v])=>`
+         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+           <div style="font-size:12px;font-weight:700;color:#1a1a1a;min-width:160px;">${m}</div>
+           <div style="flex:1;background:#f1f5f9;border-radius:4px;height:8px;overflow:hidden;">
+             <div style="background:#C9A84C;height:100%;width:${Math.round(v/sorted[0][1]*100)}%;border-radius:4px;"></div>
+           </div>
+           <div style="font-size:11px;font-weight:800;color:#555;min-width:50px;text-align:right;">${v} sets</div>
+         </div>
+       `).join('')}`
+    : '<div style="color:#aaa;padding:40px 20px;text-align:center;">Sin datos de músculo en las planificaciones.</div>';
+
+  if (sorted.length) {
+    setTimeout(() => {
+      _destroyChart('vol-musc');
+      const ctx = document.getElementById('chart-vol-musc')?.getContext('2d');
+      if (!ctx) return;
+      const COLORS = ['#C9A84C','#3b82f6','#22c55e','#ef4444','#a855f7','#06b6d4','#f97316','#ec4899','#14b8a6','#eab308','#6366f1','#84cc16'];
+      _dashCharts['vol-musc'] = new Chart(ctx, {
+        type:'bar',
+        data:{
+          labels: sorted.map(([m])=>m),
+          datasets:[{ data:sorted.map(([,v])=>v), backgroundColor:COLORS }]
+        },
+        options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,title:{display:true,text:'Series × Reps',font:{size:10}}}} }
+      });
+    }, 50);
+  }
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function _kpi(ico, label, val, unit) {
+  return `<div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:14px 16px;">
+    <div style="font-size:10px;font-weight:800;color:#888;letter-spacing:.8px;margin-bottom:6px;">${ico} ${label}</div>
+    <div style="font-size:22px;font-weight:900;color:#1a1a1a;line-height:1;">${val}<span style="font-size:12px;font-weight:700;color:#aaa;margin-left:3px;">${unit}</span></div>
+  </div>`;
+}
+function _fechaCort(f) {
+  if (!f) return '';
+  try { return new Date(f+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}); } catch(e){return f.slice(0,10);}
+}
 </script>
 </body>
 </html>
