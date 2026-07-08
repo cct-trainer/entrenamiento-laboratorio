@@ -12728,8 +12728,8 @@ function openPerfilAlumno(id) {
   if (_btnPortal) {
     _btnPortal.style.display = 'inline-flex';
     _btnPortal.onclick = () => {
-      const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
-      const url  = base + 'alumno.html?id=' + encodeURIComponent(a.id);
+      const PORTAL_BASE = 'https://cct-trainer.github.io/entrenamiento-laboratorio/';
+      const url = PORTAL_BASE + 'alumno.html?id=' + encodeURIComponent(a.id);
       navigator.clipboard.writeText(url)
         .then(() => toast('🔗 Link del portal copiado — mandáselo al alumno por WhatsApp'))
         .catch(() => { prompt('Copiá este link y mandáselo al alumno:', url); });

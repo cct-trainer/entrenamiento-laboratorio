@@ -549,6 +549,58 @@ function _ejCard(ej, uid) {
       '</div>'+
     '</div>';
 
+  // ── SOLAPA INFORMACIÓN TÉCNICA ───────────────────────────────────────────
+  const fichaHTML = (() => {
+    const f = ej.ficha;
+    const rows = [];
+
+    // Músculos (varias fuentes posibles)
+    const musc = (f && (f['MÚSCULOS'] || f['Músculos'] || f['musculos']))
+               || ej.musculos
+               || (Array.isArray(f?.musculos) ? f.musculos.join(', ') : '');
+    if (musc) rows.push(['💪 MÚSCULOS', musc]);
+
+    // Músculos secundarios
+    const muscSec = f && (f['Músculos secundarios'] || f['MÚSCULOS SECUNDARIOS']);
+    if (muscSec) rows.push(['➕ SECUNDARIOS', muscSec]);
+
+    // Tipo de ejercicio
+    const tipo = f && (f['TIPO'] || f['Tipo'] || f['tipo']);
+    if (tipo) rows.push(['🏷 TIPO', tipo]);
+
+    // Descripción / ejecución
+    const desc = (f && (f['Descripción'] || f['DESCRIPCIÓN'] || f['ejecucion'] || f['desc']))
+               || ej.ejecucion || '';
+    if (desc) rows.push(['📋 EJECUCIÓN', desc]);
+
+    if (!rows.length) return '';
+
+    const rowsHTML = rows.map(([k, v]) =>
+      '<div style="margin-bottom:10px;">'+
+        '<div style="font-size:8px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin-bottom:3px;">'+k+'</div>'+
+        '<div style="font-size:12px;color:#d1d5db;line-height:1.55;">'+v+'</div>'+
+      '</div>'
+    ).join('');
+
+    return (
+      // Solapa/botón
+      '<button onclick="_toggleFicha(\''+uid+'\')" style="'+
+        'display:flex;align-items:center;gap:6px;margin-top:10px;'+
+        'background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);'+
+        'border-radius:6px;padding:6px 12px;cursor:pointer;width:100%;'+
+        'color:#C9A84C;font-size:10px;font-weight:800;letter-spacing:.5px;'+
+      '">'+
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>'+
+        'INFORMACIÓN TÉCNICA'+
+        '<svg id="'+uid+'-fich-arr" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-left:auto;transition:transform .2s;"><path d="M6 9l6 6 6-6"/></svg>'+
+      '</button>'+
+      // Panel desplegable
+      '<div id="'+uid+'-fich" style="display:none;margin-top:6px;padding:12px;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.12);border-radius:8px;">'+
+        rowsHTML+
+      '</div>'
+    );
+  })();
+
   return '<div id="'+uid+'-card" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .2s;">'+
     '<div style="padding:12px 14px 12px;">'+
       '<div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:2px;">'+(ej.nombre||'—')+'</div>'+
@@ -556,10 +608,20 @@ function _ejCard(ej, uid) {
       ctrlGrid+
       pesoRef+
       seriesTable+
+      fichaHTML+
       videoHTML+
       feedbackHTML+
     '</div>'+
   '</div>';
+}
+
+function _toggleFicha(uid) {
+  const panel = document.getElementById(uid+'-fich');
+  const arr   = document.getElementById(uid+'-fich-arr');
+  if (!panel) return;
+  const open = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'block';
+  if (arr) arr.style.transform = open ? '' : 'rotate(180deg)';
 }
 
 function renderSesion() {
