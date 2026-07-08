@@ -565,7 +565,7 @@ function _ejCard(ej, uid) {
     if (muscSec) rows.push(['➕ SECUNDARIOS', muscSec]);
 
     // Tipo de ejercicio
-    const tipo = f && (f['TIPO'] || f['Tipo'] || f['tipo']);
+    const tipo = (f && (f['TIPO'] || f['Tipo'] || f['tipo'])) || ej.tipo || '';
     if (tipo) rows.push(['🏷 TIPO', tipo]);
 
     // Descripción / ejecución

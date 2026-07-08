@@ -17526,9 +17526,17 @@ function leerBloques() {
       const dropset = _leerTbody(eId+'-drop-tbody');
 
       if (eNombre) {
+        // Enriquecer con datos de la biblioteca para que alumno.html pueda mostrar ficha técnica
+        const _lib = (typeof getEjerciciosCompletos === 'function')
+          ? (getEjerciciosCompletos().find(e => e.nombre && e.nombre.toLowerCase() === eNombre.toLowerCase()) || {})
+          : {};
+        const ejecucion = (ficha && (ficha['Descripción'] || ficha['DESCRIPCIÓN'])) || _lib.ejecucion || _lib.desc || '';
+        const musculos  = (ficha && ficha['MÚSCULOS']) || (_lib.musculos || _lib.principales || []).join(', ') || '';
+        const tipoEj    = (ficha && ficha['TIPO']) || _lib.tipoTrabajo || _lib.cat || '';
         ejercicios.push({
           nombre: eNombre, video, ficha, series, seriesApro, dropset,
-          ctrlSeries, ctrlReps, ctrlPeso, ctrlPausa, ctrlRir
+          ctrlSeries, ctrlReps, ctrlPeso, ctrlPausa, ctrlRir,
+          ejecucion, musculos, tipo: tipoEj
         });
       }
     });
