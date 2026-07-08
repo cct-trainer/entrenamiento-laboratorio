@@ -5,20 +5,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Mi Portal — Christian Cattaneo</title>
 <link rel="manifest" id="pwa-manifest">
-<meta name="theme-color" content="#C9A84C">
+<meta name="theme-color" content="#C9A84C" id="meta-theme-color">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="C. Cattaneo">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script>
+// Aplicar tema ANTES de que la página pinte — evita flash
+(function(){
+  if(localStorage.getItem('SOCC_THEME')==='light')
+    document.documentElement.classList.add('light');
+})();
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+
+/* ── TEMA OSCURO (default) ─────────────────────────────────────────── */
 :root{
   --bg:#0d0d1a;--card:#13132a;--card2:#1a1a38;
   --gold:#C9A84C;--gold-d:#9A7A28;--green:#22c55e;
   --text:#e8e8f0;--muted:#8888aa;--border:rgba(255,255,255,.08);
+  --hdr-bg:linear-gradient(180deg,#1a1a3a 0%,transparent 100%);
+  --nav-bg:#13132a;--nav-border:rgba(255,255,255,.08);
+  --blk-hdr:rgba(255,255,255,.04);--row-odd:rgba(255,255,255,.025);
+  --input-bg:rgba(255,255,255,.04);--input-border:rgba(255,255,255,.1);
+  --ctx-bg:#14142b;--ctx-border:rgba(201,168,76,.3);--ctx-text:#e8e8f0;
+  --letra-text:#0d0d1a;
+  --avatar-grad:linear-gradient(135deg,#C9A84C,#7a5a10);
 }
-html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;}
+
+/* ── TEMA CLARO ────────────────────────────────────────────────────── */
+html.light{
+  --bg:#f0f4ff;--card:#ffffff;--card2:#e8eeff;
+  --gold:#1d4ed8;--gold-d:#1e3a8a;--green:#16a34a;
+  --text:#0d0f1a;--muted:#5a6480;--border:rgba(0,0,0,.1);
+  --hdr-bg:linear-gradient(180deg,#dde6ff 0%,transparent 100%);
+  --nav-bg:#ffffff;--nav-border:rgba(0,0,0,.1);
+  --blk-hdr:rgba(0,0,0,.04);--row-odd:rgba(0,0,0,.02);
+  --input-bg:rgba(0,0,0,.04);--input-border:rgba(0,0,0,.12);
+  --ctx-bg:#ffffff;--ctx-border:rgba(29,78,216,.2);--ctx-text:#0d0f1a;
+  --letra-text:#ffffff;
+  --avatar-grad:linear-gradient(135deg,#1d4ed8,#1e3a8a);
+}
+
+html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;transition:background .25s,color .25s;}
 
 #loading,#error-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:14px;padding:24px;text-align:center;}
 #error-screen{display:none;}
@@ -27,14 +58,14 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 
 #app{display:none;flex-direction:column;max-width:480px;margin:0 auto;min-height:100vh;}
 
-.hdr{background:linear-gradient(180deg,#1a1a3a 0%,transparent 100%);padding:28px 20px 16px;}
+.hdr{background:var(--hdr-bg);padding:28px 20px 16px;transition:background .25s;}
 .hdr-row{display:flex;align-items:center;gap:14px;}
-.avatar{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#C9A84C,#7a5a10);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;flex-shrink:0;}
+.avatar{width:50px;height:50px;border-radius:50%;background:var(--avatar-grad);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;flex-shrink:0;transition:background .25s;}
 .alumno-nombre{font-size:20px;font-weight:900;color:#fff;line-height:1.1;}
 .plan-badge{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin-top:3px;}
 .coach-tag{font-size:10px;color:var(--muted);margin-top:1px;}
 
-.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#13132a;border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0);}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--nav-bg);border-top:1px solid var(--nav-border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0);transition:background .25s;}
 .nb{flex:1;padding:10px 4px 14px;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:9px;font-weight:800;letter-spacing:.6px;}
 .nb svg{width:22px;height:22px;stroke-width:1.8;}
 .nb.on{color:var(--gold);}
@@ -66,8 +97,8 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 .scard{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;}
 .scard-name{font-size:13px;font-weight:900;color:var(--gold);margin-bottom:12px;letter-spacing:.3px;}
 .blk{margin-bottom:10px;}
-.blk-hdr{display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:2px;cursor:pointer;}
-.blk-letra{width:20px;height:20px;background:var(--gold);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#0d0d1a;flex-shrink:0;}
+.blk-hdr{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--blk-hdr);border-radius:8px;margin-bottom:2px;cursor:pointer;}
+.blk-letra{width:20px;height:20px;background:var(--gold);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:var(--letra-text);flex-shrink:0;}
 .blk-txt{flex:1;}
 .blk-n{font-size:11px;font-weight:800;color:var(--text);}
 .blk-t{font-size:9px;color:var(--muted);}
@@ -76,10 +107,10 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 .blk-body{padding:0 2px 4px;}
 
 .ejrow{display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border-radius:7px;}
-.ejrow:nth-child(odd){background:rgba(255,255,255,.025);}
+.ejrow:nth-child(odd){background:var(--row-odd);}
 .ej-n{font-size:12px;font-weight:600;color:var(--text);flex:1;line-height:1.3;}
 .ej-c{text-align:right;flex-shrink:0;}
-.cp{display:inline-block;background:rgba(201,168,76,.14);color:var(--gold);border-radius:4px;padding:2px 6px;font-size:9px;font-weight:700;margin-bottom:2px;}
+.cp{display:inline-block;background:color-mix(in srgb,var(--gold) 14%,transparent);color:var(--gold);border-radius:4px;padding:2px 6px;font-size:9px;font-weight:700;margin-bottom:2px;}
 .cr{display:inline-block;background:rgba(34,197,94,.14);color:var(--green);border-radius:4px;padding:2px 6px;font-size:9px;font-weight:700;}
 .ej-rir{font-size:9px;color:#555;margin-top:2px;}
 
@@ -113,9 +144,9 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 
 /* ── CONTEXT MENU ─────────────────────────────────────────────────── */
 #ctx-backdrop{position:fixed;inset:0;z-index:9998;display:none;}
-#ctx-menu{position:fixed;z-index:9999;background:#14142b;border:1px solid rgba(201,168,76,.3);border-radius:16px;min-width:220px;max-width:280px;box-shadow:0 20px 60px rgba(0,0,0,.9);overflow:hidden;display:none;}
-.cm-title{padding:10px 14px 8px;font-size:9px;font-weight:900;color:var(--gold);letter-spacing:1.5px;border-bottom:1px solid rgba(255,255,255,.07);}
-.cm-item{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#e8e8f0;border-bottom:1px solid rgba(255,255,255,.04);}
+#ctx-menu{position:fixed;z-index:9999;background:var(--ctx-bg);border:1px solid var(--ctx-border);border-radius:16px;min-width:220px;max-width:280px;box-shadow:0 20px 60px rgba(0,0,0,.4);overflow:hidden;display:none;transition:background .25s;}
+.cm-title{padding:10px 14px 8px;font-size:9px;font-weight:900;color:var(--gold);letter-spacing:1.5px;border-bottom:1px solid var(--border);}
+.cm-item{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ctx-text);border-bottom:1px solid var(--border);}
 .cm-item:active{background:rgba(255,255,255,.07);}
 .cm-ico{font-size:16px;width:22px;text-align:center;}
 .cm-item.danger{color:#f87171;}
@@ -140,13 +171,13 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 .fb-section{margin-bottom:22px;}
 .fb-ttl{font-size:9px;font-weight:900;color:var(--gold);letter-spacing:1.5px;margin-bottom:10px;}
 .fb-opts{display:flex;flex-wrap:wrap;gap:7px;}
-.fb-opt{padding:8px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
-.fb-opt.sel{border-color:var(--gold);background:rgba(201,168,76,.12);color:var(--gold);}
+.fb-opt{padding:8px 14px;border-radius:20px;border:1.5px solid var(--input-border);background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
+.fb-opt.sel{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 12%,transparent);color:var(--gold);}
 .fb-scale{display:flex;gap:5px;flex-wrap:wrap;}
-.fb-num{width:36px;height:36px;border-radius:9px;border:1.5px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
-.fb-num.sel{border-color:var(--gold);background:rgba(201,168,76,.15);color:var(--gold);}
-.fb-input{width:100%;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:13px;padding:10px 12px;outline:none;font-family:inherit;}
-.fb-input:focus{border-color:rgba(201,168,76,.5);}
+.fb-num{width:36px;height:36px;border-radius:9px;border:1.5px solid var(--input-border);background:transparent;color:var(--muted);font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.fb-num.sel{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 15%,transparent);color:var(--gold);}
+.fb-input{width:100%;background:var(--input-bg);border:1.5px solid var(--input-border);border-radius:10px;color:var(--text);font-size:13px;padding:10px 12px;outline:none;font-family:inherit;}
+.fb-input:focus{border-color:color-mix(in srgb,var(--gold) 50%,transparent);}
 .fb-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 </style>
 </head>
@@ -169,11 +200,13 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
   <div class="hdr">
     <div class="hdr-row">
       <div class="avatar" id="av">?</div>
-      <div>
+      <div style="flex:1;">
         <div class="alumno-nombre" id="al-nombre">—</div>
         <div class="plan-badge" id="al-plan"></div>
         <div class="coach-tag">Coach: Christian Cattaneo</div>
       </div>
+      <button id="theme-btn" onclick="_toggleTheme()" title="Cambiar tema"
+        style="background:var(--card);border:1.5px solid var(--border);border-radius:22px;padding:7px 13px;cursor:pointer;font-size:17px;flex-shrink:0;transition:all .2s;color:var(--text);">🌙</button>
     </div>
   </div>
 
@@ -367,6 +400,16 @@ function showErr(msg) {
   document.getElementById('err-msg').textContent=msg;
 }
 
+function _toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  localStorage.setItem('SOCC_THEME', isLight ? 'light' : 'dark');
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+  // Actualizar meta theme-color
+  const meta = document.getElementById('meta-theme-color');
+  if (meta) meta.content = isLight ? '#1d4ed8' : '#C9A84C';
+}
+
 function render() {
   document.getElementById('loading').style.display='none';
   document.getElementById('app').style.display='flex';
@@ -376,6 +419,10 @@ function render() {
   document.getElementById('av').textContent = nombre.charAt(0).toUpperCase();
   document.title = nombre+' — Lab. de Entrenamiento';
   if (_plan) document.getElementById('al-plan').textContent = (_plan.nombre||'Plan activo').toUpperCase();
+  // Actualizar ícono del botón de tema según preferencia guardada
+  const isLight = document.documentElement.classList.contains('light');
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = isLight ? '☀️' : '🌙';
   renderRutina();
 }
 
