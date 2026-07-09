@@ -60,7 +60,8 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 
 .hdr{background:var(--hdr-bg);padding:28px 20px 16px;transition:background .25s;}
 .hdr-row{display:flex;align-items:center;gap:14px;}
-.avatar{width:50px;height:50px;border-radius:50%;background:var(--avatar-grad);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;flex-shrink:0;transition:background .25s;}
+.avatar{width:50px;height:50px;border-radius:50%;background:var(--avatar-grad);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;flex-shrink:0;transition:background .25s;overflow:hidden;}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block;}
 .alumno-nombre{font-size:20px;font-weight:900;color:var(--text);line-height:1.1;}
 .plan-badge{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin-top:3px;}
 .coach-tag{font-size:10px;color:var(--muted);margin-top:1px;}
@@ -432,7 +433,13 @@ function render() {
   const p = _data.perfil||{};
   const nombre = p.nombre||p.name||'Alumno';
   document.getElementById('al-nombre').textContent = nombre;
-  document.getElementById('av').textContent = nombre.charAt(0).toUpperCase();
+  const avEl = document.getElementById('av');
+  const foto = _data.perfil?.foto || _data.foto;
+  if (foto) {
+    avEl.innerHTML = '<img src="'+foto+'" alt="'+nombre+'">';
+  } else {
+    avEl.textContent = nombre.charAt(0).toUpperCase();
+  }
   document.title = nombre+' — Lab. de Entrenamiento';
   if (_plan) document.getElementById('al-plan').textContent = (_plan.nombre||'Plan activo').toUpperCase();
   // Actualizar ícono del botón de tema según preferencia guardada
