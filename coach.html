@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Coach Panel — Christian Cattaneo</title>
+<meta name="theme-color" content="#C9A84C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Coach SOCC">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0d0d1a;--card:#13132a;--card2:#1a1a38;
+  --gold:#C9A84C;--gold-d:#9A7A28;--green:#22c55e;
+  --text:#e8e8f0;--muted:#8888aa;--border:rgba(255,255,255,.08);
+  --red:#f87171;--blue:#60a5fa;
+}
+html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;}
+
+/* ── LOGIN ────────────────────────────────────────────────────────── */
+#login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px;text-align:center;}
+.login-logo{font-size:64px;margin-bottom:16px;}
+.login-title{font-size:24px;font-weight:900;color:var(--gold);margin-bottom:4px;letter-spacing:-.5px;}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:40px;}
+.pin-dots{display:flex;gap:14px;justify-content:center;margin-bottom:32px;}
+.pin-dot{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,255,255,.15);background:transparent;transition:all .15s;}
+.pin-dot.filled{background:var(--gold);border-color:var(--gold);box-shadow:0 0 8px rgba(201,168,76,.4);}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:260px;width:100%;}
+.pin-btn{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 8px;font-size:24px;font-weight:700;color:var(--text);cursor:pointer;transition:all .12s;letter-spacing:0;}
+.pin-btn:active,.pin-btn:focus{background:var(--gold);color:#0d0d1a;border-color:var(--gold);outline:none;}
+.pin-err{color:var(--red);font-size:12px;margin-top:12px;min-height:18px;font-weight:700;}
+
+/* ── LOADING ─────────────────────────────────────────────────────── */
+#loading-screen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:14px;}
+.spinner{width:36px;height:36px;border:3px solid rgba(201,168,76,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .75s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── APP ─────────────────────────────────────────────────────────── */
+#app{display:none;flex-direction:column;max-width:480px;margin:0 auto;min-height:100vh;}
+
+/* ── HEADER ──────────────────────────────────────────────────────── */
+.hdr{background:linear-gradient(180deg,#1a1a3a 0%,transparent 100%);padding:28px 20px 14px;}
+.hdr-row{display:flex;align-items:center;gap:14px;}
+.coach-av{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#C9A84C,#7a5a10);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff;flex-shrink:0;overflow:hidden;border:2px solid rgba(201,168,76,.4);}
+.coach-av img{width:100%;height:100%;object-fit:cover;}
+.coach-nombre{font-size:18px;font-weight:900;color:#fff;line-height:1.1;}
+.coach-tag{font-size:9px;color:var(--gold);margin-top:3px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;}
+.hdr-date{margin-left:auto;text-align:right;flex-shrink:0;}
+.hdr-dia{font-size:13px;font-weight:900;color:var(--gold);letter-spacing:.5px;}
+.hdr-fecha{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* ── BOTTOM NAV ──────────────────────────────────────────────────── */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#13132a;border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0);}
+.nb{flex:1;padding:10px 4px 14px;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:9px;font-weight:800;letter-spacing:.6px;}
+.nb svg{width:22px;height:22px;stroke-width:1.8;}
+.nb.on{color:var(--gold);}
+
+/* ── TABS ────────────────────────────────────────────────────────── */
+.tab{padding:12px 16px 100px;display:none;}
+.tab.on{display:block;}
+
+/* ── SECTION HEADER ──────────────────────────────────────────────── */
+.sec-hdr{font-size:9px;font-weight:900;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;margin:18px 0 10px;}
+
+/* ── ALUMNO CARD ─────────────────────────────────────────────────── */
+.al-card{background:var(--card);border-radius:16px;margin-bottom:10px;overflow:hidden;}
+.al-card-hdr{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;}
+.al-av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#C9A84C,#7a5a10);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:#fff;flex-shrink:0;overflow:hidden;}
+.al-av img{width:100%;height:100%;object-fit:cover;}
+.al-nombre{font-size:14px;font-weight:800;color:var(--text);}
+.al-sub{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4;}
+.al-body{padding:0 16px 14px;}
+.al-badge{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:var(--green);font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;flex-shrink:0;white-space:nowrap;}
+
+/* ── EJ LIST ─────────────────────────────────────────────────────── */
+.ej-list{display:flex;flex-direction:column;gap:2px;}
+.ej-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);}
+.ej-item:last-child{border-bottom:none;}
+.ej-bullet{width:5px;height:5px;border-radius:50%;background:var(--gold);flex-shrink:0;}
+.ej-txt{font-size:12px;color:var(--text);flex:1;line-height:1.3;}
+.ej-det{font-size:10px;color:var(--muted);text-align:right;flex-shrink:0;}
+
+/* ── SEMANA GRID ─────────────────────────────────────────────────── */
+.sem-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:20px;}
+.sem-col{background:var(--card);border-radius:10px;overflow:hidden;min-height:40px;}
+.sem-col-hdr{padding:5px 3px;text-align:center;font-size:8px;font-weight:800;color:var(--muted);letter-spacing:.5px;}
+.sem-col.hoy .sem-col-hdr{color:var(--gold);background:rgba(201,168,76,.08);}
+.sem-chip{margin:2px 3px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);border-radius:5px;padding:3px 4px;font-size:8px;font-weight:700;color:var(--gold);text-align:center;cursor:pointer;word-break:break-all;line-height:1.3;}
+.sem-chip:active{background:rgba(201,168,76,.25);}
+
+/* ── FEEDBACK CARD ───────────────────────────────────────────────── */
+.fb-card{background:var(--card);border-radius:14px;padding:14px 16px;margin-bottom:10px;}
+.fb-card-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.fb-alumno{font-size:13px;font-weight:800;color:var(--text);}
+.fb-fecha{font-size:10px;color:var(--muted);}
+.fb-metrics{display:flex;flex-wrap:wrap;gap:5px;}
+.fb-met{background:rgba(255,255,255,.05);border-radius:8px;padding:5px 10px;font-size:10px;display:flex;gap:4px;align-items:center;}
+.fb-met-lbl{color:var(--muted);font-weight:700;}
+.fb-met-val{color:var(--gold);font-weight:900;}
+.fb-obs{font-size:11px;color:var(--muted);margin-top:8px;font-style:italic;line-height:1.5;padding-top:8px;border-top:1px solid var(--border);}
+
+/* ── DETAIL OVERLAY ──────────────────────────────────────────────── */
+#al-detail{position:fixed;inset:0;background:var(--bg);z-index:500;display:none;flex-direction:column;overflow-y:auto;max-width:480px;margin:0 auto;}
+.detail-hdr{display:flex;align-items:center;gap:12px;padding:32px 20px 16px;background:linear-gradient(180deg,#1a1a3a 0%,transparent 100%);position:sticky;top:0;z-index:10;}
+.detail-back{background:rgba(255,255,255,.07);border:none;border-radius:10px;color:var(--text);padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;}
+.detail-nombre{font-size:17px;font-weight:900;color:#fff;flex:1;line-height:1.2;}
+
+/* ── BADGE DIAS ──────────────────────────────────────────────────── */
+.dia-badge{display:inline-block;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);color:var(--gold);font-size:9px;font-weight:800;padding:3px 9px;border-radius:12px;}
+
+/* ── EMPTY STATE ─────────────────────────────────────────────────── */
+.empty{text-align:center;padding:50px 20px;}
+.empty-ico{font-size:44px;margin-bottom:12px;}
+.empty-ttl{font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px;}
+.empty-txt{font-size:12px;color:var(--muted);line-height:1.5;}
+
+/* ── STAT MINI ───────────────────────────────────────────────────── */
+.stat-mini{background:var(--card);border-radius:12px;padding:12px 14px;text-align:center;}
+.stat-mini-lbl{font-size:8px;font-weight:900;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.stat-mini-val{font-size:22px;font-weight:900;color:var(--gold);margin-top:4px;line-height:1;}
+.stat-mini-u{font-size:10px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══════════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-logo">🏋️</div>
+  <div class="login-title">Coach Panel</div>
+  <div class="login-sub">Christian Cattaneo · SOCC</div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div class="pin-grid">
+    <button class="pin-btn" onclick="_pinKey(1)">1</button>
+    <button class="pin-btn" onclick="_pinKey(2)">2</button>
+    <button class="pin-btn" onclick="_pinKey(3)">3</button>
+    <button class="pin-btn" onclick="_pinKey(4)">4</button>
+    <button class="pin-btn" onclick="_pinKey(5)">5</button>
+    <button class="pin-btn" onclick="_pinKey(6)">6</button>
+    <button class="pin-btn" onclick="_pinKey(7)">7</button>
+    <button class="pin-btn" onclick="_pinKey(8)">8</button>
+    <button class="pin-btn" onclick="_pinKey(9)">9</button>
+    <button class="pin-btn" style="font-size:18px;" onclick="_pinKey('del')">⌫</button>
+    <button class="pin-btn" onclick="_pinKey(0)">0</button>
+    <button class="pin-btn" style="font-size:18px;background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.3);color:var(--gold);" onclick="_pinKey('ok')">✓</button>
+  </div>
+  <div class="pin-err" id="pin-err"></div>
+</div>
+
+<!-- ══ LOADING ════════════════════════════════════════════════════════ -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div style="font-size:12px;color:var(--muted);">Cargando datos...</div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <div class="hdr">
+    <div class="hdr-row">
+      <div class="coach-av">C</div>
+      <div>
+        <div class="coach-nombre">Christian Cattaneo</div>
+        <div class="coach-tag">Director Técnico · SOCC</div>
+      </div>
+      <div class="hdr-date">
+        <div class="hdr-dia" id="hdr-dia">—</div>
+        <div class="hdr-fecha" id="hdr-fecha">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab on" id="tab-hoy"><div id="hoy-ctn"></div></div>
+  <div class="tab"    id="tab-semana"><div id="semana-ctn"></div></div>
+  <div class="tab"    id="tab-alumnos"><div id="alumnos-ctn"></div></div>
+  <div class="tab"    id="tab-feedback"><div id="feedback-ctn"></div></div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bnav">
+    <button class="nb on" id="nb-hoy" onclick="goTab('hoy')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="7 14 10 17 17 12"/></svg>
+      HOY
+    </button>
+    <button class="nb" id="nb-semana" onclick="goTab('semana')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      SEMANA
+    </button>
+    <button class="nb" id="nb-alumnos" onclick="goTab('alumnos')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      ALUMNOS
+    </button>
+    <button class="nb" id="nb-feedback" onclick="goTab('feedback')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      FEEDBACK
+    </button>
+  </nav>
+</div>
+
+<!-- ══ ALUMNO DETAIL OVERLAY ══════════════════════════════════════════ -->
+<div id="al-detail">
+  <div class="detail-hdr">
+    <button class="detail-back" onclick="closeDetail()">← Volver</button>
+    <div class="detail-nombre" id="detail-nombre">—</div>
+    <div class="al-av" id="detail-av" style="width:44px;height:44px;font-size:18px;flex-shrink:0;"></div>
+  </div>
+  <div style="padding:0 16px 100px;" id="detail-body"></div>
+</div>
+
+<script>
+// ══ FIREBASE ══════════════════════════════════════════════════════════
+const CFG = {
+  apiKey:'AIzaSyDkSgbqAJJRdlLwzcn-2vSMjVIUJbkVUGQ',
+  authDomain:'entrenamiento-laboratorio.firebaseapp.com',
+  projectId:'entrenamiento-laboratorio',
+  storageBucket:'entrenamiento-laboratorio.firebasestorage.app',
+  messagingSenderId:'399177627945',
+  appId:'1:399177627945:web:2b4fef0894480f70dc1f38'
+};
+
+// ══ PIN ═══════════════════════════════════════════════════════════════
+const COACH_PIN = '1234'; // ← Cambiá esto si querés otro PIN
+let _pin = '';
+
+function _pinKey(k) {
+  if (k === 'del') { _pin = _pin.slice(0,-1); }
+  else if (k === 'ok') { _checkPin(); return; }
+  else { if (_pin.length >= 4) return; _pin += k; }
+  _updDots();
+  if (_pin.length === 4) setTimeout(_checkPin, 150);
+}
+function _updDots() {
+  for (let i=0;i<4;i++) document.getElementById('pd'+i).classList.toggle('filled', i < _pin.length);
+}
+function _checkPin() {
+  if (_pin === COACH_PIN) {
+    sessionStorage.setItem('CC_COACH','1');
+    _showLoading();
+    _initFirebase();
+  } else {
+    document.getElementById('pin-err').textContent = '❌ PIN incorrecto';
+    _pin=''; _updDots();
+    setTimeout(()=>document.getElementById('pin-err').textContent='', 1800);
+  }
+}
+function _showLoading() {
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('loading-screen').style.display='flex';
+}
+
+// Auto-login si ya está autenticado en esta sesión
+if (sessionStorage.getItem('CC_COACH')==='1') _showLoading();
+
+// ══ DATA ═══════════════════════════════════════════════════════════════
+let _alumnos=[], _planes=[], _antro=[], _fbAll={};
+let _db=null;
+
+const DIAS_ES    = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DIAS_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const MESES      = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const _hoy = new Date();
+const _todayIdx  = _hoy.getDay(); // 0=Dom
+const _todayName = DIAS_ES[_todayIdx];
+
+async function _initFirebase() {
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(CFG);
+    _db = firebase.firestore();
+
+    // Cargar backup principal
+    const snap = await _db.collection('backups').doc('main').get();
+    if (!snap.exists) { alert('Sin datos en la nube.'); return; }
+    const d = snap.data();
+    _alumnos = d.alumnos || [];
+    _planes  = d.planificaciones || [];
+    _antro   = d.antropometria || [];
+
+    // Cargar feedback de cada alumno en paralelo
+    await Promise.all(_alumnos.map(async al => {
+      try {
+        const s = await _db.collection('alumnos').doc(al.id).get();
+        if (s.exists) {
+          const fb = s.data().feedbackHistorial || [];
+          if (fb.length) _fbAll[al.id] = fb;
+        }
+      } catch(e){}
+    }));
+
+    _render();
+  } catch(err) {
+    console.error(err);
+    alert('Error: '+err.message);
+  }
+}
+
+function _render() {
+  document.getElementById('loading-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+
+  // Header fecha
+  document.getElementById('hdr-dia').textContent  = _todayName.toUpperCase();
+  document.getElementById('hdr-fecha').textContent = _hoy.getDate()+' de '+MESES[_hoy.getMonth()];
+
+  renderHoy();
+  renderSemana();
+  renderAlumnos();
+  renderFeedback();
+}
+
+// ══ TABS ════════════════════════════════════════════════════════════
+function goTab(t) {
+  ['hoy','semana','alumnos','feedback'].forEach(x=>{
+    document.getElementById('tab-'+x).classList.toggle('on',x===t);
+    document.getElementById('nb-'+x).classList.toggle('on',x===t);
+  });
+}
+
+// ══ HOY ═══════════════════════════════════════════════════════════════
+function _getSesionesDelDia(alumnoId, diaName) {
+  const dn = diaName.toLowerCase();
+  const res = [];
+  for (const plan of _planes.filter(p=>p.alumnoId===alumnoId)) {
+    for (let si=0;si<(plan.semanasArray||[]).length;si++) {
+      const sem = plan.semanasArray[si];
+      for (const dia of (sem.dias||[])) {
+        const d = (dia.dia||dia.nombre||'').toLowerCase();
+        if (d===dn || d===DIAS_CORTO[_todayIdx].toLowerCase()) {
+          res.push({plan, semIdx:si, dia, semNombre:sem.nombre||'Semana '+(si+1)});
+        }
+      }
+    }
+  }
+  return res;
+}
+
+function renderHoy() {
+  const ctn = document.getElementById('hoy-ctn');
+  const conSesion = _alumnos.filter(al=>_getSesionesDelDia(al.id,_todayName).length>0);
+
+  if (!conSesion.length) {
+    ctn.innerHTML=`<div class="empty"><div class="empty-ico">😴</div><div class="empty-ttl">Nadie entrena hoy</div><div class="empty-txt">No hay sesiones programadas para el ${_todayName}.</div></div>`;
+    return;
+  }
+
+  let h=`<div class="sec-hdr">🏋️ Entrenan hoy — ${_todayName} · ${conSesion.length} alumno${conSesion.length!==1?'s':''}</div>`;
+
+  for (const al of conSesion) {
+    const sesiones = _getSesionesDelDia(al.id,_todayName);
+    const lastFb   = (_fbAll[al.id]||[]).slice(-1)[0];
+    const fotoHTML = al.foto ? `<img src="${al.foto}">` : al.nombre.charAt(0);
+
+    h+=`<div class="al-card">
+      <div class="al-card-hdr" onclick="_tog('hb_${al.id}','ha_${al.id}')">
+        <div class="al-av">${fotoHTML}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="al-nombre">${al.nombre}</div>
+          <div class="al-sub">${sesiones[0].plan.nombre||'Plan'} · ${sesiones[0].semNombre}</div>
+        </div>
+        ${lastFb?'<div class="al-badge">💬 Feedback</div>':''}
+        <span style="color:var(--muted);font-size:11px;margin-left:6px;" id="ha_${al.id}">▼</span>
+      </div>
+      <div class="al-body" id="hb_${al.id}" style="display:none;border-top:1px solid var(--border);padding-top:12px;">`;
+
+    for (const {dia,semNombre} of sesiones) {
+      const bloques = dia.bloques||[];
+      h+=`<div style="font-size:9px;font-weight:900;color:rgba(201,168,76,.7);letter-spacing:1px;margin-bottom:8px;">${(dia.nombre||dia.dia||'Sesión').toUpperCase()}</div>`;
+      if (!bloques.length) {
+        h+=`<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Sin ejercicios</div>`;
+      } else {
+        for (const blq of bloques) {
+          if (blq.nombre||blq.letra) {
+            h+=`<div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin:8px 0 4px;">${blq.letra?blq.letra+'. ':''}${blq.nombre||''}</div>`;
+          }
+          h+=`<div class="ej-list">`;
+          for (const ej of (blq.ejercicios||[])) {
+            const cs = ej.ctrlSeries||ej.ctrl?.series||(ej.seriesArray?.length||ej.series?.length||'');
+            const cr = ej.ctrlReps||ej.ctrl?.reps||(ej.series?.[0]?.reps||'');
+            const cp = ej.ctrlPeso||ej.ctrl?.peso||(ej.series?.[0]?.peso||'');
+            h+=`<div class="ej-item">
+              <div class="ej-bullet"></div>
+              <div class="ej-txt">${ej.nombre||'—'}</div>
+              <div class="ej-det">${cs?cs+'×':''} ${cr||'—'} ${cp?'· '+cp+' kg':''}</div>
+            </div>`;
+          }
+          h+=`</div>`;
+        }
+      }
+    }
+
+    h+=`<button onclick="openDetail('${al.id}')" style="width:100%;margin-top:14px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);color:var(--gold);border-radius:12px;padding:11px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:.3px;">Ver perfil completo →</button>
+      </div>
+    </div>`;
+  }
+
+  ctn.innerHTML=h;
+}
+
+function _tog(bodyId,arrId) {
+  const b=document.getElementById(bodyId);
+  const a=document.getElementById(arrId);
+  if (!b) return;
+  const open=b.style.display!=='none';
+  b.style.display=open?'none':'block';
+  if (a) a.textContent=open?'▼':'▲';
+}
+
+// ══ SEMANA ════════════════════════════════════════════════════════════
+function renderSemana() {
+  const ctn=document.getElementById('semana-ctn');
+  // Orden Lun→Dom
+  const order=[1,2,3,4,5,6,0];
+
+  // Mapa: diaIdx → {alId: al}
+  const diaMap={};
+  for (const al of _alumnos) {
+    for (const plan of _planes.filter(p=>p.alumnoId===al.id)) {
+      for (const sem of (plan.semanasArray||[])) {
+        for (const dia of (sem.dias||[])) {
+          const dn=(dia.dia||dia.nombre||'').toLowerCase();
+          const idx=DIAS_ES.findIndex(d=>d.toLowerCase()===dn||DIAS_CORTO[DIAS_ES.indexOf(d)]?.toLowerCase()===dn);
+          if (idx>=0) {
+            if (!diaMap[idx]) diaMap[idx]={};
+            diaMap[idx][al.id]=al;
+          }
+        }
+      }
+    }
+  }
+
+  let h=`<div class="sec-hdr">📅 Distribución semanal</div>
+  <div class="sem-grid">`;
+
+  for (const di of order) {
+    const isHoy=di===_todayIdx;
+    const als=Object.values(diaMap[di]||{});
+    h+=`<div class="sem-col${isHoy?' hoy':''}">
+      <div class="sem-col-hdr">${DIAS_CORTO[di].toUpperCase()}</div>`;
+    if (!als.length) {
+      h+=`<div style="padding:4px;text-align:center;font-size:9px;color:rgba(255,255,255,.08);">·</div>`;
+    } else {
+      for (const al of als) {
+        h+=`<div class="sem-chip" onclick="openDetail('${al.id}')">${al.nombre.split(' ')[0]}</div>`;
+      }
+    }
+    h+=`</div>`;
+  }
+  h+=`</div>`;
+
+  // Resumen por alumno
+  h+=`<div class="sec-hdr">Días por alumno</div>`;
+  const sortedAls = [..._alumnos].sort((a,b)=>{
+    const ca=Object.values(diaMap).filter(m=>m[a.id]).length;
+    const cb=Object.values(diaMap).filter(m=>m[b.id]).length;
+    return cb-ca;
+  });
+  for (const al of sortedAls) {
+    const dias=order.filter(di=>diaMap[di]?.[al.id]).map(di=>DIAS_CORTO[di]);
+    if (!dias.length) continue;
+    h+=`<div class="al-card" onclick="openDetail('${al.id}')">
+      <div class="al-card-hdr">
+        <div class="al-av">${al.foto?`<img src="${al.foto}">`:al.nombre.charAt(0)}</div>
+        <div style="flex:1;">
+          <div class="al-nombre">${al.nombre}</div>
+          <div class="al-sub">${dias.join(' · ')}</div>
+        </div>
+        <div style="font-size:22px;font-weight:900;color:var(--gold);">${dias.length}</div>
+      </div>
+    </div>`;
+  }
+
+  ctn.innerHTML=h;
+}
+
+// ══ ALUMNOS ═══════════════════════════════════════════════════════════
+function renderAlumnos() {
+  const ctn=document.getElementById('alumnos-ctn');
+  if (!_alumnos.length) { ctn.innerHTML='<div class="empty"><div class="empty-ico">👥</div><div class="empty-ttl">Sin alumnos</div></div>'; return; }
+
+  let h=`<div class="sec-hdr">👥 ${_alumnos.length} alumnos</div>`;
+  for (const al of _alumnos) {
+    const np=_planes.filter(p=>p.alumnoId===al.id).length;
+    const nfb=(_fbAll[al.id]||[]).length;
+    h+=`<div class="al-card" onclick="openDetail('${al.id}')">
+      <div class="al-card-hdr">
+        <div class="al-av" style="width:50px;height:50px;font-size:20px;">${al.foto?`<img src="${al.foto}">`:al.nombre.charAt(0)}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="al-nombre">${al.nombre}</div>
+          <div class="al-sub">${[al.objetivo,al.nivel].filter(Boolean).join(' · ')||'Sin objetivo registrado'}</div>
+          <div class="al-sub" style="margin-top:3px;">${np} plan${np!==1?'es':''} ${nfb?'· '+nfb+' fb':''}</div>
+        </div>
+        <div style="font-size:20px;color:var(--muted);">›</div>
+      </div>
+    </div>`;
+  }
+  ctn.innerHTML=h;
+}
+
+// ══ FEEDBACK ══════════════════════════════════════════════════════════
+function renderFeedback() {
+  const ctn=document.getElementById('feedback-ctn');
+  const all=[];
+  for (const [alId,fbs] of Object.entries(_fbAll)) {
+    const al=_alumnos.find(a=>a.id===alId);
+    if (!al) continue;
+    for (const fb of fbs) all.push({al,fb});
+  }
+
+  if (!all.length) {
+    ctn.innerHTML=`<div class="empty"><div class="empty-ico">💬</div><div class="empty-ttl">Sin feedback todavía</div><div class="empty-txt">Los alumnos aún no enviaron feedback post-entrenamiento.</div></div>`;
+    return;
+  }
+
+  all.sort((a,b)=>new Date(b.fb.fecha||0)-new Date(a.fb.fecha||0));
+
+  let h=`<div class="sec-hdr">💬 ${all.length} feedbacks recibidos</div>`;
+  for (const {al,fb} of all) {
+    const fecha=fb.fecha?new Date(fb.fecha).toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}):'—';
+    h+=`<div class="fb-card">
+      <div class="fb-card-hdr">
+        <div class="al-av" style="width:38px;height:38px;font-size:15px;">${al.foto?`<img src="${al.foto}">`:al.nombre.charAt(0)}</div>
+        <div style="flex:1;">
+          <div class="fb-alumno">${al.nombre}</div>
+          <div class="fb-fecha">${fecha}${fb.sesion?' · '+fb.sesion:''}</div>
+        </div>
+      </div>
+      <div class="fb-metrics">`;
+
+    const mets=[['Energía','energia'],['Estrés','estres'],['Motivación','motivacion'],
+                ['Dolor','dolor'],['Recuperación','recuperacion'],['Pump','pump'],['Volumen','volumen']];
+    for (const [lbl,k] of mets) {
+      if (fb[k]!==undefined&&fb[k]!=='') h+=`<div class="fb-met"><span class="fb-met-lbl">${lbl}</span><span class="fb-met-val">${fb[k]}</span></div>`;
+    }
+    if (fb['sueño_h']) h+=`<div class="fb-met"><span class="fb-met-lbl">Sueño</span><span class="fb-met-val">${fb['sueño_h']}h</span></div>`;
+    if (fb['sueño_q']) h+=`<div class="fb-met"><span class="fb-met-lbl">Calidad</span><span class="fb-met-val">${fb['sueño_q']}/10</span></div>`;
+    h+=`</div>`;
+    if (fb.obs) h+=`<div class="fb-obs">"${fb.obs}"</div>`;
+    h+=`</div>`;
+  }
+  ctn.innerHTML=h;
+}
+
+// ══ DETAIL OVERLAY ════════════════════════════════════════════════════
+function openDetail(alId) {
+  const al=_alumnos.find(a=>a.id===alId);
+  if (!al) return;
+
+  document.getElementById('detail-nombre').textContent=al.nombre;
+  const avEl=document.getElementById('detail-av');
+  avEl.innerHTML=al.foto?`<img src="${al.foto}">`:al.nombre.charAt(0);
+
+  const planes=_planes.filter(p=>p.alumnoId===alId);
+  const antro=_antro.filter(r=>r.alumnoId===alId).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+  const fbs=(_fbAll[alId]||[]).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+
+  let h='';
+
+  // ── Datos personales
+  h+=`<div class="sec-hdr">👤 Datos personales</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">`;
+  const campos=[['Objetivo',al.objetivo],['Nivel',al.nivel],['Inicio',al.inicio],['Días/sem.',al.dias],['Teléfono',al.telefono],['Email',al.email]];
+  for (const [lbl,val] of campos) {
+    if (!val) continue;
+    h+=`<div style="background:var(--card);border-radius:10px;padding:10px 12px;">
+      <div style="font-size:8px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.8px;">${lbl}</div>
+      <div style="font-size:12px;color:var(--text);font-weight:700;margin-top:3px;">${val}</div>
+    </div>`;
+  }
+  h+=`</div>`;
+
+  if (al.lesiones) h+=`<div style="background:rgba(248,113,113,.07);border-left:3px solid #f87171;border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:10px;font-size:11px;color:#f87171;line-height:1.4;">⚠️ <strong>Lesiones:</strong> ${al.lesiones}</div>`;
+  if (al.observaciones) h+=`<div style="background:rgba(255,255,255,.03);border-left:3px solid var(--border);border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:10px;font-size:11px;color:var(--muted);line-height:1.4;">📝 ${al.observaciones}</div>`;
+
+  // ── Planes
+  if (planes.length) {
+    h+=`<div class="sec-hdr">📋 ${planes.length} Planes de entrenamiento</div>`;
+    for (const plan of planes) {
+      const sems=plan.semanasArray||[];
+      // Días únicos del plan
+      const diasUnicos=[];
+      for (const sem of sems) {
+        for (const dia of (sem.dias||[])) {
+          const dn=dia.dia||dia.nombre||'';
+          if (dn&&!diasUnicos.includes(dn)) diasUnicos.push(dn);
+        }
+      }
+      h+=`<div style="background:var(--card);border-radius:14px;padding:14px 16px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:800;color:var(--text);">${plan.nombre||'Plan sin nombre'}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px;">${sems.length} semana${sems.length!==1?'s':''}</div>
+          </div>
+          <div style="font-size:20px;font-weight:900;color:var(--gold);">${sems.length}S</div>
+        </div>
+        ${diasUnicos.length?'<div style="display:flex;flex-wrap:wrap;gap:4px;">'+diasUnicos.map(d=>`<span class="dia-badge">${d}</span>`).join('')+'</div>':''}
+      </div>`;
+
+      // Mostrar primera semana con ejercicios
+      if (sems[0]) {
+        for (const dia of (sems[0].dias||[])) {
+          h+=`<div style="margin:0 0 8px 2px;">
+            <div style="font-size:9px;font-weight:900;color:rgba(201,168,76,.6);letter-spacing:1px;margin-bottom:6px;">${(dia.nombre||dia.dia||'').toUpperCase()}</div>`;
+          for (const blq of (dia.bloques||[])) {
+            if (blq.nombre||blq.letra) h+=`<div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin:4px 0 2px;">${blq.letra?blq.letra+'. ':''}${blq.nombre||''}</div>`;
+            h+=`<div class="ej-list">`;
+            for (const ej of (blq.ejercicios||[])) {
+              const cs=ej.ctrlSeries||ej.ctrl?.series||'';
+              const cr=ej.ctrlReps||ej.ctrl?.reps||'';
+              const cp=ej.ctrlPeso||ej.ctrl?.peso||'';
+              h+=`<div class="ej-item"><div class="ej-bullet"></div><div class="ej-txt">${ej.nombre||'—'}</div><div class="ej-det">${cs?cs+'×':''} ${cr||''} ${cp?'· '+cp+' kg':''}</div></div>`;
+            }
+            h+=`</div>`;
+          }
+          h+=`</div>`;
+        }
+      }
+    }
+  }
+
+  // ── Últimas mediciones
+  if (antro.length) {
+    const last=antro[antro.length-1];
+    h+=`<div class="sec-hdr">📏 Última medición — ${last.fecha||'—'}</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;">`;
+    const medFields=[['Peso','peso','kg'],['Grasa','grasa','%'],['Músculo','musculo','%'],['Cintura','cintura','cm'],['Cadera','cadera','cm'],['Brazo','brazo','cm']];
+    for (const [lbl,k,u] of medFields) {
+      if (!last[k]) continue;
+      h+=`<div class="stat-mini"><div class="stat-mini-lbl">${lbl}</div><div class="stat-mini-val">${last[k]}<span class="stat-mini-u"> ${u}</span></div></div>`;
+    }
+    h+=`</div>`;
+
+    // Evolución peso
+    const pesoData=antro.filter(r=>r.peso&&parseFloat(r.peso)>0);
+    if (pesoData.length>=2) {
+      const primer=parseFloat(pesoData[0].peso);
+      const ultimo=parseFloat(pesoData[pesoData.length-1].peso);
+      const delta=+(ultimo-primer).toFixed(1);
+      h+=`<div style="background:var(--card);border-radius:12px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+        <div style="flex:1;font-size:12px;color:var(--muted);">Variación de peso (${pesoData.length} mediciones)</div>
+        <div style="font-size:18px;font-weight:900;color:${delta<0?'var(--green)':delta>0?'#f87171':'var(--muted)'};">${delta>0?'+':''}${delta} kg</div>
+      </div>`;
+    }
+  }
+
+  // ── Feedback reciente
+  if (fbs.length) {
+    h+=`<div class="sec-hdr">💬 Últimos ${Math.min(fbs.length,3)} feedbacks</div>`;
+    for (const fb of fbs.slice(-3).reverse()) {
+      const fecha=fb.fecha?new Date(fb.fecha).toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}):'—';
+      h+=`<div class="fb-card" style="margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px;font-weight:700;">${fecha}${fb.sesion?' · '+fb.sesion:''}</div>
+        <div class="fb-metrics">`;
+      const mets=[['Energía','energia'],['Estrés','estres'],['Motivación','motivacion'],['Dolor','dolor'],['Recuperación','recuperacion'],['Pump','pump']];
+      for (const [lbl,k] of mets) {
+        if (fb[k]!==undefined&&fb[k]!=='') h+=`<div class="fb-met"><span class="fb-met-lbl">${lbl}</span><span class="fb-met-val">${fb[k]}</span></div>`;
+      }
+      h+=`</div>`;
+      if (fb.obs) h+=`<div class="fb-obs">"${fb.obs}"</div>`;
+      h+=`</div>`;
+    }
+  }
+
+  document.getElementById('detail-body').innerHTML=h;
+  document.getElementById('al-detail').style.display='flex';
+  document.getElementById('al-detail').scrollTop=0;
+}
+
+function closeDetail() {
+  document.getElementById('al-detail').style.display='none';
+}
+
+// Auto-init si ya estaba autenticado
+if (sessionStorage.getItem('CC_COACH')==='1') {
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',_initFirebase);
+  else _initFirebase();
+}
+</script>
+</body>
+</html>
