@@ -1519,9 +1519,9 @@ function renderStats() {
     const uid = parts[2]; // b0e0
     const v = _pesoEdits[k];
     if (!v || v.omitida === '1') continue;
-    const peso = parseFloat(String(v.peso).replace(/[^0-9.]/g,''));
-    const reps = parseInt(v.reps)||0;
-    if (!peso || !reps) continue;
+    const peso = parseFloat(String(v.peso||'').replace(/[^0-9.]/g,''));
+    if (!peso) continue; // Solo requiere peso; reps es opcional
+    const reps = parseInt(String(v.reps||'').replace(/[^0-9]/g,'')) || null;
     if (!prMap[uid]) prMap[uid] = [];
     prMap[uid].push({ reps, peso, key: k });
   }
@@ -1552,10 +1552,10 @@ function renderStats() {
     h += '<div style="display:flex;flex-direction:column;gap:8px;">';
     prs.forEach((pr, i) => {
       const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
-      h += `<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
+      h += `<div style="background:color-mix(in srgb,var(--gold) 5%,var(--card));border:1px solid color-mix(in srgb,var(--gold) 15%,transparent);border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
         <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${medal} ${pr.nombre}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${pr.reps} reps</div>
+          ${pr.reps ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;">${pr.reps} reps</div>` : ''}
         </div>
         <div style="font-size:20px;font-weight:900;color:var(--gold);margin-left:12px;">${pr.peso} kg</div>
       </div>`;
