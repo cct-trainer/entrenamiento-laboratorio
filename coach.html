@@ -123,6 +123,42 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 .stat-mini-lbl{font-size:8px;font-weight:900;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
 .stat-mini-val{font-size:22px;font-weight:900;color:var(--gold);margin-top:4px;line-height:1;}
 .stat-mini-u{font-size:10px;color:var(--muted);}
+
+/* ── DAY TABS ────────────────────────────────────────────────────── */
+.day-tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none;-ms-overflow-style:none;}
+.day-tabs::-webkit-scrollbar{display:none;}
+.day-tab{flex-shrink:0;padding:8px 15px;border-radius:22px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.8px;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.day-tab.has{border-color:rgba(201,168,76,.4);color:var(--text);}
+.day-tab.no{opacity:.3;cursor:default;}
+.day-tab.active{background:var(--gold);border-color:var(--gold);color:#0d0d1a !important;}
+
+/* ── WEEK NAV ────────────────────────────────────────────────────── */
+.week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.wnav-btn{background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:7px 16px;font-size:16px;cursor:pointer;}
+.wnav-btn:disabled{opacity:.3;cursor:default;}
+.wnav-lbl{font-size:11px;font-weight:800;color:var(--muted);text-align:center;}
+
+/* ── BLOQUE ──────────────────────────────────────────────────────── */
+.blq{background:var(--card);border-radius:14px;margin-bottom:10px;overflow:hidden;}
+.blq-hdr{display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(201,168,76,.06);border-bottom:1px solid var(--border);}
+.blq-letra{width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#0d0d1a;flex-shrink:0;}
+.blq-nombre{font-size:12px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.5px;}
+
+/* ── EJERCICIO COACH ─────────────────────────────────────────────── */
+.ejc{padding:12px 14px;border-bottom:1px solid var(--border);}
+.ejc:last-child{border-bottom:none;}
+.ejc-nombre{font-size:15px;font-weight:900;color:var(--text);border-left:3px solid var(--gold);padding-left:9px;line-height:1.25;margin-bottom:5px;}
+.ejc-ctrl{font-size:11px;color:var(--muted);font-weight:700;margin:0 0 8px 12px;}
+
+/* ── SERIES TABLE ────────────────────────────────────────────────── */
+.st{width:100%;border-collapse:collapse;font-size:11px;margin-top:4px;}
+.st th{background:rgba(201,168,76,.08);color:var(--muted);font-size:9px;font-weight:900;letter-spacing:.8px;padding:5px 8px;text-align:center;border:1px solid var(--border);}
+.st td{padding:7px 8px;text-align:center;border:1px solid var(--border);color:var(--text);font-weight:700;}
+.st tr:nth-child(even) td{background:rgba(255,255,255,.025);}
+.st .aprox td{opacity:.55;font-style:italic;}
+
+/* ── EMPTY DAY ───────────────────────────────────────────────────── */
+.empty-day{text-align:center;padding:36px 20px;color:var(--muted);font-size:13px;line-height:1.6;}
 </style>
 </head>
 <body>
@@ -417,7 +453,7 @@ function renderHoy() {
       }
     }
 
-    h+=`<button onclick="openDetail('${al.id}')" style="width:100%;margin-top:14px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);color:var(--gold);border-radius:12px;padding:11px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:.3px;">Ver perfil completo →</button>
+    h+=`<button onclick="openDetail('${al.id}',${_todayPlanIdx})" style="width:100%;margin-top:14px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);color:var(--gold);border-radius:12px;padding:11px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:.3px;">Ver perfil completo →</button>
       </div>
     </div>`;
   }
@@ -567,102 +603,105 @@ function renderFeedback() {
 }
 
 // ══ DETAIL OVERLAY ═════════════════════════════════════════════════════
-function openDetail(alId) {
-  const al=_alumnos.find(a=>a.id===alId);
+// Estado del detalle
+let _det = { alId:null, planIdx:0, weekIdx:0, dayIdx:0 };
+
+function openDetail(alId, dayIdx) {
+  const al = _alumnos.find(a=>a.id===alId);
   if (!al) return;
+  const planes = _planes.filter(p=>p&&p.alumnoId===alId);
+  _det = {
+    alId,
+    planIdx: Math.max(0, planes.length-1),
+    weekIdx: 0,
+    dayIdx: (dayIdx !== undefined) ? dayIdx : _todayPlanIdx
+  };
+  document.getElementById('detail-nombre').textContent = al.nombre;
+  document.getElementById('detail-av').innerHTML = al.foto ? `<img src="${al.foto}">` : al.nombre.charAt(0);
+  document.getElementById('detail-body').innerHTML = _buildDetailHTML();
+  document.getElementById('al-detail').style.display = 'flex';
+  document.getElementById('al-detail').scrollTop = 0;
+}
 
-  document.getElementById('detail-nombre').textContent=al.nombre;
-  const avEl=document.getElementById('detail-av');
-  avEl.innerHTML=al.foto?`<img src="${al.foto}">`:al.nombre.charAt(0);
+function closeDetail() {
+  document.getElementById('al-detail').style.display='none';
+}
 
-  const planes=_planes.filter(p=>p&&p.alumnoId===alId);
-  const antro=_antro.filter(r=>r&&r.alumnoId===alId).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
-  const fbs=(_fbAll[alId]||[]).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+function _buildDetailHTML() {
+  const al     = _alumnos.find(a=>a.id===_det.alId);
+  if (!al) return '';
+  const planes = _planes.filter(p=>p&&p.alumnoId===_det.alId);
+  const plan   = planes[_det.planIdx];
+  const sems   = plan ? _arr(plan.semanasArray) : [];
+  const sem    = sems[_det.weekIdx];
+  const antro  = _antro.filter(r=>r&&r.alumnoId===_det.alId).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+  const fbs    = (_fbAll[_det.alId]||[]).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+  let h = '';
 
-  let h='';
+  // ── Mini perfil
+  h += `<div style="display:flex;align-items:center;gap:14px;padding:4px 0 16px;border-bottom:1px solid var(--border);margin-bottom:16px;">
+    <div class="al-av" style="width:56px;height:56px;font-size:22px;">${al.foto?`<img src="${al.foto}">`:al.nombre.charAt(0)}</div>
+    <div style="flex:1;">
+      <div style="font-size:17px;font-weight:900;color:var(--text);">${al.nombre}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px;">${[al.objetivo,al.nivel].filter(Boolean).join(' · ')||''}</div>
+      ${al.lesiones?`<div style="font-size:10px;color:#f87171;margin-top:3px;">⚠️ ${al.lesiones}</div>`:''}
+    </div>
+  </div>`;
+
+  // ── SESIÓN CON TABS DE DÍAS
+  if (sems.length) {
+    h += `<div style="font-size:9px;font-weight:900;color:var(--gold);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;">${plan.nombre||'Plan de entrenamiento'}</div>`;
+
+    // Tabs de días
+    h += `<div class="day-tabs">`;
+    for (let di=0;di<7;di++) {
+      const hasSes = sems.some(s=>{ const ses=_daySession(s,di); return ses&&_arr(ses.bloques).length; });
+      const isActive = di===_det.dayIdx;
+      h += `<button class="day-tab${hasSes?' has':' no'}${isActive?' active':''}" onclick="${hasSes?`_detDay(${di})`:'void(0)'}">${DS[di]}</button>`;
+    }
+    h += `</div>`;
+
+    // Nav de semanas (si hay más de una)
+    if (sems.length > 1) {
+      h += `<div class="week-nav">
+        <button class="wnav-btn" onclick="_detWeek(-1)"${_det.weekIdx===0?' disabled':''}>‹</button>
+        <div class="wnav-lbl">${sem?.nombre||'Semana '+(_det.weekIdx+1)}<br><span style="opacity:.6;font-size:9px;">${sems.length} semanas</span></div>
+        <button class="wnav-btn" onclick="_detWeek(1)"${_det.weekIdx===sems.length-1?' disabled':''}>›</button>
+      </div>`;
+    }
+
+    // Sesión del día seleccionado
+    h += `<div id="det-ses">${_buildSesionHTML(sem, _det.dayIdx)}</div>`;
+    h += `<div style="height:1px;background:var(--border);margin:20px 0;"></div>`;
+  }
 
   // ── Datos personales
-  h+=`<div class="sec-hdr">👤 Datos personales</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">`;
-  const campos=[['Objetivo',al.objetivo],['Nivel',al.nivel],['Inicio',al.inicio],['Días/sem.',al.dias],['Teléfono',al.telefono],['Email',al.email]];
-  for (const [lbl,val] of campos) {
+  h += `<div class="sec-hdr">👤 Datos personales</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">`;
+  for (const [lbl,val] of [['Objetivo',al.objetivo],['Nivel',al.nivel],['Inicio',al.inicio],['Días/sem.',al.dias],['Teléfono',al.telefono],['Email',al.email]]) {
     if (!val) continue;
     h+=`<div style="background:var(--card);border-radius:10px;padding:10px 12px;">
       <div style="font-size:8px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.8px;">${lbl}</div>
       <div style="font-size:12px;color:var(--text);font-weight:700;margin-top:3px;">${val}</div>
     </div>`;
   }
-  h+=`</div>`;
-
+  h += `</div>`;
   if (al.lesiones) h+=`<div style="background:rgba(248,113,113,.07);border-left:3px solid #f87171;border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:10px;font-size:11px;color:#f87171;line-height:1.4;">⚠️ <strong>Lesiones:</strong> ${al.lesiones}</div>`;
   if (al.observaciones) h+=`<div style="background:rgba(255,255,255,.03);border-left:3px solid var(--border);border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:10px;font-size:11px;color:var(--muted);line-height:1.4;">📝 ${al.observaciones}</div>`;
 
-  // ── Planes
-  if (planes.length) {
-    h+=`<div class="sec-hdr">📋 ${planes.length} Planes de entrenamiento</div>`;
-    for (const plan of planes) {
-      const sems=_arr(plan.semanasArray);
-
-      // Días únicos del plan (usando índices, igual que alumno.html)
-      const diasUnicos=[];
-      for (const sem of sems) {
-        for (let di=0;di<7;di++) {
-          const ses=_daySession(sem,di);
-          if (ses&&_arr(ses.bloques).length&&!diasUnicos.includes(di)) diasUnicos.push(di);
-        }
-      }
-
-      h+=`<div style="background:var(--card);border-radius:14px;padding:14px 16px;margin-bottom:10px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-          <div style="flex:1;">
-            <div style="font-size:13px;font-weight:800;color:var(--text);">${plan.nombre||'Plan sin nombre'}</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px;">${sems.length} semana${sems.length!==1?'s':''}</div>
-          </div>
-          <div style="font-size:20px;font-weight:900;color:var(--gold);">${sems.length}S</div>
-        </div>
-        ${diasUnicos.length?'<div style="display:flex;flex-wrap:wrap;gap:4px;">'+diasUnicos.map(di=>`<span class="dia-badge">${DS_FULL[di]}</span>`).join('')+'</div>':''}
-      </div>`;
-
-      // Primera semana — ejercicios por día
-      if (sems[0]) {
-        for (let di=0;di<7;di++) {
-          const ses=_daySession(sems[0],di);
-          if (!ses||!_arr(ses.bloques).length) continue;
-          h+=`<div style="margin:0 0 8px 2px;">
-            <div style="font-size:9px;font-weight:900;color:rgba(201,168,76,.6);letter-spacing:1px;margin-bottom:6px;">${DS_FULL[di].toUpperCase()}</div>`;
-          for (const blq of _arr(ses.bloques)) {
-            if (blq.nombre||blq.letra) h+=`<div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin:4px 0 2px;">${blq.letra?blq.letra+'. ':''}${blq.nombre||''}</div>`;
-            h+=`<div class="ej-list">`;
-            for (const ej of _arr(blq.ejercicios)) {
-              const cs=ej.ctrlSeries||ej.ctrl?.series||'';
-              const cr=ej.ctrlReps||ej.ctrl?.reps||'';
-              const cp=ej.ctrlPeso||ej.ctrl?.peso||'';
-              h+=`<div class="ej-item"><div class="ej-bullet"></div><div class="ej-txt">${ej.nombre||'—'}</div><div class="ej-det">${cs?cs+'×':''} ${cr||''} ${cp?'· '+cp+' kg':''}</div></div>`;
-            }
-            h+=`</div>`;
-          }
-          h+=`</div>`;
-        }
-      }
-    }
-  }
-
-  // ── Últimas mediciones
+  // ── Mediciones
   if (antro.length) {
-    const last=antro[antro.length-1];
-    h+=`<div class="sec-hdr">📏 Última medición — ${last.fecha||'—'}</div>
+    const last = antro[antro.length-1];
+    h += `<div class="sec-hdr">📏 Última medición — ${last.fecha||'—'}</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;">`;
-    const medFields=[['Peso','peso','kg'],['Grasa','grasa','%'],['Músculo','musculo','%'],['Cintura','cintura','cm'],['Cadera','cadera','cm'],['Brazo','brazo','cm']];
-    for (const [lbl,k,u] of medFields) {
+    for (const [lbl,k,u] of [['Peso','peso','kg'],['Grasa','grasa','%'],['Músculo','musculo','%'],['Cintura','cintura','cm'],['Cadera','cadera','cm'],['Brazo','brazo','cm']]) {
       if (!last[k]) continue;
       h+=`<div class="stat-mini"><div class="stat-mini-lbl">${lbl}</div><div class="stat-mini-val">${last[k]}<span class="stat-mini-u"> ${u}</span></div></div>`;
     }
-    h+=`</div>`;
-    const pesoData=antro.filter(r=>r.peso&&parseFloat(r.peso)>0);
+    h += `</div>`;
+    const pesoData = antro.filter(r=>r.peso&&parseFloat(r.peso)>0);
     if (pesoData.length>=2) {
-      const primer=parseFloat(pesoData[0].peso);
-      const ultimo=parseFloat(pesoData[pesoData.length-1].peso);
-      const delta=+(ultimo-primer).toFixed(1);
+      const delta = +(parseFloat(pesoData[pesoData.length-1].peso)-parseFloat(pesoData[0].peso)).toFixed(1);
       h+=`<div style="background:var(--card);border-radius:12px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
         <div style="flex:1;font-size:12px;color:var(--muted);">Variación de peso (${pesoData.length} mediciones)</div>
         <div style="font-size:18px;font-weight:900;color:${delta<0?'var(--green)':delta>0?'#f87171':'var(--muted)'};">${delta>0?'+':''}${delta} kg</div>
@@ -670,31 +709,96 @@ function openDetail(alId) {
     }
   }
 
-  // ── Feedback reciente
+  // ── Feedback
   if (fbs.length) {
-    h+=`<div class="sec-hdr">💬 Últimos ${Math.min(fbs.length,3)} feedbacks</div>`;
+    h += `<div class="sec-hdr">💬 Últimos ${Math.min(fbs.length,3)} feedbacks</div>`;
     for (const fb of fbs.slice(-3).reverse()) {
-      const fecha=fb.fecha?new Date(fb.fecha).toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}):'—';
-      h+=`<div class="fb-card" style="margin-bottom:8px;">
+      const fecha = fb.fecha?new Date(fb.fecha).toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}):'—';
+      h += `<div class="fb-card" style="margin-bottom:8px;">
         <div style="font-size:10px;color:var(--muted);margin-bottom:8px;font-weight:700;">${fecha}${fb.sesion?' · '+fb.sesion:''}</div>
         <div class="fb-metrics">`;
-      const mets=[['Energía','energia'],['Estrés','estres'],['Motivación','motivacion'],['Dolor','dolor'],['Recuperación','recuperacion'],['Pump','pump']];
-      for (const [lbl,k] of mets) {
+      for (const [lbl,k] of [['Energía','energia'],['Estrés','estres'],['Motivación','motivacion'],['Dolor','dolor'],['Recuperación','recuperacion'],['Pump','pump']]) {
         if (fb[k]!==undefined&&fb[k]!=='') h+=`<div class="fb-met"><span class="fb-met-lbl">${lbl}</span><span class="fb-met-val">${fb[k]}</span></div>`;
       }
-      h+=`</div>`;
-      if (fb.obs) h+=`<div class="fb-obs">"${fb.obs}"</div>`;
-      h+=`</div>`;
+      h += `</div>`;
+      if (fb.obs) h += `<div class="fb-obs">"${fb.obs}"</div>`;
+      h += `</div>`;
     }
   }
 
-  document.getElementById('detail-body').innerHTML=h;
-  document.getElementById('al-detail').style.display='flex';
-  document.getElementById('al-detail').scrollTop=0;
+  return h;
 }
 
-function closeDetail() {
-  document.getElementById('al-detail').style.display='none';
+// Tap en un día
+function _detDay(di) {
+  _det.dayIdx = di;
+  document.querySelectorAll('.day-tab').forEach((btn, i) => {
+    btn.classList.toggle('active', i === di);
+  });
+  const planes = _planes.filter(p=>p&&p.alumnoId===_det.alId);
+  const plan   = planes[_det.planIdx];
+  const sems   = _arr(plan?.semanasArray||[]);
+  document.getElementById('det-ses').innerHTML = _buildSesionHTML(sems[_det.weekIdx], di);
+}
+
+// Cambio de semana
+function _detWeek(dir) {
+  const planes = _planes.filter(p=>p&&p.alumnoId===_det.alId);
+  const plan   = planes[_det.planIdx];
+  const sems   = _arr(plan?.semanasArray||[]);
+  const ni = _det.weekIdx + dir;
+  if (ni < 0 || ni >= sems.length) return;
+  _det.weekIdx = ni;
+  document.getElementById('detail-body').innerHTML = _buildDetailHTML();
+}
+
+// HTML de la sesión de un día (sem = objeto semana, di = 0-6)
+function _buildSesionHTML(sem, di) {
+  if (!sem) return `<div class="empty-day">Sin semana disponible</div>`;
+  const ses = _daySession(sem, di);
+  if (!ses || !_arr(ses.bloques).length) {
+    return `<div class="empty-day">😴 Sin sesión para el ${DS_FULL[di]}</div>`;
+  }
+  let h = '<div style="padding:2px 0 6px;">';
+  for (const blq of _arr(ses.bloques)) {
+    const ejercicios = _arr(blq.ejercicios);
+    if (!ejercicios.length) continue;
+    h += `<div class="blq">`;
+    if (blq.letra || blq.nombre) {
+      h += `<div class="blq-hdr">
+        ${blq.letra?`<div class="blq-letra">${blq.letra}</div>`:''}
+        <div class="blq-nombre">${blq.nombre||blq.tipo||''}</div>
+      </div>`;
+    }
+    for (const ej of ejercicios) h += _buildEjHTML(ej);
+    h += `</div>`;
+  }
+  return h + '</div>';
+}
+
+// HTML de un ejercicio con tabla de series
+function _buildEjHTML(ej) {
+  const cs   = ej.ctrlSeries || ej.ctrl?.series || '';
+  const cr   = ej.ctrlReps   || ej.ctrl?.reps   || '';
+  const cp   = ej.ctrlPeso   || ej.ctrl?.peso   || '';
+  const crir = ej.ctrlRIR    || ej.ctrl?.rir    || '';
+  const series = _arr(ej.seriesArray || ej.series || []);
+  const ctrl = [cs?cs+' series':'', cr?'× '+cr:'', cp?'· '+cp+' kg':'', crir?'· RIR '+crir:''].filter(Boolean).join(' ');
+  let h = `<div class="ejc">
+    <div class="ejc-nombre">${ej.nombre||'—'}</div>`;
+  if (ctrl) h += `<div class="ejc-ctrl">${ctrl}</div>`;
+  if (series.length) {
+    h += `<table class="st"><tr><th>#</th><th>REPS</th><th>PESO</th><th>RIR</th></tr>`;
+    series.forEach((s,i) => {
+      const isA = s.tipo==='A'||s.tipo==='aprox';
+      const reps = s.reps !== undefined ? s.reps : (cr||'—');
+      const peso = s.peso !== undefined ? s.peso+' kg' : (cp ? cp+' kg' : '—');
+      const rir  = s.rir  !== undefined ? s.rir  : (crir||'—');
+      h += `<tr${isA?' class="aprox"':''}><td>${i+1}${isA?' <small style="color:var(--gold)">A</small>':''}</td><td>${reps}</td><td>${peso}</td><td>${rir}</td></tr>`;
+    });
+    h += `</table>`;
+  }
+  return h + `</div>`;
 }
 
 // Auto-init si ya estaba autenticado
