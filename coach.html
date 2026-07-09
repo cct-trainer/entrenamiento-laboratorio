@@ -159,6 +159,18 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 
 /* ── EMPTY DAY ───────────────────────────────────────────────────── */
 .empty-day{text-align:center;padding:36px 20px;color:var(--muted);font-size:13px;line-height:1.6;}
+
+/* ── COACH EDITS ─────────────────────────────────────────────────── */
+.peso-inp{width:56px;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:6px;color:var(--text);text-align:center;font-size:11px;font-weight:700;padding:4px 3px;-moz-appearance:textfield;font-family:inherit;}
+.peso-inp::-webkit-outer-spin-button,.peso-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.peso-inp:focus{outline:none;border-color:var(--gold);background:rgba(201,168,76,.14);}
+.peso-inp.edited{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.1);}
+.nota-inp{width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:11px;padding:8px 10px;resize:none;margin-top:8px;font-family:inherit;line-height:1.4;min-height:34px;overflow:hidden;}
+.nota-inp:focus{outline:none;border-color:rgba(201,168,76,.4);background:rgba(201,168,76,.04);}
+.nota-inp::placeholder{color:var(--muted);}
+.nota-inp.has-nota{border-color:rgba(201,168,76,.35);background:rgba(201,168,76,.05);}
+.save-toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(34,197,94,.9);color:#fff;font-size:11px;font-weight:800;padding:6px 16px;border-radius:20px;z-index:999;pointer-events:none;opacity:0;transition:opacity .25s;}
+.save-toast.show{opacity:1;}
 </style>
 </head>
 <body>
@@ -241,6 +253,9 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
   </nav>
 </div>
 
+<!-- ══ SAVE TOAST ══════════════════════════════════════════════════════ -->
+<div class="save-toast" id="save-toast">✓ Guardado</div>
+
 <!-- ══ ALUMNO DETAIL OVERLAY ══════════════════════════════════════════ -->
 <div id="al-detail">
   <div class="detail-hdr">
@@ -296,7 +311,7 @@ function _showLoading() {
 if (sessionStorage.getItem('CC_COACH')==='1') _showLoading();
 
 // ══ DATA ═══════════════════════════════════════════════════════════════
-let _alumnos=[], _planes=[], _antro=[], _fbAll={};
+let _alumnos=[], _planes=[], _antro=[], _fbAll={}, _coachEdits={};
 let _db=null;
 
 // DS: días del plan — ÍNDICES 0=Lun...6=Dom (igual que alumno.html)
@@ -340,8 +355,10 @@ async function _initFirebase() {
       try {
         const s = await _db.collection('alumnos').doc(al.id).get();
         if (s.exists) {
-          const fb = _arr(s.data().feedbackHistorial);
+          const sd = s.data();
+          const fb = _arr(sd.feedbackHistorial);
           if (fb.length) _fbAll[al.id] = fb;
+          if (sd.coachEdits) _coachEdits[al.id] = sd.coachEdits;
         }
       } catch(e){ console.warn('FB alumno '+al.id, e); }
     }));
@@ -752,15 +769,17 @@ function _detWeek(dir) {
   document.getElementById('detail-body').innerHTML = _buildDetailHTML();
 }
 
-// HTML de la sesión de un día (sem = objeto semana, di = 0-6)
+// HTML de la sesión de un día — con índices para edición
 function _buildSesionHTML(sem, di) {
   if (!sem) return `<div class="empty-day">Sin semana disponible</div>`;
   const ses = _daySession(sem, di);
   if (!ses || !_arr(ses.bloques).length) {
     return `<div class="empty-day">😴 Sin sesión para el ${DS_FULL[di]}</div>`;
   }
+  const bloques = _arr(ses.bloques);
   let h = '<div style="padding:2px 0 6px;">';
-  for (const blq of _arr(ses.bloques)) {
+  for (let bi=0; bi<bloques.length; bi++) {
+    const blq = bloques[bi];
     const ejercicios = _arr(blq.ejercicios);
     if (!ejercicios.length) continue;
     h += `<div class="blq">`;
@@ -770,35 +789,108 @@ function _buildSesionHTML(sem, di) {
         <div class="blq-nombre">${blq.nombre||blq.tipo||''}</div>
       </div>`;
     }
-    for (const ej of ejercicios) h += _buildEjHTML(ej);
+    for (let ei=0; ei<ejercicios.length; ei++) {
+      h += _buildEjHTML(ejercicios[ei], di, bi, ei);
+    }
     h += `</div>`;
   }
   return h + '</div>';
 }
 
-// HTML de un ejercicio con tabla de series
-function _buildEjHTML(ej) {
+// HTML de un ejercicio — pesos editables + nota del coach
+function _buildEjHTML(ej, dayIdx, blkIdx, ejIdx) {
+  const alId   = _det.alId;
+  const edits  = _coachEdits[alId] || {};
+  // prefijo de clave: planIdx_weekIdx_dayIdx_blkIdx_ejIdx
+  const pfx    = `${_det.planIdx}_${_det.weekIdx}_${dayIdx}_${blkIdx}_${ejIdx}`;
+  const noteKey = `n_${pfx}`;
+  const note   = edits[noteKey] || '';
+
   const cs   = ej.ctrlSeries || ej.ctrl?.series || '';
   const cr   = ej.ctrlReps   || ej.ctrl?.reps   || '';
-  const cp   = ej.ctrlPeso   || ej.ctrl?.peso   || '';
+  const cp   = String(ej.ctrlPeso   || ej.ctrl?.peso   || '');
   const crir = ej.ctrlRIR    || ej.ctrl?.rir    || '';
   const series = _arr(ej.seriesArray || ej.series || []);
   const ctrl = [cs?cs+' series':'', cr?'× '+cr:'', cp?'· '+cp+' kg':'', crir?'· RIR '+crir:''].filter(Boolean).join(' ');
+
   let h = `<div class="ejc">
     <div class="ejc-nombre">${ej.nombre||'—'}</div>`;
   if (ctrl) h += `<div class="ejc-ctrl">${ctrl}</div>`;
+
   if (series.length) {
     h += `<table class="st"><tr><th>#</th><th>REPS</th><th>PESO</th><th>RIR</th></tr>`;
-    series.forEach((s,i) => {
-      const isA = s.tipo==='A'||s.tipo==='aprox';
+    for (let si=0; si<series.length; si++) {
+      const s    = series[si];
+      const isA  = s.tipo==='A' || s.tipo==='aprox';
       const reps = s.reps !== undefined ? s.reps : (cr||'—');
-      const peso = s.peso !== undefined ? s.peso+' kg' : (cp ? cp+' kg' : '—');
       const rir  = s.rir  !== undefined ? s.rir  : (crir||'—');
-      h += `<tr${isA?' class="aprox"':''}><td>${i+1}${isA?' <small style="color:var(--gold)">A</small>':''}</td><td>${reps}</td><td>${peso}</td><td>${rir}</td></tr>`;
-    });
+      const wKey = `w_${pfx}_${si}`;
+      const editedP = edits[wKey];
+      const baseP   = (s.peso !== undefined && s.peso !== '') ? String(s.peso) : cp;
+      const showP   = editedP !== undefined ? editedP : baseP;
+      const isEdited = editedP !== undefined;
+      h += `<tr${isA?' class="aprox"':''}>
+        <td>${si+1}${isA?` <small style="color:var(--gold);font-size:8px">A</small>`:''}</td>
+        <td>${reps}</td>
+        <td style="padding:3px 5px;">
+          <input type="number" class="peso-inp${isEdited?' edited':''}"
+            value="${showP}" placeholder="${cp||'—'}"
+            onblur="_cw('${alId}','${wKey}',this.value,this)">
+          <span style="font-size:9px;color:var(--muted);margin-left:2px;">kg</span>
+        </td>
+        <td>${rir}</td>
+      </tr>`;
+    }
     h += `</table>`;
   }
+
+  // Nota del coach (siempre visible, guardada en Firebase)
+  h += `<textarea class="nota-inp${note?' has-nota':''}" rows="1"
+    placeholder="📝 Nota del coach — cambios, sustituciones..."
+    onblur="_cn('${alId}','${noteKey}',this.value)"
+    oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+    style="height:${note?'auto':'34px'}"
+    >${note}</textarea>`;
+
   return h + `</div>`;
+}
+
+// ══ GUARDAR EDICIONES DEL COACH ═════════════════════════════════════
+let _savePending = {}, _saveT = null;
+
+function _cw(alId, key, val, el) {
+  if (!_coachEdits[alId]) _coachEdits[alId] = {};
+  _coachEdits[alId][key] = val;
+  el.classList.add('edited');
+  _queueSave(alId, key, val);
+}
+
+function _cn(alId, key, val) {
+  if (!_coachEdits[alId]) _coachEdits[alId] = {};
+  _coachEdits[alId][key] = val;
+  const el = event?.target;
+  if (el) el.classList.toggle('has-nota', !!val);
+  _queueSave(alId, key, val);
+}
+
+function _queueSave(alId, key, val) {
+  if (!_savePending[alId]) _savePending[alId] = {};
+  _savePending[alId][key] = val;
+  clearTimeout(_saveT);
+  _saveT = setTimeout(async () => {
+    const pending = {..._savePending};
+    _savePending = {};
+    for (const [aid, edits] of Object.entries(pending)) {
+      try {
+        await _db.collection('alumnos').doc(aid).set(
+          { coachEdits: edits }, { merge: true }
+        );
+      } catch(e) { console.warn('Coach save error:', aid, e); }
+    }
+    // Toast
+    const t = document.getElementById('save-toast');
+    if (t) { t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1800); }
+  }, 1000);
 }
 
 // Auto-init si ya estaba autenticado
