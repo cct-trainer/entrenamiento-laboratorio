@@ -270,6 +270,9 @@ const _hoy = new Date();
 const _todayIdx  = _hoy.getDay(); // 0=Dom
 const _todayName = DIAS_ES[_todayIdx];
 
+// Asegura que un valor sea array aunque Firebase devuelva objeto/null
+function _arr(v) { if (!v) return []; if (Array.isArray(v)) return v; return Object.values(v); }
+
 async function _initFirebase() {
   try {
     if (!firebase.apps.length) firebase.initializeApp(CFG);
@@ -277,28 +280,34 @@ async function _initFirebase() {
 
     // Cargar backup principal
     const snap = await _db.collection('backups').doc('main').get();
-    if (!snap.exists) { alert('Sin datos en la nube.'); return; }
+    if (!snap.exists) { _showAppErr('Sin datos en la nube. Sincronizá desde la app del coach.'); return; }
     const d = snap.data();
-    _alumnos = d.alumnos || [];
-    _planes  = d.planificaciones || [];
-    _antro   = d.antropometria || [];
+    _alumnos = _arr(d.alumnos);
+    _planes  = _arr(d.planificaciones);
+    _antro   = _arr(d.antropometria);
 
     // Cargar feedback de cada alumno en paralelo
-    await Promise.all(_alumnos.map(async al => {
+    await Promise.all(_alumnos.filter(al=>al&&al.id).map(async al => {
       try {
         const s = await _db.collection('alumnos').doc(al.id).get();
         if (s.exists) {
-          const fb = s.data().feedbackHistorial || [];
+          const fb = _arr(s.data().feedbackHistorial);
           if (fb.length) _fbAll[al.id] = fb;
         }
-      } catch(e){}
+      } catch(e){ console.warn('FB alumno '+al.id, e); }
     }));
 
     _render();
   } catch(err) {
-    console.error(err);
-    alert('Error: '+err.message);
+    console.error('Coach init error:', err);
+    _showAppErr('Error al conectar: '+err.message);
   }
+}
+
+function _showAppErr(msg) {
+  document.getElementById('loading-screen').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('pin-err').textContent='⚠️ '+msg;
 }
 
 function _render() {
@@ -325,14 +334,14 @@ function goTab(t) {
 
 // ══ HOY ═══════════════════════════════════════════════════════════════
 function _getSesionesDelDia(alumnoId, diaName) {
-  const dn = diaName.toLowerCase();
+  const targetIdx = _diaNameToIdx(diaName);
   const res = [];
-  for (const plan of _planes.filter(p=>p.alumnoId===alumnoId)) {
-    for (let si=0;si<(plan.semanasArray||[]).length;si++) {
-      const sem = plan.semanasArray[si];
-      for (const dia of (sem.dias||[])) {
-        const d = (dia.dia||dia.nombre||'').toLowerCase();
-        if (d===dn || d===DIAS_CORTO[_todayIdx].toLowerCase()) {
+  for (const plan of _planes.filter(p=>p&&p.alumnoId===alumnoId)) {
+    const sems = _arr(plan.semanasArray);
+    for (let si=0;si<sems.length;si++) {
+      const sem = sems[si];
+      for (const dia of _arr(sem.dias)) {
+        if (_diaNameToIdx(dia.dia||dia.nombre||'') === targetIdx) {
           res.push({plan, semIdx:si, dia, semNombre:sem.nombre||'Semana '+(si+1)});
         }
       }
@@ -413,19 +422,28 @@ function _tog(bodyId,arrId) {
 }
 
 // ══ SEMANA ════════════════════════════════════════════════════════════
+function _diaNameToIdx(dn) {
+  // busca el índice 0-6 a partir del nombre en español (completo o corto)
+  dn = (dn||'').toLowerCase().trim();
+  for (let i=0;i<7;i++) {
+    if (DIAS_ES[i].toLowerCase()===dn) return i;
+    if (DIAS_CORTO[i].toLowerCase()===dn) return i;
+  }
+  return -1;
+}
+
 function renderSemana() {
   const ctn=document.getElementById('semana-ctn');
-  // Orden Lun→Dom
-  const order=[1,2,3,4,5,6,0];
+  const order=[1,2,3,4,5,6,0]; // Lun→Dom
 
   // Mapa: diaIdx → {alId: al}
   const diaMap={};
   for (const al of _alumnos) {
-    for (const plan of _planes.filter(p=>p.alumnoId===al.id)) {
-      for (const sem of (plan.semanasArray||[])) {
-        for (const dia of (sem.dias||[])) {
-          const dn=(dia.dia||dia.nombre||'').toLowerCase();
-          const idx=DIAS_ES.findIndex(d=>d.toLowerCase()===dn||DIAS_CORTO[DIAS_ES.indexOf(d)]?.toLowerCase()===dn);
+    if (!al||!al.id) continue;
+    for (const plan of _planes.filter(p=>p&&p.alumnoId===al.id)) {
+      for (const sem of _arr(plan.semanasArray)) {
+        for (const dia of _arr(sem.dias)) {
+          const idx = _diaNameToIdx(dia.dia||dia.nombre||'');
           if (idx>=0) {
             if (!diaMap[idx]) diaMap[idx]={};
             diaMap[idx][al.id]=al;
