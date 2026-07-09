@@ -692,11 +692,11 @@ function _ejCard(ej, uid) {
       cpa ? ['PAUSA',  cpa] : null,
       ci  ? ['RIR',    ci]  : null,
     ].filter(Boolean);
-    return '<div style="display:grid;grid-template-columns:repeat('+cols.length+',1fr);border:1px solid rgba(201,168,76,.25);border-radius:8px;overflow:hidden;margin:10px 0;">'+
+    return '<div style="display:grid;grid-template-columns:repeat('+cols.length+',1fr);border:1px solid color-mix(in srgb,var(--gold) 25%,transparent);border-radius:8px;overflow:hidden;margin:10px 0;">'+
       cols.map((c,i) =>
-        '<div style="padding:8px 6px;text-align:center;'+(i<cols.length-1?'border-right:1px solid rgba(201,168,76,.15);':'')+'">'+
-          '<div style="font-size:8px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin-bottom:3px;">'+c[0]+'</div>'+
-          '<div style="font-size:18px;font-weight:900;color:#fff;line-height:1;">'+c[1]+'</div>'+
+        '<div style="padding:8px 6px;text-align:center;background:color-mix(in srgb,var(--gold) 6%,var(--card));'+(i<cols.length-1?'border-right:1px solid color-mix(in srgb,var(--gold) 15%,transparent);':'')+'">'+
+          '<div style="font-size:8px;font-weight:900;color:var(--gold);letter-spacing:1px;margin-bottom:3px;">'+c[0]+'</div>'+
+          '<div style="font-size:18px;font-weight:900;color:var(--text);line-height:1;">'+c[1]+'</div>'+
         '</div>'
       ).join('')+
     '</div>';
@@ -832,8 +832,8 @@ function _ejCard(ej, uid) {
 
   return '<div id="'+uid+'-card" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .2s;">'+
     '<div style="padding:12px 14px 12px;">'+
-      '<div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:2px;">'+(ej.nombre||'—')+'</div>'+
-      (ej.musculos ? '<div style="font-size:10px;color:#888;margin-bottom:4px;">'+ej.musculos+'</div>' : '')+
+      '<div style="font-size:16px;font-weight:900;color:var(--text);margin-bottom:3px;line-height:1.2;border-left:3px solid var(--gold);padding-left:9px;">'+(ej.nombre||'—')+'</div>'+
+      (ej.musculos ? '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;padding-left:12px;">'+ej.musculos+'</div>' : '')+
       ctrlGrid+
       pesoRef+
       seriesTable+
