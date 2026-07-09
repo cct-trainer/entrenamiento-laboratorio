@@ -263,22 +263,35 @@ if (sessionStorage.getItem('CC_COACH')==='1') _showLoading();
 let _alumnos=[], _planes=[], _antro=[], _fbAll={};
 let _db=null;
 
-const DIAS_ES    = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-const DIAS_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-const MESES      = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-const _hoy = new Date();
-const _todayIdx  = _hoy.getDay(); // 0=Dom
-const _todayName = DIAS_ES[_todayIdx];
+// DS: días del plan — ÍNDICES 0=Lun...6=Dom (igual que alumno.html)
+const DS      = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+const DS_FULL = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const MESES   = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
-// Asegura que un valor sea array aunque Firebase devuelva objeto/null
+const _hoy = new Date();
+// JS getDay(): 0=Dom,1=Lun,2=Mar,3=Mié,4=Jue,5=Vie,6=Sáb
+// Plan dias[]:  0=Lun,1=Mar,2=Mié,3=Jue,4=Vie,5=Sáb,6=Dom
+// Conversión: planIdx = (getDay() + 6) % 7
+const _todayPlanIdx = (_hoy.getDay() + 6) % 7; // 0-6 dentro del plan
+const _todayName    = DS_FULL[_todayPlanIdx];
+
+// Asegura array aunque Firebase devuelva objeto/null
 function _arr(v) { if (!v) return []; if (Array.isArray(v)) return v; return Object.values(v); }
+
+// Retorna el array de sesiones de un día del plan: sem.dias[di][0].bloques
+// sem.dias[di] es un array (puede ser object en Firebase); [0] es la primera sesión del día
+function _daySession(sem, di) {
+  const dias = _arr(sem.dias);
+  const slot  = _arr(dias[di]);
+  return slot[0] || null; // objeto {bloques:[...], nombre?:...}
+}
 
 async function _initFirebase() {
   try {
     if (!firebase.apps.length) firebase.initializeApp(CFG);
     _db = firebase.firestore();
 
-    // Cargar backup principal
+    // Cargar backup principal (alumnos, planes, antropometría)
     const snap = await _db.collection('backups').doc('main').get();
     if (!snap.exists) { _showAppErr('Sin datos en la nube. Sincronizá desde la app del coach.'); return; }
     const d = snap.data();
@@ -286,7 +299,7 @@ async function _initFirebase() {
     _planes  = _arr(d.planificaciones);
     _antro   = _arr(d.antropometria);
 
-    // Cargar feedback de cada alumno en paralelo
+    // Cargar feedback de cada alumno desde alumnos/{id}
     await Promise.all(_alumnos.filter(al=>al&&al.id).map(async al => {
       try {
         const s = await _db.collection('alumnos').doc(al.id).get();
@@ -314,7 +327,6 @@ function _render() {
   document.getElementById('loading-screen').style.display='none';
   document.getElementById('app').style.display='flex';
 
-  // Header fecha
   document.getElementById('hdr-dia').textContent  = _todayName.toUpperCase();
   document.getElementById('hdr-fecha').textContent = _hoy.getDate()+' de '+MESES[_hoy.getMonth()];
 
@@ -324,7 +336,7 @@ function _render() {
   renderFeedback();
 }
 
-// ══ TABS ════════════════════════════════════════════════════════════
+// ══ TABS ═══════════════════════════════════════════════════════════════
 function goTab(t) {
   ['hoy','semana','alumnos','feedback'].forEach(x=>{
     document.getElementById('tab-'+x).classList.toggle('on',x===t);
@@ -332,18 +344,16 @@ function goTab(t) {
   });
 }
 
-// ══ HOY ═══════════════════════════════════════════════════════════════
-function _getSesionesDelDia(alumnoId, diaName) {
-  const targetIdx = _diaNameToIdx(diaName);
+// ══ HOY ════════════════════════════════════════════════════════════════
+// Devuelve sesiones del día de hoy (planIdx) para un alumno
+function _getSesionesHoy(alumnoId) {
   const res = [];
   for (const plan of _planes.filter(p=>p&&p.alumnoId===alumnoId)) {
     const sems = _arr(plan.semanasArray);
-    for (let si=0;si<sems.length;si++) {
-      const sem = sems[si];
-      for (const dia of _arr(sem.dias)) {
-        if (_diaNameToIdx(dia.dia||dia.nombre||'') === targetIdx) {
-          res.push({plan, semIdx:si, dia, semNombre:sem.nombre||'Semana '+(si+1)});
-        }
+    for (let si=0; si<sems.length; si++) {
+      const ses = _daySession(sems[si], _todayPlanIdx);
+      if (ses && _arr(ses.bloques).length) {
+        res.push({plan, semIdx:si, ses, semNombre:sems[si].nombre||'Semana '+(si+1)});
       }
     }
   }
@@ -352,7 +362,12 @@ function _getSesionesDelDia(alumnoId, diaName) {
 
 function renderHoy() {
   const ctn = document.getElementById('hoy-ctn');
-  const conSesion = _alumnos.filter(al=>_getSesionesDelDia(al.id,_todayName).length>0);
+  const conSesion = [];
+  for (const al of _alumnos) {
+    if (!al||!al.id) continue;
+    const sesiones = _getSesionesHoy(al.id);
+    if (sesiones.length) conSesion.push({al, sesiones});
+  }
 
   if (!conSesion.length) {
     ctn.innerHTML=`<div class="empty"><div class="empty-ico">😴</div><div class="empty-ttl">Nadie entrena hoy</div><div class="empty-txt">No hay sesiones programadas para el ${_todayName}.</div></div>`;
@@ -361,46 +376,44 @@ function renderHoy() {
 
   let h=`<div class="sec-hdr">🏋️ Entrenan hoy — ${_todayName} · ${conSesion.length} alumno${conSesion.length!==1?'s':''}</div>`;
 
-  for (const al of conSesion) {
-    const sesiones = _getSesionesDelDia(al.id,_todayName);
-    const lastFb   = (_fbAll[al.id]||[]).slice(-1)[0];
+  for (const {al, sesiones} of conSesion) {
+    const lastFb  = (_fbAll[al.id]||[]).slice(-1)[0];
     const fotoHTML = al.foto ? `<img src="${al.foto}">` : al.nombre.charAt(0);
+    const {plan, ses, semNombre} = sesiones[0];
+    const bloques = _arr(ses.bloques);
 
     h+=`<div class="al-card">
       <div class="al-card-hdr" onclick="_tog('hb_${al.id}','ha_${al.id}')">
         <div class="al-av">${fotoHTML}</div>
         <div style="flex:1;min-width:0;">
           <div class="al-nombre">${al.nombre}</div>
-          <div class="al-sub">${sesiones[0].plan.nombre||'Plan'} · ${sesiones[0].semNombre}</div>
+          <div class="al-sub">${plan.nombre||'Plan'} · ${semNombre}</div>
         </div>
         ${lastFb?'<div class="al-badge">💬 Feedback</div>':''}
         <span style="color:var(--muted);font-size:11px;margin-left:6px;" id="ha_${al.id}">▼</span>
       </div>
-      <div class="al-body" id="hb_${al.id}" style="display:none;border-top:1px solid var(--border);padding-top:12px;">`;
+      <div class="al-body" id="hb_${al.id}" style="display:none;border-top:1px solid var(--border);padding-top:12px;">
+        <div style="font-size:9px;font-weight:900;color:rgba(201,168,76,.7);letter-spacing:1px;margin-bottom:8px;">${DS[_todayPlanIdx]} — ${semNombre}</div>`;
 
-    for (const {dia,semNombre} of sesiones) {
-      const bloques = dia.bloques||[];
-      h+=`<div style="font-size:9px;font-weight:900;color:rgba(201,168,76,.7);letter-spacing:1px;margin-bottom:8px;">${(dia.nombre||dia.dia||'Sesión').toUpperCase()}</div>`;
-      if (!bloques.length) {
-        h+=`<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Sin ejercicios</div>`;
-      } else {
-        for (const blq of bloques) {
-          if (blq.nombre||blq.letra) {
-            h+=`<div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin:8px 0 4px;">${blq.letra?blq.letra+'. ':''}${blq.nombre||''}</div>`;
-          }
-          h+=`<div class="ej-list">`;
-          for (const ej of (blq.ejercicios||[])) {
-            const cs = ej.ctrlSeries||ej.ctrl?.series||(ej.seriesArray?.length||ej.series?.length||'');
-            const cr = ej.ctrlReps||ej.ctrl?.reps||(ej.series?.[0]?.reps||'');
-            const cp = ej.ctrlPeso||ej.ctrl?.peso||(ej.series?.[0]?.peso||'');
-            h+=`<div class="ej-item">
-              <div class="ej-bullet"></div>
-              <div class="ej-txt">${ej.nombre||'—'}</div>
-              <div class="ej-det">${cs?cs+'×':''} ${cr||'—'} ${cp?'· '+cp+' kg':''}</div>
-            </div>`;
-          }
-          h+=`</div>`;
+    if (!bloques.length) {
+      h+=`<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Sin ejercicios</div>`;
+    } else {
+      for (const blq of bloques) {
+        if (blq.nombre||blq.letra) {
+          h+=`<div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin:8px 0 4px;">${blq.letra?blq.letra+'. ':''}${blq.nombre||''}</div>`;
         }
+        h+=`<div class="ej-list">`;
+        for (const ej of _arr(blq.ejercicios)) {
+          const cs = ej.ctrlSeries||ej.ctrl?.series||ej.seriesArray?.length||ej.series?.length||'';
+          const cr = ej.ctrlReps||ej.ctrl?.reps||ej.series?.[0]?.reps||'';
+          const cp = ej.ctrlPeso||ej.ctrl?.peso||ej.series?.[0]?.peso||'';
+          h+=`<div class="ej-item">
+            <div class="ej-bullet"></div>
+            <div class="ej-txt">${ej.nombre||'—'}</div>
+            <div class="ej-det">${cs?cs+'×':''} ${cr||'—'} ${cp?'· '+cp+' kg':''}</div>
+          </div>`;
+        }
+        h+=`</div>`;
       }
     }
 
@@ -421,46 +434,33 @@ function _tog(bodyId,arrId) {
   if (a) a.textContent=open?'▼':'▲';
 }
 
-// ══ SEMANA ════════════════════════════════════════════════════════════
-function _diaNameToIdx(dn) {
-  // busca el índice 0-6 a partir del nombre en español (completo o corto)
-  dn = (dn||'').toLowerCase().trim();
-  for (let i=0;i<7;i++) {
-    if (DIAS_ES[i].toLowerCase()===dn) return i;
-    if (DIAS_CORTO[i].toLowerCase()===dn) return i;
-  }
-  return -1;
-}
-
+// ══ SEMANA ═════════════════════════════════════════════════════════════
 function renderSemana() {
   const ctn=document.getElementById('semana-ctn');
-  const order=[1,2,3,4,5,6,0]; // Lun→Dom
 
-  // Mapa: diaIdx → {alId: al}
+  // diaMap[planDayIdx][alId] = al
   const diaMap={};
   for (const al of _alumnos) {
     if (!al||!al.id) continue;
     for (const plan of _planes.filter(p=>p&&p.alumnoId===al.id)) {
       for (const sem of _arr(plan.semanasArray)) {
-        for (const dia of _arr(sem.dias)) {
-          const idx = _diaNameToIdx(dia.dia||dia.nombre||'');
-          if (idx>=0) {
-            if (!diaMap[idx]) diaMap[idx]={};
-            diaMap[idx][al.id]=al;
+        for (let di=0;di<7;di++) {
+          const ses = _daySession(sem, di);
+          if (ses && _arr(ses.bloques).length) {
+            if (!diaMap[di]) diaMap[di]={};
+            diaMap[di][al.id]=al;
           }
         }
       }
     }
   }
 
-  let h=`<div class="sec-hdr">📅 Distribución semanal</div>
-  <div class="sem-grid">`;
-
-  for (const di of order) {
-    const isHoy=di===_todayIdx;
-    const als=Object.values(diaMap[di]||{});
+  let h=`<div class="sec-hdr">📅 Distribución semanal</div><div class="sem-grid">`;
+  for (let di=0;di<7;di++) {
+    const isHoy = di===_todayPlanIdx;
+    const als   = Object.values(diaMap[di]||{});
     h+=`<div class="sem-col${isHoy?' hoy':''}">
-      <div class="sem-col-hdr">${DIAS_CORTO[di].toUpperCase()}</div>`;
+      <div class="sem-col-hdr">${DS[di]}</div>`;
     if (!als.length) {
       h+=`<div style="padding:4px;text-align:center;font-size:9px;color:rgba(255,255,255,.08);">·</div>`;
     } else {
@@ -474,22 +474,22 @@ function renderSemana() {
 
   // Resumen por alumno
   h+=`<div class="sec-hdr">Días por alumno</div>`;
-  const sortedAls = [..._alumnos].sort((a,b)=>{
+  const sortedAls = [..._alumnos].filter(a=>a&&a.id).sort((a,b)=>{
     const ca=Object.values(diaMap).filter(m=>m[a.id]).length;
     const cb=Object.values(diaMap).filter(m=>m[b.id]).length;
     return cb-ca;
   });
   for (const al of sortedAls) {
-    const dias=order.filter(di=>diaMap[di]?.[al.id]).map(di=>DIAS_CORTO[di]);
-    if (!dias.length) continue;
+    const diasAl=[...Array(7)].map((_,di)=>di).filter(di=>diaMap[di]?.[al.id]).map(di=>DS[di]);
+    if (!diasAl.length) continue;
     h+=`<div class="al-card" onclick="openDetail('${al.id}')">
       <div class="al-card-hdr">
         <div class="al-av">${al.foto?`<img src="${al.foto}">`:al.nombre.charAt(0)}</div>
         <div style="flex:1;">
           <div class="al-nombre">${al.nombre}</div>
-          <div class="al-sub">${dias.join(' · ')}</div>
+          <div class="al-sub">${diasAl.join(' · ')}</div>
         </div>
-        <div style="font-size:22px;font-weight:900;color:var(--gold);">${dias.length}</div>
+        <div style="font-size:22px;font-weight:900;color:var(--gold);">${diasAl.length}</div>
       </div>
     </div>`;
   }
@@ -497,14 +497,15 @@ function renderSemana() {
   ctn.innerHTML=h;
 }
 
-// ══ ALUMNOS ═══════════════════════════════════════════════════════════
+// ══ ALUMNOS ════════════════════════════════════════════════════════════
 function renderAlumnos() {
   const ctn=document.getElementById('alumnos-ctn');
-  if (!_alumnos.length) { ctn.innerHTML='<div class="empty"><div class="empty-ico">👥</div><div class="empty-ttl">Sin alumnos</div></div>'; return; }
+  const als=_alumnos.filter(a=>a&&a.id);
+  if (!als.length) { ctn.innerHTML='<div class="empty"><div class="empty-ico">👥</div><div class="empty-ttl">Sin alumnos</div></div>'; return; }
 
-  let h=`<div class="sec-hdr">👥 ${_alumnos.length} alumnos</div>`;
-  for (const al of _alumnos) {
-    const np=_planes.filter(p=>p.alumnoId===al.id).length;
+  let h=`<div class="sec-hdr">👥 ${als.length} alumnos</div>`;
+  for (const al of als) {
+    const np=_planes.filter(p=>p&&p.alumnoId===al.id).length;
     const nfb=(_fbAll[al.id]||[]).length;
     h+=`<div class="al-card" onclick="openDetail('${al.id}')">
       <div class="al-card-hdr">
@@ -521,7 +522,7 @@ function renderAlumnos() {
   ctn.innerHTML=h;
 }
 
-// ══ FEEDBACK ══════════════════════════════════════════════════════════
+// ══ FEEDBACK ═══════════════════════════════════════════════════════════
 function renderFeedback() {
   const ctn=document.getElementById('feedback-ctn');
   const all=[];
@@ -565,7 +566,7 @@ function renderFeedback() {
   ctn.innerHTML=h;
 }
 
-// ══ DETAIL OVERLAY ════════════════════════════════════════════════════
+// ══ DETAIL OVERLAY ═════════════════════════════════════════════════════
 function openDetail(alId) {
   const al=_alumnos.find(a=>a.id===alId);
   if (!al) return;
@@ -574,8 +575,8 @@ function openDetail(alId) {
   const avEl=document.getElementById('detail-av');
   avEl.innerHTML=al.foto?`<img src="${al.foto}">`:al.nombre.charAt(0);
 
-  const planes=_planes.filter(p=>p.alumnoId===alId);
-  const antro=_antro.filter(r=>r.alumnoId===alId).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+  const planes=_planes.filter(p=>p&&p.alumnoId===alId);
+  const antro=_antro.filter(r=>r&&r.alumnoId===alId).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
   const fbs=(_fbAll[alId]||[]).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
 
   let h='';
@@ -600,15 +601,17 @@ function openDetail(alId) {
   if (planes.length) {
     h+=`<div class="sec-hdr">📋 ${planes.length} Planes de entrenamiento</div>`;
     for (const plan of planes) {
-      const sems=plan.semanasArray||[];
-      // Días únicos del plan
+      const sems=_arr(plan.semanasArray);
+
+      // Días únicos del plan (usando índices, igual que alumno.html)
       const diasUnicos=[];
       for (const sem of sems) {
-        for (const dia of (sem.dias||[])) {
-          const dn=dia.dia||dia.nombre||'';
-          if (dn&&!diasUnicos.includes(dn)) diasUnicos.push(dn);
+        for (let di=0;di<7;di++) {
+          const ses=_daySession(sem,di);
+          if (ses&&_arr(ses.bloques).length&&!diasUnicos.includes(di)) diasUnicos.push(di);
         }
       }
+
       h+=`<div style="background:var(--card);border-radius:14px;padding:14px 16px;margin-bottom:10px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
           <div style="flex:1;">
@@ -617,18 +620,20 @@ function openDetail(alId) {
           </div>
           <div style="font-size:20px;font-weight:900;color:var(--gold);">${sems.length}S</div>
         </div>
-        ${diasUnicos.length?'<div style="display:flex;flex-wrap:wrap;gap:4px;">'+diasUnicos.map(d=>`<span class="dia-badge">${d}</span>`).join('')+'</div>':''}
+        ${diasUnicos.length?'<div style="display:flex;flex-wrap:wrap;gap:4px;">'+diasUnicos.map(di=>`<span class="dia-badge">${DS_FULL[di]}</span>`).join('')+'</div>':''}
       </div>`;
 
-      // Mostrar primera semana con ejercicios
+      // Primera semana — ejercicios por día
       if (sems[0]) {
-        for (const dia of (sems[0].dias||[])) {
+        for (let di=0;di<7;di++) {
+          const ses=_daySession(sems[0],di);
+          if (!ses||!_arr(ses.bloques).length) continue;
           h+=`<div style="margin:0 0 8px 2px;">
-            <div style="font-size:9px;font-weight:900;color:rgba(201,168,76,.6);letter-spacing:1px;margin-bottom:6px;">${(dia.nombre||dia.dia||'').toUpperCase()}</div>`;
-          for (const blq of (dia.bloques||[])) {
+            <div style="font-size:9px;font-weight:900;color:rgba(201,168,76,.6);letter-spacing:1px;margin-bottom:6px;">${DS_FULL[di].toUpperCase()}</div>`;
+          for (const blq of _arr(ses.bloques)) {
             if (blq.nombre||blq.letra) h+=`<div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin:4px 0 2px;">${blq.letra?blq.letra+'. ':''}${blq.nombre||''}</div>`;
             h+=`<div class="ej-list">`;
-            for (const ej of (blq.ejercicios||[])) {
+            for (const ej of _arr(blq.ejercicios)) {
               const cs=ej.ctrlSeries||ej.ctrl?.series||'';
               const cr=ej.ctrlReps||ej.ctrl?.reps||'';
               const cp=ej.ctrlPeso||ej.ctrl?.peso||'';
@@ -653,8 +658,6 @@ function openDetail(alId) {
       h+=`<div class="stat-mini"><div class="stat-mini-lbl">${lbl}</div><div class="stat-mini-val">${last[k]}<span class="stat-mini-u"> ${u}</span></div></div>`;
     }
     h+=`</div>`;
-
-    // Evolución peso
     const pesoData=antro.filter(r=>r.peso&&parseFloat(r.peso)>0);
     if (pesoData.length>=2) {
       const primer=parseFloat(pesoData[0].peso);
