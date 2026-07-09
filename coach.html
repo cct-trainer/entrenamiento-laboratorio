@@ -1024,7 +1024,6 @@ function _buildSesionHTML(sem, di) {
 function _buildEjHTML(ej, dayIdx, blkIdx, ejIdx) {
   const alId   = _det.alId;
   const edits  = _coachEdits[alId] || {};
-  // prefijo de clave: planIdx_weekIdx_dayIdx_blkIdx_ejIdx
   const pfx    = `${_det.planIdx}_${_det.weekIdx}_${dayIdx}_${blkIdx}_${ejIdx}`;
   const noteKey = `n_${pfx}`;
   const note   = edits[noteKey] || '';
@@ -1033,33 +1032,42 @@ function _buildEjHTML(ej, dayIdx, blkIdx, ejIdx) {
   const cr   = ej.ctrlReps   || ej.ctrl?.reps   || '';
   const cp   = String(ej.ctrlPeso   || ej.ctrl?.peso   || '');
   const crir = ej.ctrlRIR    || ej.ctrl?.rir    || '';
-  const series = _arr(ej.seriesArray || ej.series || []);
-  const ctrl = [cs?cs+' series':'', cr?'× '+cr:'', cp?'· '+cp+' kg':'', crir?'· RIR '+crir:''].filter(Boolean).join(' ');
+
+  // Series reales del plan; si no existen, generamos N filas sintéticas desde ctrlSeries
+  let series = _arr(ej.seriesArray || ej.series || []);
+  const nCtrl = parseInt(cs) || 0;
+  if (!series.length && nCtrl > 0) {
+    // Generar filas sintéticas para poder editar pesos
+    series = Array.from({length: nCtrl}, () => ({reps: cr, peso: cp, rir: crir}));
+  }
+
+  const ctrl = [cs?cs+' series':'', cr?'× '+cr:'', cp?cp+' kg':'', crir?'RIR '+crir:''].filter(Boolean).join(' · ');
 
   let h = `<div class="ejc">
     <div class="ejc-nombre">${ej.nombre||'—'}</div>`;
   if (ctrl) h += `<div class="ejc-ctrl">${ctrl}</div>`;
 
   if (series.length) {
-    h += `<table class="st"><tr><th>#</th><th>REPS</th><th>PESO</th><th>RIR</th></tr>`;
+    h += `<table class="st"><tr><th>#</th><th>REPS</th><th>PESO (kg)</th><th>RIR</th></tr>`;
     for (let si=0; si<series.length; si++) {
       const s    = series[si];
       const isA  = s.tipo==='A' || s.tipo==='aprox';
-      const reps = s.reps !== undefined ? s.reps : (cr||'—');
-      const rir  = s.rir  !== undefined ? s.rir  : (crir||'—');
+      const reps = (s.reps !== undefined && s.reps !== '') ? s.reps : (cr||'—');
+      const rir  = (s.rir  !== undefined && s.rir  !== '') ? s.rir  : (crir||'—');
       const wKey = `w_${pfx}_${si}`;
       const editedP = edits[wKey];
+      // Base: peso editado por coach → peso de la serie → ctrlPeso del plan
       const baseP   = (s.peso !== undefined && s.peso !== '') ? String(s.peso) : cp;
-      const showP   = editedP !== undefined ? editedP : baseP;
-      const isEdited = editedP !== undefined;
+      const showP   = editedP !== undefined && editedP !== '' ? editedP : baseP;
+      const isEdited = editedP !== undefined && editedP !== '';
       h += `<tr${isA?' class="aprox"':''}>
         <td>${si+1}${isA?` <small style="color:var(--gold);font-size:8px">A</small>`:''}</td>
         <td>${reps}</td>
         <td style="padding:3px 5px;">
-          <input type="number" class="peso-inp${isEdited?' edited':''}"
-            value="${showP}" placeholder="${cp||'—'}"
-            onblur="_cw('${alId}','${wKey}',this.value,this)">
-          <span style="font-size:9px;color:var(--muted);margin-left:2px;">kg</span>
+          <input type="number" step="0.5" class="peso-inp${isEdited?' edited':''}"
+            value="${showP}" placeholder="${baseP||'—'}"
+            onblur="_cw('${alId}','${wKey}',this.value,this)"
+            onclick="this.select()">
         </td>
         <td>${rir}</td>
       </tr>`;
@@ -1067,9 +1075,9 @@ function _buildEjHTML(ej, dayIdx, blkIdx, ejIdx) {
     h += `</table>`;
   }
 
-  // Nota del coach (siempre visible, guardada en Firebase)
+  // Nota del coach
   h += `<textarea class="nota-inp${note?' has-nota':''}" rows="1"
-    placeholder="📝 Nota del coach — cambios, sustituciones..."
+    placeholder="📝 Nota — cambios, sustituciones, observaciones..."
     onblur="_cn('${alId}','${noteKey}',this.value)"
     oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
     style="height:${note?'auto':'34px'}"
