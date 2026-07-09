@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Coach SOCC">
+<link rel="manifest" href="coach-manifest.json">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
@@ -171,6 +172,27 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 .nota-inp.has-nota{border-color:rgba(201,168,76,.35);background:rgba(201,168,76,.05);}
 .save-toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(34,197,94,.9);color:#fff;font-size:11px;font-weight:800;padding:6px 16px;border-radius:20px;z-index:999;pointer-events:none;opacity:0;transition:opacity .25s;}
 .save-toast.show{opacity:1;}
+
+/* ── PLAN CHIPS ─────────────────────────────────────────────────── */
+.plan-chip{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.5px;cursor:pointer;white-space:nowrap;}
+.plan-chip.active{background:rgba(201,168,76,.15);border-color:var(--gold);color:var(--gold);}
+
+/* ── WHATSAPP BTN ───────────────────────────────────────────────── */
+.wa-btn{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;background:rgba(37,211,102,.12);border:1.5px solid rgba(37,211,102,.3);color:#25d366;flex-shrink:0;text-decoration:none;transition:all .15s;}
+.wa-btn:active{background:rgba(37,211,102,.25);}
+
+/* ── REFRESH BTN ────────────────────────────────────────────────── */
+.refresh-btn{background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:10px;color:var(--muted);width:36px;height:36px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.refresh-btn:active{color:var(--gold);transform:rotate(180deg);}
+
+/* ── SEARCH ─────────────────────────────────────────────────────── */
+.al-search{width:100%;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 14px;color:var(--text);font-size:13px;font-family:inherit;margin-bottom:14px;}
+.al-search:focus{outline:none;border-color:rgba(201,168,76,.4);}
+.al-search::placeholder{color:var(--muted);}
+
+/* ── SESIÓN COMPLETADA ──────────────────────────────────────────── */
+.ses-hist-item{background:var(--card);border-radius:12px;padding:11px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.shi-check{width:34px;height:34px;border-radius:50%;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -223,6 +245,7 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
         <div class="hdr-dia" id="hdr-dia">—</div>
         <div class="hdr-fecha" id="hdr-fecha">—</div>
       </div>
+      <button class="refresh-btn" onclick="_reload()" title="Actualizar datos">↻</button>
     </div>
   </div>
 
@@ -311,7 +334,7 @@ function _showLoading() {
 if (sessionStorage.getItem('CC_COACH')==='1') _showLoading();
 
 // ══ DATA ═══════════════════════════════════════════════════════════════
-let _alumnos=[], _planes=[], _antro=[], _fbAll={}, _coachEdits={};
+let _alumnos=[], _planes=[], _antro=[], _fbAll={}, _coachEdits={}, _coachNotaGeneral={}, _sesionesCompletadas={};
 let _db=null;
 
 // DS: días del plan — ÍNDICES 0=Lun...6=Dom (igual que alumno.html)
@@ -358,7 +381,9 @@ async function _initFirebase() {
           const sd = s.data();
           const fb = _arr(sd.feedbackHistorial);
           if (fb.length) _fbAll[al.id] = fb;
-          if (sd.coachEdits) _coachEdits[al.id] = sd.coachEdits;
+          if (sd.coachEdits)              _coachEdits[al.id]           = sd.coachEdits;
+          if (sd.coachNotaGeneral)        _coachNotaGeneral[al.id]     = sd.coachNotaGeneral;
+          if (sd.sesionesCompletadas)     _sesionesCompletadas[al.id]  = _arr(sd.sesionesCompletadas);
         }
       } catch(e){ console.warn('FB alumno '+al.id, e); }
     }));
@@ -551,26 +576,34 @@ function renderSemana() {
 }
 
 // ══ ALUMNOS ════════════════════════════════════════════════════════════
-function renderAlumnos() {
+function renderAlumnos(q='') {
   const ctn=document.getElementById('alumnos-ctn');
-  const als=_alumnos.filter(a=>a&&a.id);
-  if (!als.length) { ctn.innerHTML='<div class="empty"><div class="empty-ico">👥</div><div class="empty-ttl">Sin alumnos</div></div>'; return; }
+  const all=_alumnos.filter(a=>a&&a.id);
+  const als=q ? all.filter(a=>a.nombre.toLowerCase().includes(q.toLowerCase())) : all;
 
-  let h=`<div class="sec-hdr">👥 ${als.length} alumnos</div>`;
-  for (const al of als) {
-    const np=_planes.filter(p=>p&&p.alumnoId===al.id).length;
-    const nfb=(_fbAll[al.id]||[]).length;
-    h+=`<div class="al-card" onclick="openDetail('${al.id}')">
-      <div class="al-card-hdr">
-        <div class="al-av" style="width:50px;height:50px;font-size:20px;">${al.foto?`<img src="${al.foto}">`:al.nombre.charAt(0)}</div>
-        <div style="flex:1;min-width:0;">
-          <div class="al-nombre">${al.nombre}</div>
-          <div class="al-sub">${[al.objetivo,al.nivel].filter(Boolean).join(' · ')||'Sin objetivo registrado'}</div>
-          <div class="al-sub" style="margin-top:3px;">${np} plan${np!==1?'es':''} ${nfb?'· '+nfb+' fb':''}</div>
+  let h=`<input class="al-search" type="search" placeholder="🔍 Buscar alumno..." value="${q}"
+    oninput="renderAlumnos(this.value)" autocomplete="off">`;
+
+  if (!als.length) {
+    h+=`<div class="empty"><div class="empty-ico">${q?'🔍':'👥'}</div><div class="empty-ttl">${q?'Sin resultados':'Sin alumnos'}</div></div>`;
+  } else {
+    h+=`<div style="font-size:9px;font-weight:900;color:var(--muted);letter-spacing:1px;margin-bottom:10px;">${als.length} ALUMNO${als.length!==1?'S':''}</div>`;
+    for (const al of als) {
+      const np=_planes.filter(p=>p&&p.alumnoId===al.id).length;
+      const nfb=(_fbAll[al.id]||[]).length;
+      const nsc=(_sesionesCompletadas[al.id]||[]).length;
+      h+=`<div class="al-card" onclick="openDetail('${al.id}')">
+        <div class="al-card-hdr">
+          <div class="al-av" style="width:50px;height:50px;font-size:20px;">${al.foto?`<img src="${al.foto}">`:al.nombre.charAt(0)}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="al-nombre">${al.nombre}</div>
+            <div class="al-sub">${[al.objetivo,al.nivel].filter(Boolean).join(' · ')||'Sin objetivo registrado'}</div>
+            <div class="al-sub" style="margin-top:3px;">${np} plan${np!==1?'es':''} ${nfb?'· '+nfb+' fb':''} ${nsc?'· '+nsc+' ses.':''}</div>
+          </div>
+          <div style="font-size:20px;color:var(--muted);">›</div>
         </div>
-        <div style="font-size:20px;color:var(--muted);">›</div>
-      </div>
-    </div>`;
+      </div>`;
+    }
   }
   ctn.innerHTML=h;
 }
@@ -653,32 +686,53 @@ function _buildDetailHTML() {
   const sem    = sems[_det.weekIdx];
   const antro  = _antro.filter(r=>r&&r.alumnoId===_det.alId).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
   const fbs    = (_fbAll[_det.alId]||[]).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+  const waLink = _waLink(al.telefono);
   let h = '';
 
-  // ── Mini perfil
-  h += `<div style="display:flex;align-items:center;gap:14px;padding:4px 0 16px;border-bottom:1px solid var(--border);margin-bottom:16px;">
-    <div class="al-av" style="width:56px;height:56px;font-size:22px;">${al.foto?`<img src="${al.foto}">`:al.nombre.charAt(0)}</div>
-    <div style="flex:1;">
-      <div style="font-size:17px;font-weight:900;color:var(--text);">${al.nombre}</div>
+  // ── Mini perfil + WhatsApp
+  h += `<div style="display:flex;align-items:center;gap:12px;padding:4px 0 16px;border-bottom:1px solid var(--border);margin-bottom:16px;">
+    <div class="al-av" style="width:54px;height:54px;font-size:21px;flex-shrink:0;">${al.foto?`<img src="${al.foto}">`:al.nombre.charAt(0)}</div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:17px;font-weight:900;color:var(--text);line-height:1.2;">${al.nombre}</div>
       <div style="font-size:11px;color:var(--muted);margin-top:3px;">${[al.objetivo,al.nivel].filter(Boolean).join(' · ')||''}</div>
       ${al.lesiones?`<div style="font-size:10px;color:#f87171;margin-top:3px;">⚠️ ${al.lesiones}</div>`:''}
     </div>
+    ${waLink?`<a href="${waLink}" target="_blank" class="wa-btn" title="WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.093.541 4.061 1.487 5.773L0 24l6.392-1.673A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.779 9.779 0 01-5.032-1.399l-.361-.214-3.741.979.997-3.645-.235-.374A9.784 9.784 0 012.182 12c0-5.42 4.398-9.818 9.818-9.818 5.42 0 9.818 4.398 9.818 9.818 0 5.42-4.398 9.818-9.818 9.818z"/></svg></a>`:''}
   </div>`;
 
-  // ── SESIÓN CON TABS DE DÍAS
+  // ── Nota general del coach (siempre visible arriba)
+  const notaGeneral = _coachNotaGeneral[_det.alId] || '';
+  h += `<div class="sec-hdr" style="margin-top:0;">📋 Notas del coach</div>
+  <textarea class="nota-inp${notaGeneral?' has-nota':''}" rows="2"
+    placeholder="Observaciones generales, lesiones, preferencias, restricciones..."
+    onblur="_saveNotaGeneral('${_det.alId}',this.value)"
+    oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+    >${notaGeneral}</textarea>`;
+
+  // ── SESIÓN
   if (sems.length) {
+    h += `<div style="height:1px;background:var(--border);margin:16px 0;"></div>`;
+
+    // Selector de plan (si hay múltiples)
+    if (planes.length > 1) {
+      h += `<div style="display:flex;gap:6px;overflow-x:auto;padding:0 0 10px;scrollbar-width:none;">`;
+      for (let pi=0;pi<planes.length;pi++) {
+        h += `<button class="plan-chip${pi===_det.planIdx?' active':''}" onclick="_detPlan(${pi})">${planes[pi].nombre||'Plan '+(pi+1)}</button>`;
+      }
+      h += `</div>`;
+    }
+
     h += `<div style="font-size:9px;font-weight:900;color:var(--gold);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;">${plan.nombre||'Plan de entrenamiento'}</div>`;
 
     // Tabs de días
     h += `<div class="day-tabs">`;
     for (let di=0;di<7;di++) {
-      const hasSes = sems.some(s=>{ const ses=_daySession(s,di); return ses&&_arr(ses.bloques).length; });
-      const isActive = di===_det.dayIdx;
-      h += `<button class="day-tab${hasSes?' has':' no'}${isActive?' active':''}" onclick="${hasSes?`_detDay(${di})`:'void(0)'}">${DS[di]}</button>`;
+      const hasSes=sems.some(s=>{const ses=_daySession(s,di);return ses&&_arr(ses.bloques).length;});
+      h += `<button class="day-tab${hasSes?' has':' no'}${di===_det.dayIdx?' active':''}" onclick="${hasSes?`_detDay(${di})`:'void(0)'}">${DS[di]}</button>`;
     }
     h += `</div>`;
 
-    // Nav de semanas (si hay más de una)
+    // Nav de semanas
     if (sems.length > 1) {
       h += `<div class="week-nav">
         <button class="wnav-btn" onclick="_detWeek(-1)"${_det.weekIdx===0?' disabled':''}>‹</button>
@@ -687,13 +741,52 @@ function _buildDetailHTML() {
       </div>`;
     }
 
-    // Sesión del día seleccionado
+    // Sesión
     h += `<div id="det-ses">${_buildSesionHTML(sem, _det.dayIdx)}</div>`;
+
+    // Botón finalizar sesión
+    const sesTieneEjercicios = !!_daySession(sem, _det.dayIdx);
+    if (sesTieneEjercicios) {
+      const yaCompletada = _sesionYaCompletada(_det.alId, _det.dayIdx);
+      h += `<button id="fin-btn" onclick="_finalizarSesion('${_det.alId}')"
+        style="width:100%;margin-top:14px;padding:14px;border-radius:14px;font-size:13px;font-weight:900;letter-spacing:.3px;cursor:pointer;transition:all .2s;border:none;
+        ${yaCompletada?'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--green);cursor:default;':'background:var(--gold);color:#0d0d1a;'}"
+        ${yaCompletada?'disabled':''}>
+        ${yaCompletada?'✓ Sesión completada hoy':'✓ Finalizar sesión de hoy'}
+      </button>`;
+    }
+
     h += `<div style="height:1px;background:var(--border);margin:20px 0;"></div>`;
   }
 
+  // ── Historial de sesiones completadas
+  h += _buildHistorialHTML(_det.alId);
+
+  // ── Registrar medición rápida
+  h += `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;cursor:pointer;" onclick="_togMedForm()">
+    <div class="sec-hdr" style="margin:0;">📏 Registrar medición</div>
+    <span style="color:var(--gold);font-size:22px;font-weight:300;line-height:1;" id="med-tog">+</span>
+  </div>
+  <div id="med-form" style="display:none;margin-top:10px;background:var(--card);border-radius:12px;padding:14px 16px;">
+    <div style="display:flex;gap:10px;align-items:flex-end;">
+      <div style="flex:1;">
+        <div style="font-size:9px;color:var(--muted);font-weight:900;letter-spacing:.8px;margin-bottom:5px;">PESO CORPORAL</div>
+        <input type="number" id="med-peso" placeholder="82.5" step="0.1"
+          style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-size:15px;font-weight:700;font-family:inherit;">
+      </div>
+      <div>
+        <div style="font-size:9px;color:var(--muted);font-weight:900;letter-spacing:.8px;margin-bottom:5px;">KG</div>
+        <div style="font-size:15px;font-weight:800;color:var(--muted);padding:9px 8px;">kg</div>
+      </div>
+    </div>
+    <button onclick="_saveMedicion('${_det.alId}')"
+      style="width:100%;margin-top:10px;background:var(--gold);color:#0d0d1a;border:none;border-radius:10px;padding:12px;font-size:12px;font-weight:900;cursor:pointer;">
+      Guardar medición
+    </button>
+  </div>`;
+
   // ── Datos personales
-  h += `<div class="sec-hdr">👤 Datos personales</div>
+  h += `<div class="sec-hdr" style="margin-top:20px;">👤 Datos personales</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">`;
   for (const [lbl,val] of [['Objetivo',al.objetivo],['Nivel',al.nivel],['Inicio',al.inicio],['Días/sem.',al.dias],['Teléfono',al.telefono],['Email',al.email]]) {
     if (!val) continue;
@@ -706,19 +799,19 @@ function _buildDetailHTML() {
   if (al.lesiones) h+=`<div style="background:rgba(248,113,113,.07);border-left:3px solid #f87171;border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:10px;font-size:11px;color:#f87171;line-height:1.4;">⚠️ <strong>Lesiones:</strong> ${al.lesiones}</div>`;
   if (al.observaciones) h+=`<div style="background:rgba(255,255,255,.03);border-left:3px solid var(--border);border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:10px;font-size:11px;color:var(--muted);line-height:1.4;">📝 ${al.observaciones}</div>`;
 
-  // ── Mediciones
+  // ── Últimas mediciones
   if (antro.length) {
     const last = antro[antro.length-1];
-    h += `<div class="sec-hdr">📏 Última medición — ${last.fecha||'—'}</div>
+    h += `<div class="sec-hdr">📊 Última medición — ${last.fecha||'—'}</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;">`;
     for (const [lbl,k,u] of [['Peso','peso','kg'],['Grasa','grasa','%'],['Músculo','musculo','%'],['Cintura','cintura','cm'],['Cadera','cadera','cm'],['Brazo','brazo','cm']]) {
       if (!last[k]) continue;
       h+=`<div class="stat-mini"><div class="stat-mini-lbl">${lbl}</div><div class="stat-mini-val">${last[k]}<span class="stat-mini-u"> ${u}</span></div></div>`;
     }
     h += `</div>`;
-    const pesoData = antro.filter(r=>r.peso&&parseFloat(r.peso)>0);
+    const pesoData=antro.filter(r=>r.peso&&parseFloat(r.peso)>0);
     if (pesoData.length>=2) {
-      const delta = +(parseFloat(pesoData[pesoData.length-1].peso)-parseFloat(pesoData[0].peso)).toFixed(1);
+      const delta=+(parseFloat(pesoData[pesoData.length-1].peso)-parseFloat(pesoData[0].peso)).toFixed(1);
       h+=`<div style="background:var(--card);border-radius:12px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
         <div style="flex:1;font-size:12px;color:var(--muted);">Variación de peso (${pesoData.length} mediciones)</div>
         <div style="font-size:18px;font-weight:900;color:${delta<0?'var(--green)':delta>0?'#f87171':'var(--muted)'};">${delta>0?'+':''}${delta} kg</div>
@@ -726,11 +819,11 @@ function _buildDetailHTML() {
     }
   }
 
-  // ── Feedback
+  // ── Feedback reciente
   if (fbs.length) {
     h += `<div class="sec-hdr">💬 Últimos ${Math.min(fbs.length,3)} feedbacks</div>`;
     for (const fb of fbs.slice(-3).reverse()) {
-      const fecha = fb.fecha?new Date(fb.fecha).toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}):'—';
+      const fecha=fb.fecha?new Date(fb.fecha).toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}):'—';
       h += `<div class="fb-card" style="margin-bottom:8px;">
         <div style="font-size:10px;color:var(--muted);margin-bottom:8px;font-weight:700;">${fecha}${fb.sesion?' · '+fb.sesion:''}</div>
         <div class="fb-metrics">`;
@@ -744,6 +837,136 @@ function _buildDetailHTML() {
   }
 
   return h;
+}
+
+// ── WhatsApp helper
+function _waLink(tel) {
+  if (!tel) return null;
+  const d = String(tel).replace(/\D/g,'');
+  const n = d.startsWith('549') ? d : d.startsWith('54') ? d : '549'+d;
+  return `https://wa.me/${n}`;
+}
+
+// ── Selector de plan
+function _detPlan(pi) {
+  _det.planIdx = pi; _det.weekIdx = 0;
+  document.getElementById('detail-body').innerHTML = _buildDetailHTML();
+}
+
+// ── Sesión ya completada hoy?
+function _sesionYaCompletada(alId, dayIdx) {
+  const hoy = new Date().toISOString().split('T')[0];
+  return (_sesionesCompletadas[alId]||[]).some(s =>
+    s.fecha?.startsWith(hoy) && s.dayIdx===dayIdx && s.planIdx===_det.planIdx && s.weekIdx===_det.weekIdx
+  );
+}
+
+// ── Finalizar sesión
+async function _finalizarSesion(alId) {
+  const edits = _coachEdits[alId] || {};
+  const pfxBase = `${_det.planIdx}_${_det.weekIdx}_${_det.dayIdx}`;
+  const sesEdits = {};
+  for (const [k,v] of Object.entries(edits)) {
+    if (k.includes('_'+pfxBase+'_') || k.endsWith('_'+pfxBase)) sesEdits[k]=v;
+  }
+  const record = {
+    fecha: new Date().toISOString(),
+    planIdx: _det.planIdx,
+    weekIdx: _det.weekIdx,
+    dayIdx: _det.dayIdx,
+    dia: DS_FULL[_det.dayIdx],
+    edits: sesEdits
+  };
+  try {
+    await _db.collection('alumnos').doc(alId).update({
+      sesionesCompletadas: firebase.firestore.FieldValue.arrayUnion(record)
+    });
+    if (!_sesionesCompletadas[alId]) _sesionesCompletadas[alId]=[];
+    _sesionesCompletadas[alId].push(record);
+    const btn = document.getElementById('fin-btn');
+    if (btn) {
+      btn.textContent='✓ Sesión completada hoy';
+      btn.disabled=true;
+      btn.style.cssText='width:100%;margin-top:14px;padding:14px;border-radius:14px;font-size:13px;font-weight:900;cursor:default;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--green);';
+    }
+    _showToast('✓ Sesión registrada');
+  } catch(e) { console.error(e); }
+}
+
+// ── Nota general del coach por alumno
+async function _saveNotaGeneral(alId, val) {
+  _coachNotaGeneral[alId] = val;
+  const el = event?.target;
+  if (el) el.classList.toggle('has-nota', !!val);
+  try {
+    await _db.collection('alumnos').doc(alId).set({ coachNotaGeneral: val }, { merge: true });
+    _showToast('✓ Nota guardada');
+  } catch(e) { console.error(e); }
+}
+
+// ── Historial de sesiones completadas
+function _buildHistorialHTML(alId) {
+  const scs = (_sesionesCompletadas[alId]||[]).slice().reverse().slice(0,8);
+  if (!scs.length) return '';
+  let h = `<div class="sec-hdr">📅 Historial de sesiones — ${scs.length} completadas</div>`;
+  for (const s of scs) {
+    const fecha = new Date(s.fecha).toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+    const nPesos = Object.keys(s.edits||{}).filter(k=>k.startsWith('w_')).length;
+    const nNotas = Object.keys(s.edits||{}).filter(k=>k.startsWith('n_')).filter(k=>(s.edits||{})[k]).length;
+    h += `<div class="ses-hist-item">
+      <div class="shi-check">✓</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:800;color:var(--text);">${s.dia||DS_FULL[s.dayIdx]||'—'}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px;">${fecha}${nPesos?' · '+nPesos+' peso'+(nPesos!==1?'s':'')+'':''} ${nNotas?' · '+nNotas+' nota'+(nNotas!==1?'s':''):''}
+        </div>
+      </div>
+    </div>`;
+  }
+  return h + `<div style="height:1px;background:var(--border);margin:6px 0 16px;"></div>`;
+}
+
+// ── Medición rápida
+function _togMedForm() {
+  const f=document.getElementById('med-form');
+  const t=document.getElementById('med-tog');
+  if (!f) return;
+  const open=f.style.display!=='none';
+  f.style.display=open?'none':'block';
+  if (t) t.textContent=open?'+':'−';
+  if (!open) setTimeout(()=>document.getElementById('med-peso')?.focus(),100);
+}
+
+async function _saveMedicion(alId) {
+  const pesoEl=document.getElementById('med-peso');
+  const peso=pesoEl?.value?.trim();
+  if (!peso) { pesoEl?.focus(); return; }
+  const record = { fecha: new Date().toISOString().split('T')[0], peso };
+  try {
+    await _db.collection('alumnos').doc(alId).update({
+      antropometria: firebase.firestore.FieldValue.arrayUnion(record)
+    });
+    _antro.push({...record, alumnoId: alId});
+    if (pesoEl) pesoEl.value='';
+    _togMedForm();
+    _showToast(`✓ ${peso} kg registrado`);
+  } catch(e) { console.error(e); }
+}
+
+// ── Toast de confirmación
+function _showToast(msg) {
+  const t=document.getElementById('save-toast');
+  if (!t) return;
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2000);
+}
+
+// ── Reload completo de datos
+function _reload() {
+  _alumnos=[]; _planes=[]; _antro=[]; _fbAll={}; _coachEdits={}; _coachNotaGeneral={}; _sesionesCompletadas={};
+  document.getElementById('app').style.display='none';
+  document.getElementById('loading-screen').style.display='flex';
+  _initFirebase();
 }
 
 // Tap en un día
@@ -887,9 +1110,7 @@ function _queueSave(alId, key, val) {
         );
       } catch(e) { console.warn('Coach save error:', aid, e); }
     }
-    // Toast
-    const t = document.getElementById('save-toast');
-    if (t) { t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1800); }
+    _showToast('✓ Guardado');
   }, 1000);
 }
 
@@ -897,6 +1118,13 @@ function _queueSave(alId, key, val) {
 if (sessionStorage.getItem('CC_COACH')==='1') {
   if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',_initFirebase);
   else _initFirebase();
+}
+
+// PWA — Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./coach-sw.js').catch(()=>{});
+  });
 }
 </script>
 </body>
