@@ -173,6 +173,20 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 .save-toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(34,197,94,.9);color:#fff;font-size:11px;font-weight:800;padding:6px 16px;border-radius:20px;z-index:999;pointer-events:none;opacity:0;transition:opacity .25s;}
 .save-toast.show{opacity:1;}
 
+/* ── MOTOR DE PROGRESIÓN ─────────────────────────────────────────── */
+.prog-badge{display:flex;align-items:flex-start;gap:8px;margin:6px 0 4px;padding:8px 10px;border-radius:10px;font-size:11px;line-height:1.4;}
+.prog-badge.subir{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);}
+.prog-badge.mantener{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);}
+.prog-badge.bajar{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);}
+.prog-icon{font-size:15px;flex-shrink:0;margin-top:1px;}
+.prog-peso{font-weight:900;font-size:13px;}
+.prog-badge.subir .prog-peso{color:#22c55e;}
+.prog-badge.mantener .prog-peso{color:var(--gold);}
+.prog-badge.bajar .prog-peso{color:#f87171;}
+.prog-razon{color:var(--muted);font-size:10px;margin-top:2px;}
+.prog-hist{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;}
+.prog-hist-dot{font-size:9px;color:var(--muted);background:rgba(255,255,255,.05);padding:2px 6px;border-radius:4px;}
+
 /* ── PLAN CHIPS ─────────────────────────────────────────────────── */
 .plan-chip{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.5px;cursor:pointer;white-space:nowrap;}
 .plan-chip.active{background:rgba(201,168,76,.15);border-color:var(--gold);color:var(--gold);}
@@ -1028,6 +1042,106 @@ function _buildSesionHTML(sem, di) {
   return h + '</div>';
 }
 
+// ══ MOTOR DE PROGRESIÓN INTELIGENTE ════════════════════════════════
+function _getProgresion(alId, blkIdx, ejIdx, ej, dayIdx) {
+  // Historial de sesiones completadas para este plan + día
+  const sesiones = _arr(_sesionesCompletadas[alId])
+    .filter(s => s.planIdx === _det.planIdx && s.dayIdx === dayIdx)
+    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+    .slice(0, 5);
+
+  if (!sesiones.length) return null;
+
+  const cs  = parseInt(ej.ctrlSeries || ej.ctrl?.series || '') || 0;
+  const cp  = parseFloat(ej.ctrlPeso  || ej.ctrl?.peso  || 0);
+  const crir = parseFloat(ej.ctrlRIR  || ej.ctrl?.rir   || 0);
+  const nS  = Math.max(cs, _arr(ej.seriesArray||ej.series||[]).length, 1);
+
+  // Extraer peso promedio usado en cada sesión para este ejercicio
+  const historial = [];
+  for (const ses of sesiones) {
+    const edits = ses.edits || {};
+    const pesos = [];
+    for (let si = 0; si < nS + 2; si++) {
+      const k = `w_${ses.planIdx}_${ses.weekIdx}_${dayIdx}_${blkIdx}_${ejIdx}_${si}`;
+      const v = parseFloat(edits[k]);
+      if (!isNaN(v) && v > 0) pesos.push(v);
+    }
+    if (pesos.length) {
+      historial.push({
+        fecha: ses.fecha,
+        peso: pesos.reduce((a,b)=>a+b,0) / pesos.length,
+        semana: `S${(ses.weekIdx||0)+1}`
+      });
+    }
+  }
+
+  if (!historial.length) return null;
+
+  const ultimo = historial[0].peso;
+
+  // ── Lógica de recomendación ──
+  let tipo = 'mantener', sugerencia = ultimo, razon = '';
+
+  if (historial.length >= 3) {
+    const [h0, h1, h2] = historial;
+    const d01 = h0.peso - h1.peso;
+    const d12 = h1.peso - h2.peso;
+
+    if (d01 === 0 && d12 === 0) {
+      // Mismo peso 3 sesiones → subir
+      sugerencia = ultimo + 2.5;
+      tipo = 'subir';
+      razon = `Mismo peso (${ultimo}kg) las últimas 3 sesiones${crir>=1?' · RIR obj. '+crir:''} — es momento de progresar.`;
+    } else if (d01 === 0 && crir >= 2) {
+      // Igual que la anterior y tiene margen de RIR
+      sugerencia = ultimo + 2.5;
+      tipo = 'subir';
+      razon = `Mismo peso 2 sesiones seguidas con RIR objetivo ${crir} — hay margen para subir.`;
+    } else if (d01 > 0 && d12 > 0) {
+      // Tendencia ascendente consistente
+      sugerencia = ultimo + Math.min(d01, 5);
+      tipo = 'subir';
+      razon = `Progresión consistente: +${d12.toFixed(1)}kg → +${d01.toFixed(1)}kg. Continuá la tendencia.`;
+    } else if (d01 < 0) {
+      // Bajó en la última → mantener actual
+      tipo = 'mantener';
+      sugerencia = ultimo;
+      razon = `Bajó ${Math.abs(d01).toFixed(1)}kg en la última sesión. Consolidá este peso antes de subir.`;
+    } else {
+      tipo = 'mantener';
+      sugerencia = ultimo;
+      razon = `Rendimiento estable en ${ultimo}kg. Mantené y buscá mejorar reps o RIR.`;
+    }
+  } else if (historial.length === 2) {
+    const d = historial[0].peso - historial[1].peso;
+    if (d === 0 && crir >= 2) {
+      sugerencia = ultimo + 2.5;
+      tipo = 'subir';
+      razon = `Mismo peso 2 sesiones con RIR objetivo ${crir} — subí 2.5kg.`;
+    } else if (d > 0) {
+      sugerencia = ultimo;
+      tipo = 'mantener';
+      razon = `Subiste ${d.toFixed(1)}kg en la última sesión. Consolidá antes de seguir.`;
+    } else if (d < 0) {
+      sugerencia = ultimo;
+      tipo = 'mantener';
+      razon = `Bajó el peso. Mantené y buscá estabilizarte.`;
+    } else {
+      sugerencia = ultimo;
+      tipo = 'mantener';
+      razon = `Peso estable en ${ultimo}kg con 2 sesiones de historial.`;
+    }
+  } else {
+    // Solo 1 sesión
+    sugerencia = ultimo;
+    tipo = 'mantener';
+    razon = `Primera vez con historial. Referencia: ${ultimo}kg en sesión anterior.`;
+  }
+
+  return { tipo, sugerencia, razon, historial };
+}
+
 // HTML de un ejercicio — pesos editables + nota del coach
 function _buildEjHTML(ej, dayIdx, blkIdx, ejIdx) {
   const alId   = _det.alId;
@@ -1051,9 +1165,27 @@ function _buildEjHTML(ej, dayIdx, blkIdx, ejIdx) {
 
   const ctrl = [cs?cs+' series':'', cr?'× '+cr:'', cp?cp+' kg':'', crir?'RIR '+crir:''].filter(Boolean).join(' · ');
 
+  // Motor de Progresión
+  const prog = _getProgresion(alId, blkIdx, ejIdx, ej, dayIdx);
+
   let h = `<div class="ejc">
     <div class="ejc-nombre">${ej.nombre||'—'}</div>`;
   if (ctrl) h += `<div class="ejc-ctrl">${ctrl}</div>`;
+
+  if (prog) {
+    const icon  = prog.tipo==='subir' ? '↑' : prog.tipo==='bajar' ? '↓' : '→';
+    const label = prog.tipo==='subir' ? 'Subir a' : prog.tipo==='bajar' ? 'Bajar a' : 'Mantener';
+    const hist  = prog.historial.slice(0,4).map(h =>
+      `<span class="prog-hist-dot">${h.semana}: ${h.peso.toFixed(1)}kg</span>`).join('');
+    h += `<div class="prog-badge ${prog.tipo}">
+      <div class="prog-icon">${icon}</div>
+      <div>
+        <div class="prog-peso">${label} ${prog.sugerencia % 1 === 0 ? prog.sugerencia : prog.sugerencia.toFixed(1)}kg</div>
+        <div class="prog-razon">${prog.razon}</div>
+        <div class="prog-hist">${hist}</div>
+      </div>
+    </div>`;
+  }
 
   if (series.length) {
     h += `<table class="st"><tr><th>#</th><th>REPS</th><th>PESO (kg)</th><th>RIR</th></tr>`;
