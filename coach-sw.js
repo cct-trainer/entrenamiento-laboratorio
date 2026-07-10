@@ -1,5 +1,5 @@
 // Coach SOCC — Service Worker
-const CACHE = 'coach-socc-v1';
+const CACHE = 'coach-socc-v3';
 const PRECACHE = [
   '/entrenamiento-laboratorio/coach.html',
   '/entrenamiento-laboratorio/coach-manifest.json'
