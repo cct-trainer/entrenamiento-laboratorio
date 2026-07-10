@@ -735,11 +735,15 @@ function _buildDetailHTML() {
   if (sems.length) {
     h += `<div style="height:1px;background:var(--border);margin:16px 0;"></div>`;
 
-    // Selector de plan (si hay múltiples)
+    // Selector de plan / modalidad (si hay múltiples)
     if (planes.length > 1) {
       h += `<div style="display:flex;gap:6px;overflow-x:auto;padding:0 0 10px;scrollbar-width:none;">`;
       for (let pi=0;pi<planes.length;pi++) {
-        h += `<button class="plan-chip${pi===_det.planIdx?' active':''}" onclick="_detPlan(${pi})">${planes[pi].nombre||'Plan '+(pi+1)}</button>`;
+        const mod = planes[pi].modalidad;
+        const planLabel = mod
+          ? (mod.icon ? mod.icon+' '+mod.nombre : mod.nombre)
+          : (planes[pi].nombre || 'Plan '+(pi+1));
+        h += `<button class="plan-chip${pi===_det.planIdx?' active':''}" onclick="_detPlan(${pi})">${planLabel}</button>`;
       }
       h += `</div>`;
     }

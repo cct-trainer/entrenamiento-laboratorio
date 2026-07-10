@@ -181,6 +181,12 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 .fb-input:focus{border-color:color-mix(in srgb,var(--gold) 50%,transparent);}
 .fb-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 
+/* ── MODALIDADES ─────────────────────────────────────────────────── */
+.mod-bar{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none;-ms-overflow-style:none;}
+.mod-bar::-webkit-scrollbar{display:none;}
+.mod-tab{flex-shrink:0;padding:7px 16px;border-radius:22px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.4px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.mod-tab.on{background:color-mix(in srgb,var(--gold) 15%,transparent);border-color:var(--gold);color:var(--gold);}
+
 /* ── AJUSTES EXTRA MODO CLARO ─────────────────────────────────────── */
 html.light .scard { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
 html.light .scard-name { color: var(--gold); }
@@ -241,6 +247,7 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
       </div>
       <button class="snav-btn" id="btn-next" onclick="movSem(1)">&#8250;</button>
     </div>
+    <div id="mod-bar" class="mod-bar" style="display:none;"></div>
     <div class="slabel">DÍAS DE ENTRENAMIENTO</div>
     <div class="dgrid" id="dgrid"></div>
     <div id="sesion-ctn"></div>
@@ -339,7 +346,7 @@ const SERIE_TIPOS = {
 };
 const DS = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
 
-let _data=null, _plan=null, _planRun=null, _semIdx=0, _diaIdx=null, _runDiaIdx=null;
+let _data=null, _plan=null, _planRun=null, _planesFuerza=[], _planIdx=0, _semIdx=0, _diaIdx=null, _runDiaIdx=null;
 let _ejStore = {};   // { uid: ej }  — para re-render de cards
 let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificadas
 let _alumnoId='', _pesoEdits={};
@@ -399,10 +406,11 @@ const TIPOS_RUN = {
     _data = doc.data();
     const planes = _data.planificaciones || [];
     // Separar planes de fuerza y running
-    const planesFuerza  = planes.filter(p => p.tipoPlan !== 'running');
-    const planesRunning = planes.filter(p => p.tipoPlan === 'running');
-    _plan    = planesFuerza.length  ? planesFuerza[planesFuerza.length-1]   : null;
-    _planRun = planesRunning.length ? planesRunning[planesRunning.length-1]  : null;
+    _planesFuerza        = planes.filter(p => p.tipoPlan !== 'running');
+    const planesRunning  = planes.filter(p => p.tipoPlan === 'running');
+    _planIdx = _planesFuerza.length ? _planesFuerza.length - 1 : 0;
+    _plan    = _planesFuerza.length ? _planesFuerza[_planIdx]  : null;
+    _planRun = planesRunning.length ? planesRunning[planesRunning.length-1] : null;
     if (_plan) {
       const hoy = new Date().toISOString().slice(0,10);
       let found = 0;
@@ -475,7 +483,45 @@ function movSem(d) {
   _semIdx=n; _diaIdx=null; renderRutina();
 }
 
+// ── Selector de modalidades
+function _switchPlan(idx) {
+  _planIdx = idx;
+  _plan = _planesFuerza[idx];
+  _diaIdx = null;
+  // Ir a la semana actual del nuevo plan
+  if (_plan) {
+    const hoy = new Date().toISOString().slice(0,10);
+    let found = 0;
+    (_plan.semanasArray||[]).forEach((s,i) => { if (s.fechaInicio && s.fechaInicio <= hoy) found = i; });
+    _semIdx = found;
+  }
+  const planEl = document.getElementById('al-plan');
+  if (planEl && _plan) planEl.textContent = (_plan.nombre||'Plan activo').toUpperCase();
+  renderRutina();
+}
+
+function _getModLabel(p, i) {
+  if (!p) return 'Plan '+(i+1);
+  const mod = p.modalidad;
+  if (mod) return (mod.icon ? mod.icon+' '+mod.nombre : mod.nombre);
+  return p.nombre || 'Plan '+(i+1);
+}
+
 function renderRutina() {
+  // ── Mod-bar (selector de modalidades)
+  const modBar = document.getElementById('mod-bar');
+  if (modBar) {
+    if (_planesFuerza.length > 1) {
+      modBar.style.display = 'flex';
+      modBar.innerHTML = _planesFuerza.map((p,i) =>
+        '<button class="mod-tab'+( i===_planIdx?' on':'')+'" onclick="_switchPlan('+i+')">'+
+        _getModLabel(p,i)+'</button>'
+      ).join('');
+    } else {
+      modBar.style.display = 'none';
+    }
+  }
+
   if (!_plan||!(_plan.semanasArray||[]).length) {
     document.getElementById('dgrid').innerHTML='';
     document.getElementById('sesion-ctn').innerHTML=noData('📋','Sin plan asignado','Tu coach aún no cargó tu planificación.');
