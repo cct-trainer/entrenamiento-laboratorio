@@ -3969,6 +3969,20 @@ select.toolbox-input option:disabled { color: #888; }
           <option value="Rehabilitación">Rehabilitación</option>
         </select>
       </div>
+      <div class="field" style="margin-top:14px;">
+        <label style="font-weight:700;color:#1a1a1a;">Modalidad</label>
+        <div style="display:flex;gap:10px;margin-top:6px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 16px;border:2px solid #d0d0d0;border-radius:10px;flex:1;font-weight:600;font-size:13px;transition:all .15s;" id="mod-label-gym">
+            <input type="radio" name="crear-mes-modalidad" id="crear-mes-mod-gym" value="gym" style="display:none;" onchange="document.getElementById('mod-label-gym').style.borderColor='#1a3a6a';document.getElementById('mod-label-gym').style.background='#eef2ff';document.getElementById('mod-label-casa').style.borderColor='#d0d0d0';document.getElementById('mod-label-casa').style.background='transparent';">
+            🏋️ Gimnasio
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 16px;border:2px solid #d0d0d0;border-radius:10px;flex:1;font-weight:600;font-size:13px;transition:all .15s;" id="mod-label-casa">
+            <input type="radio" name="crear-mes-modalidad" id="crear-mes-mod-casa" value="casa" style="display:none;" onchange="document.getElementById('mod-label-casa').style.borderColor='#1a3a6a';document.getElementById('mod-label-casa').style.background='#eef2ff';document.getElementById('mod-label-gym').style.borderColor='#d0d0d0';document.getElementById('mod-label-gym').style.background='transparent';">
+            🏠 Casa
+          </label>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:5px;">Si no elegís modalidad, el plan se muestra como "Plan activo".</div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-crear-mes')" style="background:#f0f0f0;color:#333;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:600;">Cancelar</button>
@@ -16833,6 +16847,12 @@ function abrirModalCrearMes() {
   // Limpiar ciclo
   const cicloSel = document.getElementById('crear-mes-ciclo');
   if (cicloSel) cicloSel.value = '';
+  // Limpiar modalidad
+  document.querySelectorAll('input[name="crear-mes-modalidad"]').forEach(r => r.checked = false);
+  ['mod-label-gym','mod-label-casa'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.borderColor = '#d0d0d0'; el.style.background = 'transparent'; }
+  });
   document.getElementById('modal-crear-mes')?.classList.add('open');
   setTimeout(() => document.getElementById('crear-mes-nombre')?.select(), 100);
 }
@@ -16841,10 +16861,18 @@ function confirmarCrearMes() {
   const nombre = document.getElementById('crear-mes-nombre')?.value.trim();
   const fecha  = document.getElementById('crear-mes-fecha')?.value;
   const ciclo  = document.getElementById('crear-mes-ciclo')?.value;
+  const modVal = document.querySelector('input[name="crear-mes-modalidad"]:checked')?.value || '';
 
   if (!nombre) { toast('Poné un nombre al mes', 'error'); return; }
   if (!fecha)  { toast('Elegí la fecha de inicio del mes', 'error'); return; }
   if (!currentAlumnoId) { toast('Seleccioná un alumno primero', 'error'); return; }
+
+  // Resolver objeto modalidad
+  const _modMap = {
+    gym:  { id: 'gym',  nombre: 'Gimnasio', icon: '🏋️' },
+    casa: { id: 'casa', nombre: 'Casa',     icon: '🏠'  }
+  };
+  const modalidad = modVal ? _modMap[modVal] : null;
 
   // Crear el plan en localStorage AHORA (antes de abrir el editor)
   // así aunque el usuario salga sin guardar, el mes ya existe
@@ -16860,7 +16888,8 @@ function confirmarCrearMes() {
     nivel:      ciclo,
     diasData:   {},
     semanasArray: [{ semana: 1, fechaInicio: fecha, dias: {} }],
-    createdAt:  new Date().toISOString()
+    createdAt:  new Date().toISOString(),
+    ...(modalidad ? { modalidad } : {})
   };
 
   const planes = getPlanificaciones();

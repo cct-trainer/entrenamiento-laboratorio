@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Cargar Sesión — SOCC</title>
+<meta name="theme-color" content="#C9A84C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0d0d1a;--card:#13132a;--card2:#1a1a38;
+  --gold:#C9A84C;--green:#22c55e;--red:#f87171;
+  --text:#e8e8f0;--muted:#8888aa;--border:rgba(255,255,255,.08);
+}
+html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;}
+
+/* ── LOGIN ────────────────────────────────────────────────── */
+#login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px;text-align:center;}
+.login-logo{font-size:56px;margin-bottom:16px;}
+.login-title{font-size:22px;font-weight:900;color:var(--gold);margin-bottom:4px;}
+.login-sub{font-size:12px;color:var(--muted);margin-bottom:36px;}
+.pin-dots{display:flex;gap:14px;justify-content:center;margin-bottom:28px;}
+.pin-dot{width:17px;height:17px;border-radius:50%;border:2.5px solid rgba(255,255,255,.15);background:transparent;transition:all .15s;}
+.pin-dot.filled{background:var(--gold);border-color:var(--gold);}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:260px;width:100%;}
+.pin-btn{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 8px;font-size:22px;font-weight:700;color:var(--text);cursor:pointer;transition:all .12s;}
+.pin-btn:active{background:var(--gold);color:#0d0d1a;border-color:var(--gold);}
+.pin-err{color:var(--red);font-size:12px;margin-top:12px;min-height:18px;font-weight:700;}
+
+/* ── LOADING ──────────────────────────────────────────────── */
+#loading-screen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:14px;}
+.spinner{width:36px;height:36px;border:3px solid rgba(201,168,76,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .75s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── APP ──────────────────────────────────────────────────── */
+#app{display:none;max-width:520px;margin:0 auto;padding:24px 16px 80px;}
+
+.page-hdr{display:flex;align-items:center;gap:12px;padding:16px 0 20px;}
+.page-back{background:rgba(255,255,255,.07);border:none;border-radius:10px;color:var(--text);padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;}
+.page-title{font-size:18px;font-weight:900;color:var(--gold);}
+
+/* ── STEP ─────────────────────────────────────────────────── */
+.step{display:none;}
+.step.on{display:block;}
+.step-label{font-size:9px;font-weight:900;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:8px;}
+.step-title{font-size:17px;font-weight:900;color:var(--text);margin-bottom:14px;}
+
+/* ── CARDS ────────────────────────────────────────────────── */
+.sel-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .15s;}
+.sel-card:active,.sel-card.on{border-color:var(--gold);background:rgba(201,168,76,.07);}
+.sel-av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#C9A84C,#7a5a10);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#fff;flex-shrink:0;overflow:hidden;}
+.sel-av img{width:100%;height:100%;object-fit:cover;}
+.sel-name{font-size:14px;font-weight:800;color:var(--text);}
+.sel-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.sel-arr{margin-left:auto;color:var(--muted);font-size:18px;}
+
+/* ── WEEK/DAY GRID ────────────────────────────────────────── */
+.week-nav{display:flex;align-items:center;justify-content:space-between;background:var(--card);border-radius:12px;padding:12px 16px;margin-bottom:10px;}
+.wnav-btn{background:rgba(255,255,255,.07);border:none;border-radius:8px;color:var(--text);padding:7px 14px;font-size:16px;cursor:pointer;}
+.wnav-btn:disabled{opacity:.3;cursor:default;}
+.wnav-info{text-align:center;}
+.wnav-lbl{font-size:12px;font-weight:900;color:var(--gold);}
+.wnav-dates{font-size:9px;color:var(--muted);margin-top:2px;}
+
+.dgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px;}
+.dchip{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;background:var(--card);border:1.5px solid var(--border);cursor:pointer;transition:all .15s;}
+.dchip.on{background:var(--gold);border-color:var(--gold);}
+.dchip.today{box-shadow:0 0 0 2px rgba(34,197,94,.4);border-color:var(--green);}
+.dchip .dl{font-size:8px;font-weight:800;color:var(--muted);letter-spacing:.5px;}
+.dchip.on .dl{color:rgba(255,255,255,.6);}
+.dchip .dn{font-size:13px;font-weight:900;color:var(--text);}
+.dchip.on .dn{color:#fff;}
+
+/* ── SESIÓN INPUT ─────────────────────────────────────────── */
+.chat-box{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
+.chat-hint{font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.5;}
+.chat-hint code{background:rgba(201,168,76,.1);color:var(--gold);padding:1px 5px;border-radius:4px;font-size:10px;}
+textarea.chat-input{width:100%;background:rgba(255,255,255,.04);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;padding:12px;resize:none;min-height:140px;font-family:inherit;line-height:1.6;outline:none;}
+textarea.chat-input:focus{border-color:rgba(201,168,76,.4);}
+textarea.chat-input::placeholder{color:var(--muted);}
+
+.ses-name-input{width:100%;background:rgba(255,255,255,.04);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-weight:700;padding:10px 12px;margin-bottom:10px;font-family:inherit;outline:none;}
+.ses-name-input:focus{border-color:rgba(201,168,76,.4);}
+
+/* ── PREVIEW ──────────────────────────────────────────────── */
+.preview-box{background:var(--card2);border:1.5px solid rgba(201,168,76,.2);border-radius:14px;padding:14px;margin-bottom:12px;}
+.preview-ttl{font-size:9px;font-weight:900;color:var(--gold);letter-spacing:1.2px;margin-bottom:10px;}
+.blq-prev{margin-bottom:12px;}
+.blq-prev-hdr{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.blq-letra{width:24px;height:24px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#0d0d1a;flex-shrink:0;}
+.blq-nombre{font-size:11px;font-weight:800;color:var(--text);}
+.ej-prev{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:7px;font-size:12px;}
+.ej-prev:nth-child(odd){background:rgba(255,255,255,.03);}
+.ej-prev-name{font-weight:700;color:var(--text);flex:1;}
+.ej-prev-det{color:var(--gold);font-weight:800;font-size:11px;flex-shrink:0;margin-left:8px;}
+
+.err-box{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:var(--red);line-height:1.4;}
+
+/* ── BUTTONS ──────────────────────────────────────────────── */
+.btn-primary{width:100%;background:var(--gold);color:#0d0d1a;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:900;cursor:pointer;letter-spacing:.3px;transition:opacity .15s;}
+.btn-primary:disabled{opacity:.4;cursor:default;}
+.btn-secondary{width:100%;background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:14px;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px;}
+.btn-secondary:active{background:rgba(255,255,255,.1);}
+
+/* ── SUCCESS ──────────────────────────────────────────────── */
+#success-screen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:32px;}
+.success-ico{font-size:64px;margin-bottom:20px;}
+.success-ttl{font-size:20px;font-weight:900;color:var(--green);margin-bottom:8px;}
+.success-sub{font-size:13px;color:var(--muted);margin-bottom:32px;line-height:1.5;}
+
+/* ── PLAN CHIPS ───────────────────────────────────────────── */
+.plan-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.plan-chip{padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:11px;font-weight:800;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.plan-chip.on{background:rgba(201,168,76,.15);border-color:var(--gold);color:var(--gold);}
+
+/* ── PROGRESS BAR ─────────────────────────────────────────── */
+.prog-bar{display:flex;gap:0;margin-bottom:24px;border-radius:20px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid var(--border);}
+.prog-step{flex:1;padding:8px 4px;text-align:center;font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.5px;transition:all .2s;}
+.prog-step.done{background:rgba(201,168,76,.1);color:var(--gold);}
+.prog-step.active{background:var(--gold);color:#0d0d1a;}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-logo">📋</div>
+  <div class="login-title">Cargar Sesión</div>
+  <div class="login-sub">SOCC · Coach Panel</div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div class="pin-grid">
+    <button class="pin-btn" onclick="_pk(1)">1</button>
+    <button class="pin-btn" onclick="_pk(2)">2</button>
+    <button class="pin-btn" onclick="_pk(3)">3</button>
+    <button class="pin-btn" onclick="_pk(4)">4</button>
+    <button class="pin-btn" onclick="_pk(5)">5</button>
+    <button class="pin-btn" onclick="_pk(6)">6</button>
+    <button class="pin-btn" onclick="_pk(7)">7</button>
+    <button class="pin-btn" onclick="_pk(8)">8</button>
+    <button class="pin-btn" onclick="_pk(9)">9</button>
+    <button class="pin-btn" style="font-size:18px;" onclick="_pk('del')">⌫</button>
+    <button class="pin-btn" onclick="_pk(0)">0</button>
+    <button class="pin-btn" style="font-size:18px;background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.3);color:var(--gold);" onclick="_pk('ok')">✓</button>
+  </div>
+  <div class="pin-err" id="pin-err"></div>
+</div>
+
+<!-- ══ LOADING ════════════════════════════════════════════════════ -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div style="font-size:12px;color:var(--muted);">Cargando alumnos...</div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════════════ -->
+<div id="app">
+  <div class="page-hdr">
+    <div class="page-title">📋 Cargar sesión — SOCC</div>
+  </div>
+
+  <!-- Barra de progreso -->
+  <div class="prog-bar" id="prog-bar">
+    <div class="prog-step active" id="ps-1">1. ALUMNO</div>
+    <div class="prog-step" id="ps-2">2. DÍA</div>
+    <div class="prog-step" id="ps-3">3. SESIÓN</div>
+    <div class="prog-step" id="ps-4">4. CONFIRMAR</div>
+  </div>
+
+  <!-- ── STEP 1: Elegir alumno ─────────────────────────────────── -->
+  <div class="step on" id="step-1">
+    <div class="step-label">Paso 1 de 4</div>
+    <div class="step-title">¿Para quién es la sesión?</div>
+    <div id="alumnos-list"></div>
+  </div>
+
+  <!-- ── STEP 2: Elegir plan → semana → día ──────────────────── -->
+  <div class="step" id="step-2">
+    <div class="step-label">Paso 2 de 4</div>
+    <div class="step-title">¿Qué día y semana?</div>
+
+    <!-- Plan selector (si hay múltiples) -->
+    <div id="plan-chips-wrap" style="display:none;margin-bottom:10px;">
+      <div style="font-size:9px;font-weight:900;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">MODALIDAD</div>
+      <div class="plan-chips" id="plan-chips"></div>
+    </div>
+
+    <!-- Week nav -->
+    <div class="week-nav">
+      <button class="wnav-btn" id="btn-pw" onclick="_wNav(-1)">‹</button>
+      <div class="wnav-info">
+        <div class="wnav-lbl" id="wk-lbl">Semana 1</div>
+        <div class="wnav-dates" id="wk-dates"></div>
+      </div>
+      <button class="wnav-btn" id="btn-nw" onclick="_wNav(1)">›</button>
+    </div>
+
+    <!-- Day grid -->
+    <div class="dgrid" id="day-grid"></div>
+
+    <button class="btn-primary" id="btn-step2-next" onclick="_goStep(3)" disabled>Continuar →</button>
+    <button class="btn-secondary" onclick="_goStep(1)">← Cambiar alumno</button>
+  </div>
+
+  <!-- ── STEP 3: Ingresar sesión ──────────────────────────────── -->
+  <div class="step" id="step-3">
+    <div class="step-label">Paso 3 de 4</div>
+    <div class="step-title" id="s3-title">Describí la sesión</div>
+
+    <input type="text" class="ses-name-input" id="ses-name" placeholder="Nombre de la sesión (ej: Tren Superior A)">
+
+    <div class="chat-box">
+      <div class="chat-hint">
+        Separá los bloques con <code>---</code>. La primera línea de cada bloque (sin números) es el nombre.<br>
+        Formatos de ejercicio: <code>4x8</code> · <code>3x10 80kg</code> · <code>4x8 100kg RIR2</code> · <code>2x60s</code><br>
+        RIR: escribí al final <code>RIR2</code> o <code>rir 2</code>
+      </div>
+      <textarea class="chat-input" id="ses-input" rows="10"
+        placeholder="Movilidad y Activación&#10;Hip 90/90 2x60s&#10;Rotación torácica 2x10&#10;Puente de glúteos 3x12&#10;---&#10;Pre-agotamiento&#10;Extensión de cuádriceps 3x15 40kg&#10;---&#10;Trabajo Principal&#10;Sentadilla trasera 4x8 100kg RIR2&#10;Peso muerto rumano 3x10 80kg RIR3&#10;Prensa 45° 3x12 120kg"></textarea>
+    </div>
+
+    <div id="parse-err" class="err-box" style="display:none;"></div>
+
+    <button class="btn-primary" onclick="_parseSesion()">Previsualizar sesión →</button>
+    <button class="btn-secondary" onclick="_goStep(2)">← Cambiar día</button>
+  </div>
+
+  <!-- ── STEP 4: Confirmar ────────────────────────────────────── -->
+  <div class="step" id="step-4">
+    <div class="step-label">Paso 4 de 4</div>
+    <div class="step-title">¿Todo bien?</div>
+
+    <!-- Resumen de lo que se va a subir -->
+    <div id="summary-card" style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:12px;"></div>
+
+    <div class="preview-box">
+      <div class="preview-ttl">SESIÓN A SUBIR</div>
+      <div id="preview-body"></div>
+    </div>
+
+    <button class="btn-primary" id="btn-upload" onclick="_subirSesion()">✓ Subir a Firebase</button>
+    <button class="btn-secondary" onclick="_goStep(3)">← Editar sesión</button>
+  </div>
+
+  <!-- ── SUCCESS ─────────────────────────────────────────────── -->
+  <div id="success-screen">
+    <div class="success-ico">✅</div>
+    <div class="success-ttl">¡Sesión subida!</div>
+    <div class="success-sub" id="success-sub"></div>
+    <button class="btn-primary" onclick="_nuevaSesion()">Cargar otra sesión</button>
+    <button class="btn-secondary" onclick="location.href='./coach.html'">Ir al Coach Panel</button>
+  </div>
+</div>
+
+<script>
+const CFG = {
+  apiKey:'AIzaSyDkSgbqAJJRdlLwzcn-2vSMjVIUJbkVUGQ',
+  authDomain:'entrenamiento-laboratorio.firebaseapp.com',
+  projectId:'entrenamiento-laboratorio',
+  storageBucket:'entrenamiento-laboratorio.firebasestorage.app',
+  messagingSenderId:'399177627945',
+  appId:'1:399177627945:web:2b4fef0894480f70dc1f38'
+};
+const COACH_PIN = '1234';
+const DS  = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+const DSF = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+
+let _db=null, _alumnos=[], _planes=[];
+let _sel = { al:null, planIdx:0, weekIdx:0, dayIdx:null };
+let _sesionJSON = null;
+
+// ── PIN ─────────────────────────────────────────────────────────
+let _pin='';
+function _pk(k) {
+  if (k==='del') _pin=_pin.slice(0,-1);
+  else if (k==='ok') { _checkPin(); return; }
+  else { if (_pin.length>=4) return; _pin+=k; }
+  _updDots();
+  if (_pin.length===4) setTimeout(_checkPin,150);
+}
+function _updDots() {
+  for (let i=0;i<4;i++) document.getElementById('pd'+i).classList.toggle('filled',i<_pin.length);
+}
+function _checkPin() {
+  if (_pin===COACH_PIN) {
+    sessionStorage.setItem('UPLOAD_AUTH','1');
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('loading-screen').style.display='flex';
+    _initFB();
+  } else {
+    document.getElementById('pin-err').textContent='❌ PIN incorrecto';
+    _pin=''; _updDots();
+    setTimeout(()=>document.getElementById('pin-err').textContent='',1800);
+  }
+}
+if (sessionStorage.getItem('UPLOAD_AUTH')==='1') {
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('loading-screen').style.display='flex';
+  _initFB();
+}
+
+// ── FIREBASE ────────────────────────────────────────────────────
+async function _initFB() {
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(CFG);
+    _db = firebase.firestore();
+    const snap = await _db.collection('backups').doc('main').get();
+    if (!snap.exists) throw new Error('Sin datos');
+    const d = snap.data();
+    _alumnos = _arr(d.alumnos);
+    _planes  = _arr(d.planificaciones);
+    _showApp();
+  } catch(e) {
+    document.getElementById('loading-screen').innerHTML='<div style="color:#f87171;text-align:center;padding:40px;">Error: '+e.message+'</div>';
+  }
+}
+
+function _arr(v) { if (!v) return []; if (Array.isArray(v)) return v; return Object.values(v); }
+
+function _showApp() {
+  document.getElementById('loading-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  _renderAlumnos();
+}
+
+// ── STEP NAV ────────────────────────────────────────────────────
+function _goStep(n) {
+  [1,2,3,4].forEach(i => {
+    document.getElementById('step-'+i).classList.toggle('on',i===n);
+    const ps = document.getElementById('ps-'+i);
+    ps.classList.toggle('active',i===n);
+    ps.classList.toggle('done',i<n);
+  });
+  document.getElementById('success-screen').style.display='none';
+  window.scrollTo(0,0);
+}
+
+// ── STEP 1: Alumnos ─────────────────────────────────────────────
+function _renderAlumnos() {
+  const list = document.getElementById('alumnos-list');
+  if (!_alumnos.length) {
+    list.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted);">Sin alumnos cargados</div>';
+    return;
+  }
+  list.innerHTML = _alumnos.filter(a=>a&&a.id).map(al => {
+    const nPlanes = _planes.filter(p=>p&&p.alumnoId===al.id).length;
+    const fotoHTML = al.foto ? '<img src="'+al.foto+'">' : al.nombre.charAt(0);
+    return '<div class="sel-card" onclick="_selAl(\''+al.id+'\')">'+
+      '<div class="sel-av">'+fotoHTML+'</div>'+
+      '<div style="flex:1;">'+
+        '<div class="sel-name">'+al.nombre+'</div>'+
+        '<div class="sel-sub">'+nPlanes+' plan'+(nPlanes!==1?'es':'')+(al.objetivo?' · '+al.objetivo:'')+'</div>'+
+      '</div>'+
+      '<div class="sel-arr">›</div>'+
+    '</div>';
+  }).join('');
+}
+
+function _selAl(id) {
+  _sel.al = id;
+  _sel.planIdx = 0;
+  _sel.weekIdx = 0;
+  _sel.dayIdx = null;
+  _goStep(2);
+  _renderPlanStep();
+}
+
+// ── STEP 2: Plan + Semana + Día ─────────────────────────────────
+function _planesAl() {
+  return _planes.filter(p=>p&&p.alumnoId===_sel.al&&p.tipoPlan!=='running');
+}
+
+function _planActual() {
+  const ps = _planesAl();
+  return ps[_sel.planIdx] || null;
+}
+
+function _renderPlanStep() {
+  const planes = _planesAl();
+  const wrap = document.getElementById('plan-chips-wrap');
+  const chips = document.getElementById('plan-chips');
+
+  if (planes.length > 1) {
+    wrap.style.display='block';
+    chips.innerHTML = planes.map((p,i) => {
+      const mod = p.modalidad;
+      const lbl = mod ? (mod.icon?mod.icon+' '+mod.nombre:mod.nombre) : (p.nombre||'Plan '+(i+1));
+      return '<button class="plan-chip'+(i===_sel.planIdx?' on':'')+'" onclick="_selPlan('+i+')">'+lbl+'</button>';
+    }).join('');
+  } else {
+    wrap.style.display='none';
+  }
+
+  _renderWeek();
+}
+
+function _selPlan(idx) {
+  _sel.planIdx = idx;
+  _sel.weekIdx = 0;
+  _sel.dayIdx = null;
+  document.querySelectorAll('.plan-chip').forEach((b,i)=>b.classList.toggle('on',i===idx));
+  _renderWeek();
+}
+
+function _wNav(d) {
+  const plan = _planActual();
+  if (!plan) return;
+  const n = _sel.weekIdx+d;
+  const max = (_arr(plan.semanasArray)).length-1;
+  if (n<0||n>max) return;
+  _sel.weekIdx=n; _sel.dayIdx=null;
+  _renderWeek();
+}
+
+function _renderWeek() {
+  const plan = _planActual();
+  const sems = plan ? _arr(plan.semanasArray) : [];
+  const sem  = sems[_sel.weekIdx];
+
+  document.getElementById('wk-lbl').textContent='Semana '+(_sel.weekIdx+1)+' de '+sems.length;
+  if (sem?.fechaInicio) {
+    const lun=new Date(sem.fechaInicio+'T12:00:00');
+    const dom=new Date(lun); dom.setDate(dom.getDate()+6);
+    const f=d=>d.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+    document.getElementById('wk-dates').textContent=f(lun)+' — '+f(dom);
+  } else {
+    document.getElementById('wk-dates').textContent='';
+  }
+  document.getElementById('btn-pw').disabled=_sel.weekIdx===0;
+  document.getElementById('btn-nw').disabled=_sel.weekIdx>=sems.length-1;
+
+  const hoyStr=new Date().toISOString().slice(0,10);
+  const grid=document.getElementById('day-grid');
+  grid.innerHTML=DS.map((ds,i)=>{
+    const on=i===_sel.dayIdx;
+    let hoy=false;
+    if (sem?.fechaInicio){const d=new Date(sem.fechaInicio+'T12:00:00');d.setDate(d.getDate()+i);hoy=d.toISOString().slice(0,10)===hoyStr;}
+    const dayNum=sem?.fechaInicio?(()=>{const d=new Date(sem.fechaInicio+'T12:00:00');d.setDate(d.getDate()+i);return d.getDate();})():i+1;
+    return '<div class="dchip'+(on?' on':'')+(hoy?' today':'')+'" onclick="_selDay('+i+')">'+
+      '<span class="dl">'+ds+'</span>'+
+      '<span class="dn">'+dayNum+'</span>'+
+    '</div>';
+  }).join('');
+
+  document.getElementById('btn-step2-next').disabled=_sel.dayIdx===null;
+}
+
+function _selDay(i) {
+  _sel.dayIdx=i;
+  document.querySelectorAll('.dchip').forEach((c,idx)=>{
+    c.classList.toggle('on',idx===i);
+  });
+  document.getElementById('btn-step2-next').disabled=false;
+  // Precompletar nombre de sesión
+  const plan=_planActual();
+  const sems=_arr(plan?.semanasArray||[]);
+  const ses=sems[_sel.weekIdx]?.dias?.[i]?.[0];
+  const nameInput=document.getElementById('ses-name');
+  if (ses?.nombre && nameInput) nameInput.value=ses.nombre;
+  else if (nameInput) nameInput.value='Sesión '+DSF[i];
+}
+
+// ── STEP 3: Parser de sesión ─────────────────────────────────────
+function _parseSesion() {
+  const raw=document.getElementById('ses-input').value.trim();
+  const errEl=document.getElementById('parse-err');
+  errEl.style.display='none';
+
+  if (!raw) {
+    errEl.textContent='Escribí al menos un ejercicio.';
+    errEl.style.display='block';
+    return;
+  }
+
+  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l);
+  const bloques=[];
+  let currentBloque={ejercicios:[]};
+  let blqIdx=0;
+  let esperandoNombre=true; // la primera línea de cada bloque puede ser nombre
+
+  for (const line of lines) {
+    // Separador de bloque: ---
+    if (/^[-—*]{3,}$/.test(line)) {
+      if (currentBloque.ejercicios.length||currentBloque.nombre) {
+        bloques.push(currentBloque);
+        currentBloque={ejercicios:[]};
+        blqIdx++;
+        esperandoNombre=true;
+      }
+      continue;
+    }
+
+    // Nombre de bloque explícito: "Bloque A:", "A:", "A -", "BLOQUE A"
+    if (/^(bloque\s+)?[A-F][:\s–-]\s*.+/i.test(line) || /^(bloque|block)\s+[A-Za-z]/i.test(line)) {
+      if (currentBloque.ejercicios.length) { bloques.push(currentBloque); blqIdx++; }
+      const blqName=line.replace(/^(bloque\s+)?[A-F][:\s–-]+/i,'').replace(/^(bloque|block)\s+[A-Za-z]\s*/i,'').trim()||line.trim();
+      currentBloque={nombre:blqName,ejercicios:[]};
+      esperandoNombre=false;
+      continue;
+    }
+
+    // Si es la primera línea del bloque y no parece un ejercicio → nombre de bloque
+    if (esperandoNombre && !_parseEjercicio(line) && line.length>2 && !/^\d/.test(line)) {
+      currentBloque.nombre=line.replace(/^[*#_]+|[*#_]+$/g,'').trim();
+      esperandoNombre=false;
+      continue;
+    }
+    esperandoNombre=false;
+
+    // Parsear ejercicio
+    const ej=_parseEjercicio(line);
+    if (ej) currentBloque.ejercicios.push(ej);
+  }
+  if (currentBloque.ejercicios.length||currentBloque.nombre) bloques.push(currentBloque);
+
+  if (!bloques.length || !bloques.some(b=>b.ejercicios.length)) {
+    errEl.textContent='No pude reconocer ningún ejercicio. Revisá el formato.';
+    errEl.style.display='block';
+    return;
+  }
+
+  // Convertir a formato SOCC
+  const nombre=document.getElementById('ses-name').value.trim()||'Sesión '+DSF[_sel.dayIdx||0];
+  const bloquesSOCC=bloques.map((b,bi)=>({
+    letra:'ABCDEFGHIJ'[bi]||(bi+1),
+    nombre:b.nombre||'Bloque '+('ABCDEFGHIJ'[bi]||(bi+1)),
+    tipo:'Serie',
+    ejercicios:b.ejercicios
+  }));
+
+  _sesionJSON={nombre, bloques:bloquesSOCC};
+  _goStep(4);
+  _renderPreview();
+}
+
+// Parser de línea de ejercicio
+// Soporta: 4x8, 4x8 80kg, 4x8 80kg RIR2, 2x60s, 4 series de 8 reps, @ peso
+function _parseEjercicio(line) {
+  const l = line.trim().replace(/^[-–•·]\s*/,'');
+  if (!l || l.length < 3) return null;
+
+  // Extraer RIR del final primero (para no confundirlo con el peso)
+  let rir='';
+  const rirMatch = l.match(/\brir[\s:]*(\d+(?:\.\d+)?)\s*$/i);
+  if (rirMatch) rir=rirMatch[1];
+  const sinRIR = l.replace(/\brir[\s:]*\d+(?:\.\d+)?\s*$/i,'').trim();
+
+  // Formato NxM o N×M (con opcional peso y tiempo)
+  // Ej: Sentadilla 4x8 80kg  |  Hip 90/90 2x60s  |  Press 3x10 @ 70kg
+  const m = sinRIR.match(/^(.+?)\s+(\d+)\s*[xX×]\s*(\d+(?:\.\d+)?)(s)?\s*(?:@\s*)?(\d+(?:\.\d+)?)?\s*kg?\s*$/i);
+  if (m) {
+    const nombre=m[1].trim();
+    const series=m[2];
+    const repsRaw=m[3];
+    const esTiempo=!!m[4]; // tiene "s" al final → segundos
+    const peso=m[5]||'';
+    return {
+      nombre,
+      ctrlSeries: series,
+      ctrlReps:   esTiempo ? repsRaw+'s' : repsRaw,
+      ctrlPeso:   peso,
+      ctrlRIR:    rir
+    };
+  }
+
+  // Formato "N series de M reps [Xkg]"
+  const m2 = sinRIR.match(/^(.+?)\s+(\d+)\s+series?\s+de\s+(\d+(?:\.\d+)?)\s+reps?\s*(?:@\s*)?(\d+(?:\.\d+)?)?\s*kg?\s*$/i);
+  if (m2) {
+    return {
+      nombre:     m2[1].trim(),
+      ctrlSeries: m2[2],
+      ctrlReps:   m2[3],
+      ctrlPeso:   m2[4]||'',
+      ctrlRIR:    rir
+    };
+  }
+
+  // Solo nombre (sin series ni reps) — acepta como ejercicio sin parámetros
+  if (!/\d/.test(l) && l.length > 2) {
+    return {nombre:l.trim(), ctrlSeries:'', ctrlReps:'', ctrlPeso:'', ctrlRIR:''};
+  }
+
+  return null;
+}
+
+// ── STEP 4: Preview + Confirmar ─────────────────────────────────
+function _renderPreview() {
+  const plan=_planActual();
+  const planNombre=plan?.nombre||'Plan';
+  const semIdx=_sel.weekIdx;
+  const dayIdx=_sel.dayIdx;
+  const al=_alumnos.find(a=>a.id===_sel.al);
+
+  // Summary card
+  document.getElementById('summary-card').innerHTML=
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+
+      '<div><div style="font-size:8px;color:var(--muted);font-weight:900;letter-spacing:.8px;">ALUMNO</div><div style="font-size:13px;font-weight:800;margin-top:3px;">'+(al?.nombre||'—')+'</div></div>'+
+      '<div><div style="font-size:8px;color:var(--muted);font-weight:900;letter-spacing:.8px;">PLAN</div><div style="font-size:13px;font-weight:800;margin-top:3px;">'+planNombre+'</div></div>'+
+      '<div><div style="font-size:8px;color:var(--muted);font-weight:900;letter-spacing:.8px;">SEMANA</div><div style="font-size:13px;font-weight:800;color:var(--gold);margin-top:3px;">'+(semIdx+1)+'</div></div>'+
+      '<div><div style="font-size:8px;color:var(--muted);font-weight:900;letter-spacing:.8px;">DÍA</div><div style="font-size:13px;font-weight:800;color:var(--gold);margin-top:3px;">'+DSF[dayIdx]+'</div></div>'+
+    '</div>';
+
+  // Preview bloques
+  const body=document.getElementById('preview-body');
+  if (!_sesionJSON) { body.innerHTML=''; return; }
+  body.innerHTML='<div style="font-size:13px;font-weight:900;color:var(--gold);margin-bottom:10px;">'+_sesionJSON.nombre+'</div>'+
+    _sesionJSON.bloques.map(b=>{
+      const ejs=b.ejercicios.map(ej=>{
+        const det=[ej.ctrlSeries&&ej.ctrlReps?ej.ctrlSeries+'×'+ej.ctrlReps:'',ej.ctrlPeso?ej.ctrlPeso+' kg':'',ej.ctrlRIR?'RIR '+ej.ctrlRIR:''].filter(Boolean).join(' · ');
+        return '<div class="ej-prev"><span class="ej-prev-name">'+ej.nombre+'</span><span class="ej-prev-det">'+det+'</span></div>';
+      }).join('');
+      return '<div class="blq-prev">'+
+        '<div class="blq-prev-hdr"><div class="blq-letra">'+b.letra+'</div><div class="blq-nombre">'+(b.nombre||'Bloque '+b.letra)+'</div></div>'+
+        ejs+
+      '</div>';
+    }).join('');
+}
+
+// ── SUBIR A FIREBASE ────────────────────────────────────────────
+async function _subirSesion() {
+  const btn=document.getElementById('btn-upload');
+  btn.disabled=true;
+  btn.textContent='Subiendo...';
+
+  try {
+    const alId=_sel.al;
+    const planIdx=_sel.planIdx;
+    const weekIdx=_sel.weekIdx;
+    const dayIdx=_sel.dayIdx;
+
+    // Leer documento del alumno (alumnos/{id})
+    const ref=_db.collection('alumnos').doc(alId);
+    const snap=await ref.get();
+    if (!snap.exists) throw new Error('Alumno no encontrado en Firebase');
+    const data=snap.data();
+
+    // Obtener planificaciones del alumno
+    let planificaciones=_arr(data.planificaciones);
+
+    // Si no tiene planificaciones en alumnos/{id}, buscar en backups/main
+    if (!planificaciones.length) {
+      planificaciones = _planes.filter(p=>p&&p.alumnoId===alId);
+    }
+
+    // Los planes no-running
+    const planesFuerza=planificaciones.filter(p=>p.tipoPlan!=='running');
+    if (!planesFuerza[planIdx]) throw new Error('Plan no encontrado');
+
+    // Asegurar que semanasArray existe y tiene la semana
+    const semsArr=_arr(planesFuerza[planIdx].semanasArray);
+    if (!semsArr[weekIdx]) throw new Error('Semana '+( weekIdx+1)+' no existe en el plan');
+
+    // ── Construir dias como objeto plano (Firestore NO acepta arrays anidados)
+    const sem = semsArr[weekIdx];
+    const existingDias = sem.dias || {};
+    const diasMap = {};
+    // Preservar días existentes, convirtiéndolos a objeto si son array
+    if (Array.isArray(existingDias)) {
+      existingDias.forEach((v, i) => {
+        if (!v) return;
+        diasMap[i] = Array.isArray(v) ? Object.fromEntries(v.map((s,k)=>[k,s]).filter(([,s])=>s)) : v;
+      });
+    } else {
+      Object.assign(diasMap, existingDias);
+    }
+    // Asignar la sesión nueva como mapa {0: sesion}, no como array
+    diasMap[dayIdx] = {0: _sesionJSON};
+    sem.dias = diasMap;
+    semsArr[weekIdx] = sem;
+    planesFuerza[planIdx].semanasArray = semsArr;
+
+    // Reconstruir planificaciones (fuerza + running)
+    const planesRunning = planificaciones.filter(p=>p.tipoPlan==='running');
+    const newPlans = [...planesFuerza, ...planesRunning];
+
+    // Guardar en alumnos/{id}
+    await ref.set({planificaciones: newPlans}, {merge: true});
+
+    // También actualizar backups/main para coach.html
+    const mainRef = _db.collection('backups').doc('main');
+    const mainSnap = await mainRef.get();
+    if (mainSnap.exists) {
+      const mainData = mainSnap.data();
+      const mainPlanes = _arr(mainData.planificaciones);
+      // Encontrar el índice real del plan en mainPlanes
+      const alumnoFuerzaEnMain = mainPlanes
+        .map((p,i)=>({p,i}))
+        .filter(({p})=>p&&p.alumnoId===alId&&p.tipoPlan!=='running');
+      if (alumnoFuerzaEnMain[planIdx]) {
+        const realIdx = alumnoFuerzaEnMain[planIdx].i;
+        mainPlanes[realIdx] = {...mainPlanes[realIdx], semanasArray: semsArr};
+        await mainRef.set({planificaciones: mainPlanes}, {merge: true});
+      }
+    }
+
+    // Éxito
+    document.getElementById('step-4').classList.remove('on');
+    const al=_alumnos.find(a=>a.id===alId);
+    document.getElementById('success-sub').textContent=
+      'La sesión "'+ _sesionJSON.nombre+'" fue guardada para '+
+      (al?.nombre||alId)+', Semana '+(weekIdx+1)+' · '+DSF[dayIdx]+'.';
+    document.getElementById('success-screen').style.display='flex';
+
+  } catch(e) {
+    console.error(e);
+    document.getElementById('btn-upload').disabled=false;
+    document.getElementById('btn-upload').textContent='✓ Subir a Firebase';
+    const errEl=document.getElementById('parse-err');
+    errEl.textContent='Error al guardar: '+e.message;
+    errEl.style.display='block';
+    _goStep(3);
+  }
+}
+
+function _nuevaSesion() {
+  _sel={al:null,planIdx:0,weekIdx:0,dayIdx:null};
+  _sesionJSON=null;
+  document.getElementById('ses-input').value='';
+  document.getElementById('ses-name').value='';
+  document.getElementById('success-screen').style.display='none';
+  _goStep(1);
+}
+
+// Actualizar título step 3 con info del día
+document.addEventListener('DOMContentLoaded',()=>{});
+</script>
+</body>
+</html>
