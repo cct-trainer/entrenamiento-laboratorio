@@ -10083,6 +10083,7 @@ let planSemanasArray = [];   // [{semana:1, fechaInicio:'YYYY-MM-DD', dias:{}}]
 let planSemEditando  = 0;    // índice de la semana activa en edición
 let planDiasData     = {};   // { 0:[{bloques}], ... }
 let planDiaAbierto   = null;
+let _editorModTab    = 0;    // 0 = Gym, 1 = Casa
 
 const DIAS_SEM       = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 const DIAS_SEM_SIG   = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
@@ -11125,6 +11126,7 @@ function abrirPlanDiaEditor(diaIdx, semIdx) {
     planDiasData = planSemanasArray[semIdx].dias;
   }
   planDiaAbierto = diaIdx;
+  _editorModTab  = 0;   // siempre empieza en Gym
   if(!planDiasData[diaIdx]) planDiasData[diaIdx] = [{ bloques:[] }];
   // Mostrar título en topbar del overlay
   const semNum = planSemanasArray[planSemEditando]?.semana || (planSemEditando + 1);
@@ -11169,9 +11171,17 @@ function renderPlanDiaEditor(diaIdx) {
     <button style="${_btnStyle}" onclick="abrirModalDuplicarMover(${diaIdx},'mover')">Mover</button>
   `;
 
+  const _tabStyle = (active) =>
+    `flex:1;padding:9px 0;font-size:12px;font-weight:800;letter-spacing:.5px;border:none;cursor:pointer;border-bottom:3px solid ${active?'#C9A84C':'transparent'};background:${active?'rgba(201,168,76,.08)':'transparent'};color:${active?'#C9A84C':'#888'};transition:all .15s;`;
+
   editor.innerHTML = `
     <div class="plan-sesion-editor" style="margin-bottom:0;">
       <div class="plan-sesion-body">
+        <!-- tabs Gym / Casa -->
+        <div style="display:flex;border-bottom:1px solid #e0e4ed;margin-bottom:4px;" id="editor-mod-tabs">
+          <button id="editor-tab-0" style="${_tabStyle(_editorModTab===0)}" onclick="_switchEditorTab(0,${diaIdx})">🏋️ GYM</button>
+          <button id="editor-tab-1" style="${_tabStyle(_editorModTab===1)}" onclick="_switchEditorTab(1,${diaIdx})">🏠 CASA</button>
+        </div>
         <div style="padding:14px 16px 4px;">
           <input id="plan-sesion-nombre" type="text" maxlength="80"
             placeholder="Nombre de la sesión  (ej: Piernas · Fuerza, Tren superior · Hipertrofia…)"
@@ -11187,7 +11197,7 @@ function renderPlanDiaEditor(diaIdx) {
 
   // Restaurar bloques guardados
   const contenedor = document.getElementById(`plan-dia-bloques-${diaIdx}`);
-  const sesion = sesiones[0] || { bloques:[] };
+  const sesion = sesiones[_editorModTab] || { bloques:[] };
   if(sesion.bloques && sesion.bloques.length) {
     sesion.bloques.forEach(b => addBloqueDia(diaIdx, b));
   } else {
@@ -11213,6 +11223,39 @@ function cerrarPlanDiaEditor() {
   if(planRight) planRight.style.overflow = '';
   planDiaAbierto = null;
   renderPlanMes();
+}
+
+// ── Tabs Gym / Casa en editor de día ────────────────────────────────────────
+function _switchEditorTab(tabIdx, diaIdx) {
+  if (tabIdx === _editorModTab) return;
+  guardarEstadoDiaActual();           // guardar el tab actual antes de cambiar
+  _editorModTab = tabIdx;
+  // Actualizar estilos de tabs sin re-renderizar todo
+  [0, 1].forEach(i => {
+    const btn = document.getElementById('editor-tab-' + i);
+    if (!btn) return;
+    const active = i === tabIdx;
+    btn.style.borderBottom    = active ? '3px solid #C9A84C' : '3px solid transparent';
+    btn.style.background      = active ? 'rgba(201,168,76,.08)' : 'transparent';
+    btn.style.color           = active ? '#C9A84C' : '#888';
+  });
+  // Recargar bloques del nuevo tab
+  const sesiones = planDiasData[diaIdx] || [{ bloques:[] }];
+  const sesion   = sesiones[tabIdx] || { bloques:[] };
+  // Limpiar bloque-wrap existentes
+  const contenedor = document.getElementById('plan-dia-bloques-' + diaIdx);
+  if (contenedor) contenedor.innerHTML = '';
+  bloqueCounter = 0; ejercicioCounter = 0;
+  // Nombre de sesión
+  const nomInput = document.getElementById('plan-sesion-nombre');
+  if (nomInput) nomInput.value = sesion.nombre || '';
+  // Cargar bloques
+  if (sesion.bloques && sesion.bloques.length) {
+    sesion.bloques.forEach(b => addBloqueDia(diaIdx, b));
+  } else {
+    // Casa vacía: no cargar SOCC default, dejar en blanco para que el coach la arme
+    const addZone = contenedor?.parentElement?.querySelector('.plan-add-bloque-zone');
+  }
 }
 
 // ── Copiloto embebido en editor de día ───────────────────────────────────────
@@ -11615,7 +11658,7 @@ function guardarEstadoDiaActual() {
   if(!planSemanasArray[planSemEditando]) return;
   if(!planSemanasArray[planSemEditando].dias[diaIdx]) planSemanasArray[planSemEditando].dias[diaIdx] = [{}];
   const _nombreSesion = document.getElementById('plan-sesion-nombre')?.value?.trim() || '';
-  planSemanasArray[planSemEditando].dias[diaIdx][0] = { bloques, nombre: _nombreSesion };
+  planSemanasArray[planSemEditando].dias[diaIdx][_editorModTab] = { bloques, nombre: _nombreSesion };
   planDiasData = planSemanasArray[planSemEditando].dias;
 }
 

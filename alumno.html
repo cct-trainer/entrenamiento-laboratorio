@@ -346,7 +346,7 @@ const SERIE_TIPOS = {
 };
 const DS = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
 
-let _data=null, _plan=null, _planRun=null, _planesFuerza=[], _planIdx=0, _semIdx=0, _diaIdx=null, _runDiaIdx=null;
+let _data=null, _plan=null, _planRun=null, _planesFuerza=[], _planIdx=0, _semIdx=0, _diaIdx=null, _runDiaIdx=null, _diaModTab=0;
 let _ejStore = {};   // { uid: ej }  — para re-render de cards
 let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificadas
 let _alumnoId='', _pesoEdits={};
@@ -558,7 +558,8 @@ function renderRutina() {
   renderSesion();
 }
 
-function selDia(i) { _diaIdx=_diaIdx===i?null:i; renderRutina(); }
+function selDia(i) { _diaIdx=_diaIdx===i?null:i; _diaModTab=0; renderRutina(); }
+function _switchDiaModTab(t) { _diaModTab=t; renderSesion(); }
 
 // Reproduce video de YouTube inline reemplazando la miniatura
 function _playYt(uid, ytId) {
@@ -596,7 +597,7 @@ function _toggleStatus(uid, state) {
 function _compilarFeedback() {
   if (_diaIdx===null||!_plan) return '';
   const sem = _plan.semanasArray?.[_semIdx];
-  const ses = sem?.dias?.[_diaIdx]?.[0];
+  const ses = sem?.dias?.[_diaIdx]?.[_diaModTab];
   if (!ses?.bloques?.length) return '';
   const nombre = _data?.perfil?.nombre || _data?.perfil?.name || 'Alumno';
   const fecha = new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
@@ -915,9 +916,41 @@ function renderSesion() {
   const ctn=document.getElementById('sesion-ctn');
   if (_diaIdx===null||!_plan) { ctn.innerHTML=''; return; }
   const sem=_plan.semanasArray?.[_semIdx];
-  const ses=sem?.dias?.[_diaIdx]?.[0];
-  if (!ses?.bloques?.length) { ctn.innerHTML='<div class="empty" style="padding:20px"><div class="empty-txt">Sin sesión para el '+DN[_diaIdx]+'</div></div>'; return; }
-  ctn.innerHTML='<div style="padding-bottom:4px;"><div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--gold);margin-bottom:12px;">'+(ses.nombre||DN[_diaIdx]).toUpperCase()+'</div>'+
+  const diasArr = sem?.dias?.[_diaIdx] || [];
+  const sesGym  = diasArr[0] || null;
+  const sesCasa = diasArr[1] || null;
+  const hasCasa = !!(sesCasa?.bloques?.length);
+  const hasGym  = !!(sesGym?.bloques?.length);
+
+  // Tabs Gym / Casa — siempre visibles cuando hay un día seleccionado
+  const _tabBtn = (idx, icon, label, active) =>
+    '<button onclick="_switchDiaModTab('+idx+')" style="flex:1;padding:10px 0;font-size:12px;font-weight:800;letter-spacing:.4px;border:none;cursor:pointer;'+
+    'border-bottom:3px solid '+(active?'var(--gold)':'transparent')+';'+
+    'background:'+(active?'color-mix(in srgb,var(--gold) 10%,transparent)':'transparent')+';'+
+    'color:'+(active?'var(--gold)':'var(--muted)')+';transition:all .15s;">'+
+    icon+' '+label+'</button>';
+
+  const tabs =
+    '<div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:14px;">'+
+      _tabBtn(0,'🏋️','GYM', _diaModTab===0)+
+      _tabBtn(1,'🏠','CASA', _diaModTab===1)+
+    '</div>';
+
+  const ses = _diaModTab === 0 ? sesGym : sesCasa;
+
+  if (!ses?.bloques?.length) {
+    const msgGym = '<div class="empty" style="padding:20px"><div class="empty-txt">Sin sesión de gimnasio para el '+DN[_diaIdx]+'</div></div>';
+    const msgCasa= '<div class="empty" style="padding:20px">'+
+      '<div style="font-size:36px;margin-bottom:10px;">🏠</div>'+
+      '<div class="empty-txt">No hay sesión en casa para este día</div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-top:6px;">Tu coach todavía no cargó una sesión en casa.</div>'+
+    '</div>';
+    ctn.innerHTML = tabs + (_diaModTab===0 ? msgGym : msgCasa);
+    return;
+  }
+
+  ctn.innerHTML= tabs +
+    '<div style="padding-bottom:4px;"><div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--gold);margin-bottom:12px;">'+(ses.nombre||DN[_diaIdx]).toUpperCase()+'</div>'+
     ses.bloques.map((b,bi) => {
       const letra='ABCDEFGHIJ'[bi]||(bi+1);
       const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>_ejCard(ej,'b'+bi+'e'+ei)).join('');
@@ -1450,7 +1483,7 @@ let _fbState = {};
 
 function _abrirFeedback() {
   _fbState = {};
-  const ses = _plan?.semanasArray?.[_semIdx]?.dias?.[_diaIdx]?.[0];
+  const ses = _plan?.semanasArray?.[_semIdx]?.dias?.[_diaIdx]?.[_diaModTab];
   const sesNombre = ses?.nombre || DN[_diaIdx] || 'Entrenamiento';
   document.getElementById('fb-body').innerHTML = _buildFeedbackHTML(sesNombre);
   document.getElementById('feedback-overlay').style.display = 'block';
@@ -1504,7 +1537,7 @@ async function _guardarFeedback() {
     alumnoId: _alumnoId,
     semana: _semIdx,
     dia: _diaIdx,
-    sesion: _plan?.semanasArray?.[_semIdx]?.dias?.[_diaIdx]?.[0]?.nombre || '',
+    sesion: _plan?.semanasArray?.[_semIdx]?.dias?.[_diaIdx]?.[_diaModTab]?.nombre || '',
     fecha: new Date().toISOString(),
   };
   // Guardar localmente
