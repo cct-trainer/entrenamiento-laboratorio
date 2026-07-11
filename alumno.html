@@ -235,6 +235,17 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
 .plan-sem-int{font-size:10px;color:var(--muted);}
 .plan-sem-rir{font-size:9px;color:var(--muted);}
 .plan-sem-check{font-size:12px;color:var(--green);margin-left:auto;}
+.plan-sem-card{border-bottom:1px solid var(--border);padding:10px 4px;}
+.plan-sem-card:last-child{border-bottom:none;}
+.plan-sem-card.plan-sem-now{background:color-mix(in srgb,var(--gold) 6%,transparent);border-radius:8px;padding:10px 8px;margin:0 -4px;}
+.plan-sem-card.plan-sem-done{opacity:.5;}
+.plan-sem-card-top{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.plan-sem-card-btm{display:flex;align-items:center;gap:6px;padding-left:2px;}
+.plan-dia-chip{font-size:8px;font-weight:900;letter-spacing:.4px;padding:3px 6px;border-radius:5px;background:color-mix(in srgb,var(--gold) 14%,transparent);color:var(--gold);border:1px solid color-mix(in srgb,var(--gold) 30%,transparent);}
+.plan-dia-chip.run{background:rgba(239,68,68,.12);color:#f87171;border-color:rgba(239,68,68,.25);}
+.plan-sem-ir-btn{margin-left:auto;font-size:10px;font-weight:800;color:var(--gold);background:color-mix(in srgb,var(--gold) 12%,transparent);border:1px solid color-mix(in srgb,var(--gold) 30%,transparent);border-radius:7px;padding:4px 10px;cursor:pointer;white-space:nowrap;}
+.plan-sem-ir-btn:active{opacity:.7;}
+.plan-sem-sin{font-size:10px;color:var(--muted);font-style:italic;}
 </style>
 </head>
 <body>
@@ -547,6 +558,39 @@ function goTab(t) {
 }
 
 // ── PLAN (MACROCICLO) ─────────────────────────────────────────────────────
+const _DIAS_SIG = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+
+// Busca sesiones en _data.planificaciones para una semana con fechaInicio dada
+function _semSesiones(fechaStr) {
+  const planes = _data && _data.planificaciones || [];
+  for (let pi = 0; pi < planes.length; pi++) {
+    const plan = planes[pi];
+    const sems = plan.semanasArray || [];
+    for (let si = 0; si < sems.length; si++) {
+      if (sems[si].fechaInicio === fechaStr) {
+        const dias = sems[si].dias || {};
+        const conSesion = Object.entries(dias)
+          .filter(([,ses]) => ses && ses.length > 0 && (ses[0]?.bloques?.length > 0 || ses[1]?.bloques?.length > 0))
+          .map(([idx]) => +idx);
+        return { planIdx: pi, semIdx: si, dias: conSesion, tipoPlan: plan.tipoPlan || 'fuerza' };
+      }
+    }
+  }
+  return null;
+}
+
+// Navega a la tab RUTINA en el plan y semana correctos
+function _irASemana(planIdx, semIdx) {
+  // Fuerza y running están en _planesFuerza o planillas separadas
+  if (planIdx >= 0 && planIdx < (_planesFuerza||[]).length) {
+    _planIdx = planIdx;
+    _plan = _planesFuerza[planIdx];
+    _semIdx = semIdx;
+    _diaIdx = null;
+  }
+  goTab('rutina');
+}
+
 function renderPlan() {
   const ctn = document.getElementById('plan-ctn');
   if (!ctn) return;
@@ -605,13 +649,32 @@ function renderPlan() {
         const ahora = sn===semActual;
         const antes = sn<semActual;
         const c = COLORES[sem.tipo]||'var(--gold)';
-        html += `<div class="plan-sem-row${ahora?' plan-sem-now':''}${antes?' plan-sem-done':''}">
-          <div class="plan-sem-num${ahora?' plan-sem-num-now':''}">S${sn}${ahora?' <span class="plan-ahora">→ ahora</span>':''}</div>
-          <div class="plan-sem-tipo" style="background:${c}22;color:${c};border:1px solid ${c}55">${sem.tipo}</div>
-          ${sem.series?`<div class="plan-sem-vol">${sem.series} s/g</div>`:''}
-          ${sem.intens?`<div class="plan-sem-int">${sem.intens}%</div>`:''}
-          ${sem.rir?`<div class="plan-sem-rir">RIR ${sem.rir}</div>`:''}
-          ${antes?'<div class="plan-sem-check">✓</div>':''}
+        // Calcular fecha de inicio de esta semana
+        const fSemObj = new Date(fechaInicio); fSemObj.setDate(fSemObj.getDate()+(semG+si)*7);
+        const fSem = fSemObj.toISOString().slice(0,10);
+        // Buscar sesiones para esta semana
+        const sesInfo = _semSesiones(fSem);
+        const tienesSes = sesInfo && sesInfo.dias.length > 0;
+        // Chips de días
+        const diaChips = tienesSes
+          ? sesInfo.dias.map(d => `<span class="plan-dia-chip${sesInfo.tipoPlan==='running'?' run':''}">${_DIAS_SIG[d]||d}</span>`).join('')
+          : '';
+        html += `<div class="plan-sem-card${ahora?' plan-sem-now':''}${antes?' plan-sem-done':''}">
+          <div class="plan-sem-card-top">
+            <div class="plan-sem-num${ahora?' plan-sem-num-now':''}">S${sn}${ahora?' <span class="plan-ahora">→ ahora</span>':''}</div>
+            <div class="plan-sem-tipo" style="background:${c}22;color:${c};border:1px solid ${c}55">${sem.tipo}</div>
+            ${sem.series?`<div class="plan-sem-vol">${sem.series} s/g</div>`:''}
+            ${sem.intens?`<div class="plan-sem-int">${sem.intens}%</div>`:''}
+            ${sem.rir?`<div class="plan-sem-rir">RIR ${sem.rir}</div>`:''}
+            ${antes&&!tienesSes?'<div class="plan-sem-check">✓</div>':''}
+          </div>
+          <div class="plan-sem-card-btm">
+            ${tienesSes
+              ? `<div style="display:flex;gap:4px;flex-wrap:wrap;">${diaChips}</div>
+                 <button class="plan-sem-ir-btn" onclick="_irASemana(${sesInfo.planIdx},${sesInfo.semIdx})">Ver sesiones →</button>`
+              : `<span class="plan-sem-sin">${futuro?'Pendiente de carga':'Sin sesiones cargadas'}</span>`
+            }
+          </div>
         </div>`;
       });
       html += `</div>`;

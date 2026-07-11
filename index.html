@@ -22575,6 +22575,42 @@ function _macroTemplate() {
   };
 }
 
+// Retorna info de sesiones para una semana (por fechaInicio) del alumno actual
+function _macroSemInfo(fechaStr) {
+  if (!currentAlumnoId) return null;
+  const planes = getPlanificaciones().filter(p => p.alumnoId === currentAlumnoId && p.tipoPlan === 'fuerza');
+  for (let pi = 0; pi < planes.length; pi++) {
+    const sems = planes[pi].semanasArray || [];
+    for (let si = 0; si < sems.length; si++) {
+      if (sems[si].fechaInicio === fechaStr) {
+        const dias = sems[si].dias || {};
+        const count = Object.values(dias).filter(d => d && d.length > 0 && (d[0]?.bloques?.length > 0 || d[1]?.bloques?.length > 0)).length;
+        return { planId: planes[pi].id, semIdx: si, count, titulo: planes[pi].titulo || 'Plan' };
+      }
+    }
+  }
+  return null;
+}
+
+// Abre el planificador en blanco con la fecha de la semana del macrociclo
+function _macroPlanificarSemana(fechaStr) {
+  abrirPlanFuerzaSemanal();
+  setTimeout(() => {
+    const f = document.getElementById('plan-fecha');
+    if (f) { f.value = fechaStr; if (typeof onPlanFechaChange === 'function') onPlanFechaChange(fechaStr); }
+  }, 80);
+}
+
+// Abre un plan existente en la semana del macrociclo
+function _macroEditarSesiones(planId, semIdx) {
+  abrirPlanFuerzaExistente(planId);
+  setTimeout(() => {
+    planSemEditando = semIdx;
+    planDiaAbierto  = null;
+    if (typeof renderPlanMes === 'function') renderPlanMes();
+  }, 80);
+}
+
 function _renderMacroUI() {
   const el = document.getElementById('macro-editor');
   if (!el || !_macroData) return;
@@ -22635,22 +22671,43 @@ function _renderMacroUI() {
     if ((meso.semanas||[]).length===0) {
       html += `<div style="text-align:center;padding:16px;color:#aaa;font-size:12px;font-style:italic;">Sin semanas. Hacé clic en + para agregar.</div>`;
     } else {
+      let semGLocal = (mc.mesociclos||[]).slice(0,mi).reduce((a,m)=>a+(m.semanas||[]).length,0);
       (meso.semanas||[]).forEach((sem,si) => {
         const c = COLORES[sem.tipo]||'#888';
+        // Calcular fecha de inicio de esta semana
+        const fSemObj = new Date((mc.fechaInicio||new Date().toISOString().slice(0,10))+'T12:00:00');
+        fSemObj.setDate(fSemObj.getDate()+(semGLocal+si)*7);
+        const fSem = fSemObj.toISOString().slice(0,10);
+        // Buscar sesiones para esta semana
+        const sesInfo = _macroSemInfo(fSem);
+        const tienesSes = sesInfo && sesInfo.count > 0;
         html += `
-        <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f0f0f0;">
-          <span style="font-size:11px;font-weight:800;color:#1a3a6a;min-width:24px;">S${sem.semana}</span>
-          <select onchange="_semField(${mi},${si},'tipo',this.value)"
-            style="border:1.5px solid ${c}55;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:${c};background:${c}14;flex-shrink:0;font-family:inherit;">
-            ${TIPOS.map(t=>`<option value="${t}" ${sem.tipo===t?'selected':''}>${t}</option>`).join('')}
-          </select>
-          <input placeholder="Series/grupo" value="${sem.series||''}" oninput="_semField(${mi},${si},'series',this.value)"
-            style="border:1px solid #e0e0e0;border-radius:6px;padding:4px 8px;font-size:11px;width:80px;font-family:inherit;">
-          <input placeholder="Intens.%" value="${sem.intens||''}" oninput="_semField(${mi},${si},'intens',this.value)"
-            style="border:1px solid #e0e0e0;border-radius:6px;padding:4px 8px;font-size:11px;width:70px;font-family:inherit;">
-          <input placeholder="RIR" value="${sem.rir||''}" oninput="_semField(${mi},${si},'rir',this.value)"
-            style="border:1px solid #e0e0e0;border-radius:6px;padding:4px 8px;font-size:11px;width:50px;font-family:inherit;">
-          <button onclick="_semEliminar(${mi},${si})" style="background:none;border:none;color:#f87171;font-size:16px;cursor:pointer;padding:0 4px;margin-left:auto;">×</button>
+        <div style="padding:8px 0;border-bottom:1px solid #f0f0f0;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="font-size:11px;font-weight:800;color:#1a3a6a;min-width:24px;">S${sem.semana}</span>
+            <select onchange="_semField(${mi},${si},'tipo',this.value)"
+              style="border:1.5px solid ${c}55;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:${c};background:${c}14;flex-shrink:0;font-family:inherit;">
+              ${TIPOS.map(t=>`<option value="${t}" ${sem.tipo===t?'selected':''}>${t}</option>`).join('')}
+            </select>
+            <input placeholder="Series/grupo" value="${sem.series||''}" oninput="_semField(${mi},${si},'series',this.value)"
+              style="border:1px solid #e0e0e0;border-radius:6px;padding:4px 8px;font-size:11px;width:80px;font-family:inherit;">
+            <input placeholder="Intens.%" value="${sem.intens||''}" oninput="_semField(${mi},${si},'intens',this.value)"
+              style="border:1px solid #e0e0e0;border-radius:6px;padding:4px 8px;font-size:11px;width:70px;font-family:inherit;">
+            <input placeholder="RIR" value="${sem.rir||''}" oninput="_semField(${mi},${si},'rir',this.value)"
+              style="border:1px solid #e0e0e0;border-radius:6px;padding:4px 8px;font-size:11px;width:50px;font-family:inherit;">
+            <button onclick="_semEliminar(${mi},${si})" style="background:none;border:none;color:#f87171;font-size:16px;cursor:pointer;padding:0 4px;margin-left:auto;">×</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding-left:28px;">
+            ${tienesSes
+              ? `<span style="font-size:10px;font-weight:700;color:#22c55e;">● ${sesInfo.count} sesión${sesInfo.count>1?'es':''} cargada${sesInfo.count>1?'s':''}</span>
+                 <button onclick="_macroEditarSesiones('${sesInfo.planId}',${sesInfo.semIdx})"
+                   style="font-size:10px;font-weight:800;color:#1a3a6a;background:#e8f0fe;border:1px solid #c5d5f5;border-radius:6px;padding:3px 10px;cursor:pointer;">Editar sesiones →</button>`
+              : `<span style="font-size:10px;color:#aaa;">Sin sesiones</span>
+                 <button onclick="_macroPlanificarSemana('${fSem}')"
+                   style="font-size:10px;font-weight:800;color:#C9A84C;background:#fdf7e8;border:1px solid #e8d5a0;border-radius:6px;padding:3px 10px;cursor:pointer;">+ Planificar</button>`
+            }
+            <span style="font-size:9px;color:#ccc;margin-left:2px;">${fSem}</span>
+          </div>
         </div>`;
       });
     }
