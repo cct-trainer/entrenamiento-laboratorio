@@ -404,6 +404,15 @@ const TIPOS_RUN = {
     const doc = await db.collection('alumnos').doc(id).get();
     if (!doc.exists) return showErr('Todavía no hay datos para este alumno. Pedile a tu coach que sincronice el portal desde su aplicación.');
     _data = doc.data();
+
+    // ── Control de acceso ────────────────────────────────────────────────────
+    if (_data.accessUntil) {
+      const hasta = new Date(_data.accessUntil + 'T23:59:59');
+      if (hasta < new Date()) {
+        return _showAccesoBloqueado(_data.accessUntil);
+      }
+    }
+
     const planes = _data.planificaciones || [];
     // Separar planes de fuerza y running
     _planesFuerza        = planes.filter(p => p.tipoPlan !== 'running');
@@ -423,6 +432,26 @@ const TIPOS_RUN = {
     showErr('Error de conexión. Verificá tu acceso a internet e intentá de nuevo.');
   }
 })();
+
+function _showAccesoBloqueado(hasta) {
+  document.getElementById('loading').style.display='none';
+  const fmtHasta = hasta
+    ? new Date(hasta+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})
+    : '';
+  document.body.innerHTML = `
+    <div style="min-height:100vh;background:#0d0d1a;display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,sans-serif;">
+      <div style="max-width:340px;width:100%;text-align:center;">
+        <div style="font-size:52px;margin-bottom:16px;">🔒</div>
+        <div style="color:#C9A84C;font-size:13px;font-weight:900;letter-spacing:1.5px;margin-bottom:8px;">ACCESO VENCIDO</div>
+        <div style="color:#fff;font-size:16px;font-weight:700;margin-bottom:8px;">Tu plan venció el ${fmtHasta}</div>
+        <div style="color:#888;font-size:13px;line-height:1.6;margin-bottom:28px;">Para continuar entrenando con tu programa personalizado, contactate con tu coach para renovar el acceso.</div>
+        <a href="https://wa.me/5491162779993" target="_blank"
+          style="display:block;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:14px;padding:16px;font-size:15px;font-weight:800;cursor:pointer;text-decoration:none;letter-spacing:.3px;">
+          Contactar a Christian Cattaneo
+        </a>
+      </div>
+    </div>`;
+}
 
 function showErr(msg) {
   document.getElementById('loading').style.display='none';
@@ -558,8 +587,34 @@ function renderRutina() {
   renderSesion();
 }
 
-function selDia(i) { _diaIdx=_diaIdx===i?null:i; _diaModTab=0; renderRutina(); }
+function selDia(i) {
+  const abriendo = _diaIdx !== i;
+  _diaIdx = _diaIdx===i ? null : i;
+  _diaModTab = 0;
+  if (abriendo && _diaIdx !== null) _logActividad(_diaIdx);
+  renderRutina();
+}
 function _switchDiaModTab(t) { _diaModTab=t; renderSesion(); }
+
+async function _logActividad(diaIdx) {
+  if (!_db || !_alumnoId) return;
+  const sem = _plan?.semanasArray?.[_semIdx];
+  const tieneContenido = !!(sem?.dias?.[diaIdx]?.[0]?.bloques?.length);
+  if (!tieneContenido) return;
+  const diasNombre = ['Lunes','Martes','Miercoles','Jueves','Viernes','Sabado','Domingo'];
+  const sesNombre = sem?.dias?.[diaIdx]?.[0]?.nombre || diasNombre[diaIdx] || ('Dia '+(diaIdx+1));
+  try {
+    await _db.collection('alumnos').doc(_alumnoId).update({
+      actividad: firebase.firestore.FieldValue.arrayUnion({
+        fecha:     new Date().toISOString().slice(0,10),
+        timestamp: new Date().toISOString(),
+        diaIdx,
+        sesion:    sesNombre,
+        semana:    _semIdx + 1
+      })
+    });
+  } catch(e) { /* silencioso — no interrumpir experiencia del alumno */ }
+}
 
 // Reproduce video de YouTube inline reemplazando la miniatura
 function _playYt(uid, ytId) {

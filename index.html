@@ -2982,6 +2982,7 @@ select.toolbox-input option:disabled { color: #888; }
   <div style="display:flex;align-items:center;gap:10px;">
     <input type="file" id="backup-import-input" accept=".json" style="display:none;" onchange="importarBackupCompleto(this)">
     <span id="sync-status" title="Estado de sincronización con la nube" style="font-size:18px;cursor:default;" onclick="forzarSyncFirebase()">☁️</span>
+    <button onclick="_generarReporteMensual()" class="pln-btn pln-btn-outline" title="Reporte mensual de actividad de alumnos">Reporte</button>
     <button onclick="document.getElementById('backup-import-input').click()" class="pln-btn pln-btn-outline" title="Restaurar base de datos desde backup JSON">Restaurar</button>
     <button onclick="exportarBackupCompleto()" class="pln-btn pln-btn-guardar" title="Descargar backup completo de toda la base de datos">Backup</button>
     <button onclick="limpiarStorageEmergencia()" style="background:none;border:1px solid #ddd;color:#bbb;padding:7px 12px;border-radius:5px;font-size:11px;cursor:pointer;" title="Liberar espacio si hay errores de almacenamiento">🗑</button>
@@ -13356,8 +13357,29 @@ function renderSidebarAlumno(id) {
              color:#22c55e;font-size:11px;font-weight:700;padding:8px 12px;cursor:pointer;
              letter-spacing:0.5px;font-family:inherit;"
       onmouseover="this.style.background='#16a34a22'" onmouseout="this.style.background='linear-gradient(135deg,#0d2a14,#0a1f0e)'">
-      🔗 Portal del alumno
+      Portal del alumno
     </button>
+
+    <!-- Control de acceso -->
+    ${(()=>{
+      const au = a.accessUntil;
+      const auDate = au ? new Date(au+'T12:00:00') : null;
+      const hoy = new Date(); hoy.setHours(0,0,0,0);
+      const vencido = auDate && auDate < hoy;
+      const auStr = auDate ? auDate.toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) : 'Sin límite';
+      const color = !auDate ? '#888' : vencido ? '#ef4444' : '#22c55e';
+      const label = !auDate ? 'Acceso: sin fecha' : vencido ? 'Acceso VENCIDO' : 'Acceso hasta: '+auStr;
+      return `
+      <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;">
+        <div style="font-size:10px;color:${color};font-weight:800;letter-spacing:.5px;margin-bottom:8px;">${label}</div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="_renovarAcceso('${id}',30)" style="flex:1;background:#1a3a6a;border:none;border-radius:5px;color:#fff;font-size:10px;font-weight:700;padding:6px 4px;cursor:pointer;">+30 días</button>
+          <button onclick="_renovarAcceso('${id}',90)" style="flex:1;background:#1a3a6a;border:none;border-radius:5px;color:#fff;font-size:10px;font-weight:700;padding:6px 4px;cursor:pointer;">+90 días</button>
+          ${vencido ? `<button onclick="_renovarAcceso('${id}',0)" style="flex:1;background:#7f1d1d;border:none;border-radius:5px;color:#fca5a5;font-size:10px;font-weight:700;padding:6px 4px;cursor:pointer;">Revocar</button>` : ''}
+        </div>
+      </div>`;
+    })()}
+
   `;
 }
 function _copiarLinkPortal(id) {
@@ -13365,8 +13387,86 @@ function _copiarLinkPortal(id) {
   const PORTAL_BASE = 'https://cct-trainer.github.io/entrenamiento-laboratorio/';
   const url = PORTAL_BASE + 'alumno.html?id=' + encodeURIComponent(id);
   navigator.clipboard.writeText(url)
-    .then(() => toast('🔗 Link copiado — mandáselo al alumno por WhatsApp'))
+    .then(() => toast('Link copiado — mandáselo al alumno por WhatsApp'))
     .catch(() => { prompt('Copiá este link y mandáselo al alumno:', url); });
+}
+
+// ── Control de acceso y WhatsApp ──────────────────────────────────────────────
+function _renovarAcceso(id, dias) {
+  dias = dias || 30;
+  const alumnos = getAlumnos();
+  const idx = alumnos.findIndex(a => a.id === id);
+  if (idx === -1) return;
+  const base = new Date();
+  base.setDate(base.getDate() + dias);
+  alumnos[idx].accessUntil = base.toISOString().slice(0,10);
+  saveAlumnos(alumnos);
+  toast('Acceso renovado hasta ' + new Date(alumnos[idx].accessUntil+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}));
+  renderSidebarAlumno(id);
+  forzarSyncFirebase();
+}
+
+async function _generarReporteMensual() {
+  if (!window._db) { toast('Necesitás conectarte a Firebase primero (presioná Backup)', 'error'); return; }
+  const ahora = new Date();
+  const mes = ahora.getMonth();
+  const anio = ahora.getFullYear();
+  const nombresMes = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  // Mes del reporte = el mes anterior si estamos antes del día 5, si no el mes actual
+  const mesBuscar = ahora.getDate() <= 5 ? (mes === 0 ? 11 : mes - 1) : mes;
+  const anioBuscar = ahora.getDate() <= 5 && mes === 0 ? anio - 1 : anio;
+  const prefijo = anioBuscar + '-' + String(mesBuscar+1).padStart(2,'0');
+
+  toast('Generando reporte de ' + nombresMes[mesBuscar] + '...');
+  const alumnos = getAlumnos();
+  const filas = [];
+  for (const al of alumnos) {
+    try {
+      const doc = await window._db.collection('alumnos').doc(al.id).get();
+      if (!doc.exists) continue;
+      const actividad = (doc.data().actividad || []).filter(a => (a.fecha||'').startsWith(prefijo));
+      const unico = {};
+      actividad.forEach(a => { if (!unico[a.fecha]) unico[a.fecha] = []; unico[a.fecha].push(a.sesion||''); });
+      filas.push({ nombre: al.nombre || al.id, sesiones: actividad.length, dias: Object.keys(unico), detalle: unico });
+    } catch(e) {}
+  }
+
+  // Generar HTML imprimible
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+  <title>Reporte ${nombresMes[mesBuscar]} ${anioBuscar} — SOCC</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:700px;margin:40px auto;color:#1a1a1a;padding:20px;}
+    h1{font-size:22px;font-weight:900;letter-spacing:.5px;border-bottom:3px solid #C9A84C;padding-bottom:10px;margin-bottom:6px;}
+    .sub{font-size:13px;color:#666;margin-bottom:30px;}
+    table{width:100%;border-collapse:collapse;margin-bottom:30px;}
+    th{background:#1a2a4a;color:#fff;padding:10px 14px;font-size:12px;letter-spacing:.5px;text-align:left;}
+    td{padding:10px 14px;font-size:13px;border-bottom:1px solid #eee;vertical-align:top;}
+    tr:last-child td{border-bottom:none;}
+    .n0{color:#aaa;font-style:italic;}
+    .badge{display:inline-block;background:#f0f4ff;border:1px solid #1a3a6a22;border-radius:4px;padding:2px 7px;font-size:11px;margin:2px;}
+    @media print{body{margin:0;}.no-print{display:none;}}
+  </style></head><body>
+  <h1>Reporte de Actividad — ${nombresMes[mesBuscar]} ${anioBuscar}</h1>
+  <div class="sub">Sistema Operativo Christian Cattaneo (SOCC) · Generado el ${ahora.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}</div>
+  <table>
+    <thead><tr><th>Alumno</th><th>Sesiones</th><th>Días entrenados</th></tr></thead>
+    <tbody>
+    ${filas.length ? filas.sort((a,b)=>b.sesiones-a.sesiones).map(f=>`
+      <tr>
+        <td><strong>${f.nombre}</strong></td>
+        <td>${f.sesiones > 0 ? '<strong>'+f.sesiones+'</strong>' : '<span class="n0">0</span>'}</td>
+        <td>${f.dias.length ? f.dias.map(d=>'<span class="badge">'+d+'</span>').join('') : '<span class="n0">Sin actividad</span>'}</td>
+      </tr>`) .join('') : '<tr><td colspan="3" style="text-align:center;color:#aaa;padding:30px;">Sin datos de actividad registrados este mes</td></tr>'}
+    </tbody>
+  </table>
+  <div class="no-print" style="margin-top:20px;">
+    <button onclick="window.print()" style="background:#1a2a4a;color:#fff;border:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">Imprimir / Guardar PDF</button>
+  </div>
+  </body></html>`;
+
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
 }
 
 // ── Escritorio ─────────────────────────────────────────────────────────────────
@@ -20199,6 +20299,17 @@ async function forzarSyncFirebase() {
     // ── Documentos por alumno (portal del estudiante) ─────────────────────────
     const batch = window._db.batch();
     const articulosPublicados = articulos.filter(a => a.publicado !== false);
+    // Asignar accessUntil por defecto (30 días) a alumnos que no lo tengan
+    let _alumnosActualizados = false;
+    alumnos.forEach((al, idx) => {
+      if (!al.accessUntil) {
+        const d = new Date(); d.setDate(d.getDate() + 30);
+        alumnos[idx].accessUntil = d.toISOString().slice(0,10);
+        _alumnosActualizados = true;
+      }
+    });
+    if (_alumnosActualizados) saveAlumnos(alumnos);
+
     for (const al of alumnos) {
       const ref = window._db.collection('alumnos').doc(al.id);
       const planesAlumno = _enrichPlanes(planificaciones.filter(p => p.alumnoId === al.id));
@@ -20208,7 +20319,8 @@ async function forzarSyncFirebase() {
         antropometria:   antropometria.filter(r => r.alumnoId === al.id),
         articulos:       articulosPublicados,
         updatedAt:       ts,
-      });
+        accessUntil:     al.accessUntil || '',
+        });
     }
     await batch.commit();
 
