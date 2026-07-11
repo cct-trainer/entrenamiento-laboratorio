@@ -3043,6 +3043,10 @@ select.toolbox-input option:disabled { color: #888; }
           <button class="pmm-left-item" id="pmm-cat-agregar-mes" onclick="perfilPlanGo('mes')">
             📅 Agregar mes
           </button>
+          <div class="pmm-left-divider"></div>
+          <button class="pmm-left-item" id="pmm-cat-macrociclo" onclick="perfilPlanGo('macrociclo')">
+            🗓️ Macrociclo
+          </button>
         </div>
         <div class="pmm-right" id="pmm-right-panel">
           <div class="pmm-right-empty">
@@ -3292,6 +3296,22 @@ select.toolbox-input option:disabled { color: #888; }
             </div>
             <div id="cal-feed"></div>
           </div>
+        </div>
+      </div>
+
+      <!-- 2b. MACROCICLO -->
+      <div id="perfil-sec-macrociclo" class="perfil-section">
+        <div class="module-header">
+          <div class="mh-left">
+            <h2 class="mh-title">Macrociclo</h2>
+            <p class="mh-sub">Estructura de periodización a largo plazo</p>
+          </div>
+          <div class="mh-actions">
+            <button class="btn btn-primary" onclick="macroGuardar()" id="macro-btn-guardar" style="font-size:12px;background:#1a3a6a;padding:8px 18px;font-weight:700;display:none;">💾 Guardar macrociclo</button>
+          </div>
+        </div>
+        <div class="module-content">
+          <div id="macro-editor"></div>
         </div>
       </div>
 
@@ -13186,6 +13206,14 @@ function perfilPlanGo(sub) {
   _cerrarTodosPerfilMM();
   if (sub === 'nueva') { irAPlanFuerza(); return; }
   if (sub === 'mes') { _cerrarTodosPerfilMM(); crearMesFuerza(); return; }
+  if (sub === 'macrociclo') {
+    _cerrarTodosPerfilMM();
+    _limpiarAreaPrincipal(() => {
+      _activarSection('macrociclo');
+      renderMacroEditor();
+    });
+    return;
+  }
   _limpiarAreaPrincipal(() => {
     _activarSection('planificacion');
     if (currentAlumnoId) switchPerfilSubtab('plan','calendario');
@@ -20330,6 +20358,7 @@ async function forzarSyncFirebase() {
         articulos:       articulosPublicados,
         updatedAt:       ts,
         accessUntil:     al.accessUntil || '',
+        macrociclo:      al.macrociclo   || null,
         });
     }
     await batch.commit();
@@ -22483,6 +22512,227 @@ function blogEliminarArticulo(idx) {
   saveArticulos(arts);
   renderBlogLista();
   toast('Artículo eliminado');
+}
+
+// ── MACROCICLO EDITOR ──────────────────────────────────────────────────────────
+let _macroData = null; // macrociclo actual siendo editado
+
+async function renderMacroEditor() {
+  const el = document.getElementById('macro-editor');
+  const btn = document.getElementById('macro-btn-guardar');
+  if (!el) return;
+  if (!currentAlumnoId) {
+    el.innerHTML = '<div style="padding:30px;text-align:center;color:#888;">Seleccioná un alumno para gestionar su macrociclo.</div>';
+    if (btn) btn.style.display = 'none';
+    return;
+  }
+  if (btn) btn.style.display = '';
+  // Intentar cache local primero
+  const alumnos = getAlumnos();
+  const alumno = alumnos.find(a => a.id === currentAlumnoId);
+  if (alumno && alumno.macrociclo) {
+    _macroData = JSON.parse(JSON.stringify(alumno.macrociclo));
+    _renderMacroUI();
+    return;
+  }
+  // No hay cache — buscar en Firebase
+  el.innerHTML = '<div style="padding:30px;text-align:center;color:#888;">Cargando macrociclo...</div>';
+  try {
+    if (window._db) {
+      const doc = await window._db.collection('alumnos').doc(currentAlumnoId).get();
+      if (doc.exists && doc.data().macrociclo) {
+        const mc = doc.data().macrociclo;
+        // Guardar en cache local
+        if (alumno) { alumno.macrociclo = mc; saveAlumnos(alumnos); }
+        _macroData = JSON.parse(JSON.stringify(mc));
+        _renderMacroUI();
+        return;
+      }
+    }
+  } catch(e) { console.warn('macroEditor fetch:', e); }
+  // No existe todavía — plantilla en blanco
+  _macroData = _macroTemplate();
+  _renderMacroUI();
+}
+
+function _macroTemplate() {
+  const hoy = new Date().toISOString().slice(0,10);
+  return {
+    nombre: 'Hipertrofia — Fase 1',
+    nivel: 'intermedio',
+    fechaInicio: hoy,
+    totalSemanas: 12,
+    mesociclos: [
+      { numero:1, nombre:'Preparatorio', semanas:[
+        {semana:1,tipo:'Ajuste',    series:'10-12',intens:'63-70',rir:'3-4'},
+        {semana:2,tipo:'Carga',     series:'12-14',intens:'67-73',rir:'2-3'},
+        {semana:3,tipo:'Impacto',   series:'14-16',intens:'70-77',rir:'1-2'},
+        {semana:4,tipo:'Recuperación',series:'6-8',intens:'55-63',rir:'4-5'}
+      ]},
+      { numero:2, nombre:'Acumulación', semanas:[] },
+      { numero:3, nombre:'Intensificación', semanas:[] }
+    ]
+  };
+}
+
+function _renderMacroUI() {
+  const el = document.getElementById('macro-editor');
+  if (!el || !_macroData) return;
+  const mc = _macroData;
+  const TIPOS = ['Ajuste','Carga','Impacto','Recuperación','ATR-Acumulación','ATR-Transformación','ATR-Realización'];
+  const COLORES = {
+    'Ajuste':'#6366f1','Carga':'#f59e0b','Impacto':'#ef4444','Recuperación':'#22c55e',
+    'ATR-Acumulación':'#8b5cf6','ATR-Transformación':'#f59e0b','ATR-Realización':'#ef4444'
+  };
+  let html = `
+  <div style="max-width:700px;">
+    <div style="background:#f8f9fb;border:1.5px solid #e0e0e0;border-radius:14px;padding:20px;margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:800;color:#1a3a6a;letter-spacing:1px;margin-bottom:14px;">DATOS DEL MACROCICLO</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">NOMBRE</label>
+          <input id="mc-nombre" value="${mc.nombre||''}" oninput="_mcField('nombre',this.value)"
+            style="width:100%;border:1px solid #d0d0d0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">NIVEL</label>
+          <select id="mc-nivel" onchange="_mcField('nivel',this.value)"
+            style="width:100%;border:1px solid #d0d0d0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;">
+            <option value="principiante" ${mc.nivel==='principiante'?'selected':''}>Principiante</option>
+            <option value="intermedio"   ${mc.nivel==='intermedio'  ?'selected':''}>Intermedio</option>
+            <option value="avanzado"     ${mc.nivel==='avanzado'    ?'selected':''}>Avanzado</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">FECHA DE INICIO</label>
+          <input type="date" id="mc-fecha" value="${mc.fechaInicio||''}" oninput="_mcField('fechaInicio',this.value)"
+            style="width:100%;border:1px solid #d0d0d0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">SEMANAS TOTALES</label>
+          <input type="number" id="mc-semanas" value="${mc.totalSemanas||12}" min="4" max="52" oninput="_mcField('totalSemanas',+this.value)"
+            style="width:100%;border:1px solid #d0d0d0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+        </div>
+      </div>
+    </div>`;
+
+  (mc.mesociclos||[]).forEach((meso,mi) => {
+    html += `
+    <div style="background:#fff;border:1.5px solid #e0e0e0;border-radius:14px;margin-bottom:16px;overflow:hidden;">
+      <div style="background:#1a2a4a;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:10px;font-weight:900;letter-spacing:1px;opacity:.6;">MESO ${mi+1}</span>
+        <input value="${meso.nombre||''}" oninput="_mesoField(${mi},'nombre',this.value)"
+          placeholder="Nombre del mesociclo"
+          style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:5px 10px;color:#fff;font-size:13px;font-weight:700;font-family:inherit;">
+        <button onclick="_mesoAddSem(${mi})" title="Agregar semana"
+          style="background:#C9A84C;border:none;border-radius:6px;color:#fff;font-size:16px;font-weight:900;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">+</button>
+        ${mi>0?`<button onclick="_mesoEliminar(${mi})" title="Eliminar mesociclo" style="background:rgba(239,68,68,.2);border:none;border-radius:6px;color:#f87171;font-size:14px;font-weight:900;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>`:''}
+      </div>
+      <div style="padding:12px;">`;
+
+    if ((meso.semanas||[]).length===0) {
+      html += `<div style="text-align:center;padding:16px;color:#aaa;font-size:12px;font-style:italic;">Sin semanas. Hacé clic en + para agregar.</div>`;
+    } else {
+      (meso.semanas||[]).forEach((sem,si) => {
+        const c = COLORES[sem.tipo]||'#888';
+        html += `
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f0f0f0;">
+          <span style="font-size:11px;font-weight:800;color:#1a3a6a;min-width:24px;">S${sem.semana}</span>
+          <select onchange="_semField(${mi},${si},'tipo',this.value)"
+            style="border:1.5px solid ${c}55;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:${c};background:${c}14;flex-shrink:0;font-family:inherit;">
+            ${TIPOS.map(t=>`<option value="${t}" ${sem.tipo===t?'selected':''}>${t}</option>`).join('')}
+          </select>
+          <input placeholder="Series/grupo" value="${sem.series||''}" oninput="_semField(${mi},${si},'series',this.value)"
+            style="border:1px solid #e0e0e0;border-radius:6px;padding:4px 8px;font-size:11px;width:80px;font-family:inherit;">
+          <input placeholder="Intens.%" value="${sem.intens||''}" oninput="_semField(${mi},${si},'intens',this.value)"
+            style="border:1px solid #e0e0e0;border-radius:6px;padding:4px 8px;font-size:11px;width:70px;font-family:inherit;">
+          <input placeholder="RIR" value="${sem.rir||''}" oninput="_semField(${mi},${si},'rir',this.value)"
+            style="border:1px solid #e0e0e0;border-radius:6px;padding:4px 8px;font-size:11px;width:50px;font-family:inherit;">
+          <button onclick="_semEliminar(${mi},${si})" style="background:none;border:none;color:#f87171;font-size:16px;cursor:pointer;padding:0 4px;margin-left:auto;">×</button>
+        </div>`;
+      });
+    }
+    html += `</div></div>`;
+  });
+
+  html += `
+    <button onclick="_macroAddMeso()"
+      style="width:100%;padding:12px;background:#f0f4ff;border:1.5px dashed #1a3a6a44;border-radius:10px;color:#1a3a6a;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.3px;margin-bottom:8px;">
+      + Agregar mesociclo
+    </button>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+function _mcField(k,v)  { if(_macroData) _macroData[k]=v; }
+function _mesoField(mi,k,v) { if(_macroData) _macroData.mesociclos[mi][k]=v; }
+function _semField(mi,si,k,v) { if(_macroData) _macroData.mesociclos[mi].semanas[si][k]=v; }
+
+function _mesoAddSem(mi) {
+  if (!_macroData) return;
+  const meso = _macroData.mesociclos[mi];
+  const prevSems = _macroData.mesociclos.slice(0,mi).reduce((a,m)=>a+(m.semanas||[]).length,0);
+  const sN = prevSems + (meso.semanas||[]).length + 1;
+  const TIPOS_SEQ = ['Ajuste','Carga','Impacto','Recuperación'];
+  const tipo = TIPOS_SEQ[(meso.semanas||[]).length % 4] || 'Carga';
+  meso.semanas = meso.semanas || [];
+  meso.semanas.push({semana:sN, tipo, series:'', intens:'', rir:''});
+  // Recalcular totalSemanas
+  _macroData.totalSemanas = _macroData.mesociclos.reduce((a,m)=>a+(m.semanas||[]).length,0)||12;
+  _renderMacroUI();
+}
+
+function _semEliminar(mi,si) {
+  if (!_macroData) return;
+  _macroData.mesociclos[mi].semanas.splice(si,1);
+  // Renumerar semanas globalmente
+  let n=1;
+  _macroData.mesociclos.forEach(m=>(m.semanas||[]).forEach(s=>{s.semana=n++;}));
+  _macroData.totalSemanas = n-1 || 12;
+  _renderMacroUI();
+}
+
+function _mesoEliminar(mi) {
+  if (!_macroData || mi===0) return;
+  if (!confirm('¿Eliminar este mesociclo y todas sus semanas?')) return;
+  _macroData.mesociclos.splice(mi,1);
+  let n=1;
+  _macroData.mesociclos.forEach((m,i)=>{m.numero=i+1;(m.semanas||[]).forEach(s=>{s.semana=n++;});});
+  _macroData.totalSemanas = n-1 || 12;
+  _renderMacroUI();
+}
+
+function _macroAddMeso() {
+  if (!_macroData) return;
+  const mi = _macroData.mesociclos.length;
+  _macroData.mesociclos.push({numero:mi+1, nombre:'Mesociclo '+(mi+1), semanas:[]});
+  _renderMacroUI();
+}
+
+async function macroGuardar() {
+  if (!_macroData || !currentAlumnoId) { alert('No hay macrociclo ni alumno seleccionado.'); return; }
+  // Sync nombre desde el DOM (por si se escribió sin perder foco)
+  const nombreEl = document.getElementById('mc-nombre');
+  if (nombreEl) _macroData.nombre = nombreEl.value;
+  if (!window._db) { toast('Conectate a Firebase primero (Backup)', 'error'); return; }
+  const btn = document.getElementById('macro-btn-guardar');
+  if (btn) { btn.disabled=true; btn.textContent='Guardando…'; }
+  try {
+    // Guardar en Firebase directamente
+    await window._db.collection('alumnos').doc(currentAlumnoId).update({ macrociclo: _macroData });
+    // Actualizar caché en localStorage
+    const alumnos = getAlumnos();
+    const idx = alumnos.findIndex(a => a.id === currentAlumnoId);
+    if (idx >= 0) { alumnos[idx].macrociclo = _macroData; saveAlumnos(alumnos); }
+    toast('✅ Macrociclo guardado');
+  } catch(e) {
+    console.error(e);
+    alert('Error al guardar: '+e.message);
+  }
+  if (btn) { btn.disabled=false; btn.textContent='💾 Guardar macrociclo'; }
 }
 
 </script>
