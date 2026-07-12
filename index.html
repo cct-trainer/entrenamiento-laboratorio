@@ -3420,8 +3420,9 @@ select.toolbox-input option:disabled { color: #888; }
           <div id="ia-output" style="display:none;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
               <div id="ia-output-label" style="font-size:11px;font-weight:900;letter-spacing:1px;color:#7c3aed;">PROGRAMA SEMANAL GENERADO</div>
-              <div style="display:flex;gap:8px;">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <button onclick="_iaCopiar()" style="font-size:11px;font-weight:700;padding:6px 14px;border:1.5px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:7px;cursor:pointer;">Copiar texto</button>
+                <button onclick="_iaGenerarPDF()" style="font-size:11px;font-weight:700;padding:6px 14px;border:1.5px solid #dc2626;background:#fff1f1;color:#dc2626;border-radius:7px;cursor:pointer;">📄 Generar PDF</button>
                 <button onclick="_iaNueva()" style="font-size:11px;font-weight:700;padding:6px 14px;border:1.5px solid #e0e0e0;background:#f8f9fb;color:#555;border-radius:7px;cursor:pointer;">Nuevo plan</button>
               </div>
             </div>
@@ -22945,6 +22946,68 @@ async function iaGenerarPlan() {
 
   const btnLabel = _iaCurrentTrainer === 'bc' ? '🍑 Generar plan con Bret Contreras' : '🏔️ Generar plan con Mountain Dog';
   if (btn) { btn.disabled = false; btn.textContent = btnLabel; }
+}
+
+function _iaGenerarPDF() {
+  const content = localStorage.getItem('SOCC_IA_LAST_PLAN') || '';
+  if (!content) { toast('No hay plan generado todavía'); return; }
+
+  const entrenador  = _iaCurrentTrainer === 'bc' ? 'Bret Contreras' : 'John Meadows';
+  const accentColor = _iaCurrentTrainer === 'bc' ? '#0ea5e9' : '#7c3aed';
+  const nombre = (document.getElementById('ia-f-nombre')?.value || '').trim() || 'Atleta';
+  const nivel  = document.getElementById('ia-f-nivel')?.value || '';
+  const dias   = document.getElementById('ia-f-dias')?.value || '';
+  const obj    = (document.getElementById('ia-f-objetivo')?.value || '').trim();
+  const fecha  = new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'long', year:'numeric' });
+
+  const bodyHtml = _iaMarkdown(content);
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Plan Semanal — ${nombre} — ${entrenador}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; line-height: 1.75; color: #1a1a2e; padding: 40px 50px; max-width: 860px; margin: 0 auto; }
+    .cover { display:flex; align-items:flex-start; justify-content:space-between; border-bottom: 3px solid ${accentColor}; padding-bottom: 18px; margin-bottom: 28px; }
+    .cover-left h1 { font-size: 22px; font-weight: 900; color: #1a1a2e; margin-bottom: 6px; }
+    .cover-left .meta { font-size: 11px; color: #666; letter-spacing: .4px; line-height: 1.8; }
+    .cover-badge { font-size: 11px; font-weight: 800; letter-spacing: .5px; color: #fff; background: ${accentColor}; border-radius: 8px; padding: 6px 14px; white-space: nowrap; align-self: center; }
+    h2 { color: #1a1a2e; font-size: 17px; font-weight: 900; margin: 0 0 10px; }
+    h3 { color: ${accentColor}; font-size: 15px; border-bottom: 2px solid #e8e8e8; padding-bottom: 5px; margin: 22px 0 8px; }
+    h4 { color: #4f46e5; font-size: 14px; font-weight: 800; margin: 14px 0 5px; }
+    ul { padding-left: 20px; margin: 5px 0 8px; }
+    li { margin-bottom: 3px; }
+    strong { font-weight: 700; }
+    br + br { display: block; margin-top: 4px; }
+    @media print {
+      body { padding: 20px 28px; }
+      h3 { page-break-before: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="cover">
+    <div class="cover-left">
+      <h1>Programa Semanal de Entrenamiento</h1>
+      <div class="meta">
+        <strong>Atleta:</strong> ${nombre}${nivel ? ' &nbsp;·&nbsp; ' + nivel : ''}${dias ? ' &nbsp;·&nbsp; ' + dias + ' días/semana' : ''}<br>
+        ${obj ? '<strong>Objetivo:</strong> ' + obj + '<br>' : ''}
+        <strong>Entrenador IA:</strong> ${entrenador} &nbsp;·&nbsp; <strong>Fecha:</strong> ${fecha}
+      </div>
+    </div>
+    <div class="cover-badge">${_iaCurrentTrainer === 'bc' ? '🍑 GLUTE LAB' : '🏔️ MOUNTAIN DOG'}</div>
+  </div>
+  <div class="content">${bodyHtml}</div>
+  <script>window.onload = function() { window.print(); };<\/script>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank', 'width=920,height=700');
+  if (!win) { toast('⚠️ Habilitá los pop-ups para generar el PDF'); return; }
+  win.document.write(html);
+  win.document.close();
 }
 
 function _iaCopiar() {
