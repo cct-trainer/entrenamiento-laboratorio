@@ -3047,6 +3047,10 @@ select.toolbox-input option:disabled { color: #888; }
           <button class="pmm-left-item" id="pmm-cat-macrociclo" onclick="perfilPlanGo('macrociclo')">
             🗓️ Macrociclo
           </button>
+          <div class="pmm-left-divider"></div>
+          <button class="pmm-left-item" id="pmm-cat-ia" onclick="perfilPlanGo('ia')" style="color:#7c3aed;font-weight:900;">
+            🤖 IA Planner
+          </button>
         </div>
         <div class="pmm-right" id="pmm-right-panel">
           <div class="pmm-right-empty">
@@ -3312,6 +3316,108 @@ select.toolbox-input option:disabled { color: #888; }
         </div>
         <div class="module-content">
           <div id="macro-editor"></div>
+        </div>
+      </div>
+
+      <!-- 2c. IA PLANNER -->
+      <div id="perfil-sec-ia" class="perfil-section">
+        <div class="module-header">
+          <div class="mh-left">
+            <h2 class="mh-title">🤖 IA Planner</h2>
+            <p class="mh-sub">Generación de sesiones con Mountain Dog Training IA</p>
+          </div>
+          <div class="mh-actions">
+            <button onclick="_iaShowKeyModal()" style="font-size:11px;padding:7px 14px;border:1px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:8px;cursor:pointer;font-weight:700;">🔑 API Key</button>
+          </div>
+        </div>
+        <div class="module-content">
+
+          <!-- Tarjeta del alumno -->
+          <div id="ia-alumno-card" style="background:linear-gradient(135deg,#1a2a4a,#2d1b69);border-radius:14px;padding:16px 20px;margin-bottom:16px;color:#fff;display:flex;align-items:center;gap:16px;">
+            <div style="width:48px;height:48px;background:rgba(124,58,237,.4);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🏋️</div>
+            <div style="flex:1;">
+              <div id="ia-al-nombre" style="font-size:16px;font-weight:900;letter-spacing:.3px;">—</div>
+              <div id="ia-al-info" style="font-size:11px;color:rgba(255,255,255,.6);margin-top:3px;">Seleccioná un alumno en el sidebar</div>
+            </div>
+            <div id="ia-al-badge" style="font-size:10px;font-weight:800;letter-spacing:.5px;color:#c4b5fd;background:rgba(124,58,237,.3);border:1px solid rgba(124,58,237,.4);border-radius:6px;padding:4px 10px;white-space:nowrap;"></div>
+          </div>
+
+          <!-- Parámetros -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+            <div>
+              <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">GRUPO MUSCULAR / ENFOQUE</label>
+              <select id="ia-musculo" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
+                <option>Pecho</option><option>Espalda</option><option>Piernas (Cuádriceps + Glúteos)</option>
+                <option>Piernas (Femorales + Glúteos)</option><option>Hombros</option>
+                <option>Bíceps + Tríceps</option><option>Upper Body (Empuje)</option>
+                <option>Upper Body (Jalón)</option><option>Full Body</option><option>Core y Abdominales</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">DURACIÓN OBJETIVO</label>
+              <select id="ia-duracion" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
+                <option>45 minutos</option><option selected>60 minutos</option>
+                <option>75 minutos</option><option>90 minutos</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">OBJETIVO DE LA SESIÓN</label>
+              <select id="ia-objetivo" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
+                <option>Hipertrofia máxima (pump + volumen)</option>
+                <option>Fuerza y carga progresiva</option>
+                <option>Activación y conexión mente-músculo</option>
+                <option>Recuperación activa</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">MODELO IA</label>
+              <select id="ia-modelo" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
+                <option value="claude-sonnet-4-6" selected>Claude Sonnet 4.6 (recomendado)</option>
+                <option value="claude-opus-4-8">Claude Opus 4.8 (máxima calidad)</option>
+                <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (más rápido)</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">NOTAS ADICIONALES (equipamiento, restricciones, zona a reforzar)</label>
+            <textarea id="ia-notas" rows="3" placeholder="Ej: Solo tiene mancuernas y cables. Codo derecho sensible. Quiere enfatizar el deltoides posterior..."
+              style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;background:#fff;resize:vertical;box-sizing:border-box;"></textarea>
+          </div>
+          <button onclick="iaGenerarPlan()" id="ia-btn-generar"
+            style="width:100%;padding:14px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:900;letter-spacing:.5px;cursor:pointer;margin-bottom:20px;transition:opacity .2s;">
+            🤖 Generar sesión con Mountain Dog IA
+          </button>
+
+          <!-- Output -->
+          <div id="ia-output" style="display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div style="font-size:11px;font-weight:900;letter-spacing:1px;color:#7c3aed;">SESIÓN GENERADA</div>
+              <div style="display:flex;gap:8px;">
+                <button onclick="_iaCopiar()" style="font-size:11px;font-weight:700;padding:6px 14px;border:1.5px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:7px;cursor:pointer;">Copiar texto</button>
+                <button onclick="_iaNueva()" style="font-size:11px;font-weight:700;padding:6px 14px;border:1.5px solid #e0e0e0;background:#f8f9fb;color:#555;border-radius:7px;cursor:pointer;">Nueva sesión</button>
+              </div>
+            </div>
+            <div id="ia-output-text"
+              style="background:#fff;border:1.5px solid #e0e0e0;border-radius:12px;padding:20px;font-size:13px;line-height:1.7;color:#1a1a2e;white-space:pre-wrap;max-height:70vh;overflow-y:auto;font-family:inherit;"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Modal API Key -->
+      <div id="ia-key-modal" onclick="if(event.target===this)this.style.display='none'"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;display:flex!important;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:16px;padding:28px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.3);" onclick="event.stopPropagation()">
+          <div style="font-size:16px;font-weight:900;color:#1a1a2e;margin-bottom:6px;">🔑 Anthropic API Key</div>
+          <div style="font-size:12px;color:#888;margin-bottom:16px;">Se guarda solo en este navegador (localStorage). Nunca sale de tu computadora.</div>
+          <input type="password" id="ia-key-input" placeholder="sk-ant-api03-..."
+            style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:10px 14px;font-size:13px;font-family:monospace;box-sizing:border-box;margin-bottom:12px;">
+          <div style="display:flex;gap:10px;">
+            <button onclick="_iaGuardarKey()"
+              style="flex:1;padding:11px;background:#7c3aed;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">Guardar</button>
+            <button onclick="document.getElementById('ia-key-modal').style.display='none'"
+              style="flex:1;padding:11px;background:#f0f0f0;color:#555;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">Cancelar</button>
+          </div>
         </div>
       </div>
 
@@ -13214,6 +13320,14 @@ function perfilPlanGo(sub) {
     });
     return;
   }
+  if (sub === 'ia') {
+    _cerrarTodosPerfilMM();
+    _limpiarAreaPrincipal(() => {
+      _activarSection('ia');
+      renderIAPlanner();
+    });
+    return;
+  }
   _limpiarAreaPrincipal(() => {
     _activarSection('planificacion');
     if (currentAlumnoId) switchPerfilSubtab('plan','calendario');
@@ -22512,6 +22626,227 @@ function blogEliminarArticulo(idx) {
   saveArticulos(arts);
   renderBlogLista();
   toast('Artículo eliminado');
+}
+
+// ── IA PLANNER (Mountain Dog) ──────────────────────────────────────────────────
+
+const _IA_SYSTEM_PROMPT = `# SYSTEM PROMPT: Entrenador de IA - Perfil de John Meadows ("The Mountain Dog")
+## 1. IDENTIDAD Y TONO DE VOZ
+- Identidad: Eres John Meadows, legendario entrenador y culturista profesional IFBB, creador de la metodología "Mountain Dog Training". Tu misión es guiar de manera profesional y empática a atletas de fuerza y entusiastas del gimnasio.
+- Tono de voz: Humilde, motivador, cercano y sabio. Hablas como un compañero con años de experiencia en el gimnasio que ve el culturismo como un arte empírico guiado por el sentido común.
+- Filosofía Clave: Consideras que el "pump" (bombeo masivo de sangre) es obligatorio para el crecimiento y el disfrute. Defiendes firmemente que "estamos todos juntos en esto".
+- Salud y Longevidad: Eres un obsesionado de la salud articular, la longevidad en el deporte y el cuidado de los tendones. Nunca actúas como un sargento gritón; eres un mentor que enseña a escuchar al cuerpo.
+
+## 2. REGLAS DE PLANIFICACIÓN (Para Sesiones de más de 60 Minutos)
+Cada rutina para grupos musculares grandes (pecho, espalda, piernas) que supere una hora de duración debe estructurarse cronológicamente bajo tu estricto sistema de 4 fases y control estricto de volumen:
+- Bloque Inicial: Speed Warm-up (0 - 15 min): No gastes energía de más. Pauta series rápidas y ascendentes en máquina con bajas repeticiones explosivas (aprox. 6 reps) aumentando discos de peso solo hasta que la forma empiece a sufrir.
+- Fase 1: Activación / Conexión Mente-Músculo (15 - 30 min): Programa 1 o 2 ejercicios en poleas, cables o máquinas controladas. El peso debe ser moderado (sin pre-exhaustar drásticamente). El objetivo es llenar la zona objetivo de sangre y conseguir una contracción pico retenida (iso-hold de medio segundo a un segundo).
+- Fase 2: Carga Explosiva / Pesada (30 - 45 min): Una vez que las articulaciones están lubricadas y calientes gracias a la Fase 1, pauta movimientos compuestos de peso libre o barras pesadas. Instrucción biomecánica fija: Fase excéntrica perfectamente controlada y fase concéntrica lo más explosiva posible buscando sobrecarga progresiva.
+- Fase 3: Bombeo Súper Máximo (45 - 60 min): Incremento brutal del estrés metabólico en ejercicios seguros de aislamiento o máquinas. En la última serie de estos ejercicios debes recetar obligatoriamente técnicas de alta intensidad: Drop-sets de la muerte (series descendentes continuas al fallo), Partiales lentas (repeticiones parciales al final desde la posición estirada), Iso-holds (sostenimientos isométricos al fallo total de unos 10 segundos).
+- Fase 4: Estiramiento Bajo Tensión y Salud Articular (60 - 75 min): El músculo ya está cargado de sangre; usa movimientos con rangos de movimiento profundos para estirar la fascia. Concluye la sesión siempre con ejercicios rehabilitadores o regenerativos para zonas vulnerables.
+
+## 3. CONTROL DE VOLUMEN Y DESCANSOS
+- Límite de Ejercicios: No prescribas más de 4 a 5 ejercicios totales en una sesión de músculo grande.
+- Tiempos de Descanso: Indica de 90 segundos a 2 minutos para las Fases 1 y 3 y hasta 3 minutos de descanso completo para los levantamientos pesados de la Fase 2.
+
+## 4. INSTRUCCIONES BIOMECÁNICAS "FIRMA"
+- Meadows Row: Remo unilateral con barra olímpica en Landmine. Instrucción: "Usa straps, apoya fuertemente el brazo que no trabaja sobre tu rodilla, mantén la espalda plana horizontal y la cadera abajo, no gires el torso y jala dirigiendo tu codo hacia arriba y afuera en un ángulo de 45-90 grados para reventar el grosor de tus romboides, trapecios inferiores y rear delts".
+- Uso de Straps: En cualquier entrenamiento pesado de espalda o remos, recuerda siempre: "No dejes que la fuerza de tus antebrazos dicte el fin de la serie. Usa tus straps para concentrarte en jalar con los codos".
+- Alineación del Pecho: Para presses inclinados o aperturas, enfatiza alinear mecánicamente los brazos a unos 45 grados para seguir exactamente el sentido de las fibras claviculares del pectoral superior.
+- Hombros / Rear Delts: Tienes predilección por las repeticiones altas en deltoides posterior (series de 20-25 reps completas combinadas con parciales) y el ejercicio "Six Ways".
+
+## 5. RESTRICCIONES DE SEGURIDAD
+- Si el usuario reporta fatiga, sobreentrenamiento, o articulaciones crujientes o adoloridas, recomienda mutar los ejercicios libres a máquinas asistidas estables, añadir mangas de compresión, y enfocar en estrés metabólico en lugar de cargas axiales destructivas.
+- Si el atleta es Natural, prioriza una frecuencia de estímulo cada 3 días (48-72h) alternando planos y ángulos.
+
+Responde siempre en ESPAÑOL. Usa el tono cálido y motivador de John Meadows. Estructura la sesión de forma clara y detallada con todos los ejercicios, series, repeticiones, tiempos de descanso y técnicas especiales.`;
+
+function _iaApiKey() { return localStorage.getItem('SOCC_ANTHROPIC_KEY') || ''; }
+
+function _iaShowKeyModal() {
+  const modal = document.getElementById('ia-key-modal');
+  if (!modal) return;
+  const inp = document.getElementById('ia-key-input');
+  if (inp) inp.value = _iaApiKey();
+  modal.style.display = 'flex';
+}
+
+function _iaGuardarKey() {
+  const v = (document.getElementById('ia-key-input')?.value || '').trim();
+  if (!v) { alert('Ingresá la API key'); return; }
+  localStorage.setItem('SOCC_ANTHROPIC_KEY', v);
+  document.getElementById('ia-key-modal').style.display = 'none';
+  toast('✅ API key guardada');
+}
+
+function renderIAPlanner() {
+  // Actualizar tarjeta del alumno
+  const al = currentAlumnoId ? getAlumnos().find(a => a.id === currentAlumnoId) : null;
+  const nombreEl = document.getElementById('ia-al-nombre');
+  const infoEl   = document.getElementById('ia-al-info');
+  const badgeEl  = document.getElementById('ia-al-badge');
+  if (al) {
+    if (nombreEl) nombreEl.textContent = al.nombre || al.id;
+    const edad = (al.nacimiento && typeof calcularEdad === 'function') ? calcularEdad(al.nacimiento) + ' años' : '';
+    const info  = [edad, al.sexo, al.objetivo].filter(Boolean).join(' · ');
+    if (infoEl) infoEl.textContent = info || 'Sin datos adicionales';
+    if (badgeEl) badgeEl.textContent = (al.nivel || 'Sin nivel').toUpperCase();
+  } else {
+    if (nombreEl) nombreEl.textContent = 'Sin alumno seleccionado';
+    if (infoEl)   infoEl.textContent   = 'Abrí un perfil desde el inicio para ver sus datos aquí';
+    if (badgeEl)  badgeEl.textContent  = '';
+  }
+  // Resetear output
+  const out = document.getElementById('ia-output');
+  if (out) out.style.display = 'none';
+  // Mostrar modal de key si no tiene
+  if (!_iaApiKey()) setTimeout(_iaShowKeyModal, 300);
+}
+
+function _iaBuildPrompt() {
+  const al = currentAlumnoId ? getAlumnos().find(a => a.id === currentAlumnoId) : null;
+  const musculo  = document.getElementById('ia-musculo')?.value  || '';
+  const duracion = document.getElementById('ia-duracion')?.value || '60 minutos';
+  const objetivo = document.getElementById('ia-objetivo')?.value || '';
+  const notas    = document.getElementById('ia-notas')?.value.trim() || '';
+
+  let prompt = `Generá una sesión de entrenamiento completa siguiendo tu metodología Mountain Dog Training.`;
+
+  if (al) {
+    prompt += `\n\n## PERFIL DEL ATLETA\n`;
+    prompt += `- Nombre: ${al.nombre || 'Atleta'}\n`;
+    if (al.nivel)       prompt += `- Nivel: ${al.nivel}\n`;
+    if (al.objetivo)    prompt += `- Objetivo principal: ${al.objetivo}\n`;
+    if (al.dias)        prompt += `- Días disponibles: ${al.dias} por semana\n`;
+    const edad = (al.nacimiento && typeof calcularEdad === 'function') ? calcularEdad(al.nacimiento) : null;
+    if (edad)           prompt += `- Edad: ${edad} años\n`;
+    if (al.sexo)        prompt += `- Sexo: ${al.sexo}\n`;
+    if (al.lesiones)    prompt += `- Lesiones o restricciones: ${al.lesiones}\n`;
+    if (al.enfermedades) prompt += `- Condiciones de salud: ${al.enfermedades}\n`;
+    if (al.observaciones) prompt += `- Observaciones del coach: ${al.observaciones}\n`;
+    // Última antropometría
+    const antro = (typeof getAntropometria === 'function' ? getAntropometria() : [])
+      .filter(r => r.alumnoId === currentAlumnoId)
+      .sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+    if (antro.length > 0) {
+      const u = antro[0];
+      prompt += `\n## ÚLTIMA ANTROPOMETRÍA (${u.fecha || ''})\n`;
+      if (u.peso)   prompt += `- Peso: ${u.peso} kg\n`;
+      if (u.talla)  prompt += `- Talla: ${u.talla} cm\n`;
+      if (u.imc)    prompt += `- IMC: ${u.imc}\n`;
+    }
+  }
+
+  prompt += `\n## PARÁMETROS DE LA SESIÓN\n`;
+  prompt += `- Grupo muscular / Enfoque: ${musculo}\n`;
+  prompt += `- Duración objetivo: ${duracion}\n`;
+  prompt += `- Objetivo de la sesión: ${objetivo}\n`;
+  if (notas) prompt += `- Notas del coach: ${notas}\n`;
+
+  prompt += `\nGenerá la sesión completa con todas las fases, ejercicios, series, repeticiones, tiempos de descanso y técnicas especiales de alta intensidad cuando corresponda. Usá el tono característico de John Meadows: motivador, cercano y profesional.`;
+
+  return prompt;
+}
+
+// Renderizado simple de markdown → HTML
+function _iaMarkdown(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^### (.+)$/gm, '<h4 style="color:#7c3aed;margin:16px 0 6px;font-size:14px;letter-spacing:.3px;">$1</h4>')
+    .replace(/^## (.+)$/gm, '<h3 style="color:#4f46e5;margin:20px 0 8px;font-size:15px;border-bottom:2px solid #e0e0e0;padding-bottom:6px;">$1</h3>')
+    .replace(/^# (.+)$/gm, '<h2 style="color:#1a1a2e;margin:0 0 12px;font-size:17px;font-weight:900;">$1</h2>')
+    .replace(/^- (.+)$/gm, '<li style="margin-bottom:4px;">$1</li>')
+    .replace(/(<li.*<\/li>)/gs, '<ul style="padding-left:18px;margin:6px 0;">$1</ul>')
+    .replace(/\n{2,}/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
+async function iaGenerarPlan() {
+  const apiKey = _iaApiKey();
+  if (!apiKey) { _iaShowKeyModal(); return; }
+
+  const btn = document.getElementById('ia-btn-generar');
+  const out  = document.getElementById('ia-output');
+  const outText = document.getElementById('ia-output-text');
+  const modelo = document.getElementById('ia-modelo')?.value || 'claude-sonnet-4-6';
+
+  if (btn)  { btn.disabled = true; btn.textContent = '⏳ Generando sesión...'; }
+  if (out)  { out.style.display = 'block'; }
+  if (outText) { outText.innerHTML = '<span style="color:#7c3aed;font-style:italic;">Mountain Dog IA está diseñando tu sesión...</span>'; }
+
+  const prompt = _iaBuildPrompt();
+  let accumulated = '';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: modelo,
+        max_tokens: 8000,
+        stream: true,
+        system: _IA_SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(()=>({}));
+      throw new Error(err?.error?.message || `Error HTTP ${resp.status}`);
+    }
+
+    const reader  = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') break;
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+            accumulated += parsed.delta.text;
+            if (outText) outText.innerHTML = _iaMarkdown(accumulated);
+          }
+        } catch(e) {}
+      }
+    }
+
+    // Guardar en localStorage para referencia
+    localStorage.setItem('SOCC_IA_LAST_PLAN', accumulated);
+    toast('✅ Sesión generada por Mountain Dog IA');
+
+  } catch(e) {
+    console.error('IA Error:', e);
+    if (outText) outText.innerHTML = `<span style="color:#f87171;font-weight:700;">Error: ${e.message}</span><br><br>Verificá que tu API key sea válida y que tengas saldo en tu cuenta de Anthropic.`;
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = '🤖 Generar sesión con Mountain Dog IA'; }
+}
+
+function _iaCopiar() {
+  const text = localStorage.getItem('SOCC_IA_LAST_PLAN') || '';
+  navigator.clipboard.writeText(text)
+    .then(() => toast('📋 Plan copiado al portapapeles'))
+    .catch(() => alert(text));
+}
+
+function _iaNueva() {
+  const out = document.getElementById('ia-output');
+  if (out) out.style.display = 'none';
+  document.getElementById('ia-notas').value = '';
 }
 
 // ── MACROCICLO EDITOR ──────────────────────────────────────────────────────────
