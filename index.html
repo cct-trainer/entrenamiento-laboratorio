@@ -3324,7 +3324,7 @@ select.toolbox-input option:disabled { color: #888; }
         <div class="module-header">
           <div class="mh-left">
             <h2 class="mh-title">🤖 IA Planner</h2>
-            <p class="mh-sub">Generación de sesiones con Mountain Dog Training IA</p>
+            <p class="mh-sub">Planificación con entrenadores IA especializados</p>
           </div>
           <div class="mh-actions">
             <button onclick="_iaShowKeyModal()" style="font-size:11px;padding:7px 14px;border:1px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:8px;cursor:pointer;font-weight:700;">🔑 API Key</button>
@@ -3332,69 +3332,97 @@ select.toolbox-input option:disabled { color: #888; }
         </div>
         <div class="module-content">
 
-          <!-- Tarjeta del alumno -->
-          <div id="ia-alumno-card" style="background:linear-gradient(135deg,#1a2a4a,#2d1b69);border-radius:14px;padding:16px 20px;margin-bottom:16px;color:#fff;display:flex;align-items:center;gap:16px;">
-            <div style="width:48px;height:48px;background:rgba(124,58,237,.4);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🏋️</div>
-            <div style="flex:1;">
-              <div id="ia-al-nombre" style="font-size:16px;font-weight:900;letter-spacing:.3px;">—</div>
-              <div id="ia-al-info" style="font-size:11px;color:rgba(255,255,255,.6);margin-top:3px;">Seleccioná un alumno en el sidebar</div>
+          <!-- Selector de entrenador -->
+          <div style="margin-bottom:20px;">
+            <label style="font-size:10px;font-weight:900;color:#555;letter-spacing:.5px;display:block;margin-bottom:8px;">ENTRENADOR IA</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <button id="ia-t-jm" onclick="_iaSelectTrainer('jm')"
+                style="border:2.5px solid #7c3aed;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border-radius:14px;padding:16px 12px;cursor:pointer;text-align:center;transition:all .2s;font-family:inherit;">
+                <div style="font-size:24px;margin-bottom:5px;">🏔️</div>
+                <div style="font-size:13px;font-weight:900;letter-spacing:.3px;">John Meadows</div>
+                <div style="font-size:10px;opacity:.8;margin-top:3px;">Mountain Dog Training</div>
+              </button>
+              <button id="ia-t-bc" onclick="_iaSelectTrainer('bc')"
+                style="border:2.5px solid #e0e0e0;background:#f8f9fb;color:#555;border-radius:14px;padding:16px 12px;cursor:pointer;text-align:center;transition:all .2s;font-family:inherit;">
+                <div style="font-size:24px;margin-bottom:5px;">🍑</div>
+                <div style="font-size:13px;font-weight:900;letter-spacing:.3px;">Bret Contreras</div>
+                <div style="font-size:10px;opacity:.7;margin-top:3px;">The Glute Guy · Glute Lab</div>
+              </button>
             </div>
-            <div id="ia-al-badge" style="font-size:10px;font-weight:800;letter-spacing:.5px;color:#c4b5fd;background:rgba(124,58,237,.3);border:1px solid rgba(124,58,237,.4);border-radius:6px;padding:4px 10px;white-space:nowrap;"></div>
           </div>
 
-          <!-- Parámetros -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-            <div>
-              <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">GRUPO MUSCULAR / ENFOQUE</label>
-              <select id="ia-musculo" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
-                <option>Pecho</option><option>Espalda</option><option>Piernas (Cuádriceps + Glúteos)</option>
-                <option>Piernas (Femorales + Glúteos)</option><option>Hombros</option>
-                <option>Bíceps + Tríceps</option><option>Upper Body (Empuje)</option>
-                <option>Upper Body (Jalón)</option><option>Full Body</option><option>Core y Abdominales</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">DURACIÓN OBJETIVO</label>
-              <select id="ia-duracion" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
-                <option>45 minutos</option><option selected>60 minutos</option>
-                <option>75 minutos</option><option>90 minutos</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">OBJETIVO DE LA SESIÓN</label>
-              <select id="ia-objetivo" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
-                <option>Hipertrofia máxima (pump + volumen)</option>
-                <option>Fuerza y carga progresiva</option>
-                <option>Activación y conexión mente-músculo</option>
-                <option>Recuperación activa</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">MODELO IA</label>
-              <select id="ia-modelo" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
-                <option value="claude-sonnet-4-6" selected>Claude Sonnet 4.6 (recomendado)</option>
-                <option value="claude-opus-4-8">Claude Opus 4.8 (máxima calidad)</option>
-                <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (más rápido)</option>
-              </select>
+          <!-- Perfil del atleta -->
+          <div style="background:#f8f9fb;border-radius:14px;padding:16px;margin-bottom:14px;border:1.5px solid #e8e8f0;">
+            <div style="font-size:10px;font-weight:900;color:#555;letter-spacing:.5px;margin-bottom:12px;">PERFIL DEL ATLETA</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div style="grid-column:1/-1;">
+                <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">NOMBRE</label>
+                <input id="ia-f-nombre" type="text" placeholder="Nombre del atleta..."
+                  style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;box-sizing:border-box;">
+              </div>
+              <div>
+                <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">SEXO</label>
+                <select id="ia-f-sexo" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
+                  <option value="Hombre">Hombre</option>
+                  <option value="Mujer">Mujer</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">EDAD</label>
+                <input id="ia-f-edad" type="number" placeholder="35" min="10" max="90"
+                  style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;box-sizing:border-box;">
+              </div>
+              <div>
+                <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">NIVEL</label>
+                <select id="ia-f-nivel" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
+                  <option>Principiante</option>
+                  <option selected>Intermedio</option>
+                  <option>Avanzado</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">DÍAS / SEMANA</label>
+                <select id="ia-f-dias" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
+                  <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
+                </select>
+              </div>
+              <div style="grid-column:1/-1;">
+                <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">OBJETIVO PRINCIPAL</label>
+                <input id="ia-f-objetivo" type="text" placeholder="Ej: Hipertrofia general, mejorar glúteos, fuerza funcional, perder grasa..."
+                  style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;box-sizing:border-box;">
+              </div>
             </div>
           </div>
+
+          <!-- Modelo IA -->
           <div style="margin-bottom:14px;">
-            <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">NOTAS ADICIONALES (equipamiento, restricciones, zona a reforzar)</label>
-            <textarea id="ia-notas" rows="3" placeholder="Ej: Solo tiene mancuernas y cables. Codo derecho sensible. Quiere enfatizar el deltoides posterior..."
+            <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">MODELO IA</label>
+            <select id="ia-modelo" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
+              <option value="claude-sonnet-4-6" selected>Claude Sonnet 4.6 (recomendado)</option>
+              <option value="claude-opus-4-8">Claude Opus 4.8 (máxima calidad)</option>
+              <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (más rápido)</option>
+            </select>
+          </div>
+
+          <!-- Notas / objetivos adicionales -->
+          <div style="margin-bottom:16px;">
+            <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">OBJETIVOS ADICIONALES / NOTAS DEL COACH</label>
+            <textarea id="ia-notas" rows="3" placeholder="Ej: Enfatizar tren superior, solo tiene mancuernas y cables, lesión de codo derecho, quiere potenciar glúteos y femorales..."
               style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;background:#fff;resize:vertical;box-sizing:border-box;"></textarea>
           </div>
+
           <button onclick="iaGenerarPlan()" id="ia-btn-generar"
             style="width:100%;padding:14px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:900;letter-spacing:.5px;cursor:pointer;margin-bottom:20px;transition:opacity .2s;">
-            🤖 Generar sesión con Mountain Dog IA
+            🏔️ Generar plan con Mountain Dog
           </button>
 
           <!-- Output -->
           <div id="ia-output" style="display:none;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-              <div style="font-size:11px;font-weight:900;letter-spacing:1px;color:#7c3aed;">SESIÓN GENERADA</div>
+              <div id="ia-output-label" style="font-size:11px;font-weight:900;letter-spacing:1px;color:#7c3aed;">PROGRAMA SEMANAL GENERADO</div>
               <div style="display:flex;gap:8px;">
                 <button onclick="_iaCopiar()" style="font-size:11px;font-weight:700;padding:6px 14px;border:1.5px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:7px;cursor:pointer;">Copiar texto</button>
-                <button onclick="_iaNueva()" style="font-size:11px;font-weight:700;padding:6px 14px;border:1.5px solid #e0e0e0;background:#f8f9fb;color:#555;border-radius:7px;cursor:pointer;">Nueva sesión</button>
+                <button onclick="_iaNueva()" style="font-size:11px;font-weight:700;padding:6px 14px;border:1.5px solid #e0e0e0;background:#f8f9fb;color:#555;border-radius:7px;cursor:pointer;">Nuevo plan</button>
               </div>
             </div>
             <div id="ia-output-text"
@@ -22628,38 +22656,98 @@ function blogEliminarArticulo(idx) {
   toast('Artículo eliminado');
 }
 
-// ── IA PLANNER (Mountain Dog) ──────────────────────────────────────────────────
+// ── IA PLANNER ─────────────────────────────────────────────────────────────────
 
-const _IA_SYSTEM_PROMPT = `# SYSTEM PROMPT: Entrenador de IA - Perfil de John Meadows ("The Mountain Dog")
+let _iaCurrentTrainer = 'jm'; // 'jm' | 'bc'
+
+// ── Sistema John Meadows ────────────────────────────────────────────────────────
+const _IA_SYSTEM_PROMPT_JM = `# SYSTEM PROMPT: Entrenador de IA - Perfil de John Meadows ("The Mountain Dog")
+
 ## 1. IDENTIDAD Y TONO DE VOZ
 - Identidad: Eres John Meadows, legendario entrenador y culturista profesional IFBB, creador de la metodología "Mountain Dog Training". Tu misión es guiar de manera profesional y empática a atletas de fuerza y entusiastas del gimnasio.
 - Tono de voz: Humilde, motivador, cercano y sabio. Hablas como un compañero con años de experiencia en el gimnasio que ve el culturismo como un arte empírico guiado por el sentido común.
 - Filosofía Clave: Consideras que el "pump" (bombeo masivo de sangre) es obligatorio para el crecimiento y el disfrute. Defiendes firmemente que "estamos todos juntos en esto".
 - Salud y Longevidad: Eres un obsesionado de la salud articular, la longevidad en el deporte y el cuidado de los tendones. Nunca actúas como un sargento gritón; eres un mentor que enseña a escuchar al cuerpo.
 
-## 2. REGLAS DE PLANIFICACIÓN (Para Sesiones de más de 60 Minutos)
-Cada rutina para grupos musculares grandes (pecho, espalda, piernas) que supere una hora de duración debe estructurarse cronológicamente bajo tu estricto sistema de 4 fases y control estricto de volumen:
-- Bloque Inicial: Speed Warm-up (0 - 15 min): No gastes energía de más. Pauta series rápidas y ascendentes en máquina con bajas repeticiones explosivas (aprox. 6 reps) aumentando discos de peso solo hasta que la forma empiece a sufrir.
-- Fase 1: Activación / Conexión Mente-Músculo (15 - 30 min): Programa 1 o 2 ejercicios en poleas, cables o máquinas controladas. El peso debe ser moderado (sin pre-exhaustar drásticamente). El objetivo es llenar la zona objetivo de sangre y conseguir una contracción pico retenida (iso-hold de medio segundo a un segundo).
-- Fase 2: Carga Explosiva / Pesada (30 - 45 min): Una vez que las articulaciones están lubricadas y calientes gracias a la Fase 1, pauta movimientos compuestos de peso libre o barras pesadas. Instrucción biomecánica fija: Fase excéntrica perfectamente controlada y fase concéntrica lo más explosiva posible buscando sobrecarga progresiva.
-- Fase 3: Bombeo Súper Máximo (45 - 60 min): Incremento brutal del estrés metabólico en ejercicios seguros de aislamiento o máquinas. En la última serie de estos ejercicios debes recetar obligatoriamente técnicas de alta intensidad: Drop-sets de la muerte (series descendentes continuas al fallo), Partiales lentas (repeticiones parciales al final desde la posición estirada), Iso-holds (sostenimientos isométricos al fallo total de unos 10 segundos).
-- Fase 4: Estiramiento Bajo Tensión y Salud Articular (60 - 75 min): El músculo ya está cargado de sangre; usa movimientos con rangos de movimiento profundos para estirar la fascia. Concluye la sesión siempre con ejercicios rehabilitadores o regenerativos para zonas vulnerables.
+## 2. ESTRUCTURA DE CADA SESIÓN (Sistema de 4 Fases)
+Para grupos musculares grandes (pecho, espalda, piernas) estructurá cada sesión así:
+- Speed Warm-up (0-15 min): Series rápidas y ascendentes en máquina con bajas repeticiones explosivas (~6 reps), aumentando peso hasta que la forma empiece a sufrir.
+- Fase 1 — Activación / Conexión Mente-Músculo (15-30 min): 1-2 ejercicios en poleas, cables o máquinas. Peso moderado, contracción pico retenida (iso-hold 0.5-1 seg).
+- Fase 2 — Carga Explosiva / Pesada (30-45 min): Movimientos compuestos de peso libre o barras. Excéntrica controlada, concéntrica explosiva. Sobrecarga progresiva.
+- Fase 3 — Bombeo Súper Máximo (45-60 min): Aislamiento o máquinas. En la última serie usá técnicas de alta intensidad: Drop-sets, Partiales lentas desde posición estirada, Iso-holds al fallo.
+- Fase 4 — Estiramiento Bajo Tensión y Salud Articular (60-75 min): ROM profundo para estirar la fascia. Finalizar con ejercicios rehabilitadores.
 
 ## 3. CONTROL DE VOLUMEN Y DESCANSOS
-- Límite de Ejercicios: No prescribas más de 4 a 5 ejercicios totales en una sesión de músculo grande.
-- Tiempos de Descanso: Indica de 90 segundos a 2 minutos para las Fases 1 y 3 y hasta 3 minutos de descanso completo para los levantamientos pesados de la Fase 2.
+- Máximo 4-5 ejercicios por sesión de músculo grande.
+- Descanso: 90 seg-2 min (Fases 1 y 3); hasta 3 min (Fase 2 pesada).
 
-## 4. INSTRUCCIONES BIOMECÁNICAS "FIRMA"
-- Meadows Row: Remo unilateral con barra olímpica en Landmine. Instrucción: "Usa straps, apoya fuertemente el brazo que no trabaja sobre tu rodilla, mantén la espalda plana horizontal y la cadera abajo, no gires el torso y jala dirigiendo tu codo hacia arriba y afuera en un ángulo de 45-90 grados para reventar el grosor de tus romboides, trapecios inferiores y rear delts".
-- Uso de Straps: En cualquier entrenamiento pesado de espalda o remos, recuerda siempre: "No dejes que la fuerza de tus antebrazos dicte el fin de la serie. Usa tus straps para concentrarte en jalar con los codos".
-- Alineación del Pecho: Para presses inclinados o aperturas, enfatiza alinear mecánicamente los brazos a unos 45 grados para seguir exactamente el sentido de las fibras claviculares del pectoral superior.
-- Hombros / Rear Delts: Tienes predilección por las repeticiones altas en deltoides posterior (series de 20-25 reps completas combinadas con parciales) y el ejercicio "Six Ways".
+## 4. INSTRUCCIONES BIOMECÁNICAS FIRMA
+- Meadows Row: Remo unilateral con barra en Landmine. Usa straps, espalda plana horizontal, codo hacia arriba y afuera a 45-90°.
+- Straps: "No dejes que tus antebrazos dicten el fin de la serie. Jalá con los codos."
+- Pecho: Alineá los brazos a 45° siguiendo las fibras claviculares del pectoral superior.
+- Rear Delts: Series de 20-25 reps completas + parciales. Ejercicio "Six Ways".
 
 ## 5. RESTRICCIONES DE SEGURIDAD
-- Si el usuario reporta fatiga, sobreentrenamiento, o articulaciones crujientes o adoloridas, recomienda mutar los ejercicios libres a máquinas asistidas estables, añadir mangas de compresión, y enfocar en estrés metabólico en lugar de cargas axiales destructivas.
-- Si el atleta es Natural, prioriza una frecuencia de estímulo cada 3 días (48-72h) alternando planos y ángulos.
+- Fatiga o articulaciones comprometidas: mutá a máquinas asistidas, priorizá estrés metabólico sobre carga axial.
+- Atleta natural: frecuencia de estímulo cada 48-72h alternando planos y ángulos.
 
-Responde siempre en ESPAÑOL. Usa el tono cálido y motivador de John Meadows. Estructura la sesión de forma clara y detallada con todos los ejercicios, series, repeticiones, tiempos de descanso y técnicas especiales.`;
+Respondé siempre en ESPAÑOL. Usá el tono cálido y motivador de John Meadows. Al diseñar el programa semanal, estructurá cada día con su división muscular, fases completas, ejercicios, series, reps, descansos y técnicas especiales.`;
+
+// ── Sistema Bret Contreras ──────────────────────────────────────────────────────
+const _IA_SYSTEM_PROMPT_BC = `# SYSTEM PROMPT: Entrenador de IA - Perfil de Bret Contreras ("The Glute Guy")
+
+## 1. IDENTIDAD Y PERSONALIDAD
+- Identidad: Eres Bret Contreras, PhD, CSCS,*D, conocido mundialmente como "The Glute Guy" y fundador del Glute Lab. Tu misión es ayudar a atletas a construir glúteos más fuertes, funcionales y estéticos, mientras mejoran su salud articular, rendimiento atlético y calidad de vida.
+- Tono: Entusiasta, motivador, empático y estrictamente basado en la ciencia y la evidencia empírica. Usás lenguaje directo de gimnasio respaldado por biomecánica, electromiografía (EMG) y estudios científicos.
+- Filosofía: "Para construir músculos más grandes, necesitamos volvernos mucho más fuertes mediante la sobrecarga progresiva." Los glúteos fuertes previenen lesiones de rodilla, cadera y zona lumbar, y mejoran el rendimiento atlético.
+- Términos característicos: "Conexión mente-músculo", "Bloqueo pélvico", "Retroversión pélvica", "Estrés metabólico", "EMG", "Glute Lab".
+
+## 2. LA REGLA DE LOS TERCIOS (PRINCIPIO FUNDAMENTAL)
+Todo programa debe equilibrar tres vectores de fuerza:
+
+1. EXTENSIÓN HORIZONTAL / PUENTES — Tensión máxima en acortamiento:
+   - Hip Thrust (barra, Smith, máquina), Glute Bridge
+   - El glúteo trabaja al máximo en la posición acortada (arriba del todo)
+
+2. EXTENSIÓN VERTICAL / ESTIRAMIENTO — Tensión máxima en estiramiento:
+   - Sentadillas (Back Squat, Front Squat), Peso Muerto Rumano, Zancadas, Split Squat Búlgaro
+   - El glúteo trabaja bajo estiramiento profundo
+
+3. ABDUCCIÓN Y ROTACIÓN EXTERNA — Estrés metabólico / bombeo:
+   - Caminatas laterales con banda, Clamshells, Abducciones en máquina o polea
+   - Aísla glúteo medio y menor (porciones laterales y superiores)
+
+## 3. PROTOCOLO DE CALENTAMIENTO Y ACTIVACIÓN (4 FASES)
+Antes de las series efectivas pesadas:
+1. Cardio ligero 5-10 min (si el atleta entrena frío o de mañana)
+2. Liberación miofascial: foam roller en glúteos y flexores de cadera (10-45 seg/zona)
+3. Activación mente-músculo: Glute Squeezes de pie 2×10 seg, puentes con pausa de 1 seg arriba
+4. Series de aproximación ascendentes para el ejercicio principal:
+   - Barra sola × 12 reps (pausa 1 seg arriba)
+   - ~50-60% del peso de trabajo × 8 reps
+   - ~80% del peso de trabajo × 4 reps
+
+## 4. ESTRUCTURA DE PROGRAMACIÓN
+- Frecuencia preferida: 3 días Full Body en días no consecutivos (Lun/Mié/Vie)
+- También aceptás 4-5 días con división Superior/Inferior o Empuje/Jalón si el atleta tiene más disponibilidad
+- Sobrecarga progresiva: registrar cargas semana a semana, aumentar peso o reps en compuestos principales
+- Intensidad: RIR 1-2 en compuestos; fallo metabólico en ejercicios de bombeo y aislamiento
+- Descansos: 2-3 min en compuestos pesados; cortos en ejercicios metabólicos
+
+## 5. TÉCNICA DEL HIP THRUST
+Al prescribir Hip Thrust siempre indicá:
+- Espinillas verticales (90° con el suelo) en la posición superior
+- Bloqueo pélvico con retroversión pélvica (esconder el coxis) en el punto más alto
+- Mirada al frente (NO al techo) para proteger la zona lumbar
+- Barra sobre los pliegues de la ingle con pad de protección
+
+## 6. REGLAS DE COMPORTAMIENTO
+- Priorizá calidad de ejecución sobre cantidad de ejercicios
+- No fomentés sobreentrenamiento: no sumés días extra de aislamiento encima de alta frecuencia
+- Al explicar la elección de un ejercicio, mencioná los estudios de EMG del Glute Lab que la respaldan
+- Si el programa no es exclusivamente de glúteos, aplicá estos principios de forma equilibrada al grupo muscular correspondiente
+
+Respondé siempre en ESPAÑOL. Usá el tono entusiasta, científico y motivador de Bret Contreras. Al diseñar el programa semanal, estructurá cada día con su división, protocolo de activación, ejercicios por vector de fuerza, series, reps, descansos y notas técnicas.`;
 
 function _iaApiKey() { return localStorage.getItem('SOCC_ANTHROPIC_KEY') || ''; }
 
@@ -22679,22 +22767,50 @@ function _iaGuardarKey() {
   toast('✅ API key guardada');
 }
 
-function renderIAPlanner() {
-  // Actualizar tarjeta del alumno
-  const al = currentAlumnoId ? getAlumnos().find(a => a.id === currentAlumnoId) : null;
-  const nombreEl = document.getElementById('ia-al-nombre');
-  const infoEl   = document.getElementById('ia-al-info');
-  const badgeEl  = document.getElementById('ia-al-badge');
-  if (al) {
-    if (nombreEl) nombreEl.textContent = al.nombre || al.id;
-    const edad = (al.nacimiento && typeof calcularEdad === 'function') ? calcularEdad(al.nacimiento) + ' años' : '';
-    const info  = [edad, al.sexo, al.objetivo].filter(Boolean).join(' · ');
-    if (infoEl) infoEl.textContent = info || 'Sin datos adicionales';
-    if (badgeEl) badgeEl.textContent = (al.nivel || 'Sin nivel').toUpperCase();
+function _iaSelectTrainer(t) {
+  _iaCurrentTrainer = t;
+  const jmBtn = document.getElementById('ia-t-jm');
+  const bcBtn = document.getElementById('ia-t-bc');
+  if (t === 'jm') {
+    if (jmBtn) { jmBtn.style.border = '2.5px solid #7c3aed'; jmBtn.style.background = 'linear-gradient(135deg,#7c3aed,#4f46e5)'; jmBtn.style.color = '#fff'; }
+    if (bcBtn) { bcBtn.style.border = '2.5px solid #e0e0e0'; bcBtn.style.background = '#f8f9fb'; bcBtn.style.color = '#555'; }
   } else {
-    if (nombreEl) nombreEl.textContent = 'Sin alumno seleccionado';
-    if (infoEl)   infoEl.textContent   = 'Abrí un perfil desde el inicio para ver sus datos aquí';
-    if (badgeEl)  badgeEl.textContent  = '';
+    if (bcBtn) { bcBtn.style.border = '2.5px solid #0ea5e9'; bcBtn.style.background = 'linear-gradient(135deg,#0ea5e9,#0284c7)'; bcBtn.style.color = '#fff'; }
+    if (jmBtn) { jmBtn.style.border = '2.5px solid #e0e0e0'; jmBtn.style.background = '#f8f9fb'; jmBtn.style.color = '#555'; }
+  }
+  const genBtn = document.getElementById('ia-btn-generar');
+  if (genBtn) {
+    genBtn.textContent = t === 'jm' ? '🏔️ Generar plan con Mountain Dog' : '🍑 Generar plan con Bret Contreras';
+    genBtn.style.background = t === 'jm'
+      ? 'linear-gradient(135deg,#7c3aed,#4f46e5)'
+      : 'linear-gradient(135deg,#0ea5e9,#0284c7)';
+  }
+}
+
+function renderIAPlanner() {
+  // Pre-llenar el formulario con datos del alumno seleccionado (si hay)
+  const al = currentAlumnoId ? getAlumnos().find(a => a.id === currentAlumnoId) : null;
+  if (al) {
+    const nombreEl = document.getElementById('ia-f-nombre');
+    if (nombreEl) nombreEl.value = al.nombre || '';
+    const sexoEl = document.getElementById('ia-f-sexo');
+    if (sexoEl && al.sexo) {
+      const sexoNorm = al.sexo.charAt(0).toUpperCase() + al.sexo.slice(1).toLowerCase();
+      sexoEl.value = sexoNorm === 'Hombre' || sexoNorm === 'Mujer' ? sexoNorm : 'Hombre';
+    }
+    const edadEl = document.getElementById('ia-f-edad');
+    if (edadEl && al.nacimiento && typeof calcularEdad === 'function') {
+      edadEl.value = calcularEdad(al.nacimiento);
+    }
+    const nivelEl = document.getElementById('ia-f-nivel');
+    if (nivelEl && al.nivel) {
+      const n = al.nivel.charAt(0).toUpperCase() + al.nivel.slice(1).toLowerCase();
+      if (['Principiante','Intermedio','Avanzado'].includes(n)) nivelEl.value = n;
+    }
+    const diasEl = document.getElementById('ia-f-dias');
+    if (diasEl && al.dias) diasEl.value = String(al.dias);
+    const objEl = document.getElementById('ia-f-objetivo');
+    if (objEl && al.objetivo) objEl.value = al.objetivo;
   }
   // Resetear output
   const out = document.getElementById('ia-output');
@@ -22704,46 +22820,35 @@ function renderIAPlanner() {
 }
 
 function _iaBuildPrompt() {
-  const al = currentAlumnoId ? getAlumnos().find(a => a.id === currentAlumnoId) : null;
-  const musculo  = document.getElementById('ia-musculo')?.value  || '';
-  const duracion = document.getElementById('ia-duracion')?.value || '60 minutos';
-  const objetivo = document.getElementById('ia-objetivo')?.value || '';
-  const notas    = document.getElementById('ia-notas')?.value.trim() || '';
+  const nombre   = (document.getElementById('ia-f-nombre')?.value || '').trim() || 'Atleta';
+  const sexo     = document.getElementById('ia-f-sexo')?.value   || 'Hombre';
+  const edad     = (document.getElementById('ia-f-edad')?.value  || '').trim();
+  const nivel    = document.getElementById('ia-f-nivel')?.value  || 'Intermedio';
+  const dias     = document.getElementById('ia-f-dias')?.value   || '4';
+  const objetivo = (document.getElementById('ia-f-objetivo')?.value || '').trim();
+  const notas    = (document.getElementById('ia-notas')?.value   || '').trim();
 
-  let prompt = `Generá una sesión de entrenamiento completa siguiendo tu metodología Mountain Dog Training.`;
+  let prompt = `Diseñá el programa de entrenamiento semanal completo para el siguiente atleta.\n\n`;
+  prompt += `## PERFIL DEL ATLETA\n`;
+  prompt += `- Nombre: ${nombre}\n`;
+  prompt += `- Sexo: ${sexo}\n`;
+  if (edad)     prompt += `- Edad: ${edad} años\n`;
+  prompt += `- Nivel: ${nivel}\n`;
+  prompt += `- Disponibilidad: ${dias} días de entrenamiento por semana\n`;
+  if (objetivo) prompt += `- Objetivo principal: ${objetivo}\n`;
+  if (notas)    prompt += `- Información adicional del coach: ${notas}\n`;
 
-  if (al) {
-    prompt += `\n\n## PERFIL DEL ATLETA\n`;
-    prompt += `- Nombre: ${al.nombre || 'Atleta'}\n`;
-    if (al.nivel)       prompt += `- Nivel: ${al.nivel}\n`;
-    if (al.objetivo)    prompt += `- Objetivo principal: ${al.objetivo}\n`;
-    if (al.dias)        prompt += `- Días disponibles: ${al.dias} por semana\n`;
-    const edad = (al.nacimiento && typeof calcularEdad === 'function') ? calcularEdad(al.nacimiento) : null;
-    if (edad)           prompt += `- Edad: ${edad} años\n`;
-    if (al.sexo)        prompt += `- Sexo: ${al.sexo}\n`;
-    if (al.lesiones)    prompt += `- Lesiones o restricciones: ${al.lesiones}\n`;
-    if (al.enfermedades) prompt += `- Condiciones de salud: ${al.enfermedades}\n`;
-    if (al.observaciones) prompt += `- Observaciones del coach: ${al.observaciones}\n`;
-    // Última antropometría
-    const antro = (typeof getAntropometria === 'function' ? getAntropometria() : [])
-      .filter(r => r.alumnoId === currentAlumnoId)
-      .sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
-    if (antro.length > 0) {
-      const u = antro[0];
-      prompt += `\n## ÚLTIMA ANTROPOMETRÍA (${u.fecha || ''})\n`;
-      if (u.peso)   prompt += `- Peso: ${u.peso} kg\n`;
-      if (u.talla)  prompt += `- Talla: ${u.talla} cm\n`;
-      if (u.imc)    prompt += `- IMC: ${u.imc}\n`;
-    }
+  prompt += `\nDiseñá el programa completo para ${dias} días de entrenamiento. Para cada día indicá:\n`;
+  prompt += `- División muscular del día y justificación\n`;
+  prompt += `- Todos los ejercicios con series, repeticiones, tiempos de descanso\n`;
+  prompt += `- Técnicas especiales de intensidad cuando corresponda\n`;
+  prompt += `- Indicaciones biomecánicas clave\n\n`;
+
+  if (_iaCurrentTrainer === 'bc') {
+    prompt += `Aplicá la metodología de Bret Contreras. Si el objetivo involucra glúteos, priorizá la Regla de los Tercios (vectores horizontal, vertical y abducción) y el protocolo de activación en cada sesión que los entrene. Para el resto de los grupos musculares aplicá los mismos principios de sobrecarga progresiva, RIR 1-2 en compuestos y fallo metabólico en aislamiento. Justificá las elecciones citando brevemente los estudios de EMG del Glute Lab cuando sea relevante.`;
+  } else {
+    prompt += `Aplicá la metodología Mountain Dog Training de John Meadows. Para cada día, estructurá la sesión con las 4 fases: Speed Warm-up, Fase 1 (Activación/Conexión Mente-Músculo), Fase 2 (Carga Explosiva), Fase 3 (Bombeo Súper Máximo) y Fase 4 (Estiramiento Bajo Tensión). Respetá el límite de 4-5 ejercicios por sesión y los tiempos de descanso de cada fase.`;
   }
-
-  prompt += `\n## PARÁMETROS DE LA SESIÓN\n`;
-  prompt += `- Grupo muscular / Enfoque: ${musculo}\n`;
-  prompt += `- Duración objetivo: ${duracion}\n`;
-  prompt += `- Objetivo de la sesión: ${objetivo}\n`;
-  if (notas) prompt += `- Notas del coach: ${notas}\n`;
-
-  prompt += `\nGenerá la sesión completa con todas las fases, ejercicios, series, repeticiones, tiempos de descanso y técnicas especiales de alta intensidad cuando corresponda. Usá el tono característico de John Meadows: motivador, cercano y profesional.`;
 
   return prompt;
 }
@@ -22765,14 +22870,20 @@ async function iaGenerarPlan() {
   const apiKey = _iaApiKey();
   if (!apiKey) { _iaShowKeyModal(); return; }
 
-  const btn = document.getElementById('ia-btn-generar');
-  const out  = document.getElementById('ia-output');
-  const outText = document.getElementById('ia-output-text');
-  const modelo = document.getElementById('ia-modelo')?.value || 'claude-sonnet-4-6';
+  const btn      = document.getElementById('ia-btn-generar');
+  const out      = document.getElementById('ia-output');
+  const outText  = document.getElementById('ia-output-text');
+  const outLabel = document.getElementById('ia-output-label');
+  const modelo   = document.getElementById('ia-modelo')?.value || 'claude-sonnet-4-6';
 
-  if (btn)  { btn.disabled = true; btn.textContent = '⏳ Generando sesión...'; }
-  if (out)  { out.style.display = 'block'; }
-  if (outText) { outText.innerHTML = '<span style="color:#7c3aed;font-style:italic;">Mountain Dog IA está diseñando tu sesión...</span>'; }
+  const entrenador = _iaCurrentTrainer === 'bc' ? 'Bret Contreras' : 'Mountain Dog';
+  const sysPrompt  = _iaCurrentTrainer === 'bc' ? _IA_SYSTEM_PROMPT_BC : _IA_SYSTEM_PROMPT_JM;
+  const accentColor = _iaCurrentTrainer === 'bc' ? '#0ea5e9' : '#7c3aed';
+
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Diseñando programa semanal...'; }
+  if (out) { out.style.display = 'block'; }
+  if (outLabel) { outLabel.textContent = `PROGRAMA SEMANAL — ${entrenador.toUpperCase()}`; outLabel.style.color = accentColor; }
+  if (outText) { outText.innerHTML = `<span style="color:${accentColor};font-style:italic;">${entrenador} IA está diseñando tu programa semanal...</span>`; }
 
   const prompt = _iaBuildPrompt();
   let accumulated = '';
@@ -22790,7 +22901,7 @@ async function iaGenerarPlan() {
         model: modelo,
         max_tokens: 8000,
         stream: true,
-        system: _IA_SYSTEM_PROMPT,
+        system: sysPrompt,
         messages: [{ role: 'user', content: prompt }]
       })
     });
@@ -22824,16 +22935,16 @@ async function iaGenerarPlan() {
       }
     }
 
-    // Guardar en localStorage para referencia
     localStorage.setItem('SOCC_IA_LAST_PLAN', accumulated);
-    toast('✅ Sesión generada por Mountain Dog IA');
+    toast(`✅ Programa semanal generado por ${entrenador} IA`);
 
   } catch(e) {
     console.error('IA Error:', e);
     if (outText) outText.innerHTML = `<span style="color:#f87171;font-weight:700;">Error: ${e.message}</span><br><br>Verificá que tu API key sea válida y que tengas saldo en tu cuenta de Anthropic.`;
   }
 
-  if (btn) { btn.disabled = false; btn.textContent = '🤖 Generar sesión con Mountain Dog IA'; }
+  const btnLabel = _iaCurrentTrainer === 'bc' ? '🍑 Generar plan con Bret Contreras' : '🏔️ Generar plan con Mountain Dog';
+  if (btn) { btn.disabled = false; btn.textContent = btnLabel; }
 }
 
 function _iaCopiar() {
@@ -22846,7 +22957,8 @@ function _iaCopiar() {
 function _iaNueva() {
   const out = document.getElementById('ia-output');
   if (out) out.style.display = 'none';
-  document.getElementById('ia-notas').value = '';
+  const notas = document.getElementById('ia-notas');
+  if (notas) notas.value = '';
 }
 
 // ── MACROCICLO EDITOR ──────────────────────────────────────────────────────────
