@@ -3335,7 +3335,7 @@ select.toolbox-input option:disabled { color: #888; }
           <!-- Selector de entrenador -->
           <div style="margin-bottom:20px;">
             <label style="font-size:10px;font-weight:900;color:#555;letter-spacing:.5px;display:block;margin-bottom:8px;">ENTRENADOR IA</label>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
               <button id="ia-t-jm" onclick="_iaSelectTrainer('jm')"
                 style="border:2.5px solid #7c3aed;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border-radius:14px;padding:16px 12px;cursor:pointer;text-align:center;transition:all .2s;font-family:inherit;">
                 <div style="font-size:24px;margin-bottom:5px;">🏔️</div>
@@ -3347,6 +3347,12 @@ select.toolbox-input option:disabled { color: #888; }
                 <div style="font-size:24px;margin-bottom:5px;">🍑</div>
                 <div style="font-size:13px;font-weight:900;letter-spacing:.3px;">Bret Contreras</div>
                 <div style="font-size:10px;opacity:.7;margin-top:3px;">The Glute Guy · Glute Lab</div>
+              </button>
+              <button id="ia-t-eh" onclick="_iaSelectTrainer('eh')"
+                style="border:2.5px solid #e0e0e0;background:#f8f9fb;color:#555;border-radius:14px;padding:16px 12px;cursor:pointer;text-align:center;transition:all .2s;font-family:inherit;">
+                <div style="font-size:24px;margin-bottom:5px;">🏃</div>
+                <div style="font-size:13px;font-weight:900;letter-spacing:.3px;">Eric Helms</div>
+                <div style="font-size:10px;opacity:.7;margin-top:3px;">Running Científico</div>
               </button>
             </div>
           </div>
@@ -3386,10 +3392,75 @@ select.toolbox-input option:disabled { color: #888; }
                   <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
                 </select>
               </div>
+              <!-- Campos específicos de running (solo Eric Helms) -->
+              <div id="ia-run-fields" style="grid-column:1/-1;display:none;grid-template-columns:1fr 1fr;gap:10px;">
+                <div>
+                  <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">DISTANCIA OBJETIVO</label>
+                  <select id="ia-f-distancia" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
+                    <option>5K</option>
+                    <option selected>10K</option>
+                    <option>21K (Media Maratón)</option>
+                    <option>42K (Maratón)</option>
+                    <option>Ultra (&gt;42K)</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">MODALIDAD</label>
+                  <select id="ia-f-modalidad" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
+                    <option selected>Calle (Asfalto)</option>
+                    <option>Trail (Montaña)</option>
+                    <option>Pista</option>
+                  </select>
+                </div>
+              </div>
               <div style="grid-column:1/-1;">
                 <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">OBJETIVO PRINCIPAL</label>
-                <input id="ia-f-objetivo" type="text" placeholder="Ej: Hipertrofia general, mejorar glúteos, fuerza funcional, perder grasa..."
-                  style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;box-sizing:border-box;">
+                <select id="ia-f-objetivo" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;box-sizing:border-box;">
+                  <option value="">— Elegí un objetivo —</option>
+                  <optgroup label="🏋️ Hipertrofia y Estética">
+                    <option>Hipertrofia general</option>
+                    <option>Hipertrofia tren superior</option>
+                    <option>Hipertrofia tren inferior</option>
+                    <option>Glúteos y femorales</option>
+                    <option>Brazos y hombros</option>
+                    <option>Espalda y pecho</option>
+                    <option>Definición muscular</option>
+                    <option>Recomposición corporal (ganar músculo y perder grasa)</option>
+                  </optgroup>
+                  <optgroup label="💪 Fuerza y Rendimiento">
+                    <option>Fuerza máxima</option>
+                    <option>Fuerza general</option>
+                    <option>Potencia explosiva</option>
+                    <option>Powerlifting (sentadilla, banca, peso muerto)</option>
+                    <option>Rendimiento deportivo</option>
+                    <option>Fuerza funcional</option>
+                  </optgroup>
+                  <optgroup label="🔥 Pérdida de Grasa">
+                    <option>Perder grasa corporal</option>
+                    <option>Perder grasa manteniendo masa muscular</option>
+                    <option>Descenso de peso pronunciado</option>
+                  </optgroup>
+                  <optgroup label="❤️ Salud y Bienestar">
+                    <option>Salud general y longevidad</option>
+                    <option>Acondicionamiento físico general</option>
+                    <option>Movilidad y postura</option>
+                    <option>Readaptación post-lesión</option>
+                    <option>Adulto mayor: fuerza y funcionalidad</option>
+                    <option>Reducción de dolor (espalda, rodillas, hombros)</option>
+                    <option>Salud metabólica (glucemia, presión, colesterol)</option>
+                  </optgroup>
+                  <optgroup label="🏃 Running y Resistencia">
+                    <option>Empezar a correr / primera carrera</option>
+                    <option>Mejorar marca personal (PB)</option>
+                    <option>Base aeróbica y resistencia general</option>
+                    <option>Preparar 5K / 10K</option>
+                    <option>Preparar media maratón (21K)</option>
+                    <option>Preparar maratón (42K)</option>
+                    <option>Preparar ultra / trail</option>
+                    <option>Velocidad en pista</option>
+                  </optgroup>
+                  <option value="">Otro (detallar en notas del coach)</option>
+                </select>
               </div>
             </div>
           </div>
@@ -22659,7 +22730,14 @@ function blogEliminarArticulo(idx) {
 
 // ── IA PLANNER ─────────────────────────────────────────────────────────────────
 
-let _iaCurrentTrainer = 'jm'; // 'jm' | 'bc'
+let _iaCurrentTrainer = 'jm'; // 'jm' | 'bc' | 'eh'
+
+// Config visual/UI por entrenador
+const _IA_TRAINERS = {
+  jm: { btnId: 'ia-t-jm', color: '#7c3aed', grad: 'linear-gradient(135deg,#7c3aed,#4f46e5)', genLabel: '🏔️ Generar plan con Mountain Dog',  nombre: 'John Meadows',   corto: 'Mountain Dog',   badge: '🏔️ MOUNTAIN DOG' },
+  bc: { btnId: 'ia-t-bc', color: '#0ea5e9', grad: 'linear-gradient(135deg,#0ea5e9,#0284c7)', genLabel: '🍑 Generar plan con Bret Contreras', nombre: 'Bret Contreras', corto: 'Bret Contreras', badge: '🍑 GLUTE LAB' },
+  eh: { btnId: 'ia-t-eh', color: '#10b981', grad: 'linear-gradient(135deg,#10b981,#059669)', genLabel: '🏃 Generar plan con Eric Helms',     nombre: 'Eric Helms',     corto: 'Eric Helms',     badge: '🏃 RUNNING CIENTÍFICO' }
+};
 
 // ── Sistema John Meadows ────────────────────────────────────────────────────────
 const _IA_SYSTEM_PROMPT_JM = `# SYSTEM PROMPT: Entrenador de IA - Perfil de John Meadows ("The Mountain Dog")
@@ -22750,6 +22828,47 @@ Al prescribir Hip Thrust siempre indicá:
 
 Respondé siempre en ESPAÑOL. Usá el tono entusiasta, científico y motivador de Bret Contreras. Al diseñar el programa semanal, estructurá cada día con su división, protocolo de activación, ejercicios por vector de fuerza, series, reps, descansos y notas técnicas.`;
 
+// ── Sistema Eric Helms (Running Científico) ─────────────────────────────────────
+const _IA_SYSTEM_PROMPT_EH = `# SYSTEM PROMPT: Entrenador de IA - Running Científico (Perfil Eric Helms)
+
+## 1. IDENTIDAD Y ROL
+- Identidad: Eres Eric Helms, PhD, actuando como Entrenador Experto en Running y Fisiología del Ejercicio de Élite. Tu enfoque metodológico se basa estrictamente en la evidencia científica, traduciendo la jerarquía de carga y consistencia (adaptada de la Pirámide de Helms) junto con los principios biomecánicos de carrera y entrenamiento concurrente de fuerza (Schoenfeld).
+- Objetivo: Diseñar, ajustar y optimizar planes de carrera para cualquier distancia, nivel y modalidad, priorizando la longevidad del atleta y la prevención de lesiones.
+- Tono: Profesional, motivador pero con fundamento científico, claro, directo y estructurado (viñetas y tablas). Evitá la "bro-science" y los consejos vacíos de motivación sin base fisiológica.
+
+## 2. MATRIZ DE CLASIFICACIÓN (MODALIDADES Y DISTANCIAS)
+Identificá el contexto exacto del atleta antes de prescribir:
+- DISTANCIA: Corta (5K-10K) / Media (21K) / Larga (42K) / Ultra (>42K). Altera la tasa de progresión del volumen semanal y la longitud de las tiradas largas.
+- MODALIDAD:
+  · Calle (Asfalto): ritmos estables y cadencia.
+  · Trail (Montaña): desnivel positivo (D+), potencia muscular, tiempo total en zona en lugar de km rígidos.
+  · Pista: pasadas fraccionadas por distancia exacta y control láctico.
+- NIVEL: Principiante / Intermedio / Avanzado. Determina la frecuencia semanal inicial (3 a 6 días) y el volumen basal acumulado.
+
+## 3. JERARQUÍA FISIOLÓGICA DE DECISIONES (ORDEN ESTRICTO)
+No podés saltarte un paso inferior por optimizar uno superior:
+1. Adherencia y Consistencia: adaptar frecuencia y días al estilo de vida del corredor. El mejor plan es el que se puede cumplir.
+2. Gestión de Carga Crítica y Volumen: control estricto del kilometraje/tiempo semanal. REGLA DE ORO: no aumentar el volumen total más de un 10% de un microciclo a otro.
+3. Distribución de Intensidad (Zonas): modelos Polarizado o Piramidal. Control por Frecuencia Cardíaca (FC), Ritmo por Km (min/km) o Esfuerzo Percibido (RPE 1-10).
+4. Entrenamiento Concurrente (Fuerza Aplicada): programación obligatoria de fuerza en gimnasio para mejorar la economía de carrera y proteger las articulaciones sin generar interferencia hipertrófica masiva.
+5. Estrategia Táctica (Tapering y Ritmo de Carrera): descarga de la fatiga sistémica previa a la competencia para optimizar el pico de rendimiento.
+
+## 4. ESTRUCTURA DE BLOQUES PARA CADA SESIÓN
+Cada sesión debe seguir este orden:
+- Bloque M (Movilidad): 5-10 min de movilidad articular dinámica (tobillos, cadera, activación del core). Sin estiramientos estáticos pasivos prolongados antes de correr.
+- Bloque A (Activación/Drills): técnica de carrera (skipping, talones a glúteos, zancadas dinámicas) para activar el sistema neuromuscular.
+- Bloque B (Principal — El Estímulo del Día):
+  · Opción Fondos: rodajes regenerativos, zonas base o Tiradas Largas.
+  · Opción Calidad: series, pasadas, Fartleks, pasadas en cuesta (para Trail).
+- Bloque C (Desarrollo Concurrente / Fuerza): en los días designados, rutina de fuerza enfocada en tasa de desarrollo de fuerza (RFD), estabilidad de core y cadena posterior (Ej: Sentadilla Búlgara, Peso Muerto Rumano, Pantorrillas/Sóleo).
+- Bloque F (Final / Vuelta a la Calma): trote muy suave de enfriamiento y respiración controlada para bajar pulsaciones.
+
+## 5. REGLAS DE COMPORTAMIENTO Y RESTRICCIONES
+- Gestión de Lesiones: si el atleta reporta dolor articular agudo (rodilla, periostio, tendón de Aquiles, etc.), tenés estrictamente PROHIBIDO decir "entrená con dolor". Sugerí de inmediato reducir la carga un 50%, cambiar a estímulo de bajo impacto (ciclismo/natación) o recomendar consulta médica.
+- Cuantificación en Trail: calculá la carga combinando Kilómetros + Desnivel (D+) o programá por Tiempo en Zona; el ritmo por kilómetro pierde validez fisiológica en subidas técnicas.
+
+Respondé siempre en ESPAÑOL. Al diseñar el plan semanal, estructurá cada día con su tipo de sesión, bloques completos (M, A, B, C si corresponde, F), distancias/tiempos, zonas de intensidad y notas técnicas.`;
+
 function _iaApiKey() { return localStorage.getItem('SOCC_ANTHROPIC_KEY') || ''; }
 
 function _iaShowKeyModal() {
@@ -22770,22 +22889,28 @@ function _iaGuardarKey() {
 
 function _iaSelectTrainer(t) {
   _iaCurrentTrainer = t;
-  const jmBtn = document.getElementById('ia-t-jm');
-  const bcBtn = document.getElementById('ia-t-bc');
-  if (t === 'jm') {
-    if (jmBtn) { jmBtn.style.border = '2.5px solid #7c3aed'; jmBtn.style.background = 'linear-gradient(135deg,#7c3aed,#4f46e5)'; jmBtn.style.color = '#fff'; }
-    if (bcBtn) { bcBtn.style.border = '2.5px solid #e0e0e0'; bcBtn.style.background = '#f8f9fb'; bcBtn.style.color = '#555'; }
-  } else {
-    if (bcBtn) { bcBtn.style.border = '2.5px solid #0ea5e9'; bcBtn.style.background = 'linear-gradient(135deg,#0ea5e9,#0284c7)'; bcBtn.style.color = '#fff'; }
-    if (jmBtn) { jmBtn.style.border = '2.5px solid #e0e0e0'; jmBtn.style.background = '#f8f9fb'; jmBtn.style.color = '#555'; }
-  }
+  Object.keys(_IA_TRAINERS).forEach(k => {
+    const cfg = _IA_TRAINERS[k];
+    const btn = document.getElementById(cfg.btnId);
+    if (!btn) return;
+    if (k === t) {
+      btn.style.border = '2.5px solid ' + cfg.color;
+      btn.style.background = cfg.grad;
+      btn.style.color = '#fff';
+    } else {
+      btn.style.border = '2.5px solid #e0e0e0';
+      btn.style.background = '#f8f9fb';
+      btn.style.color = '#555';
+    }
+  });
   const genBtn = document.getElementById('ia-btn-generar');
   if (genBtn) {
-    genBtn.textContent = t === 'jm' ? '🏔️ Generar plan con Mountain Dog' : '🍑 Generar plan con Bret Contreras';
-    genBtn.style.background = t === 'jm'
-      ? 'linear-gradient(135deg,#7c3aed,#4f46e5)'
-      : 'linear-gradient(135deg,#0ea5e9,#0284c7)';
+    genBtn.textContent = _IA_TRAINERS[t].genLabel;
+    genBtn.style.background = _IA_TRAINERS[t].grad;
   }
+  // Campos específicos de running (solo Eric Helms)
+  const runFields = document.getElementById('ia-run-fields');
+  if (runFields) runFields.style.display = t === 'eh' ? 'grid' : 'none';
 }
 
 function renderIAPlanner() {
@@ -22811,7 +22936,17 @@ function renderIAPlanner() {
     const diasEl = document.getElementById('ia-f-dias');
     if (diasEl && al.dias) diasEl.value = String(al.dias);
     const objEl = document.getElementById('ia-f-objetivo');
-    if (objEl && al.objetivo) objEl.value = al.objetivo;
+    if (objEl && al.objetivo) {
+      // Si el objetivo del alumno no está en la lista, agregarlo como opción dinámica
+      const existe = Array.from(objEl.options).some(o => o.value === al.objetivo);
+      if (!existe) {
+        const opt = document.createElement('option');
+        opt.value = al.objetivo;
+        opt.textContent = '⭐ ' + al.objetivo + ' (del perfil)';
+        objEl.insertBefore(opt, objEl.options[1] || null);
+      }
+      objEl.value = al.objetivo;
+    }
   }
   // Resetear output
   const out = document.getElementById('ia-output');
@@ -22828,6 +22963,9 @@ function _iaBuildPrompt() {
   const dias     = document.getElementById('ia-f-dias')?.value   || '4';
   const objetivo = (document.getElementById('ia-f-objetivo')?.value || '').trim();
   const notas    = (document.getElementById('ia-notas')?.value   || '').trim();
+  const esRunning = _iaCurrentTrainer === 'eh';
+  const distancia = document.getElementById('ia-f-distancia')?.value || '10K';
+  const modalidad = document.getElementById('ia-f-modalidad')?.value || 'Calle (Asfalto)';
 
   let prompt = `Diseñá el programa de entrenamiento semanal completo para el siguiente atleta.\n\n`;
   prompt += `## PERFIL DEL ATLETA\n`;
@@ -22836,8 +22974,23 @@ function _iaBuildPrompt() {
   if (edad)     prompt += `- Edad: ${edad} años\n`;
   prompt += `- Nivel: ${nivel}\n`;
   prompt += `- Disponibilidad: ${dias} días de entrenamiento por semana\n`;
+  if (esRunning) {
+    prompt += `- Distancia objetivo: ${distancia}\n`;
+    prompt += `- Modalidad: ${modalidad}\n`;
+  }
   if (objetivo) prompt += `- Objetivo principal: ${objetivo}\n`;
   if (notas)    prompt += `- Información adicional del coach: ${notas}\n`;
+
+  if (esRunning) {
+    prompt += `\nDiseñá el plan de running semanal completo para ${dias} días. Para cada día indicá:\n`;
+    prompt += `- Tipo de sesión (rodaje base, calidad, tirada larga, fuerza concurrente o descanso)\n`;
+    prompt += `- Estructura por bloques: M (Movilidad), A (Activación/Drills), B (Principal), C (Fuerza concurrente si corresponde) y F (Vuelta a la calma)\n`;
+    prompt += `- Distancia o tiempo, zonas de intensidad (FC, ritmo min/km o RPE) y recuperaciones entre series\n`;
+    prompt += `- Indicaciones técnicas y de prevención de lesiones\n\n`;
+    prompt += `Respetá la jerarquía fisiológica: adherencia → gestión de volumen (regla del 10%) → distribución de intensidad → fuerza concurrente → estrategia táctica. Incluí el volumen semanal total estimado.`;
+    if (modalidad.startsWith('Trail')) prompt += ` Al ser Trail, cuantificá la carga combinando kilómetros + desnivel (D+) o tiempo en zona.`;
+    return prompt;
+  }
 
   prompt += `\nDiseñá el programa completo para ${dias} días de entrenamiento. Para cada día indicá:\n`;
   prompt += `- División muscular del día y justificación\n`;
@@ -22877,9 +23030,11 @@ async function iaGenerarPlan() {
   const outLabel = document.getElementById('ia-output-label');
   const modelo   = document.getElementById('ia-modelo')?.value || 'claude-sonnet-4-6';
 
-  const entrenador = _iaCurrentTrainer === 'bc' ? 'Bret Contreras' : 'Mountain Dog';
-  const sysPrompt  = _iaCurrentTrainer === 'bc' ? _IA_SYSTEM_PROMPT_BC : _IA_SYSTEM_PROMPT_JM;
-  const accentColor = _iaCurrentTrainer === 'bc' ? '#0ea5e9' : '#7c3aed';
+  const entrenador = _IA_TRAINERS[_iaCurrentTrainer].corto;
+  const sysPrompt  = _iaCurrentTrainer === 'bc' ? _IA_SYSTEM_PROMPT_BC
+                   : _iaCurrentTrainer === 'eh' ? _IA_SYSTEM_PROMPT_EH
+                   : _IA_SYSTEM_PROMPT_JM;
+  const accentColor = _IA_TRAINERS[_iaCurrentTrainer].color;
 
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Diseñando programa semanal...'; }
   if (out) { out.style.display = 'block'; }
@@ -22944,16 +23099,15 @@ async function iaGenerarPlan() {
     if (outText) outText.innerHTML = `<span style="color:#f87171;font-weight:700;">Error: ${e.message}</span><br><br>Verificá que tu API key sea válida y que tengas saldo en tu cuenta de Anthropic.`;
   }
 
-  const btnLabel = _iaCurrentTrainer === 'bc' ? '🍑 Generar plan con Bret Contreras' : '🏔️ Generar plan con Mountain Dog';
-  if (btn) { btn.disabled = false; btn.textContent = btnLabel; }
+  if (btn) { btn.disabled = false; btn.textContent = _IA_TRAINERS[_iaCurrentTrainer].genLabel; }
 }
 
 function _iaGenerarPDF() {
   const content = localStorage.getItem('SOCC_IA_LAST_PLAN') || '';
   if (!content) { toast('No hay plan generado todavía'); return; }
 
-  const entrenador  = _iaCurrentTrainer === 'bc' ? 'Bret Contreras' : 'John Meadows';
-  const accentColor = _iaCurrentTrainer === 'bc' ? '#0ea5e9' : '#7c3aed';
+  const entrenador  = _IA_TRAINERS[_iaCurrentTrainer].nombre;
+  const accentColor = _IA_TRAINERS[_iaCurrentTrainer].color;
   const nombre = (document.getElementById('ia-f-nombre')?.value || '').trim() || 'Atleta';
   const nivel  = document.getElementById('ia-f-nivel')?.value || '';
   const dias   = document.getElementById('ia-f-dias')?.value || '';
@@ -22997,7 +23151,7 @@ function _iaGenerarPDF() {
         <strong>Entrenador IA:</strong> ${entrenador} &nbsp;·&nbsp; <strong>Fecha:</strong> ${fecha}
       </div>
     </div>
-    <div class="cover-badge">${_iaCurrentTrainer === 'bc' ? '🍑 GLUTE LAB' : '🏔️ MOUNTAIN DOG'}</div>
+    <div class="cover-badge">${_IA_TRAINERS[_iaCurrentTrainer].badge}</div>
   </div>
   <div class="content">${bodyHtml}</div>
   <script>window.onload = function() { window.print(); };<\/script>
