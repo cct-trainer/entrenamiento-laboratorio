@@ -22996,6 +22996,7 @@ function _iaBuildPrompt() {
   prompt += `\nDiseñá el programa completo para ${dias} días de entrenamiento. Para cada día indicá:\n`;
   prompt += `- División muscular del día y justificación\n`;
   prompt += `- Todos los ejercicios con series, repeticiones, tiempos de descanso\n`;
+  prompt += `- En los ejercicios principales, indicá SIEMPRE por separado las SERIES DE APROXIMACIÓN (entrada en calor ascendente, con peso y reps de cada una) y las SERIES EFECTIVAS (las de trabajo real). No las mezcles.\n`;
   prompt += `- Técnicas especiales de intensidad cuando corresponda\n`;
   prompt += `- Indicaciones biomecánicas clave\n\n`;
 
@@ -23019,6 +23020,65 @@ function _iaMarkdown(text) {
     .replace(/(<li.*<\/li>)/gs, '<ul style="padding-left:18px;margin:6px 0;">$1</ul>')
     .replace(/\n{2,}/g, '<br><br>')
     .replace(/\n/g, '<br>');
+}
+
+// ── Streaming a la API con detección de corte por max_tokens ──────────────────
+async function _iaStreamAPI(body, onText) {
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': _iaApiKey(),
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err?.error?.message || 'Error HTTP ' + resp.status);
+  }
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '', text = '', stopReason = null;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      try {
+        const parsed = JSON.parse(line.slice(6).trim());
+        if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+          text += parsed.delta.text;
+          if (onText) onText(text);
+        }
+        if (parsed.type === 'message_delta' && parsed.delta?.stop_reason) stopReason = parsed.delta.stop_reason;
+      } catch(e) {}
+    }
+  }
+  return { text, stopReason };
+}
+
+// ── Generación con continuación automática ─────────────────────────────────────
+// Si la respuesta se corta por max_tokens, pide a la IA que continúe desde donde
+// quedó (prefill del turno assistant) hasta completar el contenido. Máx 4 partes.
+async function _iaGenerarConContinuacion(model, system, userPrompt, onProgress) {
+  let full = '';
+  for (let ronda = 0; ronda < 4; ronda++) {
+    const base = full.replace(/\s+$/, '');
+    const messages = [{ role: 'user', content: userPrompt }];
+    if (base) messages.push({ role: 'assistant', content: base });
+    const { text, stopReason } = await _iaStreamAPI(
+      { model, max_tokens: 8000, stream: true, system, messages },
+      t => { if (onProgress) onProgress(base + t); }
+    );
+    full = base + text;
+    if (stopReason !== 'max_tokens') break;
+  }
+  return full;
 }
 
 async function iaGenerarPlan() {
@@ -23046,51 +23106,9 @@ async function iaGenerarPlan() {
   let accumulated = '';
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: modelo,
-        max_tokens: 8000,
-        stream: true,
-        system: sysPrompt,
-        messages: [{ role: 'user', content: prompt }]
-      })
+    accumulated = await _iaGenerarConContinuacion(modelo, sysPrompt, prompt, txt => {
+      if (outText) outText.innerHTML = _iaMarkdown(txt);
     });
-
-    if (!resp.ok) {
-      const err = await resp.json().catch(()=>({}));
-      throw new Error(err?.error?.message || `Error HTTP ${resp.status}`);
-    }
-
-    const reader  = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const data = line.slice(6).trim();
-        if (data === '[DONE]') break;
-        try {
-          const parsed = JSON.parse(data);
-          if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
-            accumulated += parsed.delta.text;
-            if (outText) outText.innerHTML = _iaMarkdown(accumulated);
-          }
-        } catch(e) {}
-      }
-    }
 
     localStorage.setItem('SOCC_IA_LAST_PLAN', accumulated);
     toast(`✅ Programa semanal generado por ${entrenador} IA`);
@@ -23189,6 +23207,31 @@ function _iaParseJSON(text) {
   return JSON.parse(t.slice(ini, fin + 1));
 }
 
+// Lista de nombres de la biblioteca para inyectar en el prompt del conversor
+function _iaBibliotecaPrompt() {
+  try {
+    const nombres = getEjerciciosCompletos().map(e => e.nombre).filter(Boolean);
+    if (!nombres.length) return '';
+    return '\n\nBIBLIOTECA DE EJERCICIOS SOCC (' + nombres.length + ' ejercicios):\nSi un ejercicio del plan corresponde a uno de esta biblioteca (aunque el nombre difiera levemente, esté en inglés o use sinónimos), usá EXACTAMENTE el nombre tal como figura en la biblioteca. Solo si no existe equivalente, mantené el nombre original del plan.\n' + nombres.join('\n');
+  } catch(e) { return ''; }
+}
+
+// Normaliza y busca el nombre canónico en la biblioteca (para enganchar ficha + video)
+function _iaMatchBiblioteca(nombre) {
+  try {
+    const lib = getEjerciciosCompletos();
+    const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+    const n = norm(nombre);
+    if (!n) return nombre;
+    let hit = lib.find(e => norm(e.nombre) === n);
+    if (!hit) {
+      const cand = lib.filter(e => { const ln = norm(e.nombre); return ln.includes(n) || n.includes(ln); });
+      if (cand.length === 1) hit = cand[0];
+    }
+    return hit ? hit.nombre : nombre;
+  } catch(e) { return nombre; }
+}
+
 function _iaJSONaPlanificacion(data, alumnoId) {
   const lunes = _getLunesDe(new Date().toISOString().split('T')[0]);
   const cfgT  = _IA_TRAINERS[_iaCurrentTrainer];
@@ -23207,12 +23250,15 @@ function _iaJSONaPlanificacion(data, alumnoId) {
       const ejercicios = (b.ejercicios || []).map(ej => {
         const nSer = Math.min(parseInt(ej.series) || 3, 10);
         const fila = { reps: String(ej.reps || ''), peso: String(ej.peso || ''), rir: String(ej.rir || ''), pausa: String(ej.pausa || ''), comentarios: '' };
+        const apro = Array.isArray(ej.seriesApro)
+          ? ej.seriesApro.slice(0, 6).map(s => ({ reps: String(s.reps || ''), peso: String(s.peso || ''), rir: '', pausa: '', comentarios: '' }))
+          : [];
         return {
-          nombre: String(ej.nombre || '').trim(),
+          nombre: _iaMatchBiblioteca(String(ej.nombre || '').trim()),
           ctrl: { series: String(ej.series || ''), reps: String(ej.reps || ''), peso: String(ej.peso || ''), pausa: String(ej.pausa || ''), rir: String(ej.rir || '') },
           video: '', ficha: null,
           series: Array.from({ length: nSer }, () => ({ ...fila })),
-          seriesApro: [], dropset: []
+          seriesApro: apro, dropset: []
         };
       }).filter(e => e.nombre);
       let cardioData = null;
@@ -23269,7 +23315,8 @@ ESQUEMA:
           "tipo": "uno de: ${TIPOS_BLOQUE_F.join(' | ')}",
           "serieTipo": "uno de: ${TIPOS_SERIE_F.join(' | ')}",
           "ejercicios": [
-            { "nombre": "Nombre del ejercicio", "series": "4", "reps": "8-12", "peso": "70kg o RPE 8", "pausa": "90 seg", "rir": "2" }
+            { "nombre": "Nombre del ejercicio", "series": "4", "reps": "8-12", "peso": "70kg o RPE 8", "pausa": "90 seg", "rir": "2",
+              "seriesApro": [ { "reps": "12", "peso": "barra sola" }, { "reps": "8", "peso": "50%" } ] }
           ],
           "cardio": { "actividad": "", "duracion": "", "zona": "", "rpe": "", "observaciones": "" }
         }
@@ -23283,48 +23330,17 @@ REGLAS:
 - Estructurá cada sesión con los bloques SOCC en este orden: Movilidad y Calentamiento → Activación y Core → Calentamiento Específico (si aplica) → Fuerza Principal / Potencia y/o Desarrollo / Hipertrofia → Cardio (si aplica) → Enfriamiento Final.
 - "cardio" solo va si tipo="Cardio"; en ese caso "ejercicios" es []. Usá bloques Cardio para rodajes, series de carrera, fartlek, tiradas largas, etc. — detallá distancias, ritmos y zonas en "observaciones".
 - Incluí TODOS los ejercicios del plan original con sus series, reps, pesos/intensidades, pausas y RIR. Las técnicas especiales (drop-sets, iso-holds, parciales) incluilas entre paréntesis en el nombre del ejercicio o en "reps".
-- Todos los valores son strings salvo "diaSemana".`;
+- SERIES DE APROXIMACIÓN vs EFECTIVAS: "series"/"reps"/"peso" describen SOLO las series efectivas (de trabajo). Si el plan indica series de aproximación, calentamiento ascendente o ramp-up para un ejercicio, cargalas como filas explícitas en "seriesApro" (cada una con sus reps y peso). Si no hay, "seriesApro" es [].
+- Todos los valores son strings salvo "diaSemana".${_iaBibliotecaPrompt()}`;
 
   let accumulated = '';
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: document.getElementById('ia-modelo')?.value || 'claude-sonnet-4-6',
-        max_tokens: 16000,
-        stream: true,
-        system: sysConv,
-        messages: [{ role: 'user', content: 'Convertí este plan semanal al JSON del esquema:\n\n' + content }]
-      })
-    });
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err?.error?.message || 'Error HTTP ' + resp.status);
-    }
-    const reader  = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        try {
-          const parsed = JSON.parse(line.slice(6).trim());
-          if (parsed.type === 'content_block_delta' && parsed.delta?.text) accumulated += parsed.delta.text;
-        } catch(e) {}
-      }
-      if (btn) btn.textContent = '⏳ Convirtiendo... (' + Math.round(accumulated.length / 1000) + 'k)';
-    }
+    accumulated = await _iaGenerarConContinuacion(
+      document.getElementById('ia-modelo')?.value || 'claude-sonnet-4-6',
+      sysConv,
+      'Convertí este plan semanal al JSON del esquema (si el plan está incompleto o cortado, convertí todo lo que haya):\n\n' + content,
+      txt => { if (btn) btn.textContent = '⏳ Convirtiendo... (' + Math.round(txt.length / 1000) + 'k)'; }
+    );
 
     const data = _iaParseJSON(accumulated);
     const plan = _iaJSONaPlanificacion(data, alumnoId);
