@@ -3433,9 +3433,15 @@ select.toolbox-input option:disabled { color: #888; }
                   </select>
                 </div>
                 <div>
-                  <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">OBJETIVO / LESIONES (ALUMNO B)</label>
-                  <input id="ia-f-notas2" type="text" placeholder="Ej: perder grasa, molestia de hombro..."
+                  <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">LESIONES / NOTAS (ALUMNO B)</label>
+                  <input id="ia-f-notas2" type="text" placeholder="Ej: molestia de hombro, solo mancuernas..."
                     style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;box-sizing:border-box;">
+                </div>
+                <div style="grid-column:1/-1;">
+                  <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">OBJETIVO PRINCIPAL (ALUMNO B)</label>
+                  <select id="ia-f-objetivo2" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;box-sizing:border-box;">
+                    <option value="">— Elegí un objetivo —</option>
+                  </select>
                 </div>
               </div>
               <!-- Campos específicos de running (solo Eric Helms) -->
@@ -22999,6 +23005,13 @@ function _iaToggleDual() {
   const on  = document.getElementById('ia-f-dual')?.checked;
   const blk = document.getElementById('ia-dual-fields');
   if (blk) blk.style.display = on ? 'grid' : 'none';
+  // Clonar la lista de objetivos del alumno A hacia el select del alumno B (una sola vez)
+  const objA = document.getElementById('ia-f-objetivo');
+  const objB = document.getElementById('ia-f-objetivo2');
+  if (on && objA && objB && objB.options.length <= 1) {
+    objB.innerHTML = objA.innerHTML;
+    objB.value = '';
+  }
 }
 
 function renderIAPlanner() {
@@ -23062,11 +23075,12 @@ function _iaBuildPrompt() {
   const edad2    = (document.getElementById('ia-f-edad2')?.value || '').trim();
   const nivel2   = document.getElementById('ia-f-nivel2')?.value || 'Intermedio';
   const notas2   = (document.getElementById('ia-f-notas2')?.value || '').trim();
+  const objetivo2 = (document.getElementById('ia-f-objetivo2')?.value || '').trim();
   const dual     = esDual && nombre2;
 
   let dualInstr = '';
   if (dual) {
-    dualInstr = `\n\nMODO PAREJA — MUY IMPORTANTE: Este programa es para DOS alumnos que entrenan JUNTOS en la misma sesión (${nombre} y ${nombre2}). Diseñá cada día como UNA sesión compartida (mismos bloques, misma estructura y mismos tiempos), pero con la planilla DIVIDIDA EN DOS MITADES: primero la mitad de ${nombre} con todos sus ejercicios y parámetros individualizados (cargas, reps, RIR, variantes o regresiones según su nivel y limitaciones), y a continuación la mitad de ${nombre2} con los mismos bloques adaptados a su perfil. Encabezá cada mitad con "🅰 ${nombre.toUpperCase()}" y "🅱 ${nombre2.toUpperCase()}". Los dos comparten los equipos alternando turnos, así que elegí ejercicios compatibles para hacer en simultáneo o en circuito de a dos.`;
+    dualInstr = `\n\nMODO PAREJA — MUY IMPORTANTE: Este programa es para DOS alumnos que entrenan JUNTOS en la misma sesión (${nombre} y ${nombre2}). Diseñá cada día como UNA sesión compartida (mismos bloques, misma estructura y mismos tiempos), pero con la planilla DIVIDIDA EN DOS MITADES: primero la mitad de ${nombre} con todos sus ejercicios y parámetros individualizados (cargas, reps, RIR, variantes o regresiones según su nivel, su OBJETIVO PROPIO y sus limitaciones — si los objetivos difieren, adaptá la selección de ejercicios de cada mitad al objetivo de cada uno manteniendo la estructura compartida), y a continuación la mitad de ${nombre2} con los mismos bloques adaptados a su perfil. Encabezá cada mitad con "🅰 ${nombre.toUpperCase()}" y "🅱 ${nombre2.toUpperCase()}". Los dos comparten los equipos alternando turnos, así que elegí ejercicios compatibles para hacer en simultáneo o en circuito de a dos.`;
   }
 
   let prompt = dual
@@ -23084,7 +23098,8 @@ function _iaBuildPrompt() {
     prompt += `- Sexo: ${sexo2}\n`;
     if (edad2)  prompt += `- Edad: ${edad2} años\n`;
     prompt += `- Nivel: ${nivel2}\n`;
-    if (notas2) prompt += `- Objetivo / lesiones: ${notas2}\n`;
+    if (objetivo2) prompt += `- Objetivo principal: ${objetivo2}\n`;
+    if (notas2) prompt += `- Lesiones / notas: ${notas2}\n`;
     prompt += `\n`;
   }
   if (esRunning) {
