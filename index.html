@@ -3327,6 +3327,7 @@ select.toolbox-input option:disabled { color: #888; }
             <p class="mh-sub">Planificación con entrenadores IA especializados</p>
           </div>
           <div class="mh-actions">
+            <button onclick="_iaShowImportModal()" style="font-size:11px;padding:7px 14px;border:1px solid #10b981;background:#ecfdf5;color:#059669;border-radius:8px;cursor:pointer;font-weight:700;">📥 Importar JSON</button>
             <button onclick="_iaShowKeyModal()" style="font-size:11px;padding:7px 14px;border:1px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:8px;cursor:pointer;font-weight:700;">🔑 API Key</button>
           </div>
         </div>
@@ -3359,6 +3360,12 @@ select.toolbox-input option:disabled { color: #888; }
                 <div style="font-size:24px;margin-bottom:5px;">🦴</div>
                 <div style="font-size:13px;font-weight:900;letter-spacing:.3px;">Stuart McGill</div>
                 <div style="font-size:10px;opacity:.7;margin-top:3px;">Back Mechanic · Columna</div>
+              </button>
+              <button id="ia-t-jd" onclick="_iaSelectTrainer('jd')"
+                style="border:2.5px solid #e0e0e0;background:#f8f9fb;color:#555;border-radius:14px;padding:16px 12px;cursor:pointer;text-align:center;transition:all .2s;font-family:inherit;">
+                <div style="font-size:24px;margin-bottom:5px;">🦶</div>
+                <div style="font-size:13px;font-weight:900;letter-spacing:.3px;">Jay Dicharry</div>
+                <div style="font-size:10px;opacity:.7;margin-top:3px;">Running Rewired · Biomecánica</div>
               </button>
             </div>
           </div>
@@ -3569,6 +3576,23 @@ select.toolbox-input option:disabled { color: #888; }
             <button onclick="_iaGuardarKey()"
               style="flex:1;padding:11px;background:#7c3aed;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">Guardar</button>
             <button onclick="document.getElementById('ia-key-modal').style.display='none'"
+              style="flex:1;padding:11px;background:#f0f0f0;color:#555;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Importar Plan JSON (sin API) -->
+      <div id="ia-import-modal" onclick="if(event.target===this)this.style.display='none'"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:16px;padding:28px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.3);" onclick="event.stopPropagation()">
+          <div style="font-size:16px;font-weight:900;color:#1a1a2e;margin-bottom:6px;">📥 Importar plan (JSON)</div>
+          <div style="font-size:12px;color:#888;margin-bottom:14px;">Pegá acá el JSON del plan (generado por Claude u otra IA) y se construyen las sesiones en el planificador del alumno abierto. No consume créditos de API.</div>
+          <textarea id="ia-import-text" rows="10" placeholder='{"titulo":"...","dias":[{"diaSemana":0,"nombre":"...","bloques":[...]}]}'
+            style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:10px 12px;font-size:12px;font-family:monospace;box-sizing:border-box;margin-bottom:12px;resize:vertical;"></textarea>
+          <div style="display:flex;gap:10px;">
+            <button onclick="_iaImportarJSON()"
+              style="flex:1;padding:11px;background:#10b981;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">Importar al planificador</button>
+            <button onclick="document.getElementById('ia-import-modal').style.display='none'"
               style="flex:1;padding:11px;background:#f0f0f0;color:#555;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">Cancelar</button>
           </div>
         </div>
@@ -22783,14 +22807,15 @@ function blogEliminarArticulo(idx) {
 
 // ── IA PLANNER ─────────────────────────────────────────────────────────────────
 
-let _iaCurrentTrainer = 'jm'; // 'jm' | 'bc' | 'eh' | 'sm'
+let _iaCurrentTrainer = 'jm'; // 'jm' | 'bc' | 'eh' | 'sm' | 'jd'
 
 // Config visual/UI por entrenador
 const _IA_TRAINERS = {
   jm: { btnId: 'ia-t-jm', color: '#7c3aed', grad: 'linear-gradient(135deg,#7c3aed,#4f46e5)', genLabel: '🏔️ Generar plan con Mountain Dog',  nombre: 'John Meadows',   corto: 'Mountain Dog',   badge: '🏔️ MOUNTAIN DOG' },
   bc: { btnId: 'ia-t-bc', color: '#0ea5e9', grad: 'linear-gradient(135deg,#0ea5e9,#0284c7)', genLabel: '🍑 Generar plan con Bret Contreras', nombre: 'Bret Contreras', corto: 'Bret Contreras', badge: '🍑 GLUTE LAB' },
   eh: { btnId: 'ia-t-eh', color: '#10b981', grad: 'linear-gradient(135deg,#10b981,#059669)', genLabel: '🏃 Generar plan con Eric Helms',     nombre: 'Eric Helms',     corto: 'Eric Helms',     badge: '🏃 RUNNING CIENTÍFICO' },
-  sm: { btnId: 'ia-t-sm', color: '#f59e0b', grad: 'linear-gradient(135deg,#f59e0b,#d97706)', genLabel: '🦴 Generar plan con Stuart McGill',  nombre: 'Stuart McGill',  corto: 'Stuart McGill',  badge: '🦴 BACK MECHANIC' }
+  sm: { btnId: 'ia-t-sm', color: '#f59e0b', grad: 'linear-gradient(135deg,#f59e0b,#d97706)', genLabel: '🦴 Generar plan con Stuart McGill',  nombre: 'Stuart McGill',  corto: 'Stuart McGill',  badge: '🦴 BACK MECHANIC' },
+  jd: { btnId: 'ia-t-jd', color: '#06b6d4', grad: 'linear-gradient(135deg,#06b6d4,#0891b2)', genLabel: '🦶 Generar plan con Jay Dicharry',   nombre: 'Jay Dicharry',   corto: 'Jay Dicharry',   badge: '🦶 RUNNING REWIRED' }
 };
 
 // ── Sistema John Meadows ────────────────────────────────────────────────────────
@@ -22957,6 +22982,43 @@ const _IA_SYSTEM_PROMPT_SM = `# SYSTEM PROMPT: Entrenador de IA - Perfil de Stua
 
 Respondé siempre en ESPAÑOL (dialecto argentino). Al diseñar el programa semanal, estructurá cada día con su objetivo, ejercicios con series/reps/pausas (isometrías en segundos), progresiones/regresiones disponibles y las señales para frenar.`;
 
+// ── Sistema Jay Dicharry (Running Rewired) ──────────────────────────────────────
+const _IA_SYSTEM_PROMPT_JD = `# SYSTEM PROMPT: Entrenador de IA - Perfil de Jay Dicharry ("Running Rewired")
+
+## 1. IDENTIDAD Y TONO
+- Identidad: Eres Jay Dicharry, MPT, SCS, CSCS — fisioterapeuta deportivo y especialista mundial en biomecánica del running. Fundador del SPEED Performance Clinic (Universidad de Virginia) y del MOBO Lab (Bend, Oregon), profesor en Oregon State-Cascades, autor de "Running Rewired" y "Anatomy for Runners".
+- Tono: Científico pero práctico, centrado en sensaciones funcionales. Combinás datos objetivos ("veo un 20% de asimetría en tu apoyo") con cues claros: "llevá el dedo gordo al suelo", "no rompas el punto pivote", "contrarrotá hombros y caderas", "sentí el resorte del pie", "imaginá una tabla rígida en tu espalda". Reforzás positivamente cada mejora de forma.
+
+## 2. FILOSOFÍA (REWIRING)
+- "No basta con estar en forma: hace falta HABILIDAD para correr bien." La forma sigue a la función: el cuerpo se reprograma con trabajo deliberado FUERA de la carrera.
+- "No es cuánto corrés, sino cómo te movés."
+- 5 HABILIDADES CLAVE que todo plan desarrolla: (1) movilidad articular adecuada, (2) estabilidad de tronco/pelvis (el "punto pivote"), (3) contrarrotación hombro-cadera, (4) impulso/extensión de cadera, (5) resorte elástico del pie.
+- Las mejoras de fuerza solo valen si se pueden USAR corriendo: priorizá estabilidad funcional y propiocepción antes de agregar carga, y ensayá la forma bajo fatiga.
+
+## 3. ESTRUCTURA Y TIPOS DE TRABAJO
+- 2-3 sesiones/semana de 20-30 min que complementan (no reemplazan) la carrera del atleta.
+- Tipos de sesión: Drills de técnica (skips, rodillas altas, butt kicks, balanceos) en el calentamiento · Precisión (equilibrio, MOBO/superficie inestable, control del pie) · Fuerza (sentadillas, peso muerto, zancadas, hip thrust — 6-10 reps con carga alta; unilateral para simetría) · Potencia (pliometría: CMJ, saltos laterales, bounding, sprints cortos con foco postural).
+- Progresión: movilidad y estabilización → fuerza lenta → potencia/pliometría.
+
+## 4. PROTOCOLOS DE TEJIDO ("cargá la solución, no el problema")
+- HUESO: antes de correr, 40 saltos cortos de rebote rápido (contacto <0.1 seg) a pie plano para estimular densidad ósea.
+- TENDÓN (aquiles, rotuliano): repeticiones LENTAS con carga alta — 2-3 seg de excéntrica y concéntrica, pausa isométrica de 1-3 seg.
+- Secuenciá los estímulos: no todo junto en la misma sesión.
+
+## 5. HEURÍSTICAS DE DECISIÓN
+- Dorsiflexión de tobillo <20° o extensión del dedo gordo <30° → estiramiento de sóleo/aquiles + fortalecer flexor del hallux.
+- Equilibrio unipodal <30 seg (ojos cerrados) → priorizar propiocepción (superficie inestable, apoyo monopodal).
+- Asimetría de fuerza o zancada >10% → enfatizar trabajo unilateral del lado débil (step-ups, peso muerto a una pierna, split squat).
+- Rodilla que colapsa hacia adentro en sentadilla/apoyo → fortalecer glúteo medio y control de cadera.
+- Tasa de carga alta / overstriding → subir cadencia (ideal ~88-96 pasos por pie), tronco erguido, apoyo cerca del centro de masa. El tipo de pisada (talón/mediopié) NO es lo importante: importa dónde cae el pie respecto al centro de masa.
+- Dolor agudo → NADA de pliometría explosiva; regresión a isométricos y carga lenta controlada.
+
+## 6. RESTRICCIONES
+- Sin control motor no hay carga: si la técnica falla, regresión inmediata.
+- No des diagnósticos médicos; ante síntomas serios o dolor persistente, derivá a evaluación profesional presencial.
+
+Respondé siempre en ESPAÑOL (dialecto argentino). Al diseñar el programa semanal, estructurá cada día con sus bloques (movilidad, activación/propiocepción, fuerza, potencia/pliometría, drills de técnica), ejercicios con series/reps/tempo/pausas, los cues característicos y cómo se integra con los días de carrera del atleta.`;
+
 function _iaApiKey() { return localStorage.getItem('SOCC_ANTHROPIC_KEY') || ''; }
 
 function _iaShowKeyModal() {
@@ -22996,9 +23058,9 @@ function _iaSelectTrainer(t) {
     genBtn.textContent = _IA_TRAINERS[t].genLabel;
     genBtn.style.background = _IA_TRAINERS[t].grad;
   }
-  // Campos específicos de running (solo Eric Helms)
+  // Campos específicos de running (Eric Helms y Jay Dicharry)
   const runFields = document.getElementById('ia-run-fields');
-  if (runFields) runFields.style.display = t === 'eh' ? 'grid' : 'none';
+  if (runFields) runFields.style.display = (t === 'eh' || t === 'jd') ? 'grid' : 'none';
 }
 
 function _iaToggleDual() {
@@ -23064,7 +23126,8 @@ function _iaBuildPrompt() {
   const dias     = document.getElementById('ia-f-dias')?.value   || '4';
   const objetivo = (document.getElementById('ia-f-objetivo')?.value || '').trim();
   const notas    = (document.getElementById('ia-notas')?.value   || '').trim();
-  const esRunning = _iaCurrentTrainer === 'eh';
+  const esRunning  = _iaCurrentTrainer === 'eh';
+  const esDicharry = _iaCurrentTrainer === 'jd';
   const distancia = document.getElementById('ia-f-distancia')?.value || '10K';
   const modalidad = document.getElementById('ia-f-modalidad')?.value || 'Calle (Asfalto)';
 
@@ -23102,7 +23165,7 @@ function _iaBuildPrompt() {
     if (notas2) prompt += `- Lesiones / notas: ${notas2}\n`;
     prompt += `\n`;
   }
-  if (esRunning) {
+  if (esRunning || esDicharry) {
     prompt += `- Distancia objetivo: ${distancia}\n`;
     prompt += `- Modalidad: ${modalidad}\n`;
   }
@@ -23127,7 +23190,9 @@ function _iaBuildPrompt() {
   prompt += `- Técnicas especiales de intensidad cuando corresponda\n`;
   prompt += `- Indicaciones biomecánicas clave\n\n`;
 
-  if (_iaCurrentTrainer === 'sm') {
+  if (_iaCurrentTrainer === 'jd') {
+    prompt += `Aplicá la metodología Running Rewired de Jay Dicharry: este programa es el trabajo de gimnasio/técnica que complementa los días de carrera del atleta (2-3 sesiones de 20-30 min). Estructurá cada sesión con: movilidad dirigida (tobillo, cadera, torácica) → activación y propiocepción (equilibrio unipodal, control del pie, "dedo gordo al suelo") → fuerza funcional (6-10 reps con carga; unilateral si hay asimetrías; tempo lento 2-3 seg para tendones si hay historial) → potencia/pliometría según nivel (incluí el protocolo óseo de 40 saltos rápidos pre-carrera) → drills de técnica de carrera con sus cues. Desarrollá las 5 habilidades: movilidad, punto pivote, contrarrotación, impulso de cadera y resorte del pie. Indicá cómo se distribuyen estas sesiones respecto a los días de carrera.`;
+  } else if (_iaCurrentTrainer === 'sm') {
     prompt += `Aplicá la metodología de Stuart McGill. Si el perfil menciona dolor, lesión lumbar o hernia, diseñá el programa alrededor de eso: identificá los probables disparadores según los datos, indicá qué movimientos evitar, y construí las sesiones sobre columna neutra con los Big Three (bird-dog, plancha lateral, curl-up modificado) y sus progresiones/regresiones. Usá isometrías breves (≤10 seg) en pirámide descendente, puente de glúteos para reeducar la extensión de cadera, y patrones neutros para la fuerza (peso muerto neutro, sentadilla al cajón, farmer walk). Nada de flexión lumbar repetida bajo carga. Cerrá el programa con las banderas rojas que requieren derivación médica.`;
   } else if (_iaCurrentTrainer === 'bc') {
     prompt += `Aplicá la metodología de Bret Contreras. Si el objetivo involucra glúteos, priorizá la Regla de los Tercios (vectores horizontal, vertical y abducción) y el protocolo de activación en cada sesión que los entrene. Para el resto de los grupos musculares aplicá los mismos principios de sobrecarga progresiva, RIR 1-2 en compuestos y fallo metabólico en aislamiento. Justificá las elecciones citando brevemente los estudios de EMG del Glute Lab cuando sea relevante.`;
@@ -23233,6 +23298,7 @@ async function iaGenerarPlan() {
   const sysPrompt  = _iaCurrentTrainer === 'bc' ? _IA_SYSTEM_PROMPT_BC
                    : _iaCurrentTrainer === 'eh' ? _IA_SYSTEM_PROMPT_EH
                    : _iaCurrentTrainer === 'sm' ? _IA_SYSTEM_PROMPT_SM
+                   : _iaCurrentTrainer === 'jd' ? _IA_SYSTEM_PROMPT_JD
                    : _IA_SYSTEM_PROMPT_JM;
   const accentColor = _IA_TRAINERS[_iaCurrentTrainer].color;
 
@@ -23445,6 +23511,35 @@ function _iaJSONaPlanificacion(data, alumnoId) {
     semanasArray,
     createdAt: new Date().toISOString()
   };
+}
+
+// ── IMPORTAR PLAN JSON SIN API (pegado desde Claude u otra IA) ─────────────────
+function _iaShowImportModal() {
+  const modal = document.getElementById('ia-import-modal');
+  if (!modal) return;
+  const ta = document.getElementById('ia-import-text');
+  if (ta) ta.value = '';
+  modal.style.display = 'flex';
+}
+
+function _iaImportarJSON() {
+  const alumnoId = currentAlumnoId || document.getElementById('plan-alumno-select')?.value;
+  if (!alumnoId) { toast('Abrí el perfil de un alumno primero', 'error'); return; }
+  const raw = (document.getElementById('ia-import-text')?.value || '').trim();
+  if (!raw) { toast('Pegá el JSON del plan', 'error'); return; }
+  try {
+    const data = _iaParseJSON(raw);
+    const plan = _iaJSONaPlanificacion(data, alumnoId);
+    const planes = getPlanificaciones();
+    planes.push(plan);
+    savePlanificaciones(planes);
+    document.getElementById('ia-import-modal').style.display = 'none';
+    toast('✅ Plan importado al planificador');
+    abrirPlanFuerzaExistente(plan.id);
+  } catch(e) {
+    console.error('Importar JSON Error:', e);
+    toast('Error al importar: ' + e.message, 'error');
+  }
 }
 
 async function _iaEnviarPlanificador() {
