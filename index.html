@@ -3492,6 +3492,7 @@ select.toolbox-input option:disabled { color: #888; }
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
               <div id="ia-output-label" style="font-size:11px;font-weight:900;letter-spacing:1px;color:#7c3aed;">PROGRAMA SEMANAL GENERADO</div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button onclick="_iaEnviarPlanificador()" id="ia-btn-enviar" style="font-size:11px;font-weight:700;padding:6px 14px;border:1.5px solid #10b981;background:#ecfdf5;color:#059669;border-radius:7px;cursor:pointer;">📤 Enviar al planificador</button>
                 <button onclick="_iaCopiar()" style="font-size:11px;font-weight:700;padding:6px 14px;border:1.5px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:7px;cursor:pointer;">Copiar texto</button>
                 <button onclick="_iaGenerarPDF()" style="font-size:11px;font-weight:700;padding:6px 14px;border:1.5px solid #dc2626;background:#fff1f1;color:#dc2626;border-radius:7px;cursor:pointer;">📄 Generar PDF</button>
                 <button onclick="_iaNueva()" style="font-size:11px;font-weight:700;padding:6px 14px;border:1.5px solid #e0e0e0;background:#f8f9fb;color:#555;border-radius:7px;cursor:pointer;">Nuevo plan</button>
@@ -23176,6 +23177,169 @@ function _iaNueva() {
   if (out) out.style.display = 'none';
   const notas = document.getElementById('ia-notas');
   if (notas) notas.value = '';
+}
+
+// ── ENVIAR PLAN IA AL PLANIFICADOR SOCC ────────────────────────────────────────
+function _iaParseJSON(text) {
+  // Limpiar fences de markdown y extraer el objeto JSON
+  let t = text.replace(/```json/gi, '```').replace(/```/g, '').trim();
+  const ini = t.indexOf('{');
+  const fin = t.lastIndexOf('}');
+  if (ini === -1 || fin === -1) throw new Error('La IA no devolvió un JSON válido');
+  return JSON.parse(t.slice(ini, fin + 1));
+}
+
+function _iaJSONaPlanificacion(data, alumnoId) {
+  const lunes = _getLunesDe(new Date().toISOString().split('T')[0]);
+  const cfgT  = _IA_TRAINERS[_iaCurrentTrainer];
+  const dias  = {};
+  const patrones = { 1:[0], 2:[0,3], 3:[0,2,4], 4:[0,1,3,4], 5:[0,1,2,3,4], 6:[0,1,2,3,4,5], 7:[0,1,2,3,4,5,6] };
+  const lista  = Array.isArray(data.dias) ? data.dias : [];
+  const patron = patrones[Math.min(lista.length, 7)] || [0];
+
+  lista.forEach((d, i) => {
+    let idx = (Number.isInteger(d.diaSemana) && d.diaSemana >= 0 && d.diaSemana <= 6) ? d.diaSemana : patron[i % 7];
+    while (dias[String(idx)] && idx < 6) idx++; // no pisar días ya ocupados
+
+    const bloques = (d.bloques || []).map(b => {
+      const tipo      = TIPOS_BLOQUE_F.includes(b.tipo) ? b.tipo : 'Desarrollo / Hipertrofia';
+      const serieTipo = TIPOS_SERIE_F.includes(b.serieTipo) ? b.serieTipo : 'Serie Simple';
+      const ejercicios = (b.ejercicios || []).map(ej => {
+        const nSer = Math.min(parseInt(ej.series) || 3, 10);
+        const fila = { reps: String(ej.reps || ''), peso: String(ej.peso || ''), rir: String(ej.rir || ''), pausa: String(ej.pausa || ''), comentarios: '' };
+        return {
+          nombre: String(ej.nombre || '').trim(),
+          ctrl: { series: String(ej.series || ''), reps: String(ej.reps || ''), peso: String(ej.peso || ''), pausa: String(ej.pausa || ''), rir: String(ej.rir || '') },
+          video: '', ficha: null,
+          series: Array.from({ length: nSer }, () => ({ ...fila })),
+          seriesApro: [], dropset: []
+        };
+      }).filter(e => e.nombre);
+      let cardioData = null;
+      if (tipo === 'Cardio' && b.cardio) {
+        cardioData = {
+          actividad: String(b.cardio.actividad || ''), duracion: String(b.cardio.duracion || ''),
+          zona: String(b.cardio.zona || ''), velocidad: '', inclinacion: '', resistencia: '',
+          rpe: String(b.cardio.rpe || ''), observaciones: String(b.cardio.observaciones || '')
+        };
+      }
+      return { nombre: String(b.nombre || tipo), tipo, serieTipo, ejercicios, cardioData };
+    });
+
+    dias[String(idx)] = [{ bloques, nombre: String(d.nombre || '') }];
+  });
+
+  const semanasArray = [{ semana: 1, fechaInicio: lunes, dias }];
+  return {
+    id: genId(), alumnoId,
+    tipoPlan: 'fuerza', tipoPlanEstructura: 'semanal',
+    titulo: String(data.titulo || ('Plan IA — ' + cfgT.corto)),
+    semanaNum: 1, fecha: lunes,
+    objetivo: document.getElementById('ia-f-objetivo')?.value || '',
+    nivel: document.getElementById('ia-f-nivel')?.value || '',
+    diasData: semanasArray[0].dias,
+    semanasArray,
+    createdAt: new Date().toISOString()
+  };
+}
+
+async function _iaEnviarPlanificador() {
+  const content = localStorage.getItem('SOCC_IA_LAST_PLAN') || '';
+  if (!content) { toast('No hay plan generado todavía'); return; }
+  const apiKey = _iaApiKey();
+  if (!apiKey) { _iaShowKeyModal(); return; }
+  const alumnoId = currentAlumnoId || document.getElementById('plan-alumno-select')?.value;
+  if (!alumnoId) { toast('Abrí el perfil de un alumno primero', 'error'); return; }
+
+  const btn = document.getElementById('ia-btn-enviar');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Convirtiendo al formato SOCC...'; }
+
+  const sysConv = `Sos un conversor de planes de entrenamiento al formato JSON del sistema SOCC. Convertís el texto de un plan semanal en un JSON VÁLIDO. Respondé ÚNICAMENTE con el objeto JSON, sin explicaciones ni markdown.
+
+ESQUEMA:
+{
+  "titulo": "título corto del plan",
+  "dias": [
+    {
+      "diaSemana": 0,
+      "nombre": "nombre de la sesión (ej: Piernas · Fuerza)",
+      "bloques": [
+        {
+          "nombre": "nombre del bloque",
+          "tipo": "uno de: ${TIPOS_BLOQUE_F.join(' | ')}",
+          "serieTipo": "uno de: ${TIPOS_SERIE_F.join(' | ')}",
+          "ejercicios": [
+            { "nombre": "Nombre del ejercicio", "series": "4", "reps": "8-12", "peso": "70kg o RPE 8", "pausa": "90 seg", "rir": "2" }
+          ],
+          "cardio": { "actividad": "", "duracion": "", "zona": "", "rpe": "", "observaciones": "" }
+        }
+      ]
+    }
+  ]
+}
+
+REGLAS:
+- "diaSemana": 0=Lunes ... 6=Domingo. Distribuí los días de entrenamiento de forma equilibrada en la semana (ej: 3 días → 0,2,4).
+- Estructurá cada sesión con los bloques SOCC en este orden: Movilidad y Calentamiento → Activación y Core → Calentamiento Específico (si aplica) → Fuerza Principal / Potencia y/o Desarrollo / Hipertrofia → Cardio (si aplica) → Enfriamiento Final.
+- "cardio" solo va si tipo="Cardio"; en ese caso "ejercicios" es []. Usá bloques Cardio para rodajes, series de carrera, fartlek, tiradas largas, etc. — detallá distancias, ritmos y zonas en "observaciones".
+- Incluí TODOS los ejercicios del plan original con sus series, reps, pesos/intensidades, pausas y RIR. Las técnicas especiales (drop-sets, iso-holds, parciales) incluilas entre paréntesis en el nombre del ejercicio o en "reps".
+- Todos los valores son strings salvo "diaSemana".`;
+
+  let accumulated = '';
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: document.getElementById('ia-modelo')?.value || 'claude-sonnet-4-6',
+        max_tokens: 16000,
+        stream: true,
+        system: sysConv,
+        messages: [{ role: 'user', content: 'Convertí este plan semanal al JSON del esquema:\n\n' + content }]
+      })
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err?.error?.message || 'Error HTTP ' + resp.status);
+    }
+    const reader  = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const parsed = JSON.parse(line.slice(6).trim());
+          if (parsed.type === 'content_block_delta' && parsed.delta?.text) accumulated += parsed.delta.text;
+        } catch(e) {}
+      }
+      if (btn) btn.textContent = '⏳ Convirtiendo... (' + Math.round(accumulated.length / 1000) + 'k)';
+    }
+
+    const data = _iaParseJSON(accumulated);
+    const plan = _iaJSONaPlanificacion(data, alumnoId);
+    const planes = getPlanificaciones();
+    planes.push(plan);
+    savePlanificaciones(planes);
+    toast('✅ Plan enviado al planificador');
+    if (btn) { btn.disabled = false; btn.textContent = '📤 Enviar al planificador'; }
+    abrirPlanFuerzaExistente(plan.id);
+    return;
+  } catch(e) {
+    console.error('IA Enviar Error:', e);
+    toast('Error al convertir: ' + e.message, 'error');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '📤 Enviar al planificador'; }
 }
 
 // ── MACROCICLO EDITOR ──────────────────────────────────────────────────────────
