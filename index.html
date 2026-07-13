@@ -23068,15 +23068,24 @@ async function _iaStreamAPI(body, onText) {
 async function _iaGenerarConContinuacion(model, system, userPrompt, onProgress) {
   let full = '';
   for (let ronda = 0; ronda < 4; ronda++) {
-    const base = full.replace(/\s+$/, '');
+    const base = full;
     const messages = [{ role: 'user', content: userPrompt }];
-    if (base) messages.push({ role: 'assistant', content: base });
-    const { text, stopReason } = await _iaStreamAPI(
-      { model, max_tokens: 8000, stream: true, system, messages },
-      t => { if (onProgress) onProgress(base + t); }
-    );
-    full = base + text;
-    if (stopReason !== 'max_tokens') break;
+    if (base) {
+      messages.push({ role: 'assistant', content: base.replace(/\s+$/, '') });
+      messages.push({ role: 'user', content: 'Te cortaste por límite de longitud. Continuá EXACTAMENTE desde donde te quedaste, sin repetir nada de lo anterior, sin introducciones ni comentarios. Retomá desde el punto exacto del corte.' });
+    }
+    try {
+      const { text, stopReason } = await _iaStreamAPI(
+        { model, max_tokens: 8000, stream: true, system, messages },
+        t => { if (onProgress) onProgress(base ? base + '\n' + t : t); }
+      );
+      full = base ? base + '\n' + text : text;
+      if (stopReason !== 'max_tokens') break;
+    } catch(e) {
+      if (!full) throw e; // si falló la primera ronda, propagar el error
+      console.warn('IA continuación falló, se conserva lo generado:', e);
+      break; // conservar lo que ya se generó
+    }
   }
   return full;
 }
