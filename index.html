@@ -3335,7 +3335,7 @@ select.toolbox-input option:disabled { color: #888; }
           <!-- Selector de entrenador -->
           <div style="margin-bottom:20px;">
             <label style="font-size:10px;font-weight:900;color:#555;letter-spacing:.5px;display:block;margin-bottom:8px;">ENTRENADOR IA</label>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
               <button id="ia-t-jm" onclick="_iaSelectTrainer('jm')"
                 style="border:2.5px solid #7c3aed;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border-radius:14px;padding:16px 12px;cursor:pointer;text-align:center;transition:all .2s;font-family:inherit;">
                 <div style="font-size:24px;margin-bottom:5px;">🏔️</div>
@@ -3354,12 +3354,24 @@ select.toolbox-input option:disabled { color: #888; }
                 <div style="font-size:13px;font-weight:900;letter-spacing:.3px;">Eric Helms</div>
                 <div style="font-size:10px;opacity:.7;margin-top:3px;">Running Científico</div>
               </button>
+              <button id="ia-t-sm" onclick="_iaSelectTrainer('sm')"
+                style="border:2.5px solid #e0e0e0;background:#f8f9fb;color:#555;border-radius:14px;padding:16px 12px;cursor:pointer;text-align:center;transition:all .2s;font-family:inherit;">
+                <div style="font-size:24px;margin-bottom:5px;">🦴</div>
+                <div style="font-size:13px;font-weight:900;letter-spacing:.3px;">Stuart McGill</div>
+                <div style="font-size:10px;opacity:.7;margin-top:3px;">Back Mechanic · Columna</div>
+              </button>
             </div>
           </div>
 
           <!-- Perfil del atleta -->
           <div style="background:#f8f9fb;border-radius:14px;padding:16px;margin-bottom:14px;border:1.5px solid #e8e8f0;">
-            <div style="font-size:10px;font-weight:900;color:#555;letter-spacing:.5px;margin-bottom:12px;">PERFIL DEL ATLETA</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+              <div style="font-size:10px;font-weight:900;color:#555;letter-spacing:.5px;">PERFIL DEL ATLETA</div>
+              <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:#555;cursor:pointer;">
+                <input type="checkbox" id="ia-f-dual" onchange="_iaToggleDual()" style="width:15px;height:15px;accent-color:#7c3aed;cursor:pointer;">
+                👥 Entrenamiento en pareja (2 alumnos)
+              </label>
+            </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
               <div style="grid-column:1/-1;">
                 <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">NOMBRE</label>
@@ -3391,6 +3403,40 @@ select.toolbox-input option:disabled { color: #888; }
                 <select id="ia-f-dias" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
                   <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
                 </select>
+              </div>
+              <!-- Perfil del segundo alumno (modo pareja) -->
+              <div id="ia-dual-fields" style="grid-column:1/-1;display:none;grid-template-columns:1fr 1fr;gap:10px;background:#fdf7ee;border:1.5px dashed #f59e0b;border-radius:11px;padding:12px;">
+                <div style="grid-column:1/-1;font-size:10px;font-weight:900;color:#b45309;letter-spacing:.5px;">👥 PERFIL DEL ALUMNO B</div>
+                <div style="grid-column:1/-1;">
+                  <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">NOMBRE (ALUMNO B)</label>
+                  <input id="ia-f-nombre2" type="text" placeholder="Nombre del segundo alumno..."
+                    style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;box-sizing:border-box;">
+                </div>
+                <div>
+                  <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">SEXO</label>
+                  <select id="ia-f-sexo2" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
+                    <option value="Hombre">Hombre</option>
+                    <option value="Mujer">Mujer</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">EDAD</label>
+                  <input id="ia-f-edad2" type="number" placeholder="35" min="10" max="90"
+                    style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;box-sizing:border-box;">
+                </div>
+                <div>
+                  <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">NIVEL</label>
+                  <select id="ia-f-nivel2" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
+                    <option>Principiante</option>
+                    <option selected>Intermedio</option>
+                    <option>Avanzado</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">OBJETIVO / LESIONES (ALUMNO B)</label>
+                  <input id="ia-f-notas2" type="text" placeholder="Ej: perder grasa, molestia de hombro..."
+                    style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;box-sizing:border-box;">
+                </div>
               </div>
               <!-- Campos específicos de running (solo Eric Helms) -->
               <div id="ia-run-fields" style="grid-column:1/-1;display:none;grid-template-columns:1fr 1fr;gap:10px;">
@@ -22731,13 +22777,14 @@ function blogEliminarArticulo(idx) {
 
 // ── IA PLANNER ─────────────────────────────────────────────────────────────────
 
-let _iaCurrentTrainer = 'jm'; // 'jm' | 'bc' | 'eh'
+let _iaCurrentTrainer = 'jm'; // 'jm' | 'bc' | 'eh' | 'sm'
 
 // Config visual/UI por entrenador
 const _IA_TRAINERS = {
   jm: { btnId: 'ia-t-jm', color: '#7c3aed', grad: 'linear-gradient(135deg,#7c3aed,#4f46e5)', genLabel: '🏔️ Generar plan con Mountain Dog',  nombre: 'John Meadows',   corto: 'Mountain Dog',   badge: '🏔️ MOUNTAIN DOG' },
   bc: { btnId: 'ia-t-bc', color: '#0ea5e9', grad: 'linear-gradient(135deg,#0ea5e9,#0284c7)', genLabel: '🍑 Generar plan con Bret Contreras', nombre: 'Bret Contreras', corto: 'Bret Contreras', badge: '🍑 GLUTE LAB' },
-  eh: { btnId: 'ia-t-eh', color: '#10b981', grad: 'linear-gradient(135deg,#10b981,#059669)', genLabel: '🏃 Generar plan con Eric Helms',     nombre: 'Eric Helms',     corto: 'Eric Helms',     badge: '🏃 RUNNING CIENTÍFICO' }
+  eh: { btnId: 'ia-t-eh', color: '#10b981', grad: 'linear-gradient(135deg,#10b981,#059669)', genLabel: '🏃 Generar plan con Eric Helms',     nombre: 'Eric Helms',     corto: 'Eric Helms',     badge: '🏃 RUNNING CIENTÍFICO' },
+  sm: { btnId: 'ia-t-sm', color: '#f59e0b', grad: 'linear-gradient(135deg,#f59e0b,#d97706)', genLabel: '🦴 Generar plan con Stuart McGill',  nombre: 'Stuart McGill',  corto: 'Stuart McGill',  badge: '🦴 BACK MECHANIC' }
 };
 
 // ── Sistema John Meadows ────────────────────────────────────────────────────────
@@ -22870,6 +22917,40 @@ Cada sesión debe seguir este orden:
 
 Respondé siempre en ESPAÑOL. Al diseñar el plan semanal, estructurá cada día con su tipo de sesión, bloques completos (M, A, B, C si corresponde, F), distancias/tiempos, zonas de intensidad y notas técnicas.`;
 
+// ── Sistema Stuart McGill (Back Mechanic) ───────────────────────────────────────
+const _IA_SYSTEM_PROMPT_SM = `# SYSTEM PROMPT: Entrenador de IA - Perfil de Stuart McGill ("Back Mechanic")
+
+## 1. IDENTIDAD Y TONO
+- Identidad: Eres Stuart McGill, PhD, Profesor Emérito de Biomecánica de la Columna en la Universidad de Waterloo (Canadá), con 30 años de investigación, más de 245 artículos científicos y autor de "Back Mechanic", "Low Back Disorders" y "Ultimate Back Fitness and Performance". Referente mundial en salud lumbar, rehabilitación de lesiones de espalda y rendimiento con columna protegida.
+- Tono: Didáctico, claro, directo y cercano. Combinás datos técnicos con metáforas cotidianas: "cada flexión gasta un dólar de la cuenta bancaria de tu disco", "la cadera es el motor", "hay que ahorrar dólares en la cuenta de tu espalda". Traducís los términos biomecánicos a situaciones reales. Corregís con suavidad y celebrás el progreso.
+
+## 2. FILOSOFÍA ("IT DEPENDS")
+- No existe un protocolo único: cada persona requiere evaluación propia. Ante lo genérico, tu respuesta es "depende".
+- Método: primero identificar los DISPARADORES de dolor (movimientos/posturas que lo provocan), después ELIMINAR esa causa de la vida diaria y del entrenamiento, recién entonces rehabilitar y ampliar la actividad sin dolor.
+- Columna NEUTRA siempre: los discos tienen un número limitado de flexiones antes de dañarse. Reservá la flexión lumbar solo para lo necesario. Maximizá la rigidez (stiffness) del torso para proteger la columna.
+- Construir resistencia y control motor antes que carga máxima. Técnica perfecta y respiración abdominal en cada ejercicio.
+
+## 3. BIG THREE Y PROTOCOLOS
+- BIG THREE (pilares de estabilidad): Bird-dog, Plancha lateral y Curl-up modificado (manos bajo la zona lumbar, elevar solo cabeza/hombros unos centímetros). Core isométrico sin flexionar la columna.
+- Progresiones y regresiones: empezar con la dosis mínima efectiva (plancha contra pared o con rodillas apoyadas) y avanzar solo cuando el nivel actual se hace sin dolor y con forma perfecta.
+- Isometrías BREVES (≤10 segundos por repetición) en formato pirámide descendente (ej: 5×10s → 3×10s → 1×10s). Aumentar repeticiones, no tiempo de aguante.
+- Puente de glúteos para reeducar la extensión de cadera con predominio de glúteos (no isquios ni lumbar).
+- Orden de progresión: control motor → estabilidad/resistencia → fuerza → velocidad/potencia. NUNCA carga axial pesada sin base de estabilidad consolidada.
+
+## 4. ADAPTACIÓN POR PERFIL
+- Atleta de élite: fases (corrección de disparadores → estabilidad → fuerza/potencia con énfasis en caderas), 4-6 sesiones/sem, técnicas de superstiffness para explosividad sin comprometer la espalda.
+- Deportista recreativo: ~3 días/sem, básicos McGill + patrones neutros (sentadilla neutra, remo, puente), progresión lenta de resistencia a fuerza.
+- Dolor lumbar crónico: 2-3 días/sem, isometrías simples, higiene postural diaria, progreso guiado por la respuesta del dolor.
+- Adulto mayor: aún más gradual, ejercicios funcionales en plano neutro (sentarse/levantarse, equilibrio unipodal, marcha), fuerza de tren inferior y balance para prevenir caídas.
+
+## 5. RESTRICCIONES Y BANDERAS ROJAS
+- PROHIBIDO prescribir ejercicios que reproduzcan el mecanismo de dolor identificado (ej: flexión-intolerante → sin crunches completos ni flexiones repetidas bajo carga).
+- NUNCA decir "entrená con dolor". Si un ejercicio duele, regresión o reemplazo.
+- Banderas rojas → sugerir consulta médica inmediata: dolor continuo y nocturno, fiebre, pérdida de peso inexplicada, debilidad neurológica, hormigueo en piernas, alteraciones urinarias o intestinales.
+- No des diagnósticos médicos definitivos ni tratamientos farmacológicos.
+
+Respondé siempre en ESPAÑOL (dialecto argentino). Al diseñar el programa semanal, estructurá cada día con su objetivo, ejercicios con series/reps/pausas (isometrías en segundos), progresiones/regresiones disponibles y las señales para frenar.`;
+
 function _iaApiKey() { return localStorage.getItem('SOCC_ANTHROPIC_KEY') || ''; }
 
 function _iaShowKeyModal() {
@@ -22912,6 +22993,12 @@ function _iaSelectTrainer(t) {
   // Campos específicos de running (solo Eric Helms)
   const runFields = document.getElementById('ia-run-fields');
   if (runFields) runFields.style.display = t === 'eh' ? 'grid' : 'none';
+}
+
+function _iaToggleDual() {
+  const on  = document.getElementById('ia-f-dual')?.checked;
+  const blk = document.getElementById('ia-dual-fields');
+  if (blk) blk.style.display = on ? 'grid' : 'none';
 }
 
 function renderIAPlanner() {
@@ -22968,13 +23055,38 @@ function _iaBuildPrompt() {
   const distancia = document.getElementById('ia-f-distancia')?.value || '10K';
   const modalidad = document.getElementById('ia-f-modalidad')?.value || 'Calle (Asfalto)';
 
-  let prompt = `Diseñá el programa de entrenamiento semanal completo para el siguiente atleta.\n\n`;
-  prompt += `## PERFIL DEL ATLETA\n`;
+  // Modo pareja (2 alumnos juntos)
+  const esDual   = !!document.getElementById('ia-f-dual')?.checked;
+  const nombre2  = (document.getElementById('ia-f-nombre2')?.value || '').trim();
+  const sexo2    = document.getElementById('ia-f-sexo2')?.value  || 'Hombre';
+  const edad2    = (document.getElementById('ia-f-edad2')?.value || '').trim();
+  const nivel2   = document.getElementById('ia-f-nivel2')?.value || 'Intermedio';
+  const notas2   = (document.getElementById('ia-f-notas2')?.value || '').trim();
+  const dual     = esDual && nombre2;
+
+  let dualInstr = '';
+  if (dual) {
+    dualInstr = `\n\nMODO PAREJA — MUY IMPORTANTE: Este programa es para DOS alumnos que entrenan JUNTOS en la misma sesión (${nombre} y ${nombre2}). Diseñá cada día como UNA sesión compartida (mismos bloques, misma estructura y mismos tiempos), pero con la planilla DIVIDIDA EN DOS MITADES: primero la mitad de ${nombre} con todos sus ejercicios y parámetros individualizados (cargas, reps, RIR, variantes o regresiones según su nivel y limitaciones), y a continuación la mitad de ${nombre2} con los mismos bloques adaptados a su perfil. Encabezá cada mitad con "🅰 ${nombre.toUpperCase()}" y "🅱 ${nombre2.toUpperCase()}". Los dos comparten los equipos alternando turnos, así que elegí ejercicios compatibles para hacer en simultáneo o en circuito de a dos.`;
+  }
+
+  let prompt = dual
+    ? `Diseñá el programa de entrenamiento semanal completo para los siguientes DOS atletas que entrenan juntos.\n\n`
+    : `Diseñá el programa de entrenamiento semanal completo para el siguiente atleta.\n\n`;
+  prompt += dual ? `## PERFIL DEL ATLETA A\n` : `## PERFIL DEL ATLETA\n`;
   prompt += `- Nombre: ${nombre}\n`;
   prompt += `- Sexo: ${sexo}\n`;
   if (edad)     prompt += `- Edad: ${edad} años\n`;
   prompt += `- Nivel: ${nivel}\n`;
   prompt += `- Disponibilidad: ${dias} días de entrenamiento por semana\n`;
+  if (dual) {
+    prompt += `\n## PERFIL DEL ATLETA B\n`;
+    prompt += `- Nombre: ${nombre2}\n`;
+    prompt += `- Sexo: ${sexo2}\n`;
+    if (edad2)  prompt += `- Edad: ${edad2} años\n`;
+    prompt += `- Nivel: ${nivel2}\n`;
+    if (notas2) prompt += `- Objetivo / lesiones: ${notas2}\n`;
+    prompt += `\n`;
+  }
   if (esRunning) {
     prompt += `- Distancia objetivo: ${distancia}\n`;
     prompt += `- Modalidad: ${modalidad}\n`;
@@ -22990,7 +23102,7 @@ function _iaBuildPrompt() {
     prompt += `- Indicaciones técnicas y de prevención de lesiones\n\n`;
     prompt += `Respetá la jerarquía fisiológica: adherencia → gestión de volumen (regla del 10%) → distribución de intensidad → fuerza concurrente → estrategia táctica. Incluí el volumen semanal total estimado.`;
     if (modalidad.startsWith('Trail')) prompt += ` Al ser Trail, cuantificá la carga combinando kilómetros + desnivel (D+) o tiempo en zona.`;
-    return prompt;
+    return prompt + dualInstr;
   }
 
   prompt += `\nDiseñá el programa completo para ${dias} días de entrenamiento. Para cada día indicá:\n`;
@@ -23000,13 +23112,15 @@ function _iaBuildPrompt() {
   prompt += `- Técnicas especiales de intensidad cuando corresponda\n`;
   prompt += `- Indicaciones biomecánicas clave\n\n`;
 
-  if (_iaCurrentTrainer === 'bc') {
+  if (_iaCurrentTrainer === 'sm') {
+    prompt += `Aplicá la metodología de Stuart McGill. Si el perfil menciona dolor, lesión lumbar o hernia, diseñá el programa alrededor de eso: identificá los probables disparadores según los datos, indicá qué movimientos evitar, y construí las sesiones sobre columna neutra con los Big Three (bird-dog, plancha lateral, curl-up modificado) y sus progresiones/regresiones. Usá isometrías breves (≤10 seg) en pirámide descendente, puente de glúteos para reeducar la extensión de cadera, y patrones neutros para la fuerza (peso muerto neutro, sentadilla al cajón, farmer walk). Nada de flexión lumbar repetida bajo carga. Cerrá el programa con las banderas rojas que requieren derivación médica.`;
+  } else if (_iaCurrentTrainer === 'bc') {
     prompt += `Aplicá la metodología de Bret Contreras. Si el objetivo involucra glúteos, priorizá la Regla de los Tercios (vectores horizontal, vertical y abducción) y el protocolo de activación en cada sesión que los entrene. Para el resto de los grupos musculares aplicá los mismos principios de sobrecarga progresiva, RIR 1-2 en compuestos y fallo metabólico en aislamiento. Justificá las elecciones citando brevemente los estudios de EMG del Glute Lab cuando sea relevante.`;
   } else {
     prompt += `Aplicá la metodología Mountain Dog Training de John Meadows. Para cada día, estructurá la sesión con las 4 fases: Speed Warm-up, Fase 1 (Activación/Conexión Mente-Músculo), Fase 2 (Carga Explosiva), Fase 3 (Bombeo Súper Máximo) y Fase 4 (Estiramiento Bajo Tensión). Respetá el límite de 4-5 ejercicios por sesión y los tiempos de descanso de cada fase.`;
   }
 
-  return prompt;
+  return prompt + dualInstr;
 }
 
 // Renderizado simple de markdown → HTML
@@ -23103,6 +23217,7 @@ async function iaGenerarPlan() {
   const entrenador = _IA_TRAINERS[_iaCurrentTrainer].corto;
   const sysPrompt  = _iaCurrentTrainer === 'bc' ? _IA_SYSTEM_PROMPT_BC
                    : _iaCurrentTrainer === 'eh' ? _IA_SYSTEM_PROMPT_EH
+                   : _iaCurrentTrainer === 'sm' ? _IA_SYSTEM_PROMPT_SM
                    : _IA_SYSTEM_PROMPT_JM;
   const accentColor = _IA_TRAINERS[_iaCurrentTrainer].color;
 
@@ -23136,7 +23251,8 @@ function _iaGenerarPDF() {
 
   const entrenador  = _IA_TRAINERS[_iaCurrentTrainer].nombre;
   const accentColor = _IA_TRAINERS[_iaCurrentTrainer].color;
-  const nombre = (document.getElementById('ia-f-nombre')?.value || '').trim() || 'Atleta';
+  const _n2pdf = document.getElementById('ia-f-dual')?.checked ? (document.getElementById('ia-f-nombre2')?.value || '').trim() : '';
+  const nombre = ((document.getElementById('ia-f-nombre')?.value || '').trim() || 'Atleta') + (_n2pdf ? ' & ' + _n2pdf : '');
   const nivel  = document.getElementById('ia-f-nivel')?.value || '';
   const dias   = document.getElementById('ia-f-dias')?.value || '';
   const obj    = (document.getElementById('ia-f-objetivo')?.value || '').trim();
@@ -23208,12 +23324,17 @@ function _iaNueva() {
 
 // ── ENVIAR PLAN IA AL PLANIFICADOR SOCC ────────────────────────────────────────
 function _iaParseJSON(text) {
-  // Limpiar fences de markdown y extraer el objeto JSON
+  // Limpiar fences de markdown y extraer el JSON (objeto o array raíz)
   let t = text.replace(/```json/gi, '```').replace(/```/g, '').trim();
-  const ini = t.indexOf('{');
+  const iObj = t.indexOf('{'), iArr = t.indexOf('[');
+  if (iArr !== -1 && (iObj === -1 || iArr < iObj)) {
+    const fin = t.lastIndexOf(']');
+    if (fin === -1) throw new Error('La IA no devolvió un JSON válido');
+    return { dias: JSON.parse(t.slice(iArr, fin + 1)) };
+  }
   const fin = t.lastIndexOf('}');
-  if (ini === -1 || fin === -1) throw new Error('La IA no devolvió un JSON válido');
-  return JSON.parse(t.slice(ini, fin + 1));
+  if (iObj === -1 || fin === -1) throw new Error('La IA no devolvió un JSON válido');
+  return JSON.parse(t.slice(iObj, fin + 1));
 }
 
 // Lista de nombres de la biblioteca para inyectar en el prompt del conversor
@@ -23246,11 +23367,18 @@ function _iaJSONaPlanificacion(data, alumnoId) {
   const cfgT  = _IA_TRAINERS[_iaCurrentTrainer];
   const dias  = {};
   const patrones = { 1:[0], 2:[0,3], 3:[0,2,4], 4:[0,1,3,4], 5:[0,1,2,3,4], 6:[0,1,2,3,4,5], 7:[0,1,2,3,4,5,6] };
-  const lista  = Array.isArray(data.dias) ? data.dias : [];
+  // Tolerar variantes de clave que puede devolver la IA
+  const lista = Array.isArray(data.dias) ? data.dias
+              : Array.isArray(data['días']) ? data['días']
+              : Array.isArray(data.days) ? data.days
+              : Array.isArray(data.sesiones) ? data.sesiones
+              : (data.plan && Array.isArray(data.plan.dias)) ? data.plan.dias
+              : [];
   const patron = patrones[Math.min(lista.length, 7)] || [0];
 
   lista.forEach((d, i) => {
-    let idx = (Number.isInteger(d.diaSemana) && d.diaSemana >= 0 && d.diaSemana <= 6) ? d.diaSemana : patron[i % 7];
+    const dSem = (d.diaSemana !== undefined) ? parseInt(d.diaSemana) : NaN;
+    let idx = (Number.isInteger(dSem) && dSem >= 0 && dSem <= 6) ? dSem : patron[i % 7];
     while (dias[String(idx)] && idx < 6) idx++; // no pisar días ya ocupados
 
     const bloques = (d.bloques || []).map(b => {
@@ -23284,6 +23412,12 @@ function _iaJSONaPlanificacion(data, alumnoId) {
     dias[String(idx)] = [{ bloques, nombre: String(d.nombre || '') }];
   });
 
+  if (!Object.keys(dias).length) {
+    console.log('[IA→SOCC] JSON recibido sin días válidos:', data);
+    throw new Error('La conversión no produjo sesiones válidas. Volvé a intentar (detalle en consola F12)');
+  }
+  console.log('[IA→SOCC] Días convertidos:', Object.keys(dias).length, JSON.parse(JSON.stringify(dias)));
+
   const semanasArray = [{ semana: 1, fechaInicio: lunes, dias }];
   return {
     id: genId(), alumnoId,
@@ -23305,6 +23439,9 @@ async function _iaEnviarPlanificador() {
   if (!apiKey) { _iaShowKeyModal(); return; }
   const alumnoId = currentAlumnoId || document.getElementById('plan-alumno-select')?.value;
   if (!alumnoId) { toast('Abrí el perfil de un alumno primero', 'error'); return; }
+  if (document.getElementById('ia-f-dual')?.checked) {
+    if (!confirm('Modo pareja activo: el plan (las dos mitades) se va a convertir dentro de la planificación del alumno abierto. ¿Continuar?')) return;
+  }
 
   const btn = document.getElementById('ia-btn-enviar');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Convirtiendo al formato SOCC...'; }
@@ -23362,6 +23499,7 @@ REGLAS:
     return;
   } catch(e) {
     console.error('IA Enviar Error:', e);
+    console.log('[IA→SOCC] Respuesta cruda del conversor:', accumulated);
     toast('Error al convertir: ' + e.message, 'error');
   }
   if (btn) { btn.disabled = false; btn.textContent = '📤 Enviar al planificador'; }
