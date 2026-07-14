@@ -1480,10 +1480,188 @@ function _renderInfoDetalle(a, ctn) {
 function renderCargas() { renderInfo(); } // backward compat
 
 // ── MEDIDAS ───────────────────────────────────────────────────────────────
+// ── AUTO-REGISTRO DE MEDIDAS DEL ALUMNO ──────────────────────────────────────
+const _ANTRO_CAMPOS = [
+  { k:'peso',      lb:'Peso',            u:'kg' },
+  { k:'altura',    lb:'Altura',          u:'cm' },
+  { k:'cuello',    lb:'Cuello',          u:'cm' },
+  { k:'hombros',   lb:'Hombros',         u:'cm' },
+  { k:'pecho',     lb:'Pecho',           u:'cm' },
+  { k:'brazoDer',  lb:'Brazo derecho',   u:'cm' },
+  { k:'brazoIzq',  lb:'Brazo izquierdo', u:'cm' },
+  { k:'cintura',   lb:'Cintura',         u:'cm' },
+  { k:'cadera',    lb:'Cadera',          u:'cm' },
+  { k:'musloDer',  lb:'Muslo derecho',   u:'cm' },
+  { k:'musloIzq',  lb:'Muslo izquierdo', u:'cm' },
+  { k:'gemeloDer', lb:'Gemelo derecho',  u:'cm' },
+  { k:'gemeloIzq', lb:'Gemelo izquierdo',u:'cm' }
+];
+
+function _antroRegs() {
+  return ((_data && _data.antroAlumno) || []).slice().sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+}
+
+function _antroDiasRestantes() {
+  const regs = _antroRegs();
+  if (!regs.length) return 0;
+  if (_data && _data.antroUnlock) return 0;
+  const ult = new Date(regs[regs.length-1].fecha + 'T12:00:00');
+  const dif = 30 - Math.floor((Date.now() - ult.getTime()) / 86400000);
+  return Math.max(0, dif);
+}
+
+function _antroDelta(v1, v0, invertir) {
+  const a = parseFloat(v1), b = parseFloat(v0);
+  if (isNaN(a) || isNaN(b) || !b) return '';
+  const d = a - b, pct = (d / b) * 100;
+  const flecha = Math.abs(d) < 0.05 ? '=' : (d > 0 ? '▲' : '▼');
+  const bueno = invertir ? d < 0 : d > 0;
+  const color = Math.abs(d) < 0.05 ? 'var(--muted)' : (bueno ? '#22c55e' : '#f87171');
+  return '<span style="color:'+color+';font-weight:800;font-size:11px;">'+flecha+' '+(d>0?'+':'')+d.toFixed(1)+' ('+(pct>0?'+':'')+pct.toFixed(1)+'%)</span>';
+}
+
+function _antroSpark(vals, color) {
+  const nums = vals.map(parseFloat).filter(v=>!isNaN(v));
+  if (nums.length < 2) return '';
+  const min = Math.min(...nums), max = Math.max(...nums), rng = (max-min)||1;
+  const W = 130, H = 34;
+  const pts = nums.map((v,i)=>((i/(nums.length-1))*W).toFixed(1)+','+((H-4)-((v-min)/rng)*(H-8)+2).toFixed(1)).join(' ');
+  return '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block;">'
+    + '<polyline points="'+pts+'" fill="none" stroke="'+(color||'var(--gold)')+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+function _antroCicloDia(fechaInicio) {
+  if (!fechaInicio) return null;
+  const d = Math.floor((Date.now() - new Date(fechaInicio+'T12:00:00').getTime())/86400000) + 1;
+  return (d >= 1 && d <= 60) ? d : null;
+}
+
+function _antroRenderRegistro() {
+  const regs = _antroRegs();
+  const dias = _antroDiasRestantes();
+  const esMujer = ((_data?.perfil?.sexo)||'').toLowerCase().startsWith('m');
+  let h = '<div class="stitle">📏 MI REGISTRO DE MEDIDAS</div>';
+
+  if (dias > 0) {
+    h += '<div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">'
+      + '<div style="font-size:26px;margin-bottom:6px;">🔒</div>'
+      + '<div style="font-size:13px;font-weight:800;color:var(--text);">Próxima medición en '+dias+' día'+(dias!==1?'s':'')+'</div>'
+      + '<div style="font-size:11px;color:var(--muted);margin-top:4px;">Las medidas se registran una vez cada 30 días. Tu coach puede habilitarte una nueva antes si lo considera.</div></div>';
+  } else {
+    h += '<div style="background:var(--card);border-radius:14px;padding:14px;margin-bottom:14px;">'
+      + '<div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Cargá tus medidas de hoy ('+new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long'})+'). Medí en cm, sin ropa gruesa, a la misma hora del día.</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+    _ANTRO_CAMPOS.forEach(c => {
+      h += '<div><label style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.5px;display:block;margin-bottom:3px;">'+c.lb.toUpperCase()+' ('+c.u+')</label>'
+        + '<input id="antro-f-'+c.k+'" type="number" step="0.1" inputmode="decimal" placeholder="—" style="width:100%;background:var(--bg);border:1px solid rgba(128,128,128,.25);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);box-sizing:border-box;"></div>';
+    });
+    h += '</div>';
+    if (esMujer) {
+      h += '<div style="margin-top:12px;border-top:1px dashed rgba(128,128,128,.3);padding-top:10px;">'
+        + '<div style="font-size:10px;font-weight:900;color:var(--muted);letter-spacing:.5px;margin-bottom:8px;">🌸 CICLO MENSTRUAL (OPCIONAL)</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+        + '<div><label style="font-size:9px;font-weight:800;color:var(--muted);display:block;margin-bottom:3px;">INICIO ÚLTIMO CICLO</label>'
+        + '<input id="antro-f-ciclo" type="date" style="width:100%;background:var(--bg);border:1px solid rgba(128,128,128,.25);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--text);box-sizing:border-box;"></div>'
+        + '<div><label style="font-size:9px;font-weight:800;color:var(--muted);display:block;margin-bottom:3px;">OBSERVACIONES</label>'
+        + '<input id="antro-f-cicloobs" type="text" placeholder="Opcional..." style="width:100%;background:var(--bg);border:1px solid rgba(128,128,128,.25);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--text);box-sizing:border-box;"></div>'
+        + '</div></div>';
+    }
+    h += '<button onclick="_antroGuardar()" id="antro-btn-guardar" style="width:100%;margin-top:12px;padding:12px;background:var(--gold);color:#111;border:none;border-radius:10px;font-size:13px;font-weight:900;letter-spacing:.5px;cursor:pointer;">GUARDAR MEDICIÓN</button>'
+      + '</div>';
+  }
+
+  // ── Comparativas + historial + gráficos ──
+  if (regs.length) {
+    const ult = regs[regs.length-1], ant = regs.length>1 ? regs[regs.length-2] : null, pri = regs[0];
+    h += '<div class="stitle" style="margin-top:4px;">EVOLUCIÓN</div>';
+    const compCampos = [
+      { k:'peso', lb:'Peso', u:'kg', inv:false },
+      { k:'pecho', lb:'Pecho', u:'cm', inv:false },
+      { k:'cintura', lb:'Cintura', u:'cm', inv:true },
+      { k:'cadera', lb:'Cadera', u:'cm', inv:false },
+      { k:'_brazo', lb:'Brazo (prom)', u:'cm', inv:false },
+      { k:'_muslo', lb:'Muslo (prom)', u:'cm', inv:false }
+    ];
+    const getV = (r,k) => {
+      if (k==='_brazo') { const a=parseFloat(r.brazoDer), b=parseFloat(r.brazoIzq); return (!isNaN(a)&&!isNaN(b))?((a+b)/2).toFixed(1):(r.brazoDer||r.brazoIzq||''); }
+      if (k==='_muslo') { const a=parseFloat(r.musloDer), b=parseFloat(r.musloIzq); return (!isNaN(a)&&!isNaN(b))?((a+b)/2).toFixed(1):(r.musloDer||r.musloIzq||''); }
+      return r[k]||'';
+    };
+    compCampos.forEach(c => {
+      const v = getV(ult, c.k);
+      if (!v) return;
+      const serie = regs.map(r=>getV(r,c.k)).filter(x=>x!=='');
+      h += '<div style="background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">'
+        + '<div style="flex:1;">'
+        + '<div style="font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.5px;">'+c.lb.toUpperCase()+'</div>'
+        + '<div style="font-size:19px;font-weight:900;color:var(--text);">'+v+' <span style="font-size:11px;color:var(--muted);">'+c.u+'</span></div>'
+        + (ant ? '<div style="margin-top:2px;">vs anterior: '+_antroDelta(v, getV(ant,c.k), c.inv)+'</div>' : '')
+        + (regs.length>1 ? '<div>vs inicio: '+_antroDelta(v, getV(pri,c.k), c.inv)+'</div>' : '')
+        + '</div>'
+        + (serie.length>1 ? '<div>'+_antroSpark(serie)+'</div>' : '')
+        + '</div>';
+    });
+
+    // Ciclo (si corresponde)
+    if (esMujer && ult.ciclo && ult.ciclo.fechaInicio) {
+      const dia = _antroCicloDia(ult.ciclo.fechaInicio);
+      h += '<div style="background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:8px;">'
+        + '<div style="font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.5px;">🌸 CICLO</div>'
+        + '<div style="font-size:13px;color:var(--text);margin-top:3px;">'+(dia?('Día '+dia+' del ciclo'):'Registrado')+(ult.ciclo.obs?(' · '+ult.ciclo.obs):'')+'</div></div>';
+    }
+
+    // Historial completo
+    h += '<div class="stitle" style="margin-top:12px;">HISTORIAL DE REGISTROS</div>';
+    [...regs].reverse().forEach(r => {
+      const fL = r.fecha ? new Date(r.fecha+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) : '';
+      h += '<div class="hist-row"><div style="font-size:11px;color:var(--muted);">'+fL+'</div>'
+        + '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;">'
+        + (r.peso?'<span style="font-size:12px;font-weight:800;color:var(--text);">'+r.peso+'kg</span>':'')
+        + (r.cintura?'<span style="font-size:11px;color:var(--muted);">Cin '+r.cintura+'</span>':'')
+        + (r.cadera?'<span style="font-size:11px;color:var(--muted);">Cad '+r.cadera+'</span>':'')
+        + (r.brazoDer?'<span style="font-size:11px;color:var(--muted);">Br '+r.brazoDer+'</span>':'')
+        + (r.musloDer?'<span style="font-size:11px;color:var(--muted);">Mu '+r.musloDer+'</span>':'')
+        + '</div></div>';
+    });
+  }
+  return h;
+}
+
+async function _antroGuardar() {
+  const btn = document.getElementById('antro-btn-guardar');
+  const entry = { id: 'am' + Date.now(), fecha: new Date().toISOString().slice(0,10), creadoEn: new Date().toISOString() };
+  let alguno = false;
+  _ANTRO_CAMPOS.forEach(c => {
+    const v = (document.getElementById('antro-f-'+c.k)?.value || '').trim();
+    entry[c.k] = v || null;
+    if (v) alguno = true;
+  });
+  if (!alguno) { alert('Cargá al menos una medida'); return; }
+  const cicloFecha = (document.getElementById('antro-f-ciclo')?.value || '').trim();
+  const cicloObs   = (document.getElementById('antro-f-cicloobs')?.value || '').trim();
+  if (cicloFecha || cicloObs) entry.ciclo = { fechaInicio: cicloFecha || null, obs: cicloObs || '' };
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+  try {
+    await _db.collection('alumnos').doc(_alumnoId).update({
+      antroAlumno: firebase.firestore.FieldValue.arrayUnion(entry),
+      antroUnlock: false
+    });
+    if (!_data.antroAlumno) _data.antroAlumno = [];
+    _data.antroAlumno.push(entry);
+    _data.antroUnlock = false;
+    renderMedidas();
+  } catch(e) {
+    console.error(e);
+    if (btn) { btn.disabled = false; btn.textContent = 'GUARDAR MEDICIÓN'; }
+    alert('No se pudo guardar. Revisá tu conexión e intentá de nuevo.');
+  }
+}
+
 function renderMedidas() {
   const ctn=document.getElementById('medidas-ctn');
   const antro=_data.antropometria||[];
-  if (!antro.length) { ctn.innerHTML=noData('📏','Sin medidas','Tu coach aún no registró tus mediciones.'); return; }
+  const propio=_antroRenderRegistro();
+  if (!antro.length) { ctn.innerHTML=propio+'<div style="margin-top:14px;"></div>'+noData('📏','Sin medidas del coach','Tu coach aún no registró mediciones profesionales.'); return; }
   const sorted=[...antro].sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
   const ult=sorted[sorted.length-1], ant=sorted.length>1?sorted[sorted.length-2]:null;
   const ff=f=>f?new Date(f+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}):'';
@@ -1498,7 +1676,7 @@ function renderMedidas() {
     {k:'brazo',lb:'BRAZO',ic:'📏',u:'cm',lib:false},
     {k:'muslo',lb:'MUSLO',ic:'📏',u:'cm',lib:false},
   ];
-  let html='<div class="stitle">ÚLTIMA MEDICIÓN — '+ff(ult.fecha)+'</div>';
+  let html='<div class="stitle" style="margin-top:18px;">MEDICIÓN DEL COACH — '+ff(ult.fecha)+'</div>';
   campos.forEach(c => {
     const v=ult[c.k]; if (!v) return;
     const av=ant?.[c.k];
@@ -1523,7 +1701,7 @@ function renderMedidas() {
         '</div></div>';
     });
   }
-  ctn.innerHTML=html;
+  ctn.innerHTML=propio+html;
 }
 
 function noData(ico,ttl,txt) {

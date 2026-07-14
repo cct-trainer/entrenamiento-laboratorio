@@ -3618,6 +3618,7 @@ select.toolbox-input option:disabled { color: #888; }
           </div>
           <div id="seg-sub-antropometria" class="perfil-subcontent active">
             <div style="max-width:820px;margin:0 auto;">
+              <div id="antro-alumno-wrap" style="margin-bottom:24px;"></div>
               <div id="mediciones-chart-wrap" style="margin-bottom:24px;"></div>
               <div id="mediciones-tabla"></div>
             </div>
@@ -20343,7 +20344,176 @@ function eliminarMedicion(medId) {
   renderMediciones(currentAlumnoId);
 }
 
+// ── AUTO-REGISTRO DEL ALUMNO (antropometría cargada desde el portal) ──────────
+let _antroAlumnoCache = {}; // { alumnoId: { regs, unlock } }
+
+function _antroAlertas(regs, alumno) {
+  const alertas = [];
+  if (!regs.length) return alertas;
+  const ult = regs[regs.length-1];
+  const ant = regs.length > 1 ? regs[regs.length-2] : null;
+  const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+
+  // Asimetrías
+  const bd = num(ult.brazoDer), bi = num(ult.brazoIzq);
+  if (bd !== null && bi !== null && Math.abs(bd-bi) > 2)
+    alertas.push('⚠️ Asimetría de brazos: ' + Math.abs(bd-bi).toFixed(1) + ' cm de diferencia (Der ' + bd + ' / Izq ' + bi + ')');
+  const md = num(ult.musloDer), mi = num(ult.musloIzq);
+  if (md !== null && mi !== null && Math.abs(md-mi) > 2)
+    alertas.push('⚠️ Asimetría de muslos: ' + Math.abs(md-mi).toFixed(1) + ' cm de diferencia (Der ' + md + ' / Izq ' + mi + ')');
+
+  if (ant) {
+    const p1 = num(ult.peso), p0 = num(ant.peso);
+    const dDias = Math.max(1, Math.round((new Date(ult.fecha) - new Date(ant.fecha)) / 86400000));
+    if (p1 !== null && p0 !== null) {
+      const pctPeso = ((p1-p0)/p0)*100;
+      if (pctPeso <= -4 && dDias <= 45)
+        alertas.push('🚨 Descenso de peso acelerado: ' + (p1-p0).toFixed(1) + ' kg (' + pctPeso.toFixed(1) + '%) en ' + dDias + ' días');
+      const c1 = num(ult.cintura), c0 = num(ant.cintura);
+      if (c1 !== null && c0 !== null && (c1-c0) >= 2 && Math.abs(pctPeso) < 1.5)
+        alertas.push('⚠️ Cintura subió ' + (c1-c0).toFixed(1) + ' cm con peso estable — revisar composición corporal o retención');
+      const brzBaja = (bd !== null && num(ant.brazoDer) !== null && bd < num(ant.brazoDer) - 0.5);
+      const musBaja = (md !== null && num(ant.musloDer) !== null && md < num(ant.musloDer) - 0.5);
+      if (p1 < p0 && brzBaja && musBaja)
+        alertas.push('⚠️ Posible pérdida de masa muscular: bajan peso, brazos y muslos a la vez');
+    }
+    // Retención por fase del ciclo
+    if (ult.ciclo && ult.ciclo.fechaInicio) {
+      const dia = Math.floor((new Date(ult.fecha) - new Date(ult.ciclo.fechaInicio)) / 86400000) + 1;
+      if (dia >= 18 && dia <= 32 && p1 !== null && p0 !== null && p1 > p0)
+        alertas.push('🌸 Medición en fase lútea (día ' + dia + ' del ciclo): posible retención de líquidos — interpretar suba de peso con cautela');
+    }
+  }
+  // Estancamiento (3+ registros sin cambios relevantes)
+  if (regs.length >= 3) {
+    const ultimos = regs.slice(-3);
+    const clave = ['peso','cintura','cadera'];
+    const sinCambio = clave.every(k => {
+      const vals = ultimos.map(r => num(r[k])).filter(v => v !== null);
+      if (vals.length < 3) return true;
+      return (Math.max(...vals) - Math.min(...vals)) / (Math.min(...vals)||1) < 0.01;
+    });
+    if (sinCambio) alertas.push('⏸ Estancamiento: sin cambios relevantes en los últimos 3 registros — considerar ajustar plan o nutrición');
+  }
+  return alertas;
+}
+
+async function renderAntroAlumno(alumnoId) {
+  const wrap = document.getElementById('antro-alumno-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div style="color:#999;font-size:12px;">Cargando auto-registro del alumno...</div>';
+  let regs = [], unlock = false;
+  try {
+    if (!window._db) throw new Error('sin firebase');
+    const doc = await window._db.collection('alumnos').doc(alumnoId).get();
+    const d = doc.exists ? doc.data() : {};
+    regs = (d.antroAlumno || []).slice().sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+    unlock = !!d.antroUnlock;
+    _antroAlumnoCache[alumnoId] = { regs, unlock };
+  } catch(e) { wrap.innerHTML = ''; return; }
+
+  const al = getAlumnos().find(a => a.id === alumnoId) || {};
+  const alertas = _antroAlertas(regs, al);
+
+  let h = '<div style="background:#f8f9fb;border:1.5px solid #e8e8f0;border-radius:14px;padding:16px;">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">'
+    + '<div style="font-size:12px;font-weight:900;color:#333;letter-spacing:.5px;">📱 AUTO-REGISTRO DEL ALUMNO' + (regs.length ? ' <span style="color:#999;font-weight:700;">(' + regs.length + ' registro' + (regs.length!==1?'s':'') + ')</span>' : '') + '</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+    + '<button onclick="_antroDesbloquear(\'' + alumnoId + '\')" ' + (unlock ? 'disabled' : '') + ' style="font-size:11px;font-weight:700;padding:6px 12px;border:1.5px solid #f59e0b;background:' + (unlock?'#fef3c7':'#fffbeb') + ';color:#b45309;border-radius:7px;cursor:pointer;">' + (unlock ? '🔓 Medición habilitada' : '🔓 Habilitar nueva medición') + '</button>'
+    + (regs.length ? '<button onclick="_antroInformeIA(\'' + alumnoId + '\')" id="antro-btn-ia" style="font-size:11px;font-weight:700;padding:6px 12px;border:1.5px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:7px;cursor:pointer;">🤖 Informe IA</button>' : '')
+    + '</div></div>';
+
+  if (!regs.length) {
+    h += '<div style="font-size:12px;color:#999;">El alumno todavía no cargó medidas desde su portal. Puede hacerlo desde la pestaña Medidas.</div></div>';
+    wrap.innerHTML = h; return;
+  }
+
+  // Alertas
+  if (alertas.length) {
+    h += '<div style="background:#fff7ed;border:1.5px solid #fdba74;border-radius:10px;padding:10px 14px;margin-bottom:12px;">'
+      + alertas.map(a => '<div style="font-size:12px;color:#7c2d12;margin:3px 0;">' + a + '</div>').join('') + '</div>';
+  }
+
+  // Tabla de historial
+  const cols = [['fecha','Fecha'],['peso','Peso'],['altura','Alt'],['cuello','Cuello'],['hombros','Homb'],['pecho','Pecho'],['brazoDer','Br.D'],['brazoIzq','Br.I'],['cintura','Cint'],['cadera','Cad'],['musloDer','Mu.D'],['musloIzq','Mu.I'],['gemeloDer','Ge.D'],['gemeloIzq','Ge.I']];
+  h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;">'
+    + '<tr>' + cols.map(c=>'<th style="text-align:left;padding:5px 7px;background:#eef0f5;color:#555;font-weight:800;white-space:nowrap;">'+c[1]+'</th>').join('') + '</tr>';
+  [...regs].reverse().forEach((r, ri) => {
+    h += '<tr>' + cols.map((c,ci) => {
+      let v = r[c[0]] || '—';
+      if (c[0]==='fecha' && r.fecha) v = new Date(r.fecha+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      return '<td style="padding:5px 7px;border-top:1px solid #e8e8f0;color:#333;white-space:nowrap;">'+v+'</td>';
+    }).join('') + '</tr>';
+  });
+  h += '</table></div>';
+
+  // Comparativa última vs primera
+  if (regs.length > 1) {
+    const pri = regs[0], ult = regs[regs.length-1];
+    const difs = [];
+    [['peso','Peso','kg'],['cintura','Cintura','cm'],['cadera','Cadera','cm'],['pecho','Pecho','cm'],['brazoDer','Brazo D','cm'],['musloDer','Muslo D','cm']].forEach(([k,lb,u]) => {
+      const a = parseFloat(ult[k]), b = parseFloat(pri[k]);
+      if (isNaN(a) || isNaN(b)) return;
+      const d = a-b, pct = (d/b)*100;
+      difs.push('<span style="margin-right:14px;white-space:nowrap;"><b>'+lb+':</b> '+(d>0?'▲ +':(d<0?'▼ ':'= '))+d.toFixed(1)+u+' ('+(pct>0?'+':'')+pct.toFixed(1)+'%)</span>');
+    });
+    if (difs.length) h += '<div style="margin-top:10px;font-size:11.5px;color:#555;"><b style="color:#333;">Desde el inicio:</b><br>' + difs.join('') + '</div>';
+  }
+
+  h += '<div id="antro-ia-output" style="display:none;margin-top:12px;background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;padding:14px;font-size:12.5px;line-height:1.65;color:#1a1a2e;"></div>';
+  h += '</div>';
+  wrap.innerHTML = h;
+}
+
+async function _antroDesbloquear(alumnoId) {
+  try {
+    await window._db.collection('alumnos').doc(alumnoId).update({ antroUnlock: true });
+    toast('🔓 Medición habilitada para el alumno');
+    renderAntroAlumno(alumnoId);
+  } catch(e) { toast('Error al habilitar: ' + e.message, 'error'); }
+}
+
+async function _antroInformeIA(alumnoId) {
+  const apiKey = _iaApiKey();
+  if (!apiKey) { _iaShowKeyModal(); return; }
+  const cache = _antroAlumnoCache[alumnoId];
+  if (!cache || !cache.regs.length) { toast('No hay registros para analizar'); return; }
+  const al = getAlumnos().find(a => a.id === alumnoId) || {};
+  const out = document.getElementById('antro-ia-output');
+  const btn = document.getElementById('antro-btn-ia');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Analizando...'; }
+  if (out) { out.style.display = 'block'; out.innerHTML = '<span style="color:#7c3aed;font-style:italic;">Analizando evolución antropométrica...</span>'; }
+
+  const alertas = _antroAlertas(cache.regs, al);
+  const sys = `Sos un asistente de análisis antropométrico para entrenadores. Analizás la evolución de medidas corporales de un alumno y generás un informe breve y accionable para el ENTRENADOR (no para el alumno), en ESPAÑOL argentino. Estructurá el informe con estas secciones en markdown: ## Análisis corporal (cambios concretos con números), ## Interpretación (qué está pasando: recomposición, pérdida de grasa, ganancia muscular, retención, etc.), ## Fortalezas observadas, ## Aspectos a mejorar (incluí relaciones estéticas/funcionales como hombros/cintura si aplica), ## Recomendaciones (ajustes de entrenamiento y nutrición según el objetivo del alumno). Si hay datos del ciclo menstrual, tenelos en cuenta al interpretar peso y retención. Sé concreto, con números, sin relleno.`;
+  let prompt = `## ALUMNO\n- Nombre: ${al.nombre || 'Alumno'}\n- Sexo: ${al.sexo || '-'}\n- Nivel: ${al.nivel || '-'}\n- Objetivo: ${al.objetivo || '-'}\n`;
+  if (al.lesiones) prompt += `- Lesiones: ${al.lesiones}\n`;
+  prompt += `\n## HISTORIAL DE MEDIDAS (cm / kg)\n`;
+  cache.regs.forEach(r => {
+    prompt += `- ${r.fecha}: `;
+    prompt += ['peso','altura','cuello','hombros','pecho','brazoDer','brazoIzq','cintura','cadera','musloDer','musloIzq','gemeloDer','gemeloIzq']
+      .filter(k => r[k]).map(k => k + ' ' + r[k]).join(', ');
+    if (r.ciclo && r.ciclo.fechaInicio) prompt += ` [ciclo inició ${r.ciclo.fechaInicio}${r.ciclo.obs ? ' — ' + r.ciclo.obs : ''}]`;
+    prompt += `\n`;
+  });
+  if (alertas.length) prompt += `\n## ALERTAS AUTOMÁTICAS DETECTADAS\n` + alertas.map(a => '- ' + a).join('\n') + '\n';
+  prompt += `\nGenerá el informe para el entrenador.`;
+
+  try {
+    const texto = await _iaGenerarConContinuacion(
+      document.getElementById('ia-modelo')?.value || 'claude-sonnet-4-6',
+      sys, prompt,
+      txt => { if (out) out.innerHTML = _iaMarkdown(txt); }
+    );
+    if (out) out.innerHTML = _iaMarkdown(texto);
+  } catch(e) {
+    if (out) out.innerHTML = '<span style="color:#f87171;font-weight:700;">Error: ' + e.message + '</span>';
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '🤖 Informe IA'; }
+}
+
 function renderMediciones(alumnoId) {
+  renderAntroAlumno(alumnoId);
   const al = getAlumnos().find(a => a.id === alumnoId) || {};
   const meds = (al.mediciones || []).slice().sort((a,b) => a.fecha < b.fecha ? -1 : 1);
   const chart = document.getElementById('mediciones-chart-wrap');
@@ -20642,6 +20812,8 @@ async function forzarSyncFirebase() {
     for (const al of alumnos) {
       const ref = window._db.collection('alumnos').doc(al.id);
       const planesAlumno = _enrichPlanes(planificaciones.filter(p => p.alumnoId === al.id));
+      // merge:true → preserva los campos escritos por el alumno
+      // (antroAlumno, antroUnlock, actividad, feedbackHistorial)
       batch.set(ref, {
         perfil:          al,
         planificaciones: planesAlumno,
@@ -20650,7 +20822,7 @@ async function forzarSyncFirebase() {
         updatedAt:       ts,
         accessUntil:     al.accessUntil || '',
         macrociclo:      al.macrociclo   || null,
-        });
+        }, { merge: true });
     }
     await batch.commit();
 
