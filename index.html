@@ -22912,8 +22912,8 @@ CORE: por tiempo, sin carga de referencia.
 ## 5. FORMATO DE PRESCRIPCIÓN
 - Cálculo: peso de trabajo = 1RM del ancla × %objetivo × coeficiente de transferencia.
 - En el campo peso escribí el kg concreto redondeado a 2.5 kg con el % entre paréntesis. Ej: "72.5 kg (75%)".
+- REGLA ESTRICTA: el peso de las SERIES EFECTIVAS lleva SIEMPRE el kg de trabajo concreto. PROHIBIDO poner textos como "ver series de aproximación", "según aproximación" o referencias cruzadas. Las aproximaciones son series PREVIAS más livianas (escalada ~40% → 90% del peso de trabajo); las efectivas van TODAS con su peso de trabajo real (mayor que la última aproximación).
 - MANCUERNAS: indicá el peso POR MANCUERNA (total ÷ 2). Ej: "68 kg → 34 kg por mancuerna".
-- Series de aproximación: escalada desde ~40-50% hasta el peso de trabajo.
 - Descansos: hasta 7 min entre intentos máximos; 90 seg-3 min en hipertrofia.
 
 ## 6. AUTOAJUSTE INTELIGENTE
@@ -23525,6 +23525,7 @@ REGLAS:
 - "cardio" solo va si tipo="Cardio"; en ese caso "ejercicios" es []. Usá bloques Cardio para rodajes, series de carrera, fartlek, tiradas largas, etc. — detallá distancias, ritmos y zonas en "observaciones".
 - Incluí TODOS los ejercicios del plan original con sus series, reps, pesos/intensidades, pausas y RIR. Las técnicas especiales y aclaraciones de ejecución (drop-sets, iso-holds, parciales, tempo, pausas arriba/abajo, cues técnicos) van SIEMPRE en el campo "nota" del ejercicio — nunca en el nombre ni mezcladas en "reps". Si no hay aclaración, "nota" es "".
 - SERIES DE APROXIMACIÓN vs EFECTIVAS: "series"/"reps"/"peso" describen SOLO las series efectivas (de trabajo). Si el plan indica series de aproximación, calentamiento ascendente o ramp-up para un ejercicio, cargalas como filas explícitas en "seriesApro" (cada una con sus reps y peso). Si no hay, "seriesApro" es [].
+- El "peso" de las series efectivas debe ser SIEMPRE un valor concreto (kg, % o RIR/RPE). PROHIBIDO poner textos como "ver series de aproximación" o referencias cruzadas. Si el plan original solo da la escalera de aproximación, el peso de trabajo efectivo es igual o mayor que la última aproximación — calculalo y ponelo en kg.
 - Todos los valores son strings salvo "diaSemana".${_iaBibliotecaPrompt()}`;
 
   let accumulated = '';
