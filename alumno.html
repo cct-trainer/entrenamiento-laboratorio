@@ -404,8 +404,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260714001347 por un timestamp en cada deploy
-const _APP_VERSION = '20260714001347';
+// deploy.bat reemplaza 20260714005928 por un timestamp en cada deploy
+const _APP_VERSION = '20260714005928';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1157,6 +1157,7 @@ function _ejCard(ej, uid) {
     '<div style="padding:12px 14px 12px;">'+
       '<div style="font-size:16px;font-weight:900;color:var(--text);margin-bottom:3px;line-height:1.2;border-left:3px solid var(--gold);padding-left:9px;">'+(ej.nombre||'—')+'</div>'+
       (ej.musculos ? '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;padding-left:12px;">'+ej.musculos+'</div>' : '')+
+      (ej.nota ? '<div style="font-size:12.5px;font-weight:600;color:var(--gold);margin:3px 0 7px;padding:6px 10px 6px 12px;background:rgba(201,168,76,.08);border-radius:7px;font-style:italic;line-height:1.45;">📝 '+ej.nota+'</div>' : '')+
       ctrlGrid+
       pesoRef+
       seriesTable+

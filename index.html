@@ -11920,6 +11920,7 @@ function guardarEstadoDiaActual() {
         rir:    document.getElementById(eId+'-ctrl-rir')?.value||''
       };
       const video = eEl.querySelector('.ej-video-input')?.value||'';
+      const nota  = eEl.querySelector('.ej-nota-input')?.value.trim()||'';
       // Leer ficha
       const fichaEl = eEl.querySelector('.ficha-inline');
       let ficha = null;
@@ -11953,7 +11954,7 @@ function guardarEstadoDiaActual() {
         : _leerTbodyLocal(eId+'-tbody');
       const seriesApro = _leerTbodyLocal(eId+'-apro-tbody');
       const dropset = _leerTbodyLocal(eId+'-drop-tbody');
-      if(eName) ejercicios.push({ nombre:eName, ctrl, video, ficha, series, seriesApro, dropset });
+      if(eName) ejercicios.push({ nombre:eName, ctrl, video, nota, ficha, series, seriesApro, dropset });
     });
     // Leer datos cardio si aplica
     let cardioData = null;
@@ -12090,6 +12091,9 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
     // Restaurar nombre
     const nInp = document.querySelector(`#${ejId} .ej-nombre-input`);
     if(nInp && datosPrevios.nombre) nInp.value = datosPrevios.nombre;
+    // Restaurar aclaración de ejecución
+    const notaInp = document.querySelector(`#${ejId} .ej-nota-input`);
+    if(notaInp && datosPrevios.nota) notaInp.value = datosPrevios.nota;
     // Controles
     if(datosPrevios.ctrl) {
       const c = datosPrevios.ctrl;
@@ -17634,6 +17638,9 @@ function addEjercicio(bloqueId) {
       <button class="ej-btn-del" onclick="eliminarEjercicio('${ejId}','${bloqueId}')">🗑</button>
     </div>
     <input type="hidden" class="ej-video-input">
+    <input class="ej-nota-input" type="text"
+      placeholder="✏️ Aclaración de ejecución (ej: 8 reps con pausa de 2 seg arriba, excéntrica lenta...)"
+      style="width:100%;box-sizing:border-box;border:1px dashed #d0d0d8;border-radius:7px;padding:7px 12px;font-size:12px;font-style:italic;color:#555;background:#fafafa;margin:2px 0 8px;">
 
 
     <div style="padding: 0 0 4px;">
@@ -18028,6 +18035,7 @@ function leerBloques() {
     bEl.querySelectorAll('.ej-card').forEach(eEl => {
       const eId = eEl.id;
       const eNombre = eEl.querySelector('.ej-nombre-input')?.value.trim() || '';
+      const eNota   = eEl.querySelector('.ej-nota-input')?.value.trim() || '';
 
       // Leer controles rápidos (series, reps, pausa, rir del encabezado)
       const ctrlSeries   = document.getElementById(eId+'-ctrl-series')?.value.trim()  || '';
@@ -18088,7 +18096,7 @@ function leerBloques() {
         const musculos  = (ficha && ficha['MÚSCULOS']) || (_lib.musculos || _lib.principales || []).join(', ') || '';
         const tipoEj    = (ficha && ficha['TIPO']) || _lib.tipoTrabajo || _lib.cat || '';
         ejercicios.push({
-          nombre: eNombre, video, ficha, series, seriesApro, dropset,
+          nombre: eNombre, nota: eNota, video, ficha, series, seriesApro, dropset,
           ctrlSeries, ctrlReps, ctrlPeso, ctrlPausa, ctrlRir,
           ejecucion, musculos, tipo: tipoEj
         });
@@ -18333,7 +18341,7 @@ function renderPlanHTML(p) {
     return `<div class="ej-card" data-nombre="${ej.nombre.replace(/"/g,'&quot;')}" style="flex:1;min-width:0;background:#fff;border:2px solid #e0e0e0;border-radius:8px;overflow:hidden;transition:border-color 0.2s,background 0.2s;">
       <div class="ej-card-header" style="background:#f5f5f5;border-bottom:1px solid #e8e8e8;padding:10px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;transition:background 0.2s;">
         ${letraSpan}
-        <span class="ej-card-nombre" style="font-size:14px;font-weight:700;color:#111;flex:1;">${ej.nombre}${ej.nombreIngles ? `<br><span style="font-size:10px;font-weight:400;color:#888;letter-spacing:0.2px;">${ej.nombreIngles}</span>` : ''}</span>
+        <span class="ej-card-nombre" style="font-size:14px;font-weight:700;color:#111;flex:1;">${ej.nombre}${ej.nombreIngles ? `<br><span style="font-size:10px;font-weight:400;color:#888;letter-spacing:0.2px;">${ej.nombreIngles}</span>` : ''}${ej.nota ? `<br><span style="font-size:11px;font-weight:600;color:#b45309;font-style:italic;">📝 ${ej.nota}</span>` : ''}</span>
         ${videoUrl?`${ytBtn(videoUrl)}`:''}
         <div style="display:flex;gap:5px;flex-shrink:0;">
           <button class="ej-btn-hecho" onclick="marcHecho(this)" style="background:#e8f5e9;color:#2e7d32;border:1.5px solid #a5d6a7;border-radius:6px;padding:5px 11px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:0.5px;transition:all 0.15s;">✓ HECHO</button>
@@ -23744,6 +23752,7 @@ function _iaJSONaPlanificacion(data, alumnoId) {
           : [];
         return {
           nombre: _iaMatchBiblioteca(String(ej.nombre || '').trim()),
+          nota: String(ej.nota || '').trim(),
           ctrl: { series: String(ej.series || ''), reps: String(ej.reps || ''), peso: String(ej.peso || ''), pausa: String(ej.pausa || ''), rir: String(ej.rir || '') },
           video: '', ficha: null,
           series: Array.from({ length: nSer }, () => ({ ...fila })),
@@ -23843,6 +23852,7 @@ ESQUEMA:
           "serieTipo": "uno de: ${TIPOS_SERIE_F.join(' | ')}",
           "ejercicios": [
             { "nombre": "Nombre del ejercicio", "series": "4", "reps": "8-12", "peso": "70kg o RPE 8", "pausa": "90 seg", "rir": "2",
+              "nota": "aclaración de ejecución (ej: pausa de 2 seg arriba, excéntrica en 3 seg, dropset en la última)",
               "seriesApro": [ { "reps": "12", "peso": "barra sola" }, { "reps": "8", "peso": "50%" } ] }
           ],
           "cardio": { "actividad": "", "duracion": "", "zona": "", "rpe": "", "observaciones": "" }
@@ -23856,7 +23866,7 @@ REGLAS:
 - "diaSemana": 0=Lunes ... 6=Domingo. Distribuí los días de entrenamiento de forma equilibrada en la semana (ej: 3 días → 0,2,4).
 - Estructurá cada sesión con los bloques SOCC en este orden: Movilidad y Calentamiento → Activación y Core → Calentamiento Específico (si aplica) → Fuerza Principal / Potencia y/o Desarrollo / Hipertrofia → Cardio (si aplica) → Enfriamiento Final.
 - "cardio" solo va si tipo="Cardio"; en ese caso "ejercicios" es []. Usá bloques Cardio para rodajes, series de carrera, fartlek, tiradas largas, etc. — detallá distancias, ritmos y zonas en "observaciones".
-- Incluí TODOS los ejercicios del plan original con sus series, reps, pesos/intensidades, pausas y RIR. Las técnicas especiales (drop-sets, iso-holds, parciales) incluilas entre paréntesis en el nombre del ejercicio o en "reps".
+- Incluí TODOS los ejercicios del plan original con sus series, reps, pesos/intensidades, pausas y RIR. Las técnicas especiales y aclaraciones de ejecución (drop-sets, iso-holds, parciales, tempo, pausas arriba/abajo, cues técnicos) van SIEMPRE en el campo "nota" del ejercicio — nunca en el nombre ni mezcladas en "reps". Si no hay aclaración, "nota" es "".
 - SERIES DE APROXIMACIÓN vs EFECTIVAS: "series"/"reps"/"peso" describen SOLO las series efectivas (de trabajo). Si el plan indica series de aproximación, calentamiento ascendente o ramp-up para un ejercicio, cargalas como filas explícitas en "seriesApro" (cada una con sus reps y peso). Si no hay, "seriesApro" es [].
 - Todos los valores son strings salvo "diaSemana".${_iaBibliotecaPrompt()}`;
 
