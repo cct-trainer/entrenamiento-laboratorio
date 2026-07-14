@@ -404,8 +404,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260714194534 por un timestamp en cada deploy
-const _APP_VERSION = '20260714194534';
+// deploy.bat reemplaza 20260714200730 por un timestamp en cada deploy
+const _APP_VERSION = '20260714200730';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1025,9 +1025,8 @@ function _ejCard(ej, uid) {
     '</div>';
   })() : '';
 
-  // Peso referencia (limpiar "Kg" duplicado)
-  const cpClean = cp ? String(cp).replace(/kg$/i,'').trim() : '';
-  const pesoRef = cpClean ? '<div style="font-size:10px;color:#888;margin-bottom:8px;">Ref. peso: <span style="color:#C9A84C;font-weight:700;">'+cpClean+' kg</span></div>' : '';
+  // Referencia de peso: eliminada a pedido del coach (la info ya está en las series)
+  const pesoRef = '';
 
   // Prefijo único por sesión+ejercicio para guardar ediciones del alumno
   const _sp = (_semIdx||0)+'_'+(_diaIdx||0)+'_'+uid;
