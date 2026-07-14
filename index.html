@@ -18896,7 +18896,15 @@ function getEjerciciosCompletos() {
   // Los personalizados pueden sobreescribir (mismo nombre) o añadirse
   const customNombres = custom.map(e => e.nombre.toLowerCase());
   const base = EJERCICIOS_DB.filter(e => !customNombres.includes(e.nombre.toLowerCase()));
-  return [...base, ...custom].sort((a,b) => a.nombre.localeCompare(b.nombre, 'es'));
+  // Si un personalizado no tiene video pero la base sí, heredarlo
+  const baseMap = {};
+  EJERCICIOS_DB.forEach(e => { baseMap[e.nombre.toLowerCase()] = e; });
+  const customMerged = custom.map(e => {
+    const b = baseMap[e.nombre.toLowerCase()];
+    if (b && b.video && !e.video) return { ...e, video: b.video };
+    return e;
+  });
+  return [...base, ...customMerged].sort((a,b) => a.nombre.localeCompare(b.nombre, 'es'));
 }
 
 function abrirBibliotecaEditor() {
