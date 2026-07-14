@@ -404,8 +404,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260713221500 por un timestamp en cada deploy
-const _APP_VERSION = '20260713221500';
+// deploy.bat reemplaza 20260713224420 por un timestamp en cada deploy
+const _APP_VERSION = '20260713224420';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -470,6 +470,11 @@ const TIPOS_RUN = {
   };
   const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
   document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
+
+  // Service Worker → habilita "Instalar app" + red-primero (siempre versión fresca)
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    navigator.serviceWorker.register('alumno-sw.js').catch(()=>{});
+  }
   try {
     firebase.initializeApp(CFG);
     _db = firebase.firestore();
