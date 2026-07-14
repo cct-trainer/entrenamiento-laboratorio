@@ -3522,9 +3522,42 @@ select.toolbox-input option:disabled { color: #888; }
                 </select>
               </div>
               <div style="grid-column:1/-1;">
-                <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">🏋️ MARCAS DE REFERENCIA (OPCIONAL — para calcular todos los pesos)</label>
-                <input id="ia-f-marcas" type="text" placeholder="Ej: Banca 80kg x 5 · Sentadilla 100kg x 3 · Peso muerto 120kg x 2 · Hip thrust 90kg x 8"
-                  style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;box-sizing:border-box;">
+                <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">🏋️ MARCAS DE REFERENCIA (OPCIONAL — con lo que completes se calculan todos los pesos; lo vacío se prescribe por RIR)</label>
+                <div style="background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:1fr 88px 80px;gap:6px 8px;align-items:center;">
+                  <div style="font-size:9px;font-weight:900;color:#aaa;letter-spacing:.5px;">EJERCICIO</div>
+                  <div style="font-size:9px;font-weight:900;color:#aaa;letter-spacing:.5px;text-align:center;">PESO (KG)</div>
+                  <div style="font-size:9px;font-weight:900;color:#aaa;letter-spacing:.5px;text-align:center;">REPS MÁX</div>
+
+                  <div style="font-size:12px;color:#333;">Press de banca con barra (banco plano)</div>
+                  <input id="ia-m-banca-peso" type="number" step="0.5" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+                  <input id="ia-m-banca-reps" type="number" min="1" max="20" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+
+                  <div style="font-size:12px;color:#333;">Sentadilla con barra</div>
+                  <input id="ia-m-sentadilla-peso" type="number" step="0.5" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+                  <input id="ia-m-sentadilla-reps" type="number" min="1" max="20" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+
+                  <div style="font-size:12px;color:#333;">Peso muerto</div>
+                  <input id="ia-m-pesomuerto-peso" type="number" step="0.5" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+                  <input id="ia-m-pesomuerto-reps" type="number" min="1" max="20" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+
+                  <div style="font-size:12px;color:#333;">Hip thrust con barra</div>
+                  <input id="ia-m-hipthrust-peso" type="number" step="0.5" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+                  <input id="ia-m-hipthrust-reps" type="number" min="1" max="20" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+
+                  <div style="font-size:12px;color:#333;">Press militar de pie</div>
+                  <input id="ia-m-militar-peso" type="number" step="0.5" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+                  <input id="ia-m-militar-reps" type="number" min="1" max="20" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+
+                  <div style="font-size:12px;color:#333;">Remo con barra</div>
+                  <input id="ia-m-remo-peso" type="number" step="0.5" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+                  <input id="ia-m-remo-reps" type="number" min="1" max="20" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+
+                  <div style="font-size:12px;color:#333;">Jalón al pecho (o dominada lastrada)</div>
+                  <input id="ia-m-jalon-peso" type="number" step="0.5" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+                  <input id="ia-m-jalon-reps" type="number" min="1" max="20" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+                </div>
+                <input id="ia-f-marcas" type="text" placeholder="Otras marcas (texto libre, ej: Prensa 200kg x 10, Búlgara 24kg x 8...)"
+                  style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:12px;font-family:inherit;background:#fff;box-sizing:border-box;margin-top:8px;">
               </div>
             </div>
           </div>
@@ -23443,7 +23476,25 @@ function _iaBuildPrompt() {
   const dias     = document.getElementById('ia-f-dias')?.value   || '4';
   const objetivo = (document.getElementById('ia-f-objetivo')?.value || '').trim();
   const notas    = (document.getElementById('ia-notas')?.value   || '').trim();
-  const marcas   = (document.getElementById('ia-f-marcas')?.value || '').trim();
+  // Marcas de referencia estructuradas (grilla) + texto libre
+  const _refsDef = [
+    ['banca',      'Press de banca con barra (banco plano)'],
+    ['sentadilla', 'Sentadilla con barra'],
+    ['pesomuerto', 'Peso muerto'],
+    ['hipthrust',  'Hip thrust con barra'],
+    ['militar',    'Press militar de pie'],
+    ['remo',       'Remo con barra'],
+    ['jalon',      'Jalón al pecho']
+  ];
+  const marcasList = [];
+  _refsDef.forEach(([k, lb]) => {
+    const p = (document.getElementById('ia-m-' + k + '-peso')?.value || '').trim();
+    const r = (document.getElementById('ia-m-' + k + '-reps')?.value || '').trim();
+    if (p) marcasList.push(lb + ': ' + p + ' kg × ' + (r || '1') + ' reps');
+  });
+  const marcasLibre = (document.getElementById('ia-f-marcas')?.value || '').trim();
+  if (marcasLibre) marcasList.push(marcasLibre);
+  const marcas = marcasList.join(' · ');
   const esRunning  = _iaCurrentTrainer === 'eh';
   const esDicharry = _iaCurrentTrainer === 'jd';
   const distancia = document.getElementById('ia-f-distancia')?.value || '10K';
@@ -23488,14 +23539,15 @@ function _iaBuildPrompt() {
     prompt += `- Modalidad: ${modalidad}\n`;
   }
   if (objetivo) prompt += `- Objetivo principal: ${objetivo}\n`;
-  if (marcas)   prompt += `- MARCAS DE REFERENCIA (peso × reps): ${marcas}\n`;
+  if (marcas) {
+    prompt += `- MARCAS DE REFERENCIA (peso × reps máx):\n`;
+    marcasList.forEach(m => { prompt += `  · ${m}\n`; });
+  }
   if (notas)    prompt += `- Información adicional del coach: ${notas}\n`;
 
   let cargasInstr = '';
   if (marcas) {
-    cargasInstr = `\n\nGESTIÓN DE CARGAS: calculá la 1RM estimada de cada marca de referencia (Brzycki si reps ≤ 10, Epley si > 10) y mostrá el cálculo al inicio del programa. Después prescribí el PESO CONCRETO EN KG de todos los ejercicios principales (redondeado a 2.5 kg, con el %1RM entre paréntesis), extrapolando con los ratios del módulo de cargas para los ejercicios sin marca directa. En aislamientos sin referencia usá RIR. Aplicá los porcentajes correspondientes al objetivo del atleta y las capas de seguridad por edad/perfil. Si falta alguna marca CLAVE para este objetivo (ej: el levantamiento principal del programa no tiene referencia), agregá al final una sección "🧪 EJERCICIOS A EVALUAR" indicando cuáles testear y con qué protocolo.`;
-  } else {
-    cargasInstr = `\n\nEVALUACIÓN INICIAL: no hay marcas de referencia cargadas. Incluí al COMIENZO del programa una sección "🧪 EJERCICIOS DE REFERENCIA A EVALUAR" con los 3 a 5 levantamientos clave que conviene testear para este atleta y objetivo según tu metodología (los que después servirán para calcular todas las cargas del programa). Detallá el protocolo de evaluación de cada uno: entrada en calor escalonada, serie submáxima de 3-6 reps dejando 1-2 RIR (nunca fallo real, menos aún con principiantes o mayores), registrar peso × repeticiones, descanso completo de 3-7 minutos entre intentos, mismo ROM que se usará en el programa. Aclarale al coach que cargando esas marcas en "Marcas de referencia" el sistema calcula automáticamente los pesos de todos los ejercicios. Mientras tanto, prescribí las cargas por RIR/RPE.`;
+    cargasInstr = `\n\nGESTIÓN DE CARGAS: calculá la 1RM estimada de cada marca de referencia (Brzycki si reps ≤ 10, Epley si > 10). Prescribí el PESO CONCRETO EN KG de todos los ejercicios (redondeado a 2.5 kg, con el %1RM entre paréntesis en el campo peso), extrapolando con los ratios del módulo de cargas para los ejercicios sin marca directa. Los ejercicios que no puedan estimarse con confianza van por RIR — se trabaja igual con los datos disponibles, sin pedir más evaluaciones. Aplicá los porcentajes correspondientes al objetivo del atleta y las capas de seguridad por edad/perfil.`;
   }
 
   if (esRunning) {
