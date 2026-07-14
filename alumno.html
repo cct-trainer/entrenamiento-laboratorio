@@ -403,6 +403,27 @@ let _ejStore = {};   // { uid: ej }  — para re-render de cards
 let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificadas
 let _alumnoId='', _pesoEdits={};
 
+// ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
+// deploy.bat reemplaza 20260713220510 por un timestamp en cada deploy
+const _APP_VERSION = '20260713220510';
+async function _checkVersion() {
+  if (!location.protocol.startsWith('http')) return;
+  if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
+  try {
+    const r = await fetch(location.pathname + '?_nocache=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return;
+    const t = await r.text();
+    const m = t.match(new RegExp("_APP_VERSION\\s*=\\s*'([^']+)'"));
+    if (m && m[1] !== _APP_VERSION) {
+      sessionStorage.setItem('SOCC_VER_RELOADED', '1');
+      const u = new URL(location.href);
+      u.searchParams.set('v', m[1]);
+      location.replace(u.toString());
+    }
+  } catch(e) {}
+}
+setTimeout(_checkVersion, 2500);
+
 function _initEdits(alumnoId) {
   _alumnoId = alumnoId || '';
   try { _pesoEdits = JSON.parse(localStorage.getItem('SOCC_EDITS_'+_alumnoId) || '{}'); } catch(e) { _pesoEdits = {}; }
