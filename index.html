@@ -3521,6 +3521,11 @@ select.toolbox-input option:disabled { color: #888; }
                   <option value="">Otro (detallar en notas del coach)</option>
                 </select>
               </div>
+              <div style="grid-column:1/-1;">
+                <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">🏋️ MARCAS DE REFERENCIA (OPCIONAL — para calcular todos los pesos)</label>
+                <input id="ia-f-marcas" type="text" placeholder="Ej: Banca 80kg x 5 · Sentadilla 100kg x 3 · Peso muerto 120kg x 2 · Hip thrust 90kg x 8"
+                  style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;box-sizing:border-box;">
+              </div>
             </div>
           </div>
 
@@ -23298,6 +23303,39 @@ const _IA_SYSTEM_PROMPT_JD = `# SYSTEM PROMPT: Entrenador de IA - Perfil de Jay 
 
 Respondé siempre en ESPAÑOL (dialecto argentino). Al diseñar el programa semanal, estructurá cada día con sus bloques (movilidad, activación/propiocepción, fuerza, potencia/pliometría, drills de técnica), ejercicios con series/reps/tempo/pausas, los cues característicos y cómo se integra con los días de carrera del atleta.`;
 
+// ── Módulo de Gestión de Cargas (compartido por todos los entrenadores IA) ─────
+const _IA_CARGAS_PROMPT = `# MÓDULO DE GESTIÓN DE CARGAS
+Aplicá este sistema siempre que el perfil incluya MARCAS DE REFERENCIA (peso levantado × repeticiones).
+
+## 1. ESTIMACIÓN DE 1RM (método indirecto)
+- Si las reps de la marca son ≤ 10 → fórmula de Brzycki: 1RM = W / (1.0278 − 0.0278 × r)
+- Si las reps son > 10 → fórmula de Epley: 1RM = (W × 0.033 × r) + W
+- ROM: si el atleta trabaja rango parcial (~90°), tolera ~11% más de carga que en rango completo — ajustalo si la nota del ejercicio lo indica.
+
+## 2. EXTRAPOLACIÓN A EJERCICIOS SIN MARCA
+Usá ratios típicos desde las 1RM conocidas (son estimaciones iniciales, indicá que se ajustan en la primera semana):
+- Press militar ≈ 60-65% de banca · Press inclinado ≈ 80-85% de banca · Remo con barra ≈ 90% de banca
+- Sentadilla frontal ≈ 85% de sentadilla · Prensa ≈ 180-200% de sentadilla · Split/Búlgara ≈ 40-50% de sentadilla (por lado)
+- Peso muerto rumano ≈ 80-90% de peso muerto · Hip thrust ≈ 100-120% de sentadilla
+- Ejercicios de aislamiento o máquinas sin referencia: prescribí por RIR objetivo, no inventes kg.
+
+## 3. DOSIFICACIÓN SEGÚN OBJETIVO (% de 1RM → reps)
+- Fuerza máxima: 85-100% → 1-6 reps
+- Hipertrofia: 70-85% → 8-12 reps
+- Acondicionamiento: 60-70% → 12-15 reps
+- Resistencia: 50-70% → 15-20 reps
+- Potencia tren superior: 30-60% → 1-6 reps · Potencia tren inferior: 40-70% → 1-6 reps
+
+## 4. FORMATO DE PRESCRIPCIÓN
+- En el campo peso de CADA ejercicio principal escribí el peso concreto en kg redondeado a 2.5 kg, con el % entre paréntesis. Ej: "72.5 kg (75%)".
+- Series de aproximación: escalada desde ~40-50% hasta el peso de trabajo.
+- Descansos: hasta 7 min entre intentos máximos (recuperación de fosfocreatina); 90 seg a 3 min en hipertrofia.
+- Control de fatiga sin encoder: indicá cortar la serie si la velocidad de ejecución cae notablemente o si el RIR real queda por debajo del prescripto (pérdida de velocidad: ligero 5-10%, medio 15-30%, máximo >50%).
+
+## 5. SEGURIDAD Y POBLACIONES ESPECIALES
+- Atleta >60 años, perfil frágil o clínico (post-COVID, riesgo cardíaco): carga inicial <40-50% de 1RM; primeras semanas 30-40% en tren superior y 40-50% en tren inferior; progresión gradual y control de síntomas (mareos, dolor de pecho — Borg 11-15).
+- Ante duda entre dos cargas, prescribí la menor y compensá con RIR.`;
+
 function _iaApiKey() { return localStorage.getItem('SOCC_ANTHROPIC_KEY') || ''; }
 
 function _iaShowKeyModal() {
@@ -23405,6 +23443,7 @@ function _iaBuildPrompt() {
   const dias     = document.getElementById('ia-f-dias')?.value   || '4';
   const objetivo = (document.getElementById('ia-f-objetivo')?.value || '').trim();
   const notas    = (document.getElementById('ia-notas')?.value   || '').trim();
+  const marcas   = (document.getElementById('ia-f-marcas')?.value || '').trim();
   const esRunning  = _iaCurrentTrainer === 'eh';
   const esDicharry = _iaCurrentTrainer === 'jd';
   const distancia = document.getElementById('ia-f-distancia')?.value || '10K';
@@ -23449,7 +23488,13 @@ function _iaBuildPrompt() {
     prompt += `- Modalidad: ${modalidad}\n`;
   }
   if (objetivo) prompt += `- Objetivo principal: ${objetivo}\n`;
+  if (marcas)   prompt += `- MARCAS DE REFERENCIA (peso × reps): ${marcas}\n`;
   if (notas)    prompt += `- Información adicional del coach: ${notas}\n`;
+
+  let cargasInstr = '';
+  if (marcas) {
+    cargasInstr = `\n\nGESTIÓN DE CARGAS: calculá la 1RM estimada de cada marca de referencia (Brzycki si reps ≤ 10, Epley si > 10) y mostrá el cálculo al inicio del programa. Después prescribí el PESO CONCRETO EN KG de todos los ejercicios principales (redondeado a 2.5 kg, con el %1RM entre paréntesis), extrapolando con los ratios del módulo de cargas para los ejercicios sin marca directa. En aislamientos sin referencia usá RIR. Aplicá los porcentajes correspondientes al objetivo del atleta y las capas de seguridad por edad/perfil.`;
+  }
 
   if (esRunning) {
     prompt += `\nDiseñá el plan de running semanal completo para ${dias} días. Para cada día indicá:\n`;
@@ -23459,7 +23504,7 @@ function _iaBuildPrompt() {
     prompt += `- Indicaciones técnicas y de prevención de lesiones\n\n`;
     prompt += `Respetá la jerarquía fisiológica: adherencia → gestión de volumen (regla del 10%) → distribución de intensidad → fuerza concurrente → estrategia táctica. Incluí el volumen semanal total estimado.`;
     if (modalidad.startsWith('Trail')) prompt += ` Al ser Trail, cuantificá la carga combinando kilómetros + desnivel (D+) o tiempo en zona.`;
-    return prompt + dualInstr;
+    return prompt + cargasInstr + dualInstr;
   }
 
   prompt += `\nDiseñá el programa completo para ${dias} días de entrenamiento. Para cada día indicá:\n`;
@@ -23479,7 +23524,7 @@ function _iaBuildPrompt() {
     prompt += `Aplicá la metodología Mountain Dog Training de John Meadows. Para cada día, estructurá la sesión con las 4 fases: Speed Warm-up, Fase 1 (Activación/Conexión Mente-Músculo), Fase 2 (Carga Explosiva), Fase 3 (Bombeo Súper Máximo) y Fase 4 (Estiramiento Bajo Tensión). Respetá el límite de 4-5 ejercicios por sesión y los tiempos de descanso de cada fase.`;
   }
 
-  return prompt + dualInstr;
+  return prompt + cargasInstr + dualInstr;
 }
 
 // Renderizado simple de markdown → HTML
@@ -23574,11 +23619,12 @@ async function iaGenerarPlan() {
   const modelo   = document.getElementById('ia-modelo')?.value || 'claude-sonnet-4-6';
 
   const entrenador = _IA_TRAINERS[_iaCurrentTrainer].corto;
-  const sysPrompt  = _iaCurrentTrainer === 'bc' ? _IA_SYSTEM_PROMPT_BC
+  const sysBase    = _iaCurrentTrainer === 'bc' ? _IA_SYSTEM_PROMPT_BC
                    : _iaCurrentTrainer === 'eh' ? _IA_SYSTEM_PROMPT_EH
                    : _iaCurrentTrainer === 'sm' ? _IA_SYSTEM_PROMPT_SM
                    : _iaCurrentTrainer === 'jd' ? _IA_SYSTEM_PROMPT_JD
                    : _IA_SYSTEM_PROMPT_JM;
+  const sysPrompt  = sysBase + '\n\n' + _IA_CARGAS_PROMPT;
   const accentColor = _IA_TRAINERS[_iaCurrentTrainer].color;
 
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Diseñando programa semanal...'; }
