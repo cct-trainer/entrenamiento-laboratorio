@@ -4094,6 +4094,7 @@ select.toolbox-input option:disabled { color: #888; }
       <button class="antro-tab-btn" onclick="antroTab('ronda')">➕ Nueva Ronda</button>
       <button class="antro-tab-btn" onclick="antroTab('evolucion')">📈 Evolución</button>
       <button class="antro-tab-btn" onclick="antroTab('historial')">📊 Historial</button>
+      <button class="antro-tab-btn" onclick="antroTab('medidas')">📏 Medidas</button>
     </div>
 
     <!-- ── PANEL PROTOCOLO ── -->
@@ -4144,6 +4145,20 @@ select.toolbox-input option:disabled { color: #888; }
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- ── PANEL MEDIDAS (sincronizado con la app del alumno) ── -->
+    <div id="antro-panel-medidas" class="antro-panel">
+      <div class="antro-card">
+        <div class="antro-card-title">📏 Medidas corporales — sincronizadas con la app del alumno</div>
+        <div style="font-size:12px;color:#666;margin-bottom:16px;line-height:1.6;">Registro compartido: las medidas que cargues acá aparecen en el portal del alumno, y las que cargue el alumno desde su app aparecen acá. Cada medición queda guardada con fecha, nunca se reemplaza una anterior.</div>
+        <div class="antro-field" style="max-width:340px;margin-bottom:16px;">
+          <label>Alumno</label>
+          <select id="antro-med-alumno" onchange="_antroMedRender()"></select>
+        </div>
+        <div id="antro-med-form"></div>
+      </div>
+      <div id="antro-med-wrap" style="margin-top:16px;"></div>
     </div>
 
     <!-- ── PANEL NUEVA RONDA ── -->
@@ -15450,13 +15465,14 @@ function _antroUpdateCount() {
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
 function antroTab(tab) {
-  const TABS = ['protocolo','ronda','evolucion','historial'];
+  const TABS = ['protocolo','ronda','evolucion','historial','medidas'];
   document.querySelectorAll('.antro-tab-btn').forEach((b,i) => b.classList.toggle('active', TABS[i]===tab));
   document.querySelectorAll('.antro-panel').forEach(p => p.classList.remove('active'));
   const el = document.getElementById('antro-panel-' + tab);
   if (el) el.classList.add('active');
   if (tab === 'evolucion') antroRenderEvolucion();
   if (tab === 'historial') antroRenderHistorial();
+  if (tab === 'medidas') _antroMedInit();
 }
 
 // ── Protocolo: render landmark cards ────────────────────────────────────────
@@ -20398,8 +20414,9 @@ function _antroAlertas(regs, alumno) {
   return alertas;
 }
 
-async function renderAntroAlumno(alumnoId) {
-  const wrap = document.getElementById('antro-alumno-wrap');
+async function renderAntroAlumno(alumnoId, wrapId) {
+  wrapId = wrapId || 'antro-alumno-wrap';
+  const wrap = document.getElementById(wrapId);
   if (!wrap) return;
   wrap.innerHTML = '<div style="color:#999;font-size:12px;">Cargando auto-registro del alumno...</div>';
   let regs = [], unlock = false;
@@ -20419,8 +20436,8 @@ async function renderAntroAlumno(alumnoId) {
     + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">'
     + '<div style="font-size:12px;font-weight:900;color:#333;letter-spacing:.5px;">📱 AUTO-REGISTRO DEL ALUMNO' + (regs.length ? ' <span style="color:#999;font-weight:700;">(' + regs.length + ' registro' + (regs.length!==1?'s':'') + ')</span>' : '') + '</div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
-    + '<button onclick="_antroDesbloquear(\'' + alumnoId + '\')" ' + (unlock ? 'disabled' : '') + ' style="font-size:11px;font-weight:700;padding:6px 12px;border:1.5px solid #f59e0b;background:' + (unlock?'#fef3c7':'#fffbeb') + ';color:#b45309;border-radius:7px;cursor:pointer;">' + (unlock ? '🔓 Medición habilitada' : '🔓 Habilitar nueva medición') + '</button>'
-    + (regs.length ? '<button onclick="_antroInformeIA(\'' + alumnoId + '\')" id="antro-btn-ia" style="font-size:11px;font-weight:700;padding:6px 12px;border:1.5px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:7px;cursor:pointer;">🤖 Informe IA</button>' : '')
+    + '<button onclick="_antroDesbloquear(\'' + alumnoId + '\',\'' + wrapId + '\')" ' + (unlock ? 'disabled' : '') + ' style="font-size:11px;font-weight:700;padding:6px 12px;border:1.5px solid #f59e0b;background:' + (unlock?'#fef3c7':'#fffbeb') + ';color:#b45309;border-radius:7px;cursor:pointer;">' + (unlock ? '🔓 Medición habilitada' : '🔓 Habilitar nueva medición') + '</button>'
+    + (regs.length ? '<button onclick="_antroInformeIA(\'' + alumnoId + '\',\'' + wrapId + '\')" id="' + wrapId + '-btn-ia" style="font-size:11px;font-weight:700;padding:6px 12px;border:1.5px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:7px;cursor:pointer;">🤖 Informe IA</button>' : '')
     + '</div></div>';
 
   if (!regs.length) {
@@ -20441,7 +20458,7 @@ async function renderAntroAlumno(alumnoId) {
   [...regs].reverse().forEach((r, ri) => {
     h += '<tr>' + cols.map((c,ci) => {
       let v = r[c[0]] || '—';
-      if (c[0]==='fecha' && r.fecha) v = new Date(r.fecha+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      if (c[0]==='fecha' && r.fecha) v = new Date(r.fecha+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'}) + (r.origen==='coach' ? ' <span title="Cargada por el coach">👨‍🏫</span>' : ' <span title="Cargada por el alumno">📱</span>');
       return '<td style="padding:5px 7px;border-top:1px solid #e8e8f0;color:#333;white-space:nowrap;">'+v+'</td>';
     }).join('') + '</tr>';
   });
@@ -20460,27 +20477,28 @@ async function renderAntroAlumno(alumnoId) {
     if (difs.length) h += '<div style="margin-top:10px;font-size:11.5px;color:#555;"><b style="color:#333;">Desde el inicio:</b><br>' + difs.join('') + '</div>';
   }
 
-  h += '<div id="antro-ia-output" style="display:none;margin-top:12px;background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;padding:14px;font-size:12.5px;line-height:1.65;color:#1a1a2e;"></div>';
+  h += '<div id="' + wrapId + '-ia-output" style="display:none;margin-top:12px;background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;padding:14px;font-size:12.5px;line-height:1.65;color:#1a1a2e;"></div>';
   h += '</div>';
   wrap.innerHTML = h;
 }
 
-async function _antroDesbloquear(alumnoId) {
+async function _antroDesbloquear(alumnoId, wrapId) {
   try {
     await window._db.collection('alumnos').doc(alumnoId).update({ antroUnlock: true });
     toast('🔓 Medición habilitada para el alumno');
-    renderAntroAlumno(alumnoId);
+    renderAntroAlumno(alumnoId, wrapId);
   } catch(e) { toast('Error al habilitar: ' + e.message, 'error'); }
 }
 
-async function _antroInformeIA(alumnoId) {
+async function _antroInformeIA(alumnoId, wrapId) {
   const apiKey = _iaApiKey();
   if (!apiKey) { _iaShowKeyModal(); return; }
   const cache = _antroAlumnoCache[alumnoId];
   if (!cache || !cache.regs.length) { toast('No hay registros para analizar'); return; }
+  wrapId = wrapId || 'antro-alumno-wrap';
   const al = getAlumnos().find(a => a.id === alumnoId) || {};
-  const out = document.getElementById('antro-ia-output');
-  const btn = document.getElementById('antro-btn-ia');
+  const out = document.getElementById(wrapId + '-ia-output');
+  const btn = document.getElementById(wrapId + '-btn-ia');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Analizando...'; }
   if (out) { out.style.display = 'block'; out.innerHTML = '<span style="color:#7c3aed;font-style:italic;">Analizando evolución antropométrica...</span>'; }
 
@@ -20510,6 +20528,87 @@ async function _antroInformeIA(alumnoId) {
     if (out) out.innerHTML = '<span style="color:#f87171;font-weight:700;">Error: ' + e.message + '</span>';
   }
   if (btn) { btn.disabled = false; btn.textContent = '🤖 Informe IA'; }
+}
+
+// ── MI CUERPO → PESTAÑA MEDIDAS (registro compartido coach ↔ app) ─────────────
+const _ANTRO_MED_CAMPOS = [
+  { k:'peso',      lb:'Peso',            u:'kg' },
+  { k:'altura',    lb:'Altura',          u:'cm' },
+  { k:'cuello',    lb:'Cuello',          u:'cm' },
+  { k:'hombros',   lb:'Hombros',         u:'cm' },
+  { k:'pecho',     lb:'Pecho',           u:'cm' },
+  { k:'brazoDer',  lb:'Brazo derecho',   u:'cm' },
+  { k:'brazoIzq',  lb:'Brazo izquierdo', u:'cm' },
+  { k:'cintura',   lb:'Cintura',         u:'cm' },
+  { k:'cadera',    lb:'Cadera',          u:'cm' },
+  { k:'musloDer',  lb:'Muslo derecho',   u:'cm' },
+  { k:'musloIzq',  lb:'Muslo izquierdo', u:'cm' },
+  { k:'gemeloDer', lb:'Gemelo derecho',  u:'cm' },
+  { k:'gemeloIzq', lb:'Gemelo izquierdo',u:'cm' }
+];
+
+function _antroMedInit() {
+  const sel = document.getElementById('antro-med-alumno');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">— Elegí un alumno —</option>'
+    + getAlumnos().map(a => '<option value="' + a.id + '">' + (a.nombre || 'Sin nombre') + '</option>').join('');
+  sel.value = prev || currentAlumnoId || '';
+  _antroMedRender();
+}
+
+function _antroMedRender() {
+  const id   = document.getElementById('antro-med-alumno')?.value;
+  const form = document.getElementById('antro-med-form');
+  const wrap = document.getElementById('antro-med-wrap');
+  if (!form) return;
+  if (!id) { form.innerHTML = ''; if (wrap) wrap.innerHTML = ''; return; }
+  const al = getAlumnos().find(a => a.id === id) || {};
+  const esMujer = (al.sexo || '').toLowerCase().startsWith('m');
+  let h = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;">';
+  _ANTRO_MED_CAMPOS.forEach(c => {
+    h += '<div class="antro-field"><label>' + c.lb + ' (' + c.u + ')</label><input type="number" step="0.1" id="antro-med-f-' + c.k + '" placeholder="—"></div>';
+  });
+  h += '</div>';
+  if (esMujer) {
+    h += '<div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;">'
+      + '<div class="antro-field"><label>🌸 Inicio último ciclo (opcional)</label><input type="date" id="antro-med-f-ciclo"></div>'
+      + '<div class="antro-field"><label>Observaciones del ciclo</label><input type="text" id="antro-med-f-cicloobs" placeholder="Opcional..."></div>'
+      + '</div>';
+  }
+  h += '<button onclick="_antroMedGuardar()" id="antro-med-btn" style="margin-top:16px;padding:12px 24px;background:#C9A84C;color:#111;border:none;border-radius:10px;font-size:13px;font-weight:900;letter-spacing:.5px;cursor:pointer;">💾 GUARDAR MEDICIÓN</button>';
+  form.innerHTML = h;
+  renderAntroAlumno(id, 'antro-med-wrap');
+}
+
+async function _antroMedGuardar() {
+  const id = document.getElementById('antro-med-alumno')?.value;
+  if (!id) { toast('Elegí un alumno', 'error'); return; }
+  if (!window._db) { toast('Sin conexión a Firebase', 'error'); return; }
+  const entry = { id: 'am' + Date.now(), fecha: new Date().toISOString().slice(0,10), creadoEn: new Date().toISOString(), origen: 'coach' };
+  let alguno = false;
+  _ANTRO_MED_CAMPOS.forEach(c => {
+    const v = (document.getElementById('antro-med-f-' + c.k)?.value || '').trim();
+    entry[c.k] = v || null;
+    if (v) alguno = true;
+  });
+  if (!alguno) { toast('Cargá al menos una medida', 'error'); return; }
+  const cf = (document.getElementById('antro-med-f-ciclo')?.value || '').trim();
+  const co = (document.getElementById('antro-med-f-cicloobs')?.value || '').trim();
+  if (cf || co) entry.ciclo = { fechaInicio: cf || null, obs: co || '' };
+  const btn = document.getElementById('antro-med-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+  try {
+    await window._db.collection('alumnos').doc(id).set({
+      antroAlumno: firebase.firestore.FieldValue.arrayUnion(entry)
+    }, { merge: true });
+    toast('✅ Medición guardada — ya visible en la app del alumno');
+    _antroMedRender();
+  } catch(e) {
+    console.error('antroMedGuardar:', e);
+    toast('Error al guardar: ' + e.message, 'error');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '💾 GUARDAR MEDICIÓN'; }
 }
 
 function renderMediciones(alumnoId) {
