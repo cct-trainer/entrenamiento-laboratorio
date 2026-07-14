@@ -23403,14 +23403,22 @@ function _iaJSONaPlanificacion(data, alumnoId) {
       const serieTipo = TIPOS_SERIE_F.includes(b.serieTipo) ? b.serieTipo : 'Serie Simple';
       const ejercicios = (b.ejercicios || []).map(ej => {
         const nSer = Math.min(parseInt(ej.series) || 3, 10);
-        const fila = { reps: String(ej.reps || ''), peso: String(ej.peso || ''), rir: String(ej.rir || ''), pausa: String(ej.pausa || ''), comentarios: '' };
         const apro = Array.isArray(ej.seriesApro)
           ? ej.seriesApro.slice(0, 6).map(s => ({ reps: String(s.reps || ''), peso: String(s.peso || ''), rir: '', pausa: '', comentarios: '' }))
           : [];
+        // SANEO DE PESO: nunca aceptar referencias de texto en las series efectivas.
+        // Si la IA puso "ver series de aproximación" (o similar), calcular el peso de
+        // trabajo desde la última aproximación (+5%, redondeado a 2.5 kg).
+        let pesoEf = String(ej.peso || '').trim();
+        if (/aproximaci|ver serie|ver apro|seg[uú]n/i.test(pesoEf)) {
+          const ultApro = apro.length ? parseFloat(String(apro[apro.length - 1].peso).replace(',', '.')) : NaN;
+          pesoEf = !isNaN(ultApro) ? (Math.round((ultApro * 1.05) / 2.5) * 2.5) + ' kg' : '';
+        }
+        const fila = { reps: String(ej.reps || ''), peso: pesoEf, rir: String(ej.rir || ''), pausa: String(ej.pausa || ''), comentarios: '' };
         return {
           nombre: _iaMatchBiblioteca(String(ej.nombre || '').trim()),
           nota: String(ej.nota || '').trim(),
-          ctrl: { series: String(ej.series || ''), reps: String(ej.reps || ''), peso: String(ej.peso || ''), pausa: String(ej.pausa || ''), rir: String(ej.rir || '') },
+          ctrl: { series: String(ej.series || ''), reps: String(ej.reps || ''), peso: pesoEf, pausa: String(ej.pausa || ''), rir: String(ej.rir || '') },
           video: '', ficha: null,
           series: Array.from({ length: nSer }, () => ({ ...fila })),
           seriesApro: apro, dropset: []
