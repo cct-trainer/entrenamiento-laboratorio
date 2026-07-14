@@ -20429,24 +20429,42 @@ async function forzarSyncFirebase() {
     function _enrichPlanes(planes) {
       if (!planes || !planes.length) return planes;
       const lib = (typeof getEjerciciosCompletos === 'function') ? getEjerciciosCompletos() : [];
+
+      const enrichEj = ej => {
+        const libEj = lib.find(e => e.nombre && e.nombre.toLowerCase() === (ej.nombre||'').toLowerCase()) || {};
+        // Completar video desde la biblioteca si falta
+        const video = ej.video || libEj.video || '';
+        // Solo enriquecer ficha si faltan los campos
+        if (ej.ejecucion || ej.musculos) return (ej.video || !video) ? ej : { ...ej, video };
+        const ejecucion = (ej.ficha && (ej.ficha['Descripción'] || ej.ficha['DESCRIPCIÓN'])) || libEj.ejecucion || libEj.desc || '';
+        const musculos  = (ej.ficha && ej.ficha['MÚSCULOS']) || (libEj.musculos || libEj.principales || []).join(', ') || '';
+        const tipo      = (ej.ficha && ej.ficha['TIPO']) || libEj.tipoTrabajo || libEj.cat || '';
+        return { ...ej, ejecucion, musculos, tipo, video };
+      };
+      const enrichBloques = bloques => bloques.map(b =>
+        (b && b.ejercicios && b.ejercicios.length) ? { ...b, ejercicios: b.ejercicios.map(enrichEj) } : b
+      );
+
       return planes.map(plan => {
-        if (!plan.bloques || !plan.bloques.length) return plan;
-        const bloques = plan.bloques.map(bloque => {
-          if (!bloque.ejercicios || !bloque.ejercicios.length) return bloque;
-          const ejercicios = bloque.ejercicios.map(ej => {
-            const libEj = lib.find(e => e.nombre && e.nombre.toLowerCase() === (ej.nombre||'').toLowerCase()) || {};
-            // Completar video desde la biblioteca si falta
-            const video = ej.video || libEj.video || '';
-            // Solo enriquecer ficha si faltan los campos
-            if (ej.ejecucion || ej.musculos) return (ej.video ? ej : { ...ej, video });
-            const ejecucion = (ej.ficha && (ej.ficha['Descripción'] || ej.ficha['DESCRIPCIÓN'])) || libEj.ejecucion || libEj.desc || '';
-            const musculos  = (ej.ficha && ej.ficha['MÚSCULOS']) || (libEj.musculos || libEj.principales || []).join(', ') || '';
-            const tipo      = (ej.ficha && ej.ficha['TIPO']) || libEj.tipoTrabajo || libEj.cat || '';
-            return { ...ej, ejecucion, musculos, tipo, video };
+        const p2 = { ...plan };
+        // Formato plano (planes viejos / sesión única)
+        if (p2.bloques && p2.bloques.length) p2.bloques = enrichBloques(p2.bloques);
+        // Formato semanal: semanasArray → dias → sesiones[mod] → bloques
+        if (p2.semanasArray && p2.semanasArray.length) {
+          p2.semanasArray = p2.semanasArray.map(sem => {
+            if (!sem || !sem.dias) return sem;
+            const dias = {};
+            Object.keys(sem.dias).forEach(k => {
+              dias[k] = (sem.dias[k] || []).map(ses =>
+                (ses && ses.bloques && ses.bloques.length) ? { ...ses, bloques: enrichBloques(ses.bloques) } : ses
+              );
+            });
+            return { ...sem, dias };
           });
-          return { ...bloque, ejercicios };
-        });
-        return { ...plan, bloques };
+          // diasData apunta a la primera semana — mantener coherencia
+          if (p2.diasData && p2.semanasArray[0] && p2.semanasArray[0].dias) p2.diasData = p2.semanasArray[0].dias;
+        }
+        return p2;
       });
     }
 
