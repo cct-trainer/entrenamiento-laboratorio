@@ -3555,6 +3555,10 @@ select.toolbox-input option:disabled { color: #888; }
                   <div style="font-size:12px;color:#333;">Jalón al pecho (o dominada lastrada)</div>
                   <input id="ia-m-jalon-peso" type="number" step="0.5" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
                   <input id="ia-m-jalon-reps" type="number" min="1" max="20" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+
+                  <div style="font-size:12px;color:#333;">Curl femoral sentado</div>
+                  <input id="ia-m-femoral-peso" type="number" step="0.5" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
+                  <input id="ia-m-femoral-reps" type="number" min="1" max="20" placeholder="—" style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 8px;font-size:12px;text-align:center;font-family:inherit;">
                 </div>
                 <input id="ia-f-marcas" type="text" placeholder="Otras marcas (texto libre, ej: Prensa 200kg x 10, Búlgara 24kg x 8...)"
                   style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:12px;font-family:inherit;background:#fff;box-sizing:border-box;margin-top:8px;">
@@ -23336,37 +23340,65 @@ const _IA_SYSTEM_PROMPT_JD = `# SYSTEM PROMPT: Entrenador de IA - Perfil de Jay 
 
 Respondé siempre en ESPAÑOL (dialecto argentino). Al diseñar el programa semanal, estructurá cada día con sus bloques (movilidad, activación/propiocepción, fuerza, potencia/pliometría, drills de técnica), ejercicios con series/reps/tempo/pausas, los cues característicos y cómo se integra con los días de carrera del atleta.`;
 
-// ── Módulo de Gestión de Cargas (compartido por todos los entrenadores IA) ─────
-const _IA_CARGAS_PROMPT = `# MÓDULO DE GESTIÓN DE CARGAS
-Aplicá este sistema siempre que el perfil incluya MARCAS DE REFERENCIA (peso levantado × repeticiones).
+// ── Módulo de Gestión de Cargas — Anchor Exercise System (todos los entrenadores)
+const _IA_CARGAS_PROMPT = `# MÓDULO DE GESTIÓN DE CARGAS — SISTEMA DE EJERCICIOS DE REFERENCIA (ANCHOR)
+Aplicá este sistema siempre que el perfil incluya MARCAS DE REFERENCIA (peso × reps). El alumno solo evalúa unos pocos ejercicios ancla; todos los demás heredan la carga por coeficiente de transferencia.
 
-## 1. ESTIMACIÓN DE 1RM (método indirecto)
-- Si las reps de la marca son ≤ 10 → fórmula de Brzycki: 1RM = W / (1.0278 − 0.0278 × r)
-- Si las reps son > 10 → fórmula de Epley: 1RM = (W × 0.033 × r) + W
-- ROM: si el atleta trabaja rango parcial (~90°), tolera ~11% más de carga que en rango completo — ajustalo si la nota del ejercicio lo indica.
+## 1. ESTIMACIÓN DE 1RM
+- Reps ≤ 10 → Brzycki: 1RM = W / (1.0278 − 0.0278 × r)
+- Reps > 10 → Epley: 1RM = (W × 0.033 × r) + W
+- ROM parcial (~90°) tolera ~11% más de carga que ROM completo.
 
-## 2. EXTRAPOLACIÓN A EJERCICIOS SIN MARCA
-Usá ratios típicos desde las 1RM conocidas (son estimaciones iniciales, indicá que se ajustan en la primera semana):
-- Press militar ≈ 60-65% de banca · Press inclinado ≈ 80-85% de banca · Remo con barra ≈ 90% de banca
-- Sentadilla frontal ≈ 85% de sentadilla · Prensa ≈ 180-200% de sentadilla · Split/Búlgara ≈ 40-50% de sentadilla (por lado)
-- Peso muerto rumano ≈ 80-90% de peso muerto · Hip thrust ≈ 100-120% de sentadilla
-- Ejercicios de aislamiento o máquinas sin referencia: prescribí por RIR objetivo, no inventes kg.
+## 2. MATRIZ DE TRANSFERENCIA DE FUERZA (% respecto al ancla de cada patrón)
+EMPUJE HORIZONTAL — ancla: Press banca plano con barra:
+press plano mancuernas 85% · press inclinado barra 90% · press inclinado mancuernas 80% · press declinado 92% · máquina convergente 95% · chest press Hammer 95% · fondos lastrados 90% · flexiones lastradas 75% · press en Smith 95%
+EMPUJE VERTICAL — ancla: Press militar de pie:
+press mancuernas sentado 90% · press Arnold 80% · press en máquina 95% · push press 110%. (Elevaciones laterales NO usan esta ancla.)
+DELTOIDES LATERAL — ancla: Elevación lateral con mancuerna:
+en polea 95% · en máquina 110% · lean away 85%
+TRACCIÓN HORIZONTAL — ancla: Remo con barra:
+remo Pendlay 95% · remo T-Bar 105% · remo en máquina 110% · seal row 90% · remo con mancuerna 80%
+TRACCIÓN VERTICAL — ancla: Dominadas lastradas o Jalón al pecho:
+jalón al pecho 100% · jalón cerrado 95% · jalón unilateral 90% · dominadas 100%
+DOMINANTE DE RODILLA — ancla: Sentadilla trasera:
+front squat 85% · hack squat 110% · sentadilla en Smith 105% · belt squat 110% · goblet squat 45% · safety bar 90%
+DOMINANTE DE CADERA — ancla: Peso muerto convencional:
+peso muerto rumano 75% · rack pull 115% · peso muerto sumo 95% · trap bar 105%
+GLÚTEOS — ancla: Hip thrust con barra:
+hip thrust en Smith 95% · en máquina 100% · con banda 40%
+BÍCEPS — ancla: Curl con barra recta:
+curl EZ 95% · curl mancuernas 85% · curl Scott 90% · curl en polea 95%
+TRÍCEPS — ancla: Press banca agarre cerrado:
+press francés 55% · extensión en polea 45% · katana 35% · fondos 90%
+GEMELOS — ancla: Elevación de gemelos de pie:
+elevación sentado 70% · en prensa 130%
+CORE: por tiempo, sin carga de referencia.
 
-## 3. DOSIFICACIÓN SEGÚN OBJETIVO (% de 1RM → reps)
-- Fuerza máxima: 85-100% → 1-6 reps
-- Hipertrofia: 70-85% → 8-12 reps
-- Acondicionamiento: 60-70% → 12-15 reps
-- Resistencia: 50-70% → 15-20 reps
-- Potencia tren superior: 30-60% → 1-6 reps · Potencia tren inferior: 40-70% → 1-6 reps
+## 3. ESTIMACIONES CRUZADAS (si falta un ancla, derivalo de los disponibles)
+- Press militar ≈ 60-65% de banca · Press banca cerrada ≈ 90% de banca · Curl barra ≈ 45-50% de remo
+- Jalón/dominadas ≈ 95-100% de remo · Remo ≈ jalón si solo hay jalón
+- Peso muerto ≈ 110-120% de sentadilla (o desde hip thrust) · Sentadilla ≈ 85-90% de peso muerto
+- Hip thrust ≈ 100-120% de sentadilla o ≈ peso muerto · Búlgara ≈ 45-50% de sentadilla (total, por lado)
+- El sistema FUNCIONA CON LO DISPONIBLE: con 5-6 anclas alcanza; lo que no pueda estimarse con confianza va por RIR, sin pedir más evaluaciones.
 
-## 4. FORMATO DE PRESCRIPCIÓN
-- En el campo peso de CADA ejercicio principal escribí el peso concreto en kg redondeado a 2.5 kg, con el % entre paréntesis. Ej: "72.5 kg (75%)".
+## 4. DOSIFICACIÓN SEGÚN OBJETIVO (% de 1RM → reps)
+- Fuerza máxima: 85-100% → 1-6 · Hipertrofia: 70-85% → 8-12 · Acondicionamiento: 60-70% → 12-15
+- Resistencia: 50-70% → 15-20 · Potencia tren superior: 30-60% → 1-6 · Potencia tren inferior: 40-70% → 1-6
+
+## 5. FORMATO DE PRESCRIPCIÓN
+- Cálculo: peso de trabajo = 1RM del ancla × %objetivo × coeficiente de transferencia.
+- En el campo peso escribí el kg concreto redondeado a 2.5 kg con el % entre paréntesis. Ej: "72.5 kg (75%)".
+- MANCUERNAS: indicá el peso POR MANCUERNA (total ÷ 2). Ej: "68 kg → 34 kg por mancuerna".
 - Series de aproximación: escalada desde ~40-50% hasta el peso de trabajo.
-- Descansos: hasta 7 min entre intentos máximos (recuperación de fosfocreatina); 90 seg a 3 min en hipertrofia.
-- Control de fatiga sin encoder: indicá cortar la serie si la velocidad de ejecución cae notablemente o si el RIR real queda por debajo del prescripto (pérdida de velocidad: ligero 5-10%, medio 15-30%, máximo >50%).
+- Descansos: hasta 7 min entre intentos máximos; 90 seg-3 min en hipertrofia.
 
-## 5. SEGURIDAD Y POBLACIONES ESPECIALES
-- Atleta >60 años, perfil frágil o clínico (post-COVID, riesgo cardíaco): carga inicial <40-50% de 1RM; primeras semanas 30-40% en tren superior y 40-50% en tren inferior; progresión gradual y control de síntomas (mareos, dolor de pecho — Borg 11-15).
+## 6. AUTOAJUSTE INTELIGENTE
+- Indicá en el programa la regla de ajuste sesión a sesión: si el RIR real es MAYOR al prescripto → subir la carga 2-5%; si es MENOR → bajarla 2-7%.
+- Control de fatiga: cortar la serie si la velocidad de ejecución cae notablemente (ligero 5-10%, medio 15-30%, máximo >50% de pérdida).
+- Los pesos calculados son estimaciones iniciales que se recalibran con el rendimiento registrado.
+
+## 7. SEGURIDAD Y POBLACIONES ESPECIALES
+- >60 años, perfil frágil o clínico (post-COVID, riesgo cardíaco): carga inicial <40-50% de 1RM; primeras semanas 30-40% tren superior y 40-50% tren inferior; control de síntomas (mareos, dolor de pecho — Borg 11-15).
 - Ante duda entre dos cargas, prescribí la menor y compensá con RIR.`;
 
 function _iaApiKey() { return localStorage.getItem('SOCC_ANTHROPIC_KEY') || ''; }
@@ -23484,7 +23516,8 @@ function _iaBuildPrompt() {
     ['hipthrust',  'Hip thrust con barra'],
     ['militar',    'Press militar de pie'],
     ['remo',       'Remo con barra'],
-    ['jalon',      'Jalón al pecho']
+    ['jalon',      'Jalón al pecho'],
+    ['femoral',    'Curl femoral sentado']
   ];
   const marcasList = [];
   _refsDef.forEach(([k, lb]) => {
