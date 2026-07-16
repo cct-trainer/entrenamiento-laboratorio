@@ -118,6 +118,15 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 .dr-arr{font-size:11px;color:var(--muted);transition:transform .2s,color .2s;flex-shrink:0;}
 .dayrow.on .dr-arr{transform:rotate(180deg);color:var(--gold);}
 .dr-empty{padding:26px 16px;text-align:center;color:var(--muted);font-size:12px;background:var(--card);border:1px dashed var(--border);border-radius:14px;margin-bottom:16px;}
+/* Encabezado de la vista de sesión (con botón volver) */
+.ses-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
+.ses-back{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:11px;background:var(--card);border:1px solid var(--border);color:var(--gold);font-size:12px;font-weight:800;letter-spacing:.3px;cursor:pointer;transition:all .15s;}
+.ses-back:hover{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 8%,var(--card));}
+.ses-back i{font-style:normal;font-size:18px;line-height:1;margin-top:-1px;}
+.ses-head-day{display:flex;align-items:baseline;gap:6px;}
+.ses-head-dow{font-size:10px;font-weight:800;letter-spacing:1px;color:var(--gold);}
+.ses-head-num{font-size:19px;font-weight:900;color:var(--text);}
+.ses-head-sem{font-size:10px;color:var(--muted);}
 
 .scard{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;}
 .scard-name{font-size:13px;font-weight:900;color:var(--gold);margin-bottom:12px;letter-spacing:.3px;}
@@ -316,7 +325,7 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
       <button class="snav-btn" id="btn-next" onclick="movSem(1)">&#8250;</button>
     </div>
     <div id="mod-bar" class="mod-bar" style="display:none;"></div>
-    <div class="slabel">DÍAS DE ENTRENAMIENTO</div>
+    <div class="slabel" id="dias-slabel">DÍAS DE ENTRENAMIENTO</div>
     <div class="dlist" id="dgrid"></div>
     <div id="sesion-ctn"></div>
   </div>
@@ -428,8 +437,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260716114543 por un timestamp en cada deploy
-const _APP_VERSION = '20260716114543';
+// deploy.bat reemplaza 20260716115524 por un timestamp en cada deploy
+const _APP_VERSION = '20260716115524';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -843,6 +852,15 @@ function renderRutina() {
     }).join('');
   }
   renderSesion();
+
+  // ── Modo detalle: al abrir un día se oculta la lista y el nav para una vista limpia ──
+  const _detalle = _diaIdx !== null;
+  const _slabelEl = document.getElementById('dias-slabel');
+  const _snavEl = document.querySelector('#tab-rutina .snav');
+  if (_slabelEl) _slabelEl.style.display = _detalle ? 'none' : '';
+  if (_snavEl)  _snavEl.style.display  = _detalle ? 'none' : '';
+  dgridEl.style.display = _detalle ? 'none' : '';
+  if (modBar && _detalle) modBar.style.display = 'none';
 }
 
 function selDia(i) {
@@ -851,6 +869,12 @@ function selDia(i) {
   _diaModTab = 0;
   if (abriendo && _diaIdx !== null) _logActividad(_diaIdx);
   renderRutina();
+  if (abriendo && _diaIdx !== null) window.scrollTo({top:0,behavior:'smooth'});
+}
+function volverDias() {
+  _diaIdx = null; _diaModTab = 0;
+  renderRutina();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 function _switchDiaModTab(t) { _diaModTab=t; renderSesion(); }
 
@@ -1237,6 +1261,18 @@ function renderSesion() {
   const hasCasa = !!(sesCasa?.bloques?.length);
   const hasGym  = !!(sesGym?.bloques?.length);
 
+  // Encabezado con botón de volver a la lista de días
+  const _dnum = sem?.fechaInicio ? (()=>{const d=new Date(sem.fechaInicio+'T12:00:00');d.setDate(d.getDate()+_diaIdx);return d.getDate();})() : _diaIdx+1;
+  const back =
+    '<div class="ses-head">'+
+      '<button class="ses-back" onclick="volverDias()"><i>‹</i> Volver a los días</button>'+
+      '<div class="ses-head-day">'+
+        '<span class="ses-head-dow">'+DS[_diaIdx]+'</span>'+
+        '<span class="ses-head-num">'+_dnum+'</span>'+
+        '<span class="ses-head-sem">Semana '+(_semIdx+1)+'</span>'+
+      '</div>'+
+    '</div>';
+
   // Tabs Gym / Casa — siempre visibles cuando hay un día seleccionado
   const _tabBtn = (idx, icon, label, active) =>
     '<button onclick="_switchDiaModTab('+idx+')" style="flex:1;padding:10px 0;font-size:12px;font-weight:800;letter-spacing:.4px;border:none;cursor:pointer;'+
@@ -1260,11 +1296,11 @@ function renderSesion() {
       '<div class="empty-txt">No hay sesión en casa para este día</div>'+
       '<div style="font-size:12px;color:var(--muted);margin-top:6px;">Tu coach todavía no cargó una sesión en casa.</div>'+
     '</div>';
-    ctn.innerHTML = tabs + (_diaModTab===0 ? msgGym : msgCasa);
+    ctn.innerHTML = back + tabs + (_diaModTab===0 ? msgGym : msgCasa);
     return;
   }
 
-  ctn.innerHTML= tabs +
+  ctn.innerHTML= back + tabs +
     '<div style="padding-bottom:4px;"><div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--gold);margin-bottom:12px;">'+(ses.nombre||DN[_diaIdx]).toUpperCase()+'</div>'+
     ses.bloques.map((b,bi) => {
       const letra='ABCDEFGHIJ'[bi]||(bi+1);
