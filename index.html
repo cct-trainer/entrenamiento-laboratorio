@@ -17422,13 +17422,15 @@ function seleccionarEjercicio(ejId, bloqueId, nombreOIdx) {
   closeDropdown(ejId);
   // Auto-popular video si el ejercicio tiene uno en la biblioteca
   setVideoEj(ejId, ex.video || '');
-  // Auto-prescripción de MOVILIDAD: 1 serie · 8 reps por lado (unilateral) / 10 reps (bilateral)
+  // Auto-prescripción de MOVILIDAD: 1 serie efectiva · 8 reps por lado (unilateral) / 10 reps (bilateral)
   const _catEx = ex.cat || ex.tipoTrabajo || '';
   if (/movilidad/i.test(_catEx)) {
-    const sEl = document.getElementById(ejId + '-ctrl-series');
-    const rEl = document.getElementById(ejId + '-ctrl-reps');
-    if (sEl && !sEl.value) sEl.value = '1';
-    if (rEl && !rEl.value) rEl.value = ex.unilateral ? '8 por lado' : '10';
+    const tb = document.getElementById(ejId + '-efec-tbody');
+    if (tb && tb.querySelectorAll('tr').length === 0) {
+      tb.appendChild(_makeSerieRow(ejId, ejId + '-efec-tbody', 'Serie', 1, { reps: ex.unilateral ? '8 por lado' : '10' }));
+      const bodyEl = document.getElementById(ejId + '-efec-body');
+      if (bodyEl && !bodyEl.classList.contains('open')) toggleSeriesSec(ejId, 'efec');
+    }
   }
   // Mostrar ficha (la construye y la pone visible)
   mostrarFicha(ejId, ex);

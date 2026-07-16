@@ -95,6 +95,30 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 .dchip.no{opacity:.3;pointer-events:none;}
 .ddot{position:absolute;top:4px;right:4px;width:5px;height:5px;background:var(--gold);border-radius:50%;}
 
+/* ── Lista de días en formato renglón (plan de fuerza) ── */
+.dlist{display:flex;flex-direction:column;gap:9px;margin-bottom:16px;}
+.dayrow{display:flex;align-items:center;gap:13px;padding:13px 15px;border-radius:14px;background:var(--card);border:1px solid var(--border);cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,border-color .15s,background .15s,box-shadow .15s;}
+.dayrow::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:rgba(201,168,76,.45);transition:width .15s,background .15s;}
+.dayrow:hover{border-color:rgba(201,168,76,.45);transform:translateX(2px);}
+.dayrow.on{background:color-mix(in srgb,var(--gold) 8%,var(--card));border-color:var(--gold);box-shadow:0 4px 18px -8px rgba(201,168,76,.5);}
+.dayrow.on::before{width:5px;background:var(--gold);}
+.dayrow.today{border-color:var(--green);}
+.dayrow.today::before{background:var(--green);}
+.dr-date{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:44px;}
+.dr-dow{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--gold);margin-bottom:1px;}
+.dayrow.today .dr-dow{color:var(--green);}
+.dr-num{font-size:29px;font-weight:900;line-height:.88;color:var(--text);font-variant-numeric:tabular-nums;}
+.dr-sep{width:1px;align-self:stretch;background:var(--border);margin:3px 0;}
+.dr-body{flex:1;min-width:0;}
+.dr-title{font-size:14px;font-weight:800;color:var(--gold);letter-spacing:.3px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;}
+.dr-sub{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dr-tags{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;}
+.dr-tag{font-size:8.5px;font-weight:800;letter-spacing:.5px;padding:2px 8px;border-radius:20px;background:rgba(201,168,76,.12);color:var(--gold);border:1px solid rgba(201,168,76,.25);}
+.dr-tag.today{background:rgba(34,197,94,.14);color:var(--green);border-color:rgba(34,197,94,.35);}
+.dr-arr{font-size:11px;color:var(--muted);transition:transform .2s,color .2s;flex-shrink:0;}
+.dayrow.on .dr-arr{transform:rotate(180deg);color:var(--gold);}
+.dr-empty{padding:26px 16px;text-align:center;color:var(--muted);font-size:12px;background:var(--card);border:1px dashed var(--border);border-radius:14px;margin-bottom:16px;}
+
 .scard{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;}
 .scard-name{font-size:13px;font-weight:900;color:var(--gold);margin-bottom:12px;letter-spacing:.3px;}
 .blk{margin-bottom:10px;}
@@ -293,7 +317,7 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
     </div>
     <div id="mod-bar" class="mod-bar" style="display:none;"></div>
     <div class="slabel">DÍAS DE ENTRENAMIENTO</div>
-    <div class="dgrid" id="dgrid"></div>
+    <div class="dlist" id="dgrid"></div>
     <div id="sesion-ctn"></div>
   </div>
 
@@ -404,8 +428,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260715133911 por un timestamp en cada deploy
-const _APP_VERSION = '20260715133911';
+// deploy.bat reemplaza 20260716114543 por un timestamp en cada deploy
+const _APP_VERSION = '20260716114543';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -781,16 +805,43 @@ function renderRutina() {
     return d.toISOString().slice(0,10)===hoyStr;
   };
 
-  document.getElementById('dgrid').innerHTML = DS.map((ds,i) => {
-    const has=!!(sem.dias?.[i]?.[0]?.bloques?.length);
-    const on=i===_diaIdx, hoy=esHoy(i);
-    const dayNum=sem.fechaInicio?(()=>{const d=new Date(sem.fechaInicio+'T12:00:00');d.setDate(d.getDate()+i);return d.getDate();})():i+1;
-    return '<div class="dchip '+(has?'has ':'')+( on?'on ':'')+( hoy?'today ':'')+( !has?'no':'')+'" onclick="selDia('+i+')">'+
-      '<span class="dl">'+ds+'</span>'+
-      '<span class="dn">'+dayNum+'</span>'+
-      (has&&!on?'<div class="ddot"></div>':'')+
-    '</div>';
-  }).join('');
+  // ── Días con entrenamiento renderizados como renglones ──
+  const diasEntrena = [];
+  for (let i=0;i<7;i++){
+    const arr = sem.dias?.[i] || [];
+    if (arr.some(s => s?.bloques?.length)) diasEntrena.push(i);
+  }
+  const dgridEl = document.getElementById('dgrid');
+  if (!diasEntrena.length){
+    dgridEl.innerHTML = '<div class="dr-empty">No hay sesiones cargadas para esta semana.</div>';
+  } else {
+    dgridEl.innerHTML = diasEntrena.map(i => {
+      const arr = sem.dias[i] || [];
+      const ses = (arr[0]?.bloques?.length ? arr[0] : arr[1]) || arr[0] || {};
+      const hasCasa = !!(arr[1]?.bloques?.length);
+      const on = i===_diaIdx, hoy=esHoy(i);
+      const dayNum = sem.fechaInicio ? (()=>{const d=new Date(sem.fechaInicio+'T12:00:00');d.setDate(d.getDate()+i);return d.getDate();})() : i+1;
+      const bloques = ses.bloques || [];
+      const nBloques = bloques.length;
+      const nEj = bloques.reduce((a,b)=>a+((b.ejercicios||[]).length),0);
+      const title = (ses.nombre || DN[i]).toUpperCase();
+      const partes = [DN[i]];
+      if (nEj) partes.push(nEj+' ejercicio'+(nEj>1?'s':''));
+      if (nBloques) partes.push(nBloques+' bloque'+(nBloques>1?'s':''));
+      const sub = partes.join(' · ');
+      const tags = (hoy?'<span class="dr-tag today">HOY</span>':'') + (hasCasa?'<span class="dr-tag">🏠 CASA</span>':'');
+      return '<div class="dayrow '+(on?'on ':'')+(hoy?'today':'')+'" onclick="selDia('+i+')">'+
+        '<div class="dr-date"><span class="dr-dow">'+DS[i]+'</span><span class="dr-num">'+dayNum+'</span></div>'+
+        '<div class="dr-sep"></div>'+
+        '<div class="dr-body">'+
+          '<div class="dr-title">'+title+'</div>'+
+          '<div class="dr-sub">'+sub+'</div>'+
+          (tags?'<div class="dr-tags">'+tags+'</div>':'')+
+        '</div>'+
+        '<div class="dr-arr">&#9660;</div>'+
+      '</div>';
+    }).join('');
+  }
   renderSesion();
 }
 
