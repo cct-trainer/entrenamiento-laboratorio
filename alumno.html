@@ -62,17 +62,20 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 #portada{display:none;position:relative;flex-direction:column;min-height:100vh;min-height:100dvh;max-width:480px;margin:0 auto;padding:38px 26px calc(30px + env(safe-area-inset-bottom));text-align:center;overflow:hidden;}
 #portada::before{content:'';position:absolute;top:-140px;left:50%;transform:translateX(-50%);width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,.16),transparent 70%);pointer-events:none;}
 html.light #portada::before{background:radial-gradient(circle,rgba(29,78,216,.12),transparent 70%);}
-.pt-inner{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:space-between;width:100%;gap:22px;}
-.pt-brand{display:flex;align-items:center;gap:9px;margin-top:6px;}
-.pt-brand img{width:26px;height:26px;border-radius:7px;}
-.pt-brand span{font-size:9.5px;font-weight:800;letter-spacing:2px;color:var(--gold);}
-.pt-hero{display:flex;flex-direction:column;align-items:center;flex:1;justify-content:center;gap:6px;}
-.pt-av{width:106px;height:106px;border-radius:50%;background:var(--avatar-grad);display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:900;color:#fff;overflow:hidden;border:3px solid rgba(201,168,76,.35);box-shadow:0 12px 42px -12px rgba(201,168,76,.55);margin-bottom:16px;}
+.pt-inner{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:space-between;width:100%;gap:18px;}
+.pt-brand{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:2px;}
+.pt-logo{width:96px;height:96px;border-radius:22px;object-fit:contain;box-shadow:0 14px 44px -12px rgba(201,168,76,.5);}
+html.light .pt-logo{box-shadow:0 14px 44px -12px rgba(29,78,216,.4);}
+.pt-brand-name{margin-top:12px;font-size:16px;font-weight:900;letter-spacing:3px;color:var(--text);}
+.pt-brand-sub{font-size:9px;font-weight:800;letter-spacing:5px;color:var(--gold);margin-top:1px;}
+.pt-hero{display:flex;flex-direction:column;align-items:center;flex:1;justify-content:center;gap:5px;}
+.pt-av{width:96px;height:96px;border-radius:50%;background:var(--avatar-grad);display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:900;color:#fff;overflow:hidden;border:3px solid rgba(201,168,76,.35);box-shadow:0 12px 42px -12px rgba(201,168,76,.55);margin-bottom:14px;}
 html.light .pt-av{border-color:rgba(29,78,216,.3);box-shadow:0 12px 42px -12px rgba(29,78,216,.45);}
 .pt-av img{width:100%;height:100%;object-fit:cover;}
 .pt-hello{font-size:15px;color:var(--muted);font-weight:600;letter-spacing:.3px;}
-.pt-name{font-size:31px;font-weight:900;color:var(--text);line-height:1.05;letter-spacing:-.5px;}
-.pt-plan{margin-top:13px;font-size:10.5px;font-weight:800;letter-spacing:1.2px;color:var(--gold);background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.28);padding:7px 16px;border-radius:22px;}
+.pt-name{font-size:30px;font-weight:900;color:var(--text);line-height:1.05;letter-spacing:-.5px;}
+.pt-frase{margin-top:10px;font-size:14px;font-weight:700;font-style:italic;color:var(--gold);line-height:1.4;max-width:270px;}
+.pt-plan{margin-top:14px;font-size:10.5px;font-weight:800;letter-spacing:1.2px;color:var(--gold);background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.28);padding:7px 16px;border-radius:22px;}
 html.light .pt-plan{background:rgba(29,78,216,.08);border-color:rgba(29,78,216,.25);}
 .pt-foot{display:flex;flex-direction:column;align-items:center;gap:15px;width:100%;}
 .pt-coach{font-size:12px;color:var(--muted);letter-spacing:.2px;}
@@ -323,17 +326,18 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
 <div id="portada">
   <div class="pt-inner">
     <div class="pt-brand">
-      <img src="https://cct-trainer.github.io/entrenamiento-laboratorio/icon-192.png" alt="" onerror="this.style.display='none'">
-      <span>LABORATORIO DE ENTRENAMIENTO</span>
+      <img class="pt-logo" src="https://cct-trainer.github.io/entrenamiento-laboratorio/icon-512.png" alt="Christian Cattaneo" onerror="this.style.display='none'">
+      <div class="pt-brand-name">CHRISTIAN CATTANEO</div>
+      <div class="pt-brand-sub">ENTRENADOR</div>
     </div>
     <div class="pt-hero">
       <div class="pt-av" id="pt-av">?</div>
       <div class="pt-hello">Hola,</div>
       <div class="pt-name" id="pt-name">—</div>
+      <div class="pt-frase" id="pt-frase"></div>
       <div class="pt-plan" id="pt-plan"></div>
     </div>
     <div class="pt-foot">
-      <div class="pt-coach">Tu coach · Christian Cattaneo</div>
       <button class="pt-enter" onclick="entrarApp()">Entrar a mi entrenamiento <span>›</span></button>
       <div class="pt-date" id="pt-date"></div>
     </div>
@@ -481,8 +485,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260716120308 por un timestamp en cada deploy
-const _APP_VERSION = '20260716120308';
+// deploy.bat reemplaza 20260716121232 por un timestamp en cada deploy
+const _APP_VERSION = '20260716121232';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -647,11 +651,25 @@ function render() {
 }
 
 // ── PORTADA: pantalla de bienvenida antes de entrar a la app ──
+const _FRASES_PORTADA = [
+  'Hoy es tu día. ¡Vamos!',
+  'Cada serie suma. A darle.',
+  'Tu mejor versión se entrena hoy.',
+  'Un día más, un paso más fuerte.',
+  'La constancia gana. ¡Vamos!',
+  'Hoy entrenás tu futuro.',
+  'Fuerte de la cabeza a los pies.',
+  'El progreso te está esperando.',
+  'Disciplina hoy, orgullo mañana.',
+  'Dale que se puede. ¡A entrenar!'
+];
 function _mostrarPortada(nombre, foto) {
   const av = document.getElementById('pt-av');
   if (foto) { av.innerHTML = '<img src="'+foto+'" alt="'+nombre+'">'; }
   else { av.textContent = (nombre||'?').charAt(0).toUpperCase(); }
   document.getElementById('pt-name').textContent = nombre;
+  const frase = _FRASES_PORTADA[Math.floor(Math.random()*_FRASES_PORTADA.length)];
+  document.getElementById('pt-frase').textContent = frase;
   const pl = document.getElementById('pt-plan');
   const planNom = _plan ? (_plan.nombre || 'Plan activo') : '';
   if (planNom) { pl.textContent = planNom.toUpperCase(); pl.style.display = ''; }
