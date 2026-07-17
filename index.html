@@ -11064,18 +11064,9 @@ function renderPlanDiaEditor(diaIdx) {
   const sesion = sesiones[_editorModTab] || { bloques:[] };
   if(sesion.bloques && sesion.bloques.length) {
     sesion.bloques.forEach(b => addBloqueDia(diaIdx, b));
-  } else {
-    // Día vacío — cargar estructura SOCC automáticamente
-    const BLOQUES_SOCC = [
-      { nombre:'Movilidad y Calentamiento General',  tipo:'Movilidad',         serieTipo:'Serie Simple', ejercicios:[] },
-      { nombre:'Activación y Core',                   tipo:'Activación',        serieTipo:'Serie Simple', ejercicios:[] },
-      { nombre:'Calentamiento Específico',            tipo:'Fuerza Principal',  serieTipo:'Serie Simple', ejercicios:[] },
-      { nombre:'Principal — Fuerza / Potencia',       tipo:'Fuerza Principal',  serieTipo:'Serie Simple', ejercicios:[] },
-      { nombre:'Desarrollo — Hipertrofia',            tipo:'Complementario 1',  serieTipo:'Serie Simple', ejercicios:[] },
-      { nombre:'Enfriamiento Final',                  tipo:'Movilidad',         serieTipo:'Serie Simple', ejercicios:[] },
-    ];
-    BLOQUES_SOCC.forEach(b => addBloqueDia(diaIdx, b));
   }
+  // Día vacío: se deja en blanco. El coach arma los bloques con "＋ AGREGAR BLOQUE"
+  // (mismo comportamiento que la modalidad CASA).
 }
 
 function cerrarPlanDiaEditor() {
