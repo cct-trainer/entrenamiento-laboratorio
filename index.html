@@ -3921,8 +3921,6 @@ select.toolbox-input option:disabled { color: #888; }
         <button class="run-semana-btn" style="--c:#C9A84C;" onclick="planNavSemana(-1)">‹</button>
         <div class="run-semana-label" id="plan-semana-label" style="color:#C9A84C;">Semana 1</div>
         <button class="run-semana-btn" onclick="planNavSemana(1)">›</button>
-        <button class="pln-btn pln-btn-outline" onclick="exportarPlanSemanaHTML()" style="font-size:11px;padding:5px 12px;">Exportar</button>
-        <button class="pln-btn" style="background:#0d0d1a;color:#E8C96A;border:1px solid #E8C96A;font-size:11px;padding:5px 12px;" onclick="exportarPlanSemanaMovil()">Celular</button>
       </div>
     </div>
 
@@ -3937,8 +3935,6 @@ select.toolbox-input option:disabled { color: #888; }
       <button class="pln-btn pln-btn-outline" onclick="showView('inicio')">← Inicio</button>
       <button class="pln-btn pln-btn-outline" onclick="volverAlPerfil()" style="background:#e8f0fe;color:#1a3a6a;border-color:#1a3a6a;font-weight:700;">← Volver al alumno</button>
       <button class="pln-btn pln-btn-outline" onclick="irAPlanRunning()">Running</button>
-      <button class="pln-btn pln-btn-outline" onclick="exportarPlanSemanaHTML()">Exportar HTML</button>
-      <button class="pln-btn" style="background:#0d0d1a;color:#E8C96A;border:1px solid #E8C96A;" onclick="exportarPlanSemanaMovil()">Celular</button>
       <button class="pln-btn pln-btn-guardar" onclick="guardarPlanSemanal()">Guardar semana</button>
     </div>
 
@@ -4066,10 +4062,6 @@ select.toolbox-input option:disabled { color: #888; }
         <div class="run-semana-label" id="run-semana-label">Semana 1</div>
         <button class="run-semana-btn" onclick="runSemanaSiguiente()">›</button>
       </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-run btn-run-outline" onclick="exportarRunSemanaHTML()">⬇ Exportar semana</button>
-        <button class="btn-run" style="background:#0d0d1a;color:#E8C96A;border:1px solid #E8C96A;" onclick="exportarRunSemanaMovil()">📱 Celular</button>
-      </div>
     </div>
 
     <!-- GRID 7 DÍAS -->
@@ -4083,8 +4075,6 @@ select.toolbox-input option:disabled { color: #888; }
       <button class="btn-run btn-run-outline" onclick="showView('inicio')">← Inicio</button>
       <button class="btn-run btn-run-outline" onclick="volverAlPerfil()" style="background:#e8f0fe;color:#1a3a6a;border-color:#1a3a6a;font-weight:700;">← Volver al alumno</button>
       <button class="btn-run btn-run-outline" onclick="irAPlanFuerza()" style="background:#FDF6E3;color:#9A7A28;border-color:#90caf9;">💪 Fuerza</button>
-      <button class="btn-run btn-run-outline" onclick="exportarRunSemanaHTML()">⬇ Exportar HTML</button>
-      <button class="btn-run" style="background:#0d0d1a;color:#E8C96A;border:1px solid #E8C96A;" onclick="exportarRunSemanaMovil()">📱 Celular</button>
       <button class="btn-run btn-run-guardar" onclick="guardarPlanRunning()">✓ Guardar semana</button>
     </div>
 
@@ -9161,8 +9151,6 @@ function renderDiaEditor(diaIdx) {
         <span style="font-size:18px;">📅</span>
         <span class="run-sesion-editor-titulo">${DIAS_SEMANA[diaIdx].toUpperCase()}</span>
         <div style="display:flex;gap:8px;margin-left:auto;">
-          <button class="btn-run btn-run-outline" style="font-size:11px;padding:5px 12px;color:#fff;border-color:#ff8a65;" onclick="exportarDiaHTML(${diaIdx})">⬇ Exportar día</button>
-          <button class="btn-run" style="background:rgba(0,0,0,0.3);border:1px solid #ff8a65;color:#fff;font-size:11px;padding:5px 12px;" onclick="exportarDiaMovil(${diaIdx})">📱 Celular</button>
           <button class="run-sesion-cerrar" onclick="cerrarDiaEditor()">×</button>
         </div>
       </div>
@@ -11027,8 +11015,6 @@ function renderPlanDiaEditor(diaIdx) {
   const actionsEl = document.getElementById('plan-editor-page-actions');
   const _btnStyle = 'background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.25);border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;';
   if(actionsEl) actionsEl.innerHTML = `
-    <button style="${_btnStyle}" onclick="exportarDiaFuerzaHTML(${diaIdx})">HTML</button>
-    <button style="${_btnStyle}" onclick="exportarDiaFuerzaMovil(${diaIdx})">Celular</button>
     <button style="${_btnStyle}" onclick="guardarPlanSemanal()">💾 Guardar</button>
     <button style="${_btnStyle}" onclick="abrirModalGuardarEnAlumnos(${diaIdx})">Otro alumno</button>
     <button style="${_btnStyle}" onclick="abrirModalDuplicarMover(${diaIdx},'duplicar')">Duplicar</button>
@@ -15673,11 +15659,6 @@ function renderHistorialPlanes(alumnoId) {
       ? `abrirPlanRunningExistente('${p.id}')`
       : `abrirPlanFuerzaExistente('${p.id}')`;
 
-    // Action: export HTML
-    const exportFn = isRun
-      ? `(()=>{const pl=getPlanificaciones().find(x=>x.id==='${p.id}');const al=getAlumnos().find(x=>x.id===pl.alumnoId);runDiasData=pl.diasData||{};_generarHTMLRunSemana(pl.titulo,al,pl.semanaNum,pl.fechaInicio,false);})()`
-      : `(()=>{const pl=getPlanificaciones().find(x=>x.id==='${p.id}');planSemanasArray=(pl.semanasArray&&pl.semanasArray.length)?pl.semanasArray:[{semana:1,fechaInicio:pl.fecha||'',dias:pl.diasData||{}}];planDiasData=planSemanasArray[0].dias;document.getElementById('plan-titulo').value=pl.titulo||'';_generarHTMLFuerzaSemana(false);})()`;
-
     return `<tr style="border-bottom:1px solid #f0f0f0;">
       <td style="padding:11px 14px;font-size:12px;color:#888;white-space:nowrap;">${fecha}</td>
       <td style="padding:11px 14px;">${badge}</td>
@@ -15685,7 +15666,6 @@ function renderHistorialPlanes(alumnoId) {
       <td style="padding:11px 14px;font-size:12px;color:#888;text-align:center;">${durStr}</td>
       <td style="padding:11px 14px;text-align:right;white-space:nowrap;">
         <button onclick="${abrirFn}" style="background:none;border:1px solid #C9A84C;color:#C9A84C;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;cursor:pointer;margin-right:4px;letter-spacing:0.5px;">ABRIR</button>
-        <button onclick="${exportFn}" style="background:none;border:1px solid #ddd;color:#666;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;cursor:pointer;letter-spacing:0.5px;">HTML</button>
       </td>
     </tr>`;
   }).join('');
@@ -16729,8 +16709,6 @@ function abrirCalModal(fechaStr) {
             ${ev.resumen?`<div class="cal-sesion-bloques">${ev.resumen}</div>`:''}
             <div style="display:flex;gap:8px;margin-top:10px;">
               <button class="cal-sesion-btn fuerza" onclick="cerrarCalModal();verPlanificacion('${ev.planId}')">Ver sesión</button>
-              <button class="cal-sesion-btn fuerza" onclick="cerrarCalModal();(()=>{const p=getPlanificaciones().find(x=>x.id==='${ev.planId}');const a=getAlumnos().find(x=>x.id===p.alumnoId);generarHTMLExport(p,a,p.titulo);})()">⬇ Exportar</button>
-              <button class="cal-sesion-btn fuerza" onclick="cerrarCalModal();exportarHTMLMovilPlan('${ev.planId}')">📱 Celular</button>
             </div>
           </div>`).join('')}
       </div>`;
@@ -16745,8 +16723,6 @@ function abrirCalModal(fechaStr) {
             ${ev.resumen?`<div class="cal-sesion-bloques" style="margin-top:4px;">${ev.resumen}</div>`:''}
             <div style="display:flex;gap:8px;margin-top:10px;">
               <button class="cal-sesion-btn running" onclick="cerrarCalModal();abrirPlanRunningExistente('${ev.planId}')">Ver plan</button>
-              <button class="cal-sesion-btn running" onclick="cerrarCalModal();(()=>{const p=getPlanificaciones().find(x=>x.id==='${ev.planId}');const a=getAlumnos().find(x=>x.id===p.alumnoId);runDiasData=p.diasData||{};_generarHTMLRunDia(p.titulo,a,${ev.diaIdx||0},false);})()">⬇ Día</button>
-              <button class="cal-sesion-btn running" onclick="cerrarCalModal();(()=>{const p=getPlanificaciones().find(x=>x.id==='${ev.planId}');const a=getAlumnos().find(x=>x.id===p.alumnoId);runDiasData=p.diasData||{};_generarHTMLRunDia(p.titulo,a,${ev.diaIdx||0},true);})()">📱 Celular</button>
             </div>
           </div>`).join('')}
       </div>`;
@@ -16788,17 +16764,10 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
     const iconClass = isRun ? 'running' : 'fuerza';
     const iconEmoji = isRun ? '🏃' : '💪';
 
-    const runExportFn = `(()=>{const pl=getPlanificaciones().find(x=>x.id==='${p.id}');const al=getAlumnos().find(x=>x.id===pl.alumnoId);runDiasData=pl.diasData||{};`;
-    const fuerzaExportFn = `(()=>{const pl=getPlanificaciones().find(x=>x.id==='${p.id}');planSemanasArray=(pl.semanasArray&&pl.semanasArray.length)?pl.semanasArray:[{semana:1,fechaInicio:pl.fecha||'',dias:pl.diasData||{}}];planDiasData=planSemanasArray[0].dias;document.getElementById('plan-titulo').value=pl.titulo||'';`;
-
     const actionsBtns = isRun ? `
       <button class="plan-item-action-btn" onclick="abrirPlanRunningExistente('${p.id}')">ABRIR</button>
-      <button class="plan-item-action-btn" onclick="${runExportFn}_generarHTMLRunSemana(pl.titulo,al,pl.semanaNum,pl.fechaInicio,false);})()">ENVIAR A HTML</button>
-      <button class="plan-item-action-btn" onclick="${runExportFn}_generarHTMLRunSemana(pl.titulo,al,pl.semanaNum,pl.fechaInicio,true);})()">ENVIAR A CELULAR</button>
     ` : `
       <button class="plan-item-action-btn" onclick="abrirPlanFuerzaExistente('${p.id}')">ABRIR</button>
-      <button class="plan-item-action-btn" onclick="${fuerzaExportFn}_generarHTMLFuerzaSemana(false);})()">ENVIAR A HTML</button>
-      <button class="plan-item-action-btn" onclick="${fuerzaExportFn}_generarHTMLFuerzaSemana(true);})()">ENVIAR A CELULAR</button>
     `;
 
     // Extract month label from fecha for display
