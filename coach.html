@@ -76,6 +76,12 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 .al-sub{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4;}
 .al-body{padding:0 16px 14px;}
 .al-badge{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:var(--green);font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;flex-shrink:0;white-space:nowrap;}
+/* ── Acciones de portal del alumno ── */
+.al-actions{display:flex;gap:7px;padding:0 12px 12px;}
+.al-act{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 6px;border-radius:11px;border:1.5px solid var(--border);background:var(--card2,rgba(255,255,255,.03));color:var(--text);font-size:11px;font-weight:800;letter-spacing:.2px;cursor:pointer;text-decoration:none;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.al-act:active{transform:scale(.97);}
+.al-act.gold{border-color:rgba(201,168,76,.45);color:var(--gold);background:rgba(201,168,76,.08);}
+.al-act.wa{border-color:rgba(37,211,102,.4);color:#25D366;background:rgba(37,211,102,.08);flex:0 0 44px;}
 
 /* ── EJ LIST ─────────────────────────────────────────────────────── */
 .ej-list{display:flex;flex-direction:column;gap:2px;}
@@ -303,8 +309,10 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
     <button class="detail-back" onclick="closeDetail()">← Volver</button>
     <div class="detail-nombre" id="detail-nombre">—</div>
     <div style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;">
-      <a href="./alumno.html?id=mqcxctmkrucidy326rn"
-        style="background:rgba(201,168,76,.15);border:1.5px solid rgba(201,168,76,.5);border-radius:18px;padding:5px 12px;font-size:12px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:5px;color:var(--gold);">🏋️ MI RUTINA</a>
+      <button id="detail-copiar" title="Copiar link del portal"
+        style="background:var(--card);border:1.5px solid var(--border);border-radius:18px;padding:5px 11px;font-size:14px;font-weight:800;cursor:pointer;color:var(--text);display:inline-flex;align-items:center;">🔗</button>
+      <a id="detail-portal" href="#" target="_blank" rel="noopener"
+        style="background:rgba(201,168,76,.15);border:1.5px solid rgba(201,168,76,.5);border-radius:18px;padding:5px 12px;font-size:12px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:5px;color:var(--gold);">👁 VER PORTAL</a>
       <div class="al-av" id="detail-av" style="width:44px;height:44px;font-size:18px;"></div>
     </div>
   </div>
@@ -614,6 +622,8 @@ function renderAlumnos(q='') {
       const np=_planes.filter(p=>p&&p.alumnoId===al.id).length;
       const nfb=(_fbAll[al.id]||[]).length;
       const nsc=(_sesionesCompletadas[al.id]||[]).length;
+      const purl=_portalURL(al.id);
+      const wa=_waLink(al.telefono);
       h+=`<div class="al-card" onclick="openDetail('${al.id}')">
         <div class="al-card-hdr">
           <div class="al-av" style="width:50px;height:50px;font-size:20px;">${al.foto?`<img src="${al.foto}">`:al.nombre.charAt(0)}</div>
@@ -623,6 +633,11 @@ function renderAlumnos(q='') {
             <div class="al-sub" style="margin-top:3px;">${np} plan${np!==1?'es':''} ${nfb?'· '+nfb+' fb':''} ${nsc?'· '+nsc+' ses.':''}</div>
           </div>
           <div style="font-size:20px;color:var(--muted);">›</div>
+        </div>
+        <div class="al-actions">
+          <a class="al-act gold" href="${purl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">👁 Ver portal</a>
+          <button class="al-act" onclick="event.stopPropagation();_copiarPortal('${al.id}')">🔗 Copiar link</button>
+          ${wa?`<button class="al-act wa" title="Enviar link por WhatsApp" onclick="event.stopPropagation();_enviarPortalWA('${al.id}')">💬</button>`:''}
         </div>
       </div>`;
     }
@@ -690,6 +705,10 @@ function openDetail(alId, dayIdx) {
   };
   document.getElementById('detail-nombre').textContent = al.nombre;
   document.getElementById('detail-av').innerHTML = al.foto ? `<img src="${al.foto}">` : al.nombre.charAt(0);
+  const portalA = document.getElementById('detail-portal');
+  if (portalA) portalA.href = _portalURL(alId);
+  const copiarB = document.getElementById('detail-copiar');
+  if (copiarB) copiarB.onclick = () => _copiarPortal(alId);
   document.getElementById('detail-body').innerHTML = _buildDetailHTML();
   document.getElementById('al-detail').style.display = 'flex';
   document.getElementById('al-detail').scrollTop = 0;
@@ -871,6 +890,40 @@ function _waLink(tel) {
   const d = String(tel).replace(/\D/g,'');
   const n = d.startsWith('549') ? d : d.startsWith('54') ? d : '549'+d;
   return `https://wa.me/${n}`;
+}
+
+// ── Portal del alumno: URL, copiar y compartir ──
+function _portalURL(alId) {
+  let base = location.origin + location.pathname;      // .../coach.html
+  base = base.replace(/coach\.html$/i, 'alumno.html');
+  if (!/alumno\.html$/i.test(base)) base = base.replace(/\/?$/, '/') + 'alumno.html';
+  return base + '?id=' + encodeURIComponent(alId);
+}
+function _fallbackCopy(txt, cb) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    cb && cb(true);
+  } catch(e) { prompt('Copiá el link del portal:', txt); cb && cb(false); }
+}
+function _copiarPortal(alId) {
+  const url = _portalURL(alId);
+  const ok = () => _showToast('✓ Link copiado');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(ok).catch(() => _fallbackCopy(url, ok));
+  } else { _fallbackCopy(url, ok); }
+}
+function _enviarPortalWA(alId) {
+  const al = _alumnos.find(a => a.id === alId);
+  const url = _portalURL(alId);
+  const nombre = (al && al.nombre) ? al.nombre.split(' ')[0] : '';
+  const msg = `Hola${nombre?' '+nombre:''}! Este es el link a tu portal de entrenamiento 👇\n${url}`;
+  const wa = _waLink(al && al.telefono);
+  const link = wa ? `${wa}?text=${encodeURIComponent(msg)}`
+                  : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  window.open(link, '_blank', 'noopener');
 }
 
 // ── Selector de plan
