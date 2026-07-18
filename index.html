@@ -18435,7 +18435,7 @@ function _compEnsureDb() {
 async function _compLoadFirestore() {
   if (!_compEnsureDb()) return;
   try {
-    const doc = await window._db.collection('alumnos').doc('__complementos__').get();
+    const doc = await window._db.collection('alumnos').doc('zz_complementos_global').get();
     if (doc.exists && Array.isArray(doc.data().rutinas)) {
       _COMPLEMENTOS = doc.data().rutinas;
       _compGuardarLocal();
@@ -18446,7 +18446,7 @@ async function _compSaveFirestore() {
   _compGuardarLocal();
   if (!_compEnsureDb()) { toast('Guardado local. Conectate a Firebase (Backup) para sincronizar.', 'error'); return; }
   try {
-    await window._db.collection('alumnos').doc('__complementos__').set({
+    await window._db.collection('alumnos').doc('zz_complementos_global').set({
       rutinas: _COMPLEMENTOS,
       updatedAt: new Date().toISOString()
     }, { merge: true });
