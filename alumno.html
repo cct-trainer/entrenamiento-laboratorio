@@ -485,8 +485,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260718131121 por un timestamp en cada deploy
-const _APP_VERSION = '20260718131121';
+// deploy.bat reemplaza 20260718131544 por un timestamp en cada deploy
+const _APP_VERSION = '20260718131544';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1750,14 +1750,14 @@ function _compGrid() {
     grid.innerHTML = '<div class="empty" style="padding:30px 20px;text-align:center;"><div class="empty-txt">Sin resultados</div></div>';
     return;
   }
-  grid.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+items.map(_compCard).join('')+'</div>';
+  grid.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;column-gap:14px;row-gap:20px;">'+items.map(_compCard).join('')+'</div>';
 }
 function _compCard(r) {
   const bg = r.imagen
     ? 'background:#0a0a12 url(\''+String(r.imagen).replace(/'/g,'%27')+'\') center/cover no-repeat;'
     : 'background:linear-gradient(135deg,#2a2438,#15151c);';
-  return '<div onclick="_abrirCompDetalle(\''+r.id+'\')" style="position:relative;border-radius:16px;overflow:hidden;cursor:pointer;min-height:236px;'+bg+'display:flex;flex-direction:column;justify-content:flex-end;border:1px solid var(--border);">'+
-    '<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.05) 55%,rgba(0,0,0,.3) 100%);"></div>'+
+  return '<div onclick="_abrirCompDetalle(\''+r.id+'\')" style="position:relative;border-radius:16px;overflow:hidden;cursor:pointer;min-height:236px;'+bg+'display:flex;flex-direction:column;justify-content:flex-end;border:1px solid var(--border);box-shadow:0 12px 28px -10px rgba(0,0,0,.65), 0 4px 10px -6px rgba(0,0,0,.5);">'+
+    '<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.92) 0%,rgba(0,0,0,.35) 32%,rgba(0,0,0,0) 62%,rgba(0,0,0,.25) 100%);"></div>'+
     (!r.imagen?'<div style="position:absolute;top:16px;left:0;right:0;text-align:center;font-size:36px;opacity:.45;">🧩</div>':'')+
     '<div style="position:relative;padding:13px;">'+
       '<div style="font-size:15px;font-weight:900;color:#fff;line-height:1.15;text-shadow:0 1px 5px rgba(0,0,0,.6);">'+_compEsc(r.titulo||'Rutina')+'</div>'+
