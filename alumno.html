@@ -355,8 +355,8 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
         <div class="coach-tag">Coach: Christian Cattaneo</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
-        <a href="./coach.html" title="Panel Coach"
-          style="background:rgba(201,168,76,.1);border:1.5px solid rgba(201,168,76,.3);border-radius:22px;padding:7px 11px;font-size:15px;text-decoration:none;display:inline-flex;align-items:center;transition:all .2s;"
+        <a id="btn-coach-panel" href="./coach.html" title="Panel Coach"
+          style="display:none;background:rgba(201,168,76,.1);border:1.5px solid rgba(201,168,76,.3);border-radius:22px;padding:7px 11px;font-size:15px;text-decoration:none;align-items:center;transition:all .2s;"
           onmouseover="this.style.background='rgba(201,168,76,.2)'" onmouseout="this.style.background='rgba(201,168,76,.1)'">🏋️</a>
         <button id="theme-btn" onclick="_toggleTheme()" title="Cambiar tema"
           style="background:var(--card);border:1.5px solid var(--border);border-radius:22px;padding:7px 13px;cursor:pointer;font-size:17px;flex-shrink:0;transition:all .2s;color:var(--text);">🌙</button>
@@ -485,8 +485,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260718131544 por un timestamp en cada deploy
-const _APP_VERSION = '20260718131544';
+// deploy.bat reemplaza 20260718132304 por un timestamp en cada deploy
+const _APP_VERSION = '20260718132304';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -641,6 +641,10 @@ function render() {
     avEl.textContent = nombre.charAt(0).toUpperCase();
   }
   document.title = nombre+' — Lab. de Entrenamiento';
+  // El botón de Panel Coach (🏋️) solo aparece en el perfil de Christian Cattaneo
+  const esChristian = (_alumnoId === 'mqcxctmkrucidy326rn') || /christian\s+cattaneo/i.test(nombre);
+  const coachBtn = document.getElementById('btn-coach-panel');
+  if (coachBtn) coachBtn.style.display = esChristian ? 'inline-flex' : 'none';
   if (_plan) document.getElementById('al-plan').textContent = (_plan.nombre||'Plan activo').toUpperCase();
   // Actualizar ícono del botón de tema según preferencia guardada
   const isLight = document.documentElement.classList.contains('light');
