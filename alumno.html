@@ -425,19 +425,15 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
     </button>
     <button class="nb" id="nb-cargas" onclick="goTab('cargas')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-      INFO
+      COMPLEMENTOS
     </button>
     <button class="nb" id="nb-stats" onclick="goTab('stats')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
       STATS
     </button>
     <button class="nb" id="nb-medidas" onclick="goTab('medidas')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4l-14 14l-4 -4z"/><path d="M16 7l-1.5 -1.5"/><path d="M13 10l-1.5 -1.5"/><path d="M10 13l-1.5 -1.5"/><path d="M7 16l-1.5 -1.5"/></svg>
       MEDIDAS
-    </button>
-    <button class="nb" id="nb-plan" onclick="goTab('plan')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
-      PLAN
     </button>
   </nav>
 </div>
@@ -486,8 +482,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260717155114 por un timestamp en cada deploy
-const _APP_VERSION = '20260717155114';
+// deploy.bat reemplaza 20260717210413 por un timestamp en cada deploy
+const _APP_VERSION = '20260717210413';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -688,7 +684,7 @@ function entrarApp() {
 }
 
 function goTab(t) {
-  ['rutina','running','cargas','stats','medidas','plan'].forEach(x => {
+  ['rutina','running','cargas','stats','medidas'].forEach(x => {
     const tab = document.getElementById('tab-'+x);
     const btn = document.getElementById('nb-'+x);
     if (tab) tab.classList.toggle('on',x===t);
@@ -698,7 +694,6 @@ function goTab(t) {
   if (t==='medidas') renderMedidas();
   if (t==='running') renderRunning();
   if (t==='stats')   renderStats();
-  if (t==='plan')    renderPlan();
 }
 
 // ── PLAN (MACROCICLO) ─────────────────────────────────────────────────────
