@@ -18479,7 +18479,10 @@ function _compRenderLista() {
   const ctn = document.getElementById('comp-lista');
   if (!ctn) return;
   if (!_COMPLEMENTOS.length) {
-    ctn.innerHTML = `<div style="text-align:center;color:#aaa;padding:40px 20px;font-size:13px;">Todavía no hay complementos.<br>Creá el primero con "＋ Nueva rutina".</div>`;
+    ctn.innerHTML = `<div style="text-align:center;color:#aaa;padding:36px 20px;font-size:13px;">
+      Todavía no hay complementos.<br>Creá el primero con "＋ Nueva rutina".
+      <div style="margin-top:16px;"><button class="btn btn-ghost" style="font-size:12px;padding:9px 16px;" onclick="_compCargarEjemplos()">✨ Cargar 3 rutinas de ejemplo</button></div>
+    </div>`;
     return;
   }
   let h = '';
@@ -18510,6 +18513,58 @@ function _compImgPrev(url) {
   const el = document.getElementById('comp-img-prev');
   if (!el) return;
   el.innerHTML = url && url.trim() ? '<img src="'+url.replace(/"/g,'&quot;')+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;" onerror="this.style.display=\'none\'">' : '';
+}
+
+// Portadas generadas (degradé oro / azul / verde)
+const _COMP_IMG_MOV = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMDAnIGhlaWdodD0nNDAwJyB2aWV3Qm94PScwIDAgMzAwIDQwMCc+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+PHN0b3Agb2Zmc2V0PScwJyBzdG9wLWNvbG9yPScjQzlBODRDJy8+PHN0b3Agb2Zmc2V0PScxJyBzdG9wLWNvbG9yPScjMWExMDE4Jy8+PC9saW5lYXJHcmFkaWVudD48cmFkaWFsR3JhZGllbnQgaWQ9J2gnIGN4PScwLjcyJyBjeT0nMC4yMicgcj0nMC43NSc+PHN0b3Agb2Zmc2V0PScwJyBzdG9wLWNvbG9yPScjRThDOTZBJyBzdG9wLW9wYWNpdHk9JzAuNTUnLz48c3RvcCBvZmZzZXQ9JzEnIHN0b3AtY29sb3I9JyNFOEM5NkEnIHN0b3Atb3BhY2l0eT0nMCcvPjwvcmFkaWFsR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSczMDAnIGhlaWdodD0nNDAwJyBmaWxsPSd1cmwoI2cpJy8+PHJlY3Qgd2lkdGg9JzMwMCcgaGVpZ2h0PSc0MDAnIGZpbGw9J3VybCgjaCknLz48Y2lyY2xlIGN4PScyMzUnIGN5PSc4MCcgcj0nMTQwJyBmaWxsPScjZmZmZmZmJyBmaWxsLW9wYWNpdHk9JzAuMDYnLz48Y2lyY2xlIGN4PSc0MCcgY3k9JzM1MCcgcj0nMTEwJyBmaWxsPScjMDAwMDAwJyBmaWxsLW9wYWNpdHk9JzAuMTQnLz48Y2lyY2xlIGN4PScyNTAnIGN5PSczMDAnIHI9JzYwJyBmaWxsPScjZmZmZmZmJyBmaWxsLW9wYWNpdHk9JzAuMDUnLz48L3N2Zz4=';
+const _COMP_IMG_CORE = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMDAnIGhlaWdodD0nNDAwJyB2aWV3Qm94PScwIDAgMzAwIDQwMCc+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+PHN0b3Agb2Zmc2V0PScwJyBzdG9wLWNvbG9yPScjMUQ0RUQ4Jy8+PHN0b3Agb2Zmc2V0PScxJyBzdG9wLWNvbG9yPScjMGExMDI0Jy8+PC9saW5lYXJHcmFkaWVudD48cmFkaWFsR3JhZGllbnQgaWQ9J2gnIGN4PScwLjcyJyBjeT0nMC4yMicgcj0nMC43NSc+PHN0b3Agb2Zmc2V0PScwJyBzdG9wLWNvbG9yPScjNWI4Y2YwJyBzdG9wLW9wYWNpdHk9JzAuNTUnLz48c3RvcCBvZmZzZXQ9JzEnIHN0b3AtY29sb3I9JyM1YjhjZjAnIHN0b3Atb3BhY2l0eT0nMCcvPjwvcmFkaWFsR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSczMDAnIGhlaWdodD0nNDAwJyBmaWxsPSd1cmwoI2cpJy8+PHJlY3Qgd2lkdGg9JzMwMCcgaGVpZ2h0PSc0MDAnIGZpbGw9J3VybCgjaCknLz48Y2lyY2xlIGN4PScyMzUnIGN5PSc4MCcgcj0nMTQwJyBmaWxsPScjZmZmZmZmJyBmaWxsLW9wYWNpdHk9JzAuMDYnLz48Y2lyY2xlIGN4PSc0MCcgY3k9JzM1MCcgcj0nMTEwJyBmaWxsPScjMDAwMDAwJyBmaWxsLW9wYWNpdHk9JzAuMTQnLz48Y2lyY2xlIGN4PScyNTAnIGN5PSczMDAnIHI9JzYwJyBmaWxsPScjZmZmZmZmJyBmaWxsLW9wYWNpdHk9JzAuMDUnLz48L3N2Zz4=';
+const _COMP_IMG_ACT = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMDAnIGhlaWdodD0nNDAwJyB2aWV3Qm94PScwIDAgMzAwIDQwMCc+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+PHN0b3Agb2Zmc2V0PScwJyBzdG9wLWNvbG9yPScjMGY5ZDZiJy8+PHN0b3Agb2Zmc2V0PScxJyBzdG9wLWNvbG9yPScjMDcyMzFhJy8+PC9saW5lYXJHcmFkaWVudD48cmFkaWFsR3JhZGllbnQgaWQ9J2gnIGN4PScwLjcyJyBjeT0nMC4yMicgcj0nMC43NSc+PHN0b3Agb2Zmc2V0PScwJyBzdG9wLWNvbG9yPScjM2VlMGEwJyBzdG9wLW9wYWNpdHk9JzAuNTUnLz48c3RvcCBvZmZzZXQ9JzEnIHN0b3AtY29sb3I9JyMzZWUwYTAnIHN0b3Atb3BhY2l0eT0nMCcvPjwvcmFkaWFsR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSczMDAnIGhlaWdodD0nNDAwJyBmaWxsPSd1cmwoI2cpJy8+PHJlY3Qgd2lkdGg9JzMwMCcgaGVpZ2h0PSc0MDAnIGZpbGw9J3VybCgjaCknLz48Y2lyY2xlIGN4PScyMzUnIGN5PSc4MCcgcj0nMTQwJyBmaWxsPScjZmZmZmZmJyBmaWxsLW9wYWNpdHk9JzAuMDYnLz48Y2lyY2xlIGN4PSc0MCcgY3k9JzM1MCcgcj0nMTEwJyBmaWxsPScjMDAwMDAwJyBmaWxsLW9wYWNpdHk9JzAuMTQnLz48Y2lyY2xlIGN4PScyNTAnIGN5PSczMDAnIHI9JzYwJyBmaWxsPScjZmZmZmZmJyBmaWxsLW9wYWNpdHk9JzAuMDUnLz48L3N2Zz4=';
+
+const _COMP_EJEMPLOS = [
+  {
+    categoria:'Movilidad', titulo:'Movilidad de cadera y tobillo', imagen:_COMP_IMG_MOV,
+    lugar:'Cualquiera', dificultad:'1', duracion:'6 min',
+    descripcion:'Ideal antes de entrenar tren inferior: prepara cadera, rodilla y tobillo para sentadilla y peso muerto.',
+    ejercicios:[
+      {nombre:'Rotación de cadera 90/90', detalle:'8 por lado', nota:'Movimiento lento y controlado, sin rebotes.'},
+      {nombre:'Sentadilla profunda con apoyo', detalle:'45 seg', nota:'Sostené abajo empujando las rodillas hacia afuera.'},
+      {nombre:'Movilidad de tobillo en pared', detalle:'10 por lado', nota:'La rodilla busca tocar la pared sin despegar el talón.'}
+    ]
+  },
+  {
+    categoria:'Core / Estabilidad', titulo:'Core anti-extensión · Big Three', imagen:_COMP_IMG_CORE,
+    lugar:'Cualquiera', dificultad:'2', duracion:'8 min',
+    descripcion:'Los Big Three de Stuart McGill: estabilidad de columna sin cargar la zona lumbar. Sirve como activación o para días de descanso.',
+    ejercicios:[
+      {nombre:'Curl-up de McGill', detalle:'3 x 8 seg', nota:'Una sola pierna flexionada, manos bajo la lumbar, no aplanes la espalda.'},
+      {nombre:'Plancha lateral', detalle:'3 x 20 seg por lado', nota:'Cuerpo en línea, cadera bien arriba.'},
+      {nombre:'Bird-dog', detalle:'3 x 8 por lado', nota:'Brazo y pierna opuestos, sin rotar la cadera.'}
+    ]
+  },
+  {
+    categoria:'Activación', titulo:'Activación de glúteo pre-pierna', imagen:_COMP_IMG_ACT,
+    lugar:'Gym', dificultad:'1', duracion:'5 min',
+    descripcion:'Enciende el glúteo antes de sentadillas y hip thrust para mejorar la activación y la técnica.',
+    ejercicios:[
+      {nombre:'Puente de glúteo', detalle:'2 x 15', nota:'Apretá el glúteo arriba 1 segundo.'},
+      {nombre:'Abducción con banda', detalle:'2 x 20', nota:'Banda por encima de las rodillas, empujá hacia afuera.'},
+      {nombre:'Patada de glúteo en cuadrupedia', detalle:'2 x 12 por lado', nota:'Sin arquear la lumbar, el movimiento sale del glúteo.'}
+    ]
+  }
+];
+function _compCargarEjemplos() {
+  if (_COMPLEMENTOS.length && !confirm('Ya tenés complementos cargados. ¿Agregar igual las 3 rutinas de ejemplo?')) return;
+  _COMP_EJEMPLOS.forEach(e => {
+    _COMPLEMENTOS.push({
+      id:'comp'+Date.now()+Math.random().toString(36).slice(2,6),
+      categoria:e.categoria, titulo:e.titulo, imagen:e.imagen, lugar:e.lugar,
+      dificultad:e.dificultad, duracion:e.duracion, descripcion:e.descripcion,
+      ejercicios:e.ejercicios.map(ej => ({ ...ej, video:_compVideoDe(ej.nombre) }))
+    });
+  });
+  _compSaveFirestore();
+  _compRenderLista();
+  toast('3 rutinas de ejemplo cargadas');
 }
 function _compEditar(id) {
   const r = _COMPLEMENTOS.find(x => x.id === id);
