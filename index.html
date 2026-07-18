@@ -3221,7 +3221,10 @@ select.toolbox-input option:disabled { color: #888; }
   <div id="view-inicio" class="view active">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:8px;border-bottom:1px solid #e0e0e0;">
       <div class="section-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">ALUMNOS</div>
-      <button class="btn btn-ghost" onclick="abrirBibliotecaEditor()" style="display:flex;align-items:center;gap:6px;font-size:12px;">📚 Biblioteca de ejercicios</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost" onclick="abrirComplementos()" style="display:flex;align-items:center;gap:6px;font-size:12px;">🧩 Complementos</button>
+        <button class="btn btn-ghost" onclick="abrirBibliotecaEditor()" style="display:flex;align-items:center;gap:6px;font-size:12px;">📚 Biblioteca de ejercicios</button>
+      </div>
     </div>
     <div class="alumnos-grid" id="alumnos-grid"></div>
   </div>
@@ -4439,6 +4442,32 @@ select.toolbox-input option:disabled { color: #888; }
     </div>
   </div>
 </div>
+
+<!-- MODAL COMPLEMENTOS (catálogo global de rutinas complementarias) -->
+<div id="modal-complementos" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2100;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;">
+  <div style="background:#fff;border-radius:14px;width:100%;max-width:840px;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.4);display:flex;flex-direction:column;max-height:92vh;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #eee;">
+      <h2 style="font-size:16px;font-weight:800;color:#1a1a1a;margin:0;">🧩 COMPLEMENTOS · rutinas complementarias</h2>
+      <button onclick="cerrarComplementos()" style="background:none;border:none;font-size:24px;color:#999;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div style="padding:16px 20px;overflow-y:auto;" id="comp-body">
+      <!-- Vista LISTA -->
+      <div id="comp-list-view">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:12px;color:#888;">Estas rutinas las ven <b>todos</b> los alumnos en la pestaña Complementos de la app.</div>
+          <button class="btn btn-primary" style="font-size:12px;padding:8px 14px;white-space:nowrap;" onclick="_compNueva()">＋ Nueva rutina</button>
+        </div>
+        <div id="comp-lista"></div>
+      </div>
+      <!-- Vista FORM -->
+      <div id="comp-form-view" style="display:none;"></div>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:8px;" id="comp-footer">
+      <button class="btn btn-ghost" onclick="cerrarComplementos()">Cerrar</button>
+    </div>
+  </div>
+</div>
+<datalist id="comp-ej-datalist"></datalist>
 
 <!-- MODAL ASIGNAR SESIÓN (multi-alumno, merge automático) -->
 <div class="modal-overlay" id="modal-asignar-sesion">
@@ -18377,6 +18406,210 @@ function getEjerciciosCompletos() {
     return e;
   });
   return [...base, ...customMerged].sort((a,b) => a.nombre.localeCompare(b.nombre, 'es'));
+}
+
+// ══ COMPLEMENTOS (catálogo global de rutinas complementarias) ══════════════
+const COMP_CATEGORIAS = ['Movilidad','Activación','Core / Estabilidad','Prehab','Estiramientos','Descanso activo'];
+let _COMPLEMENTOS = [];
+let _compEditId = null;
+
+function _compCargarLocal() {
+  try { _COMPLEMENTOS = JSON.parse(localStorage.getItem('LAB_COMPLEMENTOS') || '[]'); }
+  catch(e) { _COMPLEMENTOS = []; }
+}
+function _compGuardarLocal() {
+  try { localStorage.setItem('LAB_COMPLEMENTOS', JSON.stringify(_COMPLEMENTOS)); } catch(e) {}
+}
+function _compEnsureDb() {
+  if (window._db) return true;
+  try {
+    if (typeof firebase !== 'undefined') {
+      if (!firebase.apps.length) firebase.initializeApp({apiKey:'AIzaSyDkSgbqAJJRdlLwzcn-2vSMjVIUJbkVUGQ',authDomain:'entrenamiento-laboratorio.firebaseapp.com',projectId:'entrenamiento-laboratorio',storageBucket:'entrenamiento-laboratorio.firebasestorage.app',messagingSenderId:'399177627945',appId:'1:399177627945:web:2b4fef0894480f70dc1f38'});
+      window._db = firebase.firestore();
+    }
+  } catch(e) {}
+  return !!window._db;
+}
+async function _compLoadFirestore() {
+  if (!_compEnsureDb()) return;
+  try {
+    const doc = await window._db.collection('complementos').doc('global').get();
+    if (doc.exists && Array.isArray(doc.data().rutinas)) {
+      _COMPLEMENTOS = doc.data().rutinas;
+      _compGuardarLocal();
+    }
+  } catch(e) { console.warn('comp load', e); }
+}
+async function _compSaveFirestore() {
+  _compGuardarLocal();
+  if (!_compEnsureDb()) { toast('Guardado local. Conectate a Firebase (Backup) para sincronizar.', 'error'); return; }
+  try {
+    await window._db.collection('complementos').doc('global').set({
+      rutinas: _COMPLEMENTOS,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    toast('Complementos sincronizados ☁️');
+  } catch(e) { console.warn('comp save', e); toast('No se pudo sincronizar', 'error'); }
+}
+function _compVideoDe(nombre) {
+  if (!nombre) return '';
+  const n = nombre.trim().toLowerCase();
+  const ej = getEjerciciosCompletos().find(e => (e.nombre||'').trim().toLowerCase() === n);
+  return ej && ej.video ? ej.video : '';
+}
+async function abrirComplementos() {
+  _compCargarLocal();
+  document.getElementById('modal-complementos').style.display = 'flex';
+  const dl = document.getElementById('comp-ej-datalist');
+  if (dl) dl.innerHTML = getEjerciciosCompletos().map(e => `<option value="${(e.nombre||'').replace(/"/g,'&quot;')}">`).join('');
+  _compVolverLista();
+  await _compLoadFirestore();
+  _compRenderLista();
+}
+function cerrarComplementos() {
+  document.getElementById('modal-complementos').style.display = 'none';
+}
+function _compVolverLista() {
+  _compEditId = null;
+  document.getElementById('comp-list-view').style.display = '';
+  document.getElementById('comp-form-view').style.display = 'none';
+  _compRenderLista();
+}
+function _compRenderLista() {
+  const ctn = document.getElementById('comp-lista');
+  if (!ctn) return;
+  if (!_COMPLEMENTOS.length) {
+    ctn.innerHTML = `<div style="text-align:center;color:#aaa;padding:40px 20px;font-size:13px;">Todavía no hay complementos.<br>Creá el primero con "＋ Nueva rutina".</div>`;
+    return;
+  }
+  let h = '';
+  COMP_CATEGORIAS.forEach(cat => {
+    const items = _COMPLEMENTOS.filter(r => r.categoria === cat);
+    if (!items.length) return;
+    h += `<div style="font-size:10px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:14px 0 8px;">${cat.toUpperCase()}</div>`;
+    items.forEach(r => {
+      const nej = (r.ejercicios||[]).length;
+      h += `<div style="display:flex;align-items:center;gap:11px;padding:9px 12px;border:1px solid #eee;border-radius:10px;margin-bottom:7px;">
+        <div style="width:52px;height:52px;border-radius:9px;flex-shrink:0;background:#eef0f5 ${r.imagen?`center/cover no-repeat`:''};overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;">${r.imagen?`<img src="${(r.imagen||'').replace(/"/g,'&quot;')}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='🧩'">`:'🧩'}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#1a1a1a;">${r.titulo||'Sin título'}</div>
+          <div style="font-size:11px;color:#999;margin-top:2px;">${[r.lugar, r.duracion, nej+' ejercicio'+(nej!==1?'s':'')].filter(Boolean).join(' · ')}</div>
+        </div>
+        <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px;white-space:nowrap;" onclick="_compEditar('${r.id}')">✏️ Editar</button>
+        <button class="btn btn-ghost" style="font-size:13px;padding:6px 10px;color:#c62828;" onclick="_compEliminar('${r.id}')">🗑</button>
+      </div>`;
+    });
+  });
+  ctn.innerHTML = h;
+}
+function _compNueva() {
+  _compEditId = '_new';
+  _compRenderForm({ id:'', categoria:COMP_CATEGORIAS[0], titulo:'', imagen:'', lugar:'Gym', dificultad:'1', duracion:'', descripcion:'', ejercicios:[{nombre:'',detalle:'',nota:''}] });
+}
+function _compImgPrev(url) {
+  const el = document.getElementById('comp-img-prev');
+  if (!el) return;
+  el.innerHTML = url && url.trim() ? '<img src="'+url.replace(/"/g,'&quot;')+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;" onerror="this.style.display=\'none\'">' : '';
+}
+function _compEditar(id) {
+  const r = _COMPLEMENTOS.find(x => x.id === id);
+  if (!r) return;
+  _compEditId = id;
+  _compRenderForm(JSON.parse(JSON.stringify(r)));
+}
+function _compRenderForm(r) {
+  document.getElementById('comp-list-view').style.display = 'none';
+  const fv = document.getElementById('comp-form-view');
+  fv.style.display = '';
+  const inp = 'width:100%;padding:9px 12px;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px;box-sizing:border-box;';
+  const lbl = 'font-size:10px;font-weight:800;color:#888;letter-spacing:.5px;margin:12px 0 5px;display:block;';
+  fv.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+      <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px;" onclick="_compVolverLista()">← Volver</button>
+      <div style="font-size:14px;font-weight:800;color:#1a1a1a;">${_compEditId==='_new'?'Nueva rutina':'Editar rutina'}</div>
+    </div>
+    <label style="${lbl}">CATEGORÍA</label>
+    <select id="comp-f-cat" style="${inp}">${COMP_CATEGORIAS.map(c=>`<option${c===r.categoria?' selected':''}>${c}</option>`).join('')}</select>
+    <label style="${lbl}">TÍTULO</label>
+    <input id="comp-f-titulo" style="${inp}" maxlength="80" placeholder="Ej: Movilidad de cadera pre-sentadilla" value="${(r.titulo||'').replace(/"/g,'&quot;')}">
+    <label style="${lbl}">IMAGEN DE PORTADA (URL)</label>
+    <input id="comp-f-img" style="${inp}" placeholder="https://... (link a una foto de portada)" value="${(r.imagen||'').replace(/"/g,'&quot;')}" oninput="_compImgPrev(this.value)">
+    <div id="comp-img-prev" style="margin-top:6px;">${r.imagen?`<img src="${(r.imagen||'').replace(/"/g,'&quot;')}" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;">`:''}</div>
+    <div style="display:flex;gap:10px;">
+      <div style="flex:1;">
+        <label style="${lbl}">DURACIÓN</label>
+        <input id="comp-f-dur" style="${inp}" maxlength="40" placeholder="Ej: 45 mins" value="${(r.duracion||'').replace(/"/g,'&quot;')}">
+      </div>
+      <div style="flex:1;">
+        <label style="${lbl}">LUGAR</label>
+        <select id="comp-f-lugar" style="${inp}">${['Gym','Casa','Cualquiera'].map(l=>`<option${l===(r.lugar||'Gym')?' selected':''}>${l}</option>`).join('')}</select>
+      </div>
+      <div style="flex:1;">
+        <label style="${lbl}">DIFICULTAD</label>
+        <select id="comp-f-dif" style="${inp}">${[['1','Baja'],['2','Media'],['3','Alta']].map(([v,t])=>`<option value="${v}"${String(r.dificultad||'1')===v?' selected':''}>${t}</option>`).join('')}</select>
+      </div>
+    </div>
+    <label style="${lbl}">DESCRIPCIÓN (opcional)</label>
+    <textarea id="comp-f-desc" rows="2" style="${inp}resize:vertical;" placeholder="Cuándo hacerla, para qué sirve...">${r.descripcion||''}</textarea>
+    <label style="${lbl}">EJERCICIOS</label>
+    <div id="comp-f-ejercicios"></div>
+    <button class="btn btn-ghost" style="font-size:12px;padding:8px 12px;margin-top:8px;" onclick="_compAddEjRow()">＋ Agregar ejercicio</button>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px;border-top:1px solid #eee;padding-top:14px;">
+      <button class="btn btn-ghost" onclick="_compVolverLista()">Cancelar</button>
+      <button class="btn btn-primary" onclick="_compGuardarRutina()">💾 Guardar rutina</button>
+    </div>`;
+  (r.ejercicios&&r.ejercicios.length?r.ejercicios:[{nombre:'',detalle:'',nota:''}]).forEach(ej => _compAddEjRow(ej));
+}
+function _compAddEjRow(ej) {
+  ej = (ej && typeof ej === 'object' && ej.nodeType === undefined) ? ej : {nombre:'',detalle:'',nota:''};
+  const ejc = document.getElementById('comp-f-ejercicios');
+  if (!ejc) return;
+  const row = document.createElement('div');
+  row.className = 'comp-ej-row';
+  row.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:flex-start;';
+  const inp = 'padding:8px 10px;border:1.5px solid #dde1ea;border-radius:7px;font-size:12px;box-sizing:border-box;min-width:0;';
+  row.innerHTML = `
+    <input class="comp-ej-nombre" list="comp-ej-datalist" style="${inp}flex:2;" placeholder="Ejercicio" value="${(ej.nombre||'').replace(/"/g,'&quot;')}">
+    <input class="comp-ej-detalle" style="${inp}flex:1;" placeholder="3 x 10 / 30 seg" value="${(ej.detalle||'').replace(/"/g,'&quot;')}">
+    <input class="comp-ej-nota" style="${inp}flex:1.5;" placeholder="Nota (opcional)" value="${(ej.nota||'').replace(/"/g,'&quot;')}">
+    <button class="btn btn-ghost" style="font-size:15px;padding:6px 9px;color:#c62828;" onclick="this.parentElement.remove()">×</button>`;
+  ejc.appendChild(row);
+}
+function _compGuardarRutina() {
+  const cat = document.getElementById('comp-f-cat').value;
+  const titulo = document.getElementById('comp-f-titulo').value.trim();
+  if (!titulo) { toast('Poné un título a la rutina', 'error'); return; }
+  const imagen = document.getElementById('comp-f-img').value.trim();
+  const lugar = document.getElementById('comp-f-lugar').value;
+  const dificultad = document.getElementById('comp-f-dif').value;
+  const dur = document.getElementById('comp-f-dur').value.trim();
+  const desc = document.getElementById('comp-f-desc').value.trim();
+  const ejercicios = [];
+  document.querySelectorAll('#comp-f-ejercicios .comp-ej-row').forEach(row => {
+    const nombre = row.querySelector('.comp-ej-nombre').value.trim();
+    if (!nombre) return;
+    ejercicios.push({
+      nombre,
+      detalle: row.querySelector('.comp-ej-detalle').value.trim(),
+      nota: row.querySelector('.comp-ej-nota').value.trim(),
+      video: _compVideoDe(nombre)
+    });
+  });
+  if (_compEditId && _compEditId !== '_new') {
+    const r = _COMPLEMENTOS.find(x => x.id === _compEditId);
+    if (r) { r.categoria=cat; r.titulo=titulo; r.imagen=imagen; r.lugar=lugar; r.dificultad=dificultad; r.duracion=dur; r.descripcion=desc; r.ejercicios=ejercicios; }
+  } else {
+    _COMPLEMENTOS.push({ id:'comp'+Date.now()+Math.random().toString(36).slice(2,6), categoria:cat, titulo, imagen, lugar, dificultad, duracion:dur, descripcion:desc, ejercicios });
+  }
+  _compSaveFirestore();
+  _compVolverLista();
+  toast('Rutina guardada');
+}
+function _compEliminar(id) {
+  if (!confirm('¿Eliminar esta rutina complementaria?')) return;
+  _COMPLEMENTOS = _COMPLEMENTOS.filter(x => x.id !== id);
+  _compSaveFirestore();
+  _compRenderLista();
 }
 
 function abrirBibliotecaEditor() {
