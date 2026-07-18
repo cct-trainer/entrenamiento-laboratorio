@@ -18489,10 +18489,11 @@ function _compRenderLista() {
     return;
   }
   let h = '';
-  COMP_CATEGORIAS.forEach(cat => {
-    const items = _COMPLEMENTOS.filter(r => r.categoria === cat);
+  const _cats = [...new Set([...COMP_CATEGORIAS, ..._COMPLEMENTOS.map(r=>r.categoria||'General')])];
+  _cats.forEach(cat => {
+    const items = _COMPLEMENTOS.filter(r => (r.categoria||'General') === cat);
     if (!items.length) return;
-    h += `<div style="font-size:10px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:14px 0 8px;">${cat.toUpperCase()}</div>`;
+    h += `<div style="font-size:10px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:14px 0 8px;">${(cat||'').toUpperCase()}</div>`;
     items.forEach(r => {
       const nej = (r.ejercicios||[]).length;
       h += `<div style="display:flex;align-items:center;gap:11px;padding:9px 12px;border:1px solid #eee;border-radius:10px;margin-bottom:7px;">
@@ -18516,6 +18517,34 @@ function _compImgPrev(url) {
   const el = document.getElementById('comp-img-prev');
   if (!el) return;
   el.innerHTML = url && url.trim() ? '<img src="'+url.replace(/"/g,'&quot;')+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;" onerror="this.style.display=\'none\'">' : '';
+}
+// Sube una imagen desde el archivo, la reduce y la guarda como data URL (sin necesidad de hosting)
+function _compSubirImagen(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 900;
+      const scale = Math.min(1, maxW / img.width);
+      const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      let dataUrl;
+      try { dataUrl = canvas.toDataURL('image/jpeg', 0.72); }
+      catch(err) { toast('No se pudo procesar la imagen', 'error'); return; }
+      const campo = document.getElementById('comp-f-img');
+      if (campo) campo.value = dataUrl;
+      _compImgPrev(dataUrl);
+      toast('Imagen cargada ✓');
+    };
+    img.onerror = () => toast('Archivo de imagen inválido', 'error');
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
 }
 
 // Portadas generadas (degradé oro / azul / verde)
@@ -18587,11 +18616,16 @@ function _compRenderForm(r) {
       <div style="font-size:14px;font-weight:800;color:#1a1a1a;">${_compEditId==='_new'?'Nueva rutina':'Editar rutina'}</div>
     </div>
     <label style="${lbl}">CATEGORÍA</label>
-    <select id="comp-f-cat" style="${inp}">${COMP_CATEGORIAS.map(c=>`<option${c===r.categoria?' selected':''}>${c}</option>`).join('')}</select>
+    <input id="comp-f-cat" list="comp-cat-datalist" style="${inp}" placeholder="Elegí o escribí una (ej: Entrenamiento de glúteos, Zona media...)" value="${(r.categoria||'').replace(/"/g,'&quot;')}">
+    <datalist id="comp-cat-datalist">${COMP_CATEGORIAS.map(c=>`<option value="${c}">`).join('')}</datalist>
     <label style="${lbl}">TÍTULO</label>
     <input id="comp-f-titulo" style="${inp}" maxlength="80" placeholder="Ej: Movilidad de cadera pre-sentadilla" value="${(r.titulo||'').replace(/"/g,'&quot;')}">
-    <label style="${lbl}">IMAGEN DE PORTADA (URL)</label>
-    <input id="comp-f-img" style="${inp}" placeholder="https://... (link a una foto de portada)" value="${(r.imagen||'').replace(/"/g,'&quot;')}" oninput="_compImgPrev(this.value)">
+    <label style="${lbl}">IMAGEN DE PORTADA</label>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input id="comp-f-img" style="${inp}flex:1;" placeholder="Pegá un link o subí una foto →" value="${(r.imagen||'').replace(/"/g,'&quot;')}" oninput="_compImgPrev(this.value)">
+      <button type="button" class="btn btn-ghost" style="white-space:nowrap;font-size:12px;padding:9px 13px;" onclick="document.getElementById('comp-f-imgfile').click()">📁 Subir foto</button>
+      <input type="file" id="comp-f-imgfile" accept="image/*" style="display:none;" onchange="_compSubirImagen(this)">
+    </div>
     <div id="comp-img-prev" style="margin-top:6px;">${r.imagen?`<img src="${(r.imagen||'').replace(/"/g,'&quot;')}" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;">`:''}</div>
     <div style="display:flex;gap:10px;">
       <div style="flex:1;">
@@ -18634,7 +18668,7 @@ function _compAddEjRow(ej) {
   ejc.appendChild(row);
 }
 function _compGuardarRutina() {
-  const cat = document.getElementById('comp-f-cat').value;
+  const cat = (document.getElementById('comp-f-cat').value || '').trim() || 'General';
   const titulo = document.getElementById('comp-f-titulo').value.trim();
   if (!titulo) { toast('Poné un título a la rutina', 'error'); return; }
   const imagen = document.getElementById('comp-f-img').value.trim();
