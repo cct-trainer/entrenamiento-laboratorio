@@ -485,8 +485,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260718114231 por un timestamp en cada deploy
-const _APP_VERSION = '20260718114231';
+// deploy.bat reemplaza 20260718131121 por un timestamp en cada deploy
+const _APP_VERSION = '20260718131121';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1690,6 +1690,8 @@ async function renderComplementos() {
   }
   _renderComplementos(ctn);
 }
+let _compCats = [];
+let _compFilterIdx = -1;
 function _renderComplementos(ctn) {
   if (!_COMPS || !_COMPS.length) {
     ctn.innerHTML = '<div class="empty" style="padding:40px 20px;text-align:center;">'+
@@ -1698,32 +1700,68 @@ function _renderComplementos(ctn) {
       '<div style="font-size:12px;color:var(--muted);margin-top:6px;">Tu coach los va a ir sumando acá.</div></div>';
     return;
   }
-  const CATS = ['Movilidad','Activación','Core / Estabilidad','Prehab','Estiramientos','Descanso activo'];
-  const cats = [...new Set([...CATS, ..._COMPS.map(r=>r.categoria||'Otros')])];
-  let h = '<div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--gold);margin:4px 0 4px;">🧩 RUTINAS COMPLEMENTARIAS</div>'+
-          '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;line-height:1.5;">Trabajo extra para sumar a tus entrenamientos.</div>';
-  cats.forEach(cat => {
-    const items = _COMPS.filter(r => (r.categoria||'Otros') === cat);
-    if (!items.length) return;
-    h += '<div class="slabel" style="margin:16px 0 10px;">'+_compEsc(cat).toUpperCase()+'</div>';
-    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;">';
-    items.forEach(r => { h += _compCard(r); });
-    h += '</div>';
+  _compCats = [...new Set(_COMPS.map(r => r.categoria || 'General'))];
+  if (_compFilterIdx >= _compCats.length) _compFilterIdx = -1;
+  ctn.innerHTML =
+    '<div style="margin:2px 0 11px;">'+
+      '<input id="comp-search" type="search" placeholder="Busca un entrenamiento" oninput="_compGrid()" autocomplete="off" '+
+        'style="width:100%;padding:13px 15px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;outline:none;box-sizing:border-box;">'+
+    '</div>'+
+    '<div style="margin-bottom:13px;">'+
+      '<button onclick="_compToggleFiltros()" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:22px;border:1px solid var(--border);background:var(--card);color:var(--gold);font-size:13px;font-weight:800;cursor:pointer;">🔽 Filtros</button>'+
+      '<div id="comp-filtros" style="display:none;flex-wrap:wrap;gap:7px;margin-top:10px;">'+
+        _compChip(-1,'Todas') + _compCats.map((c,i)=>_compChip(i,c)).join('')+
+      '</div>'+
+    '</div>'+
+    '<div id="comp-grid"></div>';
+  _compGrid();
+}
+function _compChip(idx, label) {
+  const on = (_compFilterIdx === idx);
+  return '<button class="comp-chip" data-i="'+idx+'" onclick="_compSetFiltro('+idx+')" '+
+    'style="padding:7px 14px;border-radius:20px;border:1px solid '+(on?'var(--gold)':'var(--border)')+';'+
+    'background:'+(on?'rgba(201,168,76,.14)':'var(--card)')+';color:'+(on?'var(--gold)':'var(--muted)')+';'+
+    'font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">'+_compEsc(label)+'</button>';
+}
+function _compToggleFiltros() {
+  const el = document.getElementById('comp-filtros');
+  if (el) el.style.display = (el.style.display === 'none' || !el.style.display) ? 'flex' : 'none';
+}
+function _compSetFiltro(idx) {
+  _compFilterIdx = idx;
+  document.querySelectorAll('.comp-chip').forEach(b => {
+    const on = (parseInt(b.getAttribute('data-i'),10) === idx);
+    b.style.borderColor = on ? 'var(--gold)' : 'var(--border)';
+    b.style.background  = on ? 'rgba(201,168,76,.14)' : 'var(--card)';
+    b.style.color       = on ? 'var(--gold)' : 'var(--muted)';
   });
-  ctn.innerHTML = h;
+  _compGrid();
+}
+function _compGrid() {
+  const grid = document.getElementById('comp-grid');
+  if (!grid) return;
+  const q = (document.getElementById('comp-search')?.value || '').toLowerCase().trim();
+  const cat = _compFilterIdx >= 0 ? _compCats[_compFilterIdx] : '';
+  const items = _COMPS.filter(r =>
+    (!cat || (r.categoria || 'General') === cat) &&
+    (!q || (r.titulo||'').toLowerCase().includes(q) || (r.categoria||'').toLowerCase().includes(q))
+  );
+  if (!items.length) {
+    grid.innerHTML = '<div class="empty" style="padding:30px 20px;text-align:center;"><div class="empty-txt">Sin resultados</div></div>';
+    return;
+  }
+  grid.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+items.map(_compCard).join('')+'</div>';
 }
 function _compCard(r) {
-  const nej = (r.ejercicios||[]).length;
   const bg = r.imagen
     ? 'background:#0a0a12 url(\''+String(r.imagen).replace(/'/g,'%27')+'\') center/cover no-repeat;'
     : 'background:linear-gradient(135deg,#2a2438,#15151c);';
-  return '<div onclick="_abrirCompDetalle(\''+r.id+'\')" style="position:relative;border-radius:16px;overflow:hidden;cursor:pointer;aspect-ratio:3/4;'+bg+'display:flex;flex-direction:column;justify-content:flex-end;border:1px solid var(--border);">'+
-    '<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,rgba(0,0,0,.1) 55%,rgba(0,0,0,.25) 100%);"></div>'+
-    (!r.imagen?'<div style="position:absolute;top:14px;left:0;right:0;text-align:center;font-size:34px;opacity:.45;">🧩</div>':'')+
-    '<div style="position:relative;padding:12px;">'+
-      '<div style="font-size:14px;font-weight:900;color:#fff;line-height:1.15;text-shadow:0 1px 4px rgba(0,0,0,.6);">'+_compEsc(r.titulo||'Rutina')+'</div>'+
-      '<div style="font-size:10px;color:rgba(255,255,255,.8);margin-top:4px;">'+[r.duracion, nej+' ej.'].filter(Boolean).join(' · ')+'</div>'+
-      '<div style="margin-top:9px;background:var(--gold);color:#0d0d1a;font-size:11px;font-weight:900;text-align:center;padding:8px;border-radius:20px;">Abrir</div>'+
+  return '<div onclick="_abrirCompDetalle(\''+r.id+'\')" style="position:relative;border-radius:16px;overflow:hidden;cursor:pointer;min-height:236px;'+bg+'display:flex;flex-direction:column;justify-content:flex-end;border:1px solid var(--border);">'+
+    '<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.05) 55%,rgba(0,0,0,.3) 100%);"></div>'+
+    (!r.imagen?'<div style="position:absolute;top:16px;left:0;right:0;text-align:center;font-size:36px;opacity:.45;">🧩</div>':'')+
+    '<div style="position:relative;padding:13px;">'+
+      '<div style="font-size:15px;font-weight:900;color:#fff;line-height:1.15;text-shadow:0 1px 5px rgba(0,0,0,.6);">'+_compEsc(r.titulo||'Rutina')+'</div>'+
+      '<div style="width:100%;margin-top:11px;background:var(--gold);color:#0d0d1a;font-size:13px;font-weight:900;text-align:center;padding:11px;border-radius:22px;">Entrenar</div>'+
     '</div>'+
   '</div>';
 }
