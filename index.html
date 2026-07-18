@@ -4462,7 +4462,9 @@ select.toolbox-input option:disabled { color: #888; }
       <!-- Vista FORM -->
       <div id="comp-form-view" style="display:none;"></div>
     </div>
-    <div style="padding:12px 20px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:8px;" id="comp-footer">
+    <div style="padding:12px 20px;border-top:1px solid #eee;display:flex;align-items:center;gap:8px;" id="comp-footer">
+      <span style="font-size:11px;color:#999;margin-right:auto;">Los cambios se sincronizan solos. Si algo no aparece en la app, tocá Sincronizar.</span>
+      <button class="btn btn-primary" onclick="_compSincronizar()">☁️ Sincronizar con la nube</button>
       <button class="btn btn-ghost" onclick="cerrarComplementos()">Cerrar</button>
     </div>
   </div>
@@ -18433,7 +18435,7 @@ function _compEnsureDb() {
 async function _compLoadFirestore() {
   if (!_compEnsureDb()) return;
   try {
-    const doc = await window._db.collection('complementos').doc('global').get();
+    const doc = await window._db.collection('alumnos').doc('__complementos__').get();
     if (doc.exists && Array.isArray(doc.data().rutinas)) {
       _COMPLEMENTOS = doc.data().rutinas;
       _compGuardarLocal();
@@ -18444,13 +18446,14 @@ async function _compSaveFirestore() {
   _compGuardarLocal();
   if (!_compEnsureDb()) { toast('Guardado local. Conectate a Firebase (Backup) para sincronizar.', 'error'); return; }
   try {
-    await window._db.collection('complementos').doc('global').set({
+    await window._db.collection('alumnos').doc('__complementos__').set({
       rutinas: _COMPLEMENTOS,
       updatedAt: new Date().toISOString()
     }, { merge: true });
     toast('Complementos sincronizados ☁️');
-  } catch(e) { console.warn('comp save', e); toast('No se pudo sincronizar', 'error'); }
+  } catch(e) { console.warn('comp save', e); toast('No se pudo sincronizar: '+(e&&e.message||e), 'error'); }
 }
+function _compSincronizar() { _compSaveFirestore(); }
 function _compVideoDe(nombre) {
   if (!nombre) return '';
   const n = nombre.trim().toLowerCase();

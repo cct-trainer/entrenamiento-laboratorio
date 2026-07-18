@@ -485,8 +485,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260717213142 por un timestamp en cada deploy
-const _APP_VERSION = '20260717213142';
+// deploy.bat reemplaza 20260717214023 por un timestamp en cada deploy
+const _APP_VERSION = '20260717214023';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1684,7 +1684,7 @@ async function renderComplementos() {
   if (_COMPS === null) {
     ctn.innerHTML = '<div class="empty" style="padding:40px 20px;"><div class="empty-txt">Cargando complementos…</div></div>';
     try {
-      const doc = await _db.collection('complementos').doc('global').get();
+      const doc = await _db.collection('alumnos').doc('__complementos__').get();
       _COMPS = (doc.exists && Array.isArray(doc.data().rutinas)) ? doc.data().rutinas : [];
     } catch(e) { _COMPS = []; }
   }
