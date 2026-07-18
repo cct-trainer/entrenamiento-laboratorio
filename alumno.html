@@ -485,8 +485,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260717211430 por un timestamp en cada deploy
-const _APP_VERSION = '20260717211430';
+// deploy.bat reemplaza 20260717211834 por un timestamp en cada deploy
+const _APP_VERSION = '20260717211834';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1700,59 +1700,96 @@ function _renderComplementos(ctn) {
   }
   const CATS = ['Movilidad','Activación','Core / Estabilidad','Prehab','Estiramientos','Descanso activo'];
   const cats = [...new Set([...CATS, ..._COMPS.map(r=>r.categoria||'Otros')])];
-  let uid = 0;
-  let h = '<div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--gold);margin:4px 0 6px;">🧩 RUTINAS COMPLEMENTARIAS</div>'+
-          '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.5;">Trabajo extra para sumar a tus entrenamientos: movilidad, activación, core y más.</div>';
+  let h = '<div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--gold);margin:4px 0 4px;">🧩 RUTINAS COMPLEMENTARIAS</div>'+
+          '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;line-height:1.5;">Trabajo extra para sumar a tus entrenamientos.</div>';
   cats.forEach(cat => {
     const items = _COMPS.filter(r => (r.categoria||'Otros') === cat);
     if (!items.length) return;
-    h += '<div class="slabel" style="margin:16px 0 8px;">'+_compEsc(cat).toUpperCase()+'</div>';
-    items.forEach(r => {
-      const bid = 'compbody'+uid; uid++;
-      const nej = (r.ejercicios||[]).length;
-      let body = '';
-      if (r.descripcion) body += '<div style="font-size:12px;color:var(--muted);line-height:1.5;margin:6px 0 4px;">'+_compEsc(r.descripcion)+'</div>';
-      (r.ejercicios||[]).forEach(ej => {
-        const cuid = 'c'+uid; uid++;
-        const ytId = _ytId(ej.video||'');
-        body += '<div style="border-top:1px solid var(--border);padding:11px 0;">'+
-          '<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;">'+
-            '<div style="font-size:13px;font-weight:800;color:var(--text);line-height:1.25;">'+_compEsc(ej.nombre||'')+'</div>'+
-            (ej.detalle?'<div style="font-size:12px;font-weight:800;color:var(--gold);white-space:nowrap;flex-shrink:0;">'+_compEsc(ej.detalle)+'</div>':'')+
-          '</div>'+
-          (ej.nota?'<div style="font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4;">'+_compEsc(ej.nota)+'</div>':'')+
-          (ytId?(
-            '<div style="margin-top:8px;border-radius:10px;overflow:hidden;">'+
-              '<div id="yt-thumb-'+cuid+'" style="cursor:pointer;position:relative;" onclick="_playYt(\''+cuid+'\',\''+ytId+'\')">'+
-                '<img src="https://img.youtube.com/vi/'+ytId+'/hqdefault.jpg" alt="Video" style="width:100%;display:block;aspect-ratio:16/9;object-fit:cover;">'+
-                '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><div style="width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;">▶</div></div>'+
-              '</div>'+
-              '<div id="yt-player-'+cuid+'" style="display:none;"></div>'+
-            '</div>'
-          ):'')+
-        '</div>';
-      });
-      h += '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:9px;overflow:hidden;">'+
-        '<div onclick="_toggleComp(\''+bid+'\',this)" style="display:flex;align-items:center;gap:12px;padding:13px 15px;cursor:pointer;">'+
-          '<div style="flex:1;min-width:0;">'+
-            '<div style="font-size:14px;font-weight:800;color:var(--gold);">'+_compEsc(r.titulo||'Rutina')+'</div>'+
-            '<div style="font-size:11px;color:var(--muted);margin-top:2px;">'+[r.duracion, nej+' ejercicio'+(nej!==1?'s':'')].filter(Boolean).join(' · ')+'</div>'+
-          '</div>'+
-          '<div class="comp-arr" style="font-size:12px;color:var(--muted);transition:transform .2s;flex-shrink:0;">▼</div>'+
-        '</div>'+
-        '<div id="'+bid+'" style="display:none;padding:0 15px 14px;">'+body+'</div>'+
-      '</div>';
-    });
+    h += '<div class="slabel" style="margin:16px 0 10px;">'+_compEsc(cat).toUpperCase()+'</div>';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;">';
+    items.forEach(r => { h += _compCard(r); });
+    h += '</div>';
   });
   ctn.innerHTML = h;
 }
-function _toggleComp(bid, hdr) {
-  const b = document.getElementById(bid);
-  if (!b) return;
-  const open = b.style.display !== 'none';
-  b.style.display = open ? 'none' : 'block';
-  const arr = hdr.querySelector('.comp-arr');
-  if (arr) arr.style.transform = open ? '' : 'rotate(180deg)';
+function _compCard(r) {
+  const nej = (r.ejercicios||[]).length;
+  const bg = r.imagen
+    ? 'background:#0a0a12 url(\''+String(r.imagen).replace(/'/g,'%27')+'\') center/cover no-repeat;'
+    : 'background:linear-gradient(135deg,#2a2438,#15151c);';
+  return '<div onclick="_abrirCompDetalle(\''+r.id+'\')" style="position:relative;border-radius:16px;overflow:hidden;cursor:pointer;aspect-ratio:3/4;'+bg+'display:flex;flex-direction:column;justify-content:flex-end;border:1px solid var(--border);">'+
+    '<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,rgba(0,0,0,.1) 55%,rgba(0,0,0,.25) 100%);"></div>'+
+    (!r.imagen?'<div style="position:absolute;top:14px;left:0;right:0;text-align:center;font-size:34px;opacity:.45;">🧩</div>':'')+
+    '<div style="position:relative;padding:12px;">'+
+      '<div style="font-size:14px;font-weight:900;color:#fff;line-height:1.15;text-shadow:0 1px 4px rgba(0,0,0,.6);">'+_compEsc(r.titulo||'Rutina')+'</div>'+
+      '<div style="font-size:10px;color:rgba(255,255,255,.8);margin-top:4px;">'+[r.duracion, nej+' ej.'].filter(Boolean).join(' · ')+'</div>'+
+      '<div style="margin-top:9px;background:var(--gold);color:#0d0d1a;font-size:11px;font-weight:900;text-align:center;padding:8px;border-radius:20px;">Abrir</div>'+
+    '</div>'+
+  '</div>';
+}
+function _abrirCompDetalle(id) {
+  const r = (_COMPS||[]).find(x=>x.id===id);
+  if (!r) return;
+  const ov = document.getElementById('comp-detail');
+  if (!ov) return;
+  const dif = parseInt(r.dificultad||'1',10)||1;
+  const dots = [1,2,3].map(i=>'<span style="width:10px;height:10px;border-radius:50%;background:'+(i<=dif?'var(--green)':'rgba(255,255,255,.15)')+';display:inline-block;"></span>').join('');
+  const cover = r.imagen
+    ? '<div style="height:280px;background:#0a0a12 url(\''+String(r.imagen).replace(/'/g,'%27')+'\') center/cover no-repeat;"></div>'
+    : '<div style="height:210px;background:linear-gradient(135deg,#2a2438,#15151c);display:flex;align-items:center;justify-content:center;font-size:64px;opacity:.5;">🧩</div>';
+  let ejes = '';
+  (r.ejercicios||[]).forEach((ej,i) => {
+    const cuid = 'cd'+i;
+    const ytId = _ytId(ej.video||'');
+    ejes += '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px 15px;margin-bottom:10px;">'+
+      '<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;">'+
+        '<div style="font-size:14px;font-weight:800;color:var(--text);border-left:3px solid var(--gold);padding-left:9px;line-height:1.25;">'+_compEsc(ej.nombre||'')+'</div>'+
+        (ej.detalle?'<div style="font-size:13px;font-weight:800;color:var(--gold);white-space:nowrap;flex-shrink:0;">'+_compEsc(ej.detalle)+'</div>':'')+
+      '</div>'+
+      (ej.nota?'<div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.45;background:rgba(201,168,76,.07);border-radius:8px;padding:8px 10px;">📝 '+_compEsc(ej.nota)+'</div>':'')+
+      (ytId?(
+        '<div style="margin-top:10px;border-radius:10px;overflow:hidden;">'+
+          '<div id="yt-thumb-'+cuid+'" style="cursor:pointer;position:relative;" onclick="_playYt(\''+cuid+'\',\''+ytId+'\')">'+
+            '<img src="https://img.youtube.com/vi/'+ytId+'/hqdefault.jpg" alt="Video" style="width:100%;display:block;aspect-ratio:16/9;object-fit:cover;">'+
+            '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><div style="width:50px;height:50px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;">▶</div></div>'+
+          '</div>'+
+          '<div id="yt-player-'+cuid+'" style="display:none;"></div>'+
+        '</div>'
+      ):'')+
+    '</div>';
+  });
+  if (!ejes) ejes = '<div class="empty" style="padding:20px;"><div class="empty-txt">Esta rutina todavía no tiene ejercicios cargados.</div></div>';
+  ov.innerHTML =
+    '<div style="position:relative;">'+
+      cover +
+      '<button onclick="_cerrarCompDetalle()" style="position:absolute;top:calc(12px + env(safe-area-inset-top,0));left:14px;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">‹</button>'+
+    '</div>'+
+    '<div style="max-width:480px;margin:-42px auto 0;position:relative;padding:0 16px calc(40px + env(safe-area-inset-bottom,0));">'+
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:0 10px 34px -14px rgba(0,0,0,.55);">'+
+        '<div style="font-size:22px;font-weight:900;color:var(--text);line-height:1.15;">'+_compEsc(r.titulo||'Rutina')+'</div>'+
+        '<div style="display:flex;flex-direction:column;gap:11px;margin-top:15px;">'+
+          '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🏋️</span>'+_compEsc(r.lugar||'Gym')+'</div>'+
+          (r.duracion?'<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🕐</span>'+_compEsc(r.duracion)+'</div>':'')+
+          '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);">'+dots+' <span style="margin-left:3px;">Dificultad</span></div>'+
+        '</div>'+
+        (r.descripcion?'<div style="font-size:13px;color:var(--muted);line-height:1.55;margin-top:15px;padding-top:15px;border-top:1px solid var(--border);">'+_compEsc(r.descripcion)+'</div>':'')+
+      '</div>'+
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;">'+
+        '<div style="font-size:13px;font-weight:900;letter-spacing:.5px;color:var(--text);">TU ENTRENAMIENTO</div>'+
+        '<div style="font-size:11px;color:var(--muted);">'+(r.ejercicios||[]).length+' ejercicios</div>'+
+      '</div>'+
+      ejes +
+    '</div>';
+  ov.style.display = 'block';
+  ov.scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+}
+function _cerrarCompDetalle() {
+  const ov = document.getElementById('comp-detail');
+  if (!ov) return;
+  ov.style.display = 'none';
+  ov.innerHTML = '';
+  document.body.style.overflow = '';
 }
 
 // ── MEDIDAS ───────────────────────────────────────────────────────────────
