@@ -20950,6 +20950,13 @@ async function cargarDesdeFirestore() {
     if (doc.exists) {
       const data = doc.data();
       const remoteAlumnos = data.alumnos || [];
+      // PROTECCIÓN DE ARTÍCULOS: si la nube tiene más artículos que local, traerlos
+      // ANTES de cualquier subida (evita que un auto-sync los pise con una lista vacía).
+      try {
+        const remoteArts = Array.isArray(data.articulos) ? data.articulos : [];
+        const localArts  = JSON.parse(localStorage.getItem('LAB_ARTICULOS') || '[]');
+        if (remoteArts.length > localArts.length) localStorage.setItem('LAB_ARTICULOS', JSON.stringify(remoteArts));
+      } catch(e){}
       // Solo bajar si Firestore tiene MÁS alumnos que local
       if (remoteAlumnos.length > localAlumnos.length) {
         if (data.alumnos)         localStorage.setItem('LAB_ALUMNOS',         JSON.stringify(data.alumnos));
