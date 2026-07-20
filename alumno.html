@@ -566,8 +566,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260720122906 por un timestamp en cada deploy
-const _APP_VERSION = '20260720122906';
+// deploy.bat reemplaza 20260720123850 por un timestamp en cada deploy
+const _APP_VERSION = '20260720123850';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1550,43 +1550,8 @@ function renderSesion() {
   '</div>';
 }
 
-// ── RUNNING ───────────────────────────────────────────────────────────────
-function renderRunning() {
-  const ctn = document.getElementById('running-ctn');
-  if (!_planRun) { ctn.innerHTML = noData('🏃','Sin plan de running','Tu coach aún no cargó un plan de running.'); return; }
-  const diasData = _planRun.diasData || {};
-  const hoyStr = new Date().toISOString().slice(0,10);
-
-  // Chips de días
-  const chips = DS.map((ds,i) => {
-    const bloques = diasData[i] || [];
-    const has = bloques.length > 0;
-    const on = i === _runDiaIdx;
-    const tipoObj = has ? (TIPOS_RUN[bloques[0].tipo] || {icon:'🏃',color:'#C9A84C'}) : null;
-    const dayNum = i+1;
-    return '<div class="dchip '+(has?'has ':'')+( on?'on ':'')+( !has?'no':'')+'" onclick="_selRunDia('+i+')" style="'+(has&&!on?'border-color:'+(tipoObj.color||'rgba(201,168,76,.4)')+'44;':'')+'">'+
-      '<span class="dl">'+ds+'</span>'+
-      '<span class="dn">'+(has ? tipoObj.icon : '—')+'</span>'+
-    '</div>';
-  }).join('');
-
-  const sesionHTML = _renderDiaRunning();
-
-  ctn.innerHTML =
-    '<div style="font-size:10px;font-weight:800;letter-spacing:.5px;color:var(--gold);margin-bottom:6px;">'+(_planRun.titulo||'Plan de Running').toUpperCase()+'</div>'+
-    '<div style="font-size:9px;color:var(--muted);margin-bottom:12px;">Semana '+(_planRun.semanaNum||1)+(  _planRun.fechaInicio?' · desde '+new Date(_planRun.fechaInicio+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}):'')+'</div>'+
-    '<div class="slabel">DÍAS DE ENTRENAMIENTO</div>'+
-    '<div class="dgrid">'+chips+'</div>'+
-    '<div id="run-sesion-ctn">'+sesionHTML+'</div>'+
-    '<div style="height:20px;"></div>';
-}
-
-function _selRunDia(i) {
-  _runDiaIdx = _runDiaIdx === i ? null : i;
-  renderRunning();
-}
-
-function _renderDiaRunning() {
+// ── RUNNING (el render nuevo, estilo Fuerza, está más abajo) ──
+function _renderDiaRunning_LEGACY() {
   if (_runDiaIdx === null || !_planRun) return '';
   const diasData = _planRun.diasData || {};
   const bloques = diasData[_runDiaIdx] || [];
@@ -1687,6 +1652,132 @@ function _renderDiaRunning() {
       '</div>'+
     '</div>';
   }).join('');
+}
+
+// ── RUNNING con el MISMO estilo que Fuerza (renglones + hoja de detalle dorada) ──
+function renderRunning() {
+  const ctn = document.getElementById('running-ctn');
+  if (!_planRun) { ctn.innerHTML = noData('🏃','Sin plan de running','Tu coach aún no cargó un plan de running.'); return; }
+  const diasData = _planRun.diasData || {};
+
+  if (_runDiaIdx !== null && (diasData[_runDiaIdx]||[]).length) {
+    ctn.innerHTML = _runDetalleHTML(_runDiaIdx);
+    return;
+  }
+
+  const fx = _planRun.fechaInicio;
+  const hoyStr = new Date().toISOString().slice(0,10);
+  const esHoy = i => { if(!fx) return false; const d=new Date(fx+'T12:00:00'); d.setDate(d.getDate()+i); return d.toISOString().slice(0,10)===hoyStr; };
+
+  let h = '<div class="mes-nav"><span style="width:38px;"></span>'+
+      '<div class="mes-nav-info"><div class="mes-nav-title" style="font-size:17px;">'+((_planRun.titulo||'PLAN DE RUNNING')).toUpperCase()+'</div>'+
+      '<div class="mes-nav-sub">Semana '+(_planRun.semanaNum||1)+(fx?' · desde '+new Date(fx+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}):'')+'</div></div>'+
+      '<span style="width:38px;"></span></div>'+
+    '<div class="slabel">DÍAS DE ENTRENAMIENTO</div>';
+
+  const diasE = [];
+  for (let i=0;i<7;i++){ if((diasData[i]||[]).length) diasE.push(i); }
+  if (!diasE.length) {
+    h += '<div class="dr-empty">No hay sesiones cargadas para esta semana.</div>';
+  } else {
+    h += '<div class="dlist">'+diasE.map(i=>{
+      const bloques = diasData[i]||[];
+      const b0 = bloques[0]||{};
+      const tipoObj = TIPOS_RUN[b0.tipo] || {label:b0.label||b0.tipo||'Sesión'};
+      const hoy = esHoy(i);
+      const dayNum = fx ? (()=>{const d=new Date(fx+'T12:00:00');d.setDate(d.getDate()+i);return d.getDate();})() : i+1;
+      const title = (b0.nombre || tipoObj.label || 'Sesión').toUpperCase();
+      const resumen = [b0.distancia?(b0.distancia+(b0.unidad||'')):'', b0.duracion||'', b0.ritmo?(b0.ritmo+'/km'):''].filter(Boolean).join(' · ');
+      const partes=[DN[i]]; if(resumen) partes.push(resumen); if(bloques.length>1) partes.push(bloques.length+' bloques');
+      const sub = partes.join(' · ');
+      const tags = hoy?'<span class="dr-tag today">HOY</span>':'';
+      return '<div class="dayrow '+(hoy?'today':'')+'" onclick="_selRunDia('+i+')">'+
+        '<div class="dr-date"><span class="dr-dow">'+DS[i]+'</span><span class="dr-num">'+dayNum+'</span></div>'+
+        '<div class="dr-sep"></div>'+
+        '<div class="dr-body"><div class="dr-title">'+title+'</div><div class="dr-sub">'+sub+'</div>'+(tags?'<div class="dr-tags">'+tags+'</div>':'')+'</div>'+
+        '<div class="dr-arr">&#9660;</div>'+
+      '</div>';
+    }).join('')+'</div>';
+  }
+  ctn.innerHTML = h + '<div style="height:20px;"></div>';
+}
+function _selRunDia(i){ _runDiaIdx = i; renderRunning(); window.scrollTo({top:0,behavior:'smooth'}); }
+function _volverRunDias(){ _runDiaIdx = null; renderRunning(); window.scrollTo({top:0,behavior:'smooth'}); }
+function _runDetalleHTML(i){
+  const diasData = _planRun.diasData||{};
+  const bloques = diasData[i]||[];
+  const fx = _planRun.fechaInicio;
+  const dnum = fx ? (()=>{const d=new Date(fx+'T12:00:00');d.setDate(d.getDate()+i);return d.getDate();})() : i+1;
+  const back = '<div class="ses-head"><button class="ses-back" onclick="_volverRunDias()"><i>‹</i> Volver a los días</button>'+
+    '<div class="ses-head-day"><span class="ses-head-dow">'+DS[i]+'</span><span class="ses-head-num">'+dnum+'</span><span class="ses-head-sem">Semana '+(_planRun.semanaNum||1)+'</span></div></div>';
+  return back + '<div>'+bloques.map(_runBloqueHTML).join('')+'</div>';
+}
+function _runBloqueHTML(b){
+  const tipoObj = TIPOS_RUN[b.tipo] || {icon:'🏃', label:b.label||b.tipo||'Sesión'};
+  const calent = b.calent && (b.calent.tipo||b.calent.duracion) ? (
+    '<div style="background:color-mix(in srgb,var(--gold) 7%,transparent);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:8px;">'+
+      '<div style="font-size:9px;font-weight:800;color:var(--gold);letter-spacing:1px;margin-bottom:6px;">🔥 ENTRADA EN CALOR</div>'+
+      (b.calent.tipo?'<div style="font-size:12px;color:var(--text);font-weight:600;">'+b.calent.tipo+'</div>':'')+
+      (b.calent.duracion?'<div style="font-size:11px;color:var(--muted);margin-top:2px;">'+b.calent.duracion+'</div>':'')+
+      (b.calent.ritmo?'<div style="font-size:11px;color:var(--muted);">Ritmo: '+b.calent.ritmo+'</div>':'')+
+      (b.calent.ejercicios?'<div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">'+b.calent.ejercicios+'</div>':'')+
+    '</div>') : '';
+  const vuelta = b.vuelta && (b.vuelta.tipo||b.vuelta.duracion) ? (
+    '<div style="background:color-mix(in srgb,var(--gold) 5%,transparent);border-left:3px solid var(--gold-d);border-radius:0 8px 8px 0;padding:10px 12px;margin-top:8px;">'+
+      '<div style="font-size:9px;font-weight:800;color:var(--gold-d);letter-spacing:1px;margin-bottom:6px;">❄️ VUELTA A LA CALMA</div>'+
+      (b.vuelta.tipo?'<div style="font-size:12px;color:var(--text);font-weight:600;">'+b.vuelta.tipo+'</div>':'')+
+      (b.vuelta.duracion?'<div style="font-size:11px;color:var(--muted);margin-top:2px;">'+b.vuelta.duracion+'</div>':'')+
+      (b.vuelta.intensidad?'<div style="font-size:11px;color:var(--muted);">Intensidad: '+b.vuelta.intensidad+'</div>':'')+
+      (b.vuelta.obs?'<div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">'+b.vuelta.obs+'</div>':'')+
+    '</div>') : '';
+  let mainHTML = '';
+  if (b.tipo==='pasadas' && b.pasadas?.length){
+    const unidad=b.unidad||'m';
+    const rows=b.pasadas.map((p,pi)=>
+      '<tr>'+
+        '<td style="background:color-mix(in srgb,var(--gold) 12%,transparent);color:var(--gold);font-size:10px;font-weight:800;text-align:center;padding:7px 8px;border:1px solid var(--border);">'+(pi+1)+'</td>'+
+        '<td style="text-align:center;padding:7px 8px;border:1px solid var(--border);font-size:13px;font-weight:700;color:var(--text);">'+(p.distancia||'—')+' '+unidad+'</td>'+
+        '<td style="text-align:center;padding:7px 8px;border:1px solid var(--border);font-size:13px;font-weight:700;color:var(--gold);">'+(p.ritmo||'—')+'/km</td>'+
+        '<td style="text-align:center;padding:7px 8px;border:1px solid var(--border);font-size:11px;color:var(--muted);">'+(p.pausa||'—')+'</td>'+
+      '</tr>').join('');
+    mainHTML='<div style="overflow-x:auto;margin:10px 0;"><table style="width:100%;border-collapse:collapse;"><thead><tr>'+
+      ['#','DISTANCIA','RITMO','PAUSA'].map(th=>'<th style="background:var(--row-odd);font-size:8px;color:var(--muted);font-weight:800;padding:6px 8px;border:1px solid var(--border);letter-spacing:1px;">'+th+'</th>').join('')+
+      '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+  } else {
+    const fields=[
+      b.distancia?['DISTANCIA',b.distancia+(b.unidad||'')]:null,
+      b.duracion?['DURACIÓN',b.duracion]:null,
+      b.ritmo?['RITMO',b.ritmo+'/km']:null,
+      b.ritmoMin?['RITMO MÍN',b.ritmoMin+'/km']:null,
+      b.ritmoMax?['RITMO MÁX',b.ritmoMax+'/km']:null,
+      b.fc?['FC OBJETIVO',b.fc+' bpm']:null,
+      b.rpe?['RPE',b.rpe]:null,
+    ].filter(Boolean);
+    if (fields.length){
+      mainHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0;">'+
+        fields.map(([k,v])=>'<div style="background:var(--input-bg);border-radius:8px;padding:10px 12px;">'+
+          '<div style="font-size:8px;font-weight:800;color:var(--gold);letter-spacing:1px;margin-bottom:4px;">'+k+'</div>'+
+          '<div style="font-size:16px;font-weight:900;color:var(--text);">'+v+'</div></div>').join('')+
+      '</div>';
+    }
+  }
+  if (b.tipo==='progresivos' && b.tramos?.length){
+    mainHTML+='<div style="margin-top:8px;">'+b.tramos.map((t,i)=>
+      '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--input-bg);border-radius:6px;margin-bottom:4px;">'+
+        '<span style="font-size:11px;font-weight:700;color:var(--gold);">Tramo '+(i+1)+'</span>'+
+        '<span style="font-size:11px;color:var(--text);">'+(t.distancia||'')+' '+(t.ritmo?'· '+t.ritmo+'/km':'')+'</span>'+
+      '</div>').join('')+'</div>';
+  }
+  const obs = b.obs ? '<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-top:8px;padding:10px 12px;background:var(--input-bg);border-radius:8px;">'+b.obs+'</div>' : '';
+  return '<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;margin-bottom:12px;overflow:hidden;">'+
+    '<div style="padding:13px 14px;">'+
+      '<div style="display:flex;align-items:center;gap:9px;margin-bottom:'+((calent||mainHTML||vuelta||obs)?'10px':'0')+';">'+
+        '<span style="font-size:19px;">'+(tipoObj.icon||'🏃')+'</span>'+
+        '<div><div style="font-size:14px;font-weight:900;color:var(--gold);">'+(tipoObj.label||'Sesión')+'</div>'+(b.nombre?'<div style="font-size:10px;color:var(--muted);">'+b.nombre+'</div>':'')+'</div>'+
+      '</div>'+
+      calent+mainHTML+vuelta+obs+
+    '</div>'+
+  '</div>';
 }
 
 // ── INFO / BLOG ───────────────────────────────────────────────────────────
