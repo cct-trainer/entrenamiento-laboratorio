@@ -498,6 +498,7 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
 <div id="comp-detail" style="display:none;position:fixed;inset:0;z-index:1000;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
@@ -566,8 +567,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260720131225 por un timestamp en cada deploy
-const _APP_VERSION = '20260720131225';
+// deploy.bat reemplaza 20260720133341 por un timestamp en cada deploy
+const _APP_VERSION = '20260720133341';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1673,6 +1674,7 @@ function renderRunning() {
       '<div class="mes-nav-info"><div class="mes-nav-title" style="font-size:17px;">'+((_planRun.titulo||'PLAN DE RUNNING')).toUpperCase()+'</div>'+
       '<div class="mes-nav-sub">Semana '+(_planRun.semanaNum||1)+(fx?' · desde '+new Date(fx+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}):'')+'</div></div>'+
       '<span style="width:38px;"></span></div>'+
+    '<button onclick="_exportarRunReloj()" style="width:100%;margin-bottom:12px;padding:12px;border-radius:12px;border:1px solid rgba(201,168,76,.4);background:color-mix(in srgb,var(--gold) 8%,var(--card));color:var(--gold);font-size:12px;font-weight:800;letter-spacing:.3px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">⌚ EXPORTAR AL RELOJ (.TCX)</button>'+
     '<div class="slabel">DÍAS DE ENTRENAMIENTO</div>';
 
   const diasE = [];
@@ -1778,6 +1780,77 @@ function _runBloqueHTML(b){
       calent+mainHTML+vuelta+obs+
     '</div>'+
   '</div>';
+}
+
+// ── EXPORTAR RUNNING AL RELOJ (TCX estructurado, Garmin-first) ──────────────
+function _x(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function _paceToMps(p){ if(!p) return null; const m=String(p).match(/(\d+):(\d{1,2})/); if(!m) return null; const sec=parseInt(m[1],10)*60+parseInt(m[2],10); return sec?1000/sec:null; }
+function _parseSecs(d){ if(!d) return null; const s=String(d).toLowerCase().trim(); let m;
+  if((m=s.match(/(\d+):(\d{2})/))) return parseInt(m[1])*60+parseInt(m[2]);
+  if((m=s.match(/(\d+(?:[.,]\d+)?)\s*h/))) return Math.round(parseFloat(m[1].replace(',','.'))*3600);
+  if((m=s.match(/(\d+(?:[.,]\d+)?)\s*min/))) return Math.round(parseFloat(m[1].replace(',','.'))*60);
+  if((m=s.match(/(\d+(?:[.,]\d+)?)\s*(?:seg|s)\b/))) return Math.round(parseFloat(m[1].replace(',','.')));
+  if((m=s.match(/^(\d+(?:[.,]\d+)?)$/))) return Math.round(parseFloat(m[1].replace(',','.'))*60);
+  return null; }
+function _parseMeters(val,unidad){ if(val==null||val==='') return null; const n=parseFloat(String(val).replace(',','.')); if(isNaN(n)) return null; const u=(unidad||'').toLowerCase();
+  if(u.includes('km')) return Math.round(n*1000); if(u==='m'||u.includes('metro')) return Math.round(n); return n<50?Math.round(n*1000):Math.round(n); }
+function _tgtNone(){return {type:'None_t',body:''};}
+function _tgtPace(ritmo){ const mps=_paceToMps(ritmo); if(!mps) return _tgtNone(); return {type:'Speed_t',body:'<SpeedZone xsi:type="CustomSpeedZone_t"><LowInMetersPerSecond>'+(mps*0.97).toFixed(3)+'</LowInMetersPerSecond><HighInMetersPerSecond>'+(mps*1.03).toFixed(3)+'</HighInMetersPerSecond></SpeedZone>'}; }
+function _tgtPaceRange(ritmo,rmin,rmax){ if(rmin&&rmax){ const lo=_paceToMps(rmax),hi=_paceToMps(rmin); if(lo&&hi) return {type:'Speed_t',body:'<SpeedZone xsi:type="CustomSpeedZone_t"><LowInMetersPerSecond>'+lo.toFixed(3)+'</LowInMetersPerSecond><HighInMetersPerSecond>'+hi.toFixed(3)+'</HighInMetersPerSecond></SpeedZone>'}; } return ritmo?_tgtPace(ritmo):null; }
+function _tgtHR(fc){ const n=parseInt(String(fc),10); if(!n) return _tgtNone(); return {type:'HeartRate_t',body:'<HeartRateZone xsi:type="CustomHeartRateZone_t"><Low xsi:type="HeartRateInBeatsPerMinute_t"><Value>'+(n-5)+'</Value></Low><High xsi:type="HeartRateInBeatsPerMinute_t"><Value>'+(n+5)+'</Value></High></HeartRateZone>'}; }
+function _tcxStep(id,name,dur,tgt,resting){ return '<Step xsi:type="Step_t"><StepId>'+id+'</StepId>'+(name?'<Name>'+_x(name).slice(0,20)+'</Name>':'')+
+  '<Duration xsi:type="'+dur.type+'">'+dur.body+'</Duration><Intensity>'+(resting?'Resting':'Active')+'</Intensity><Target xsi:type="'+tgt.type+'">'+tgt.body+'</Target></Step>'; }
+function _stepDist(id,name,meters,tgt,resting){ return _tcxStep(id,name,{type:'Distance_t',body:'<Meters>'+meters+'</Meters>'},tgt,resting); }
+function _stepTime(id,name,secs,tgt,resting){ return _tcxStep(id,name,{type:'Time_t',body:'<Seconds>'+secs+'</Seconds>'},tgt,resting); }
+function _tcxWorkout(nombre, bloques, fechaISO){
+  let sid=0; const nx=()=>(++sid); const steps=[];
+  (bloques||[]).forEach(b=>{
+    if(b.calent&&(b.calent.duracion||b.calent.tipo)) steps.push(_stepTime(nx(),'Calentamiento',_parseSecs(b.calent.duracion)||600,_tgtNone(),false));
+    if(b.tipo==='pasadas'&&Array.isArray(b.pasadas)&&b.pasadas.length){
+      b.pasadas.forEach((p,idx)=>{ const dist=_parseMeters(p.distancia,b.unidad)||400;
+        steps.push(_stepDist(nx(),'Pasada '+(idx+1),dist,_tgtPace(p.ritmo),false));
+        const ps=_parseSecs(p.pausa); if(ps) steps.push(_stepTime(nx(),'Recuperacion',ps,_tgtNone(),true)); });
+    } else if(b.tipo==='progresivos'&&Array.isArray(b.tramos)&&b.tramos.length){
+      b.tramos.forEach((t,idx)=>{ const dist=_parseMeters(t.distancia,b.unidad);
+        if(dist) steps.push(_stepDist(nx(),'Tramo '+(idx+1),dist,_tgtPace(t.ritmo),false));
+        else steps.push(_stepTime(nx(),'Tramo '+(idx+1),600,_tgtPace(t.ritmo),false)); });
+    } else {
+      const dist=_parseMeters(b.distancia,b.unidad); const secs=_parseSecs(b.duracion);
+      const tgt=_tgtPaceRange(b.ritmo,b.ritmoMin,b.ritmoMax)||(b.fc?_tgtHR(b.fc):_tgtNone());
+      const nm=(TIPOS_RUN[b.tipo]&&TIPOS_RUN[b.tipo].label)||b.nombre||'Sesion';
+      if(dist) steps.push(_stepDist(nx(),nm,dist,tgt,false)); else steps.push(_stepTime(nx(),nm,secs||1800,tgt,false));
+    }
+    if(b.vuelta&&(b.vuelta.duracion||b.vuelta.tipo)) steps.push(_stepTime(nx(),'Vuelta a la calma',_parseSecs(b.vuelta.duracion)||600,_tgtNone(),false));
+  });
+  if(!steps.length) steps.push(_stepTime(nx(),'Sesion',1800,_tgtNone(),false));
+  return '<?xml version="1.0" encoding="UTF-8"?>\n'+
+    '<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2 http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd">\n'+
+    '<Workouts><Workout Sport="Running"><Name>'+_x(nombre||'Running').slice(0,20)+'</Name>'+steps.join('')+
+    (fechaISO?'<ScheduledOn>'+fechaISO+'</ScheduledOn>':'')+
+    '</Workout></Workouts></TrainingCenterDatabase>';
+}
+function _descargarArchivo(content,filename,mime){
+  const blob=(content instanceof Blob)?content:new Blob([content],{type:mime||'text/plain'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1200);
+}
+async function _exportarRunReloj(){
+  if(!_planRun){ return; }
+  const diasData=_planRun.diasData||{}; const fx=_planRun.fechaInicio;
+  const dias=[]; for(let i=0;i<7;i++){ if((diasData[i]||[]).length) dias.push(i); }
+  if(!dias.length){ alert('No hay sesiones de running para exportar.'); return; }
+  const files=dias.map(i=>{
+    const b0=diasData[i][0]||{};
+    const nombre=b0.nombre||(TIPOS_RUN[b0.tipo]&&TIPOS_RUN[b0.tipo].label)||('Run '+DN[i]);
+    const fechaISO=fx?(()=>{const d=new Date(fx+'T12:00:00');d.setDate(d.getDate()+i);return d.toISOString().slice(0,10);})():'';
+    const fname=((i+1)+'-'+DN[i]+'-'+nombre).replace(/[^\w\-]+/g,'_').slice(0,40)+'.tcx';
+    return {name:fname, content:_tcxWorkout(nombre, diasData[i], fechaISO)};
+  });
+  if(files.length===1){ _descargarArchivo(files[0].content, files[0].name, 'application/vnd.garmin.tcx+xml'); return; }
+  if(typeof JSZip==='undefined'){ alert('No se pudo preparar el ZIP. Revisá tu conexión y probá otra vez.'); return; }
+  const zip=new JSZip(); files.forEach(f=>zip.file(f.name,f.content));
+  const blob=await zip.generateAsync({type:'blob'});
+  _descargarArchivo(blob, ((_planRun.titulo||'running').replace(/[^\w\-]+/g,'_'))+'_reloj.zip','application/zip');
 }
 
 // ── INFO / BLOG ───────────────────────────────────────────────────────────
