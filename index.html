@@ -9704,12 +9704,13 @@ function _importarRunningJSON(){
   const alumnoId=(sel&&sel.value)||currentAlumnoId;
   if(!alumnoId){ toast('Seleccioná un alumno primero','error'); return; }
   const planes=getPlanificaciones();
+  const grupoRun = 'gr'+genId();  // agrupa todas las semanas de esta importación en un solo "mes"
   let n=0;
-  arr.forEach(p=>{
+  arr.forEach((p,idx)=>{
     if(!p||!p.diasData) return;
     planes.push({
-      id: genId(), alumnoId, tipoPlan:'running',
-      titulo: p.titulo||'Plan running', semanaNum: String(p.semanaNum||1),
+      id: genId(), alumnoId, tipoPlan:'running', grupoRun,
+      titulo: p.titulo||'Plan running', semanaNum: String(p.semanaNum||(idx+1)),
       fechaInicio: p.fechaInicio||'', objetivo: p.objetivo||'', nivel: p.nivel||'',
       diasData: p.diasData||{}, createdAt: new Date().toISOString()
     });
@@ -16861,6 +16862,52 @@ function _faseBloqueHTML(p, faseIdx, auto) {
     + '</div>';
 }
 
+// Running: agrupa las semanas de un mismo bloque en UNA tarjeta-mes
+function _renderRunningGroups(planes){
+  const groups={}; const order=[];
+  planes.forEach(p=>{ const k=p.grupoRun||('obj:'+(p.objetivo||p.id)); if(!groups[k]){groups[k]=[];order.push(k);} groups[k].push(p); });
+  let html='<div class="plan-items-grid">';
+  order.forEach(k=>{
+    const semanas=groups[k].slice().sort((a,b)=>{
+      const fa=a.fechaInicio?new Date(a.fechaInicio+'T12:00:00').getTime():0, fb=b.fechaInicio?new Date(b.fechaInicio+'T12:00:00').getTime():0;
+      if(fa!==fb) return fa-fb; return (parseInt(a.semanaNum)||0)-(parseInt(b.semanaNum)||0);
+    });
+    const p0=semanas[0];
+    const mesTit=((p0.titulo||'Plan running').split('·')[0]).trim();
+    if(semanas.length===1){
+      html+='<div class="plan-item"><div style="height:5px;background:linear-gradient(90deg,#3b82f6,#60a5fa);"></div>'+
+        '<div class="plan-item-head" style="background:linear-gradient(160deg,#1e293b,#0b1220);border-radius:0;padding-top:32px;">'+
+          '<button class="plan-item-del-btn" onclick="eliminarPlanificacion(\''+p0.id+'\')" title="Eliminar" style="position:absolute;top:10px;right:10px;">×</button>'+
+          '<span style="position:absolute;top:11px;left:13px;background:#3b82f6;color:#fff;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 9px;border-radius:20px;">🏃 RUNNING</span>'+
+          '<div class="plan-item-name">'+mesTit+'</div>'+(p0.fechaInicio?'<div class="plan-item-meta">'+p0.fechaInicio+'</div>':'')+
+        '</div>'+
+        '<div style="display:flex;gap:6px;padding:12px 14px;">'+
+          '<button onclick="abrirPlanRunningExistente(\''+p0.id+'\')" style="flex:1;background:#1a1a1a;color:#fff;border:none;border-radius:9px;padding:10px;font-size:12px;font-weight:800;cursor:pointer;">▶ ABRIR</button>'+
+          '<button onclick="renombrarPlanificacion(\''+p0.id+'\')" style="background:#f1f3f7;border:none;border-radius:9px;padding:9px 12px;font-size:14px;cursor:pointer;">✏️</button>'+
+          '<button onclick="eliminarPlanificacion(\''+p0.id+'\')" style="background:#fdeaea;border:none;border-radius:9px;padding:9px 12px;font-size:14px;cursor:pointer;color:#c62828;">🗑</button>'+
+        '</div></div>';
+    } else {
+      const rows=semanas.map((s,i)=>{ let rango='';
+        if(s.fechaInicio){const l=new Date(s.fechaInicio+'T12:00:00');const d=new Date(l);d.setDate(d.getDate()+6);const f=x=>x.toLocaleDateString('es-AR',{day:'numeric',month:'short'});rango=f(l)+' — '+f(d);}
+        return '<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid #f0f0f0;">'+
+          '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:700;color:#1a1a1a;">Semana '+(s.semanaNum||(i+1))+'</div>'+(rango?'<div style="font-size:10px;color:#999;">'+rango+'</div>':'')+'</div>'+
+          '<button onclick="abrirPlanRunningExistente(\''+s.id+'\')" style="background:#1a1a1a;color:#fff;border:none;border-radius:7px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;">ABRIR</button>'+
+          '<button onclick="renombrarPlanificacion(\''+s.id+'\')" title="Renombrar" style="background:#f1f3f7;border:none;border-radius:7px;padding:6px 9px;font-size:12px;cursor:pointer;">✏️</button>'+
+          '<button onclick="eliminarPlanificacion(\''+s.id+'\')" title="Borrar semana" style="background:#fdeaea;border:none;border-radius:7px;padding:6px 9px;font-size:12px;cursor:pointer;color:#c62828;">🗑</button>'+
+        '</div>';
+      }).join('');
+      html+='<div class="plan-item" style="grid-column:1/-1;"><div style="height:5px;background:linear-gradient(90deg,#3b82f6,#60a5fa);"></div>'+
+        '<div class="plan-item-head" style="background:linear-gradient(160deg,#1e293b,#0b1220);border-radius:0;padding-top:30px;">'+
+          '<span style="position:absolute;top:11px;left:13px;background:#3b82f6;color:#fff;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 9px;border-radius:20px;">🏃 RUNNING · '+semanas.length+' SEMANAS</span>'+
+          '<div class="plan-item-name" style="font-size:22px;">'+mesTit+'</div>'+(p0.objetivo?'<div class="plan-item-meta">'+p0.objetivo+'</div>':'')+
+        '</div>'+
+        '<div style="padding:2px 6px 10px;">'+rows+'</div>'+
+      '</div>';
+    }
+  });
+  return html+'</div>';
+}
+
 function renderPerfilPlanificaciones(alumnoId, tipo) {
   // tipo = 'fuerza' | 'running'
   const listId = tipo === 'running' ? 'perfil-plan-list-running' : 'perfil-plan-list-fuerza';
@@ -16877,6 +16924,7 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
     c.innerHTML = `<div class="empty-state"><div class="icon">${tipo==='running'?'🏃':'💪'}</div><p>${emptyMsg}</p></div>`;
     return;
   }
+  if (tipo === 'running') { c.innerHTML = _renderRunningGroups(planes); return; }
   const alumnoOpts = getAlumnos().filter(a => a.id !== alumnoId)
     .map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
 

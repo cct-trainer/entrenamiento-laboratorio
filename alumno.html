@@ -562,13 +562,14 @@ function _mesNombreDe(plan, i){
 function _selSemana(i){ _semIdx=i; _diaIdx=null; renderRutina(); }
 
 let _data=null, _plan=null, _planRun=null, _planesFuerza=[], _planIdx=0, _semIdx=0, _diaIdx=null, _runDiaIdx=null, _diaModTab=0;
+let _planesRunning=[], _runSemIdx=0;
 let _ejStore = {};   // { uid: ej }  — para re-render de cards
 let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificadas
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260720134615 por un timestamp en cada deploy
-const _APP_VERSION = '20260720134615';
+// deploy.bat reemplaza 20260720140451 por un timestamp en cada deploy
+const _APP_VERSION = '20260720140451';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -662,7 +663,17 @@ const TIPOS_RUN = {
     const _activoIdx = _planesFuerza.findIndex(p => p && p.activo);
     _planIdx = _activoIdx >= 0 ? _activoIdx : (_planesFuerza.length ? _planesFuerza.length - 1 : 0);
     _plan    = _planesFuerza.length ? _planesFuerza[_planIdx]  : null;
-    _planRun = planesRunning.length ? planesRunning[planesRunning.length-1] : null;
+    // Running: todas las semanas ordenadas = un solo "mes" navegable
+    _planesRunning = planesRunning.slice().sort((a,b)=>{
+      const fa=a.fechaInicio?new Date(a.fechaInicio+'T12:00:00').getTime():0;
+      const fb=b.fechaInicio?new Date(b.fechaInicio+'T12:00:00').getTime():0;
+      if(fa!==fb) return fa-fb;
+      return (parseInt(a.semanaNum)||0)-(parseInt(b.semanaNum)||0);
+    });
+    { const _hr=new Date().toISOString().slice(0,10); let _ri=0;
+      _planesRunning.forEach((p,i)=>{ if(p.fechaInicio && p.fechaInicio<=_hr) _ri=i; });
+      _runSemIdx = _ri; }
+    _planRun = _planesRunning.length ? _planesRunning[_runSemIdx] : null;
     if (_plan) {
       const hoy = new Date().toISOString().slice(0,10);
       let found = 0;
@@ -1658,7 +1669,9 @@ function _renderDiaRunning_LEGACY() {
 // ── RUNNING con el MISMO estilo que Fuerza (renglones + hoja de detalle dorada) ──
 function renderRunning() {
   const ctn = document.getElementById('running-ctn');
-  if (!_planRun) { ctn.innerHTML = noData('🏃','Sin plan de running','Tu coach aún no cargó un plan de running.'); return; }
+  if (!_planesRunning || !_planesRunning.length) { ctn.innerHTML = noData('🏃','Sin plan de running','Tu coach aún no cargó un plan de running.'); return; }
+  if (_runSemIdx >= _planesRunning.length) _runSemIdx = _planesRunning.length-1;
+  _planRun = _planesRunning[_runSemIdx];
   const diasData = _planRun.diasData || {};
 
   if (_runDiaIdx !== null && (diasData[_runDiaIdx]||[]).length) {
@@ -1670,12 +1683,23 @@ function renderRunning() {
   const hoyStr = new Date().toISOString().slice(0,10);
   const esHoy = i => { if(!fx) return false; const d=new Date(fx+'T12:00:00'); d.setDate(d.getDate()+i); return d.toISOString().slice(0,10)===hoyStr; };
 
+  const mesTitulo = ((_planesRunning[0].titulo||'PLAN DE RUNNING').split('·')[0]).trim();
   let h = '<div class="mes-nav"><span style="width:38px;"></span>'+
-      '<div class="mes-nav-info"><div class="mes-nav-title" style="font-size:17px;">'+((_planRun.titulo||'PLAN DE RUNNING')).toUpperCase()+'</div>'+
-      '<div class="mes-nav-sub">Semana '+(_planRun.semanaNum||1)+(fx?' · desde '+new Date(fx+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}):'')+'</div></div>'+
+      '<div class="mes-nav-info"><div class="mes-nav-title" style="font-size:17px;">'+_compEsc(mesTitulo).toUpperCase()+'</div>'+
+      (_planRun.objetivo?'<div class="mes-nav-sub">'+_compEsc(_planRun.objetivo)+'</div>':'')+'</div>'+
       '<span style="width:38px;"></span></div>'+
-    '<button onclick="_exportarRunReloj()" style="width:100%;margin-bottom:12px;padding:12px;border-radius:12px;border:1px solid rgba(201,168,76,.4);background:color-mix(in srgb,var(--gold) 8%,var(--card));color:var(--gold);font-size:12px;font-weight:800;letter-spacing:.3px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">⌚ EXPORTAR AL RELOJ (.TCX)</button>'+
-    '<div class="slabel">DÍAS DE ENTRENAMIENTO</div>';
+    '<button onclick="_exportarRunReloj()" style="width:100%;margin-bottom:14px;padding:12px;border-radius:12px;border:1px solid rgba(201,168,76,.4);background:color-mix(in srgb,var(--gold) 8%,var(--card));color:var(--gold);font-size:12px;font-weight:800;letter-spacing:.3px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">⌚ EXPORTAR SEMANA AL RELOJ (.TCX)</button>';
+
+  // Selector de semanas (el mes completo)
+  if (_planesRunning.length > 1) {
+    h += '<div class="slabel">SEMANAS</div><div class="wk-row">'+
+      _planesRunning.map((p,i)=>{
+        const on=i===_runSemIdx; let rango='';
+        if(p.fechaInicio){ const l=new Date(p.fechaInicio+'T12:00:00'); const d=new Date(l); d.setDate(d.getDate()+6); const f=x=>x.toLocaleDateString('es-AR',{day:'numeric',month:'short'}); rango=f(l)+' — '+f(d); }
+        return '<button class="wk-chip'+(on?' on':'')+'" onclick="_selRunSemana('+i+')"><span class="wk-n">Semana '+(p.semanaNum||(i+1))+'</span>'+(rango?'<span class="wk-d">'+rango+'</span>':'')+'</button>';
+      }).join('')+'</div>';
+  }
+  h += '<div class="slabel">DÍAS DE ENTRENAMIENTO</div>';
 
   const diasE = [];
   for (let i=0;i<7;i++){ if((diasData[i]||[]).length) diasE.push(i); }
@@ -1704,6 +1728,7 @@ function renderRunning() {
   ctn.innerHTML = h + '<div style="height:20px;"></div>';
 }
 function _selRunDia(i){ _runDiaIdx = i; renderRunning(); window.scrollTo({top:0,behavior:'smooth'}); }
+function _selRunSemana(i){ _runSemIdx = i; _planRun = _planesRunning[i]; _runDiaIdx = null; renderRunning(); window.scrollTo({top:0,behavior:'smooth'}); }
 function _volverRunDias(){ _runDiaIdx = null; renderRunning(); window.scrollTo({top:0,behavior:'smooth'}); }
 function _runDetalleHTML(i){
   const diasData = _planRun.diasData||{};
