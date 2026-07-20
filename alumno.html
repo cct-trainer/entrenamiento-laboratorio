@@ -451,6 +451,10 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
     <div id="stats-ctn"></div>
   </div>
 
+  <div class="tab" id="tab-coach">
+    <div id="coach-ctn"></div>
+  </div>
+
   <div class="tab" id="tab-plan">
     <div id="plan-ctn"></div>
   </div>
@@ -490,6 +494,10 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
     <button class="nb" id="nb-medidas" onclick="goTab('medidas')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4l-14 14l-4 -4z"/><path d="M16 7l-1.5 -1.5"/><path d="M13 10l-1.5 -1.5"/><path d="M10 13l-1.5 -1.5"/><path d="M7 16l-1.5 -1.5"/></svg>
       MEDIDAS
+    </button>
+    <button class="nb" id="nb-coach" onclick="goTab('coach')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+      COACH
     </button>
   </nav>
 </div>
@@ -568,8 +576,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260720142914 por un timestamp en cada deploy
-const _APP_VERSION = '20260720142914';
+// deploy.bat reemplaza 20260720150807 por un timestamp en cada deploy
+const _APP_VERSION = '20260720150807';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -822,7 +830,7 @@ function _configNavModo() {
 function _volverChooser() { _mostrarChooser(); }
 
 function goTab(t) {
-  ['rutina','running','cargas','stats','medidas'].forEach(x => {
+  ['rutina','running','cargas','stats','medidas','coach'].forEach(x => {
     const tab = document.getElementById('tab-'+x);
     const btn = document.getElementById('nb-'+x);
     if (tab) tab.classList.toggle('on',x===t);
@@ -832,6 +840,7 @@ function goTab(t) {
   if (t==='medidas') renderMedidas();
   if (t==='running') renderRunning();
   if (t==='stats')   renderStats();
+  if (t==='coach')   renderInfo();
 }
 
 // ── PLAN (MACROCICLO) ─────────────────────────────────────────────────────
@@ -1889,10 +1898,11 @@ const _INFO_COLORS = {
 let _infoArtOpen = null; // índice del artículo abierto, o null = lista
 
 function renderInfo() {
-  const ctn = document.getElementById('info-ctn');
+  const ctn = document.getElementById('coach-ctn');
+  if (!ctn) return;
   const arts = (_data && _data.articulos) ? _data.articulos.filter(a => a.publicado !== false) : [];
   if (!arts.length) {
-    ctn.innerHTML = noData('📖','Sin contenido','Tu coach publicará artículos y recursos aquí próximamente.');
+    ctn.innerHTML = noData('🎓','Coach Online','Tu coach va a subir videos y artículos sobre preparación, mentalidad y psicología del deporte para que rindas siempre al 100.');
     return;
   }
   if (_infoArtOpen !== null && arts[_infoArtOpen]) {
@@ -1904,7 +1914,10 @@ function renderInfo() {
 }
 
 function _renderInfoLista(arts, ctn) {
-  ctn.innerHTML = arts.map((a, i) => {
+  ctn.innerHTML =
+    '<div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--gold);margin:4px 0 4px;">🎓 COACH ONLINE</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5;">Videos y artículos sobre preparación, mentalidad y psicología del deporte.</div>'+
+    arts.map((a, i) => {
     const color = _INFO_COLORS[a.categoria] || '#94a3b8';
     const tipoIcon = a.tipo === 'video' ? '▶' : a.tipo === 'link' ? '🔗' : '📄';
     const portadaHTML = a.portada
