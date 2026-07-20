@@ -4060,10 +4060,12 @@ select.toolbox-input option:disabled { color: #888; }
     <!-- NAV SEMANA -->
     <div class="run-semana-header">
       <div class="run-semana-titulo">DISTRIBUCIÓN SEMANAL</div>
-      <div class="run-semana-nav">
+      <div class="run-semana-nav" style="display:flex;align-items:center;gap:8px;">
         <button class="run-semana-btn" onclick="runSemanaAnterior()">‹</button>
-        <div class="run-semana-label" id="run-semana-label">Semana 1</div>
+        <div class="run-semana-label" id="run-semana-label">Semana 1 de 1</div>
         <button class="run-semana-btn" onclick="runSemanaSiguiente()">›</button>
+        <button class="btn-run btn-run-outline" style="font-size:11px;padding:5px 12px;background:#eef7ee;color:#166534;border-color:#22c55e;" onclick="runAgregarSemana()">＋ Agregar semana</button>
+        <button class="btn-run btn-run-outline" style="font-size:11px;padding:5px 10px;color:#c62828;border-color:#f0c0c0;" onclick="runEliminarSemana()" title="Eliminar esta semana">🗑</button>
       </div>
     </div>
 
@@ -9082,14 +9084,53 @@ const TIPOS_SESION_RUNNING = [
 
 // Estado del planificador running
 let runPlanActualId = null;
-let runDiasData = {}; // { 0: [{tipo, bloques}], 1: [...], ... }  índice = día semana
+let runSemanasArray = [{ semana:1, fechaInicio:'', diasData:{} }]; // varias semanas dentro del plan (como fuerza)
+let runSemActual = 0;                                             // índice de la semana en edición
+let runDiasData = runSemanasArray[0].diasData;                    // referencia a la semana activa
 let runDiaAbierto = null; // índice del día que está editando
 let runBloqueCounter = 0;
+
+function _runSyncSemana(){ if(runSemanasArray[runSemActual]){ runSemanasArray[runSemActual].diasData = runDiasData; const fn=document.getElementById('run-fecha-inicio'); if(fn && fn.value) runSemanasArray[runSemActual].fechaInicio = fn.value; } }
+function _runCargarSemana(idx){
+  _runSyncSemana();
+  runSemActual = idx;
+  runDiasData = runSemanasArray[idx].diasData || (runSemanasArray[idx].diasData={});
+  runDiaAbierto = null;
+  const ed=document.getElementById('run-dia-editor'); if(ed) ed.style.display='none';
+  _runActualizarSemLabel();
+  const fn=document.getElementById('run-fecha-inicio'); if(fn) fn.value=runSemanasArray[idx].fechaInicio||'';
+  renderRunDias();
+}
+function _runActualizarSemLabel(){
+  const sl=document.getElementById('run-semana-label');
+  if(sl) sl.textContent='Semana '+(runSemActual+1)+' de '+runSemanasArray.length;
+  const sn=document.getElementById('run-semana-num'); if(sn) sn.value=String(runSemActual+1);
+}
+function runAgregarSemana(){
+  _runSyncSemana();
+  // fecha de la nueva semana = inicio de la anterior + 7 días
+  let fi='';
+  const prev=runSemanasArray[runSemanasArray.length-1];
+  if(prev && prev.fechaInicio){ const d=new Date(prev.fechaInicio+'T12:00:00'); d.setDate(d.getDate()+7); fi=d.toISOString().slice(0,10); }
+  runSemanasArray.push({ semana:runSemanasArray.length+1, fechaInicio:fi, diasData:{} });
+  _runCargarSemana(runSemanasArray.length-1);
+  toast('Semana '+runSemanasArray.length+' agregada');
+}
+function runEliminarSemana(){
+  if(runSemanasArray.length<=1){ toast('El plan debe tener al menos una semana','error'); return; }
+  if(!confirm('¿Eliminar la Semana '+(runSemActual+1)+'?')) return;
+  runSemanasArray.splice(runSemActual,1);
+  runSemanasArray.forEach((s,i)=>s.semana=i+1);
+  _runCargarSemana(Math.max(0,runSemActual-1));
+}
 
 // ── Abrir planificador running ──────────────────────────────────────────────
 function abrirPlanRunning() {
   runPlanActualId = null;
-  runDiasData = {};
+  const hoy = new Date().toISOString().split('T')[0];
+  runSemanasArray = [{ semana:1, fechaInicio:hoy, diasData:{} }];
+  runSemActual = 0;
+  runDiasData = runSemanasArray[0].diasData;
   runDiaAbierto = null;
   runBloqueCounter = 0;
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
@@ -9097,9 +9138,9 @@ function abrirPlanRunning() {
   renderPlanSidebar('running');
   const tit = document.getElementById('run-titulo'); if(tit) tit.value='';
   const d = document.getElementById('run-titulo-display'); if(d) d.textContent='🏃 PLANIFICACIÓN DE RUNNING';
-  const fn = document.getElementById('run-fecha-inicio'); if(fn) fn.value = new Date().toISOString().split('T')[0];
+  const fn = document.getElementById('run-fecha-inicio'); if(fn) fn.value = hoy;
   const sn = document.getElementById('run-semana-num'); if(sn) sn.value='1';
-  const sl = document.getElementById('run-semana-label'); if(sl) sl.textContent='Semana 1';
+  const sl = document.getElementById('run-semana-label'); if(sl) sl.textContent='Semana 1 de 1';
   refreshRunAlumnoSelect();
   if(currentAlumnoId) document.getElementById('run-alumno-select').value = currentAlumnoId;
   document.getElementById('run-dia-editor').style.display='none';
@@ -9118,14 +9159,8 @@ function actualizarTituloRunning(val) {
   if(d) d.textContent = val.trim().toUpperCase() || '🏃 PLANIFICACIÓN DE RUNNING';
 }
 
-function runSemanaAnterior() {
-  const n = document.getElementById('run-semana-num');
-  if(n && parseInt(n.value)>1) { n.value=parseInt(n.value)-1; document.getElementById('run-semana-label').textContent='Semana '+n.value; }
-}
-function runSemanaSiguiente() {
-  const n = document.getElementById('run-semana-num');
-  if(n) { n.value=parseInt(n.value||1)+1; document.getElementById('run-semana-label').textContent='Semana '+n.value; }
-}
+function runSemanaAnterior() { if(runSemActual>0) _runCargarSemana(runSemActual-1); }
+function runSemanaSiguiente() { if(runSemActual<runSemanasArray.length-1) _runCargarSemana(runSemActual+1); }
 
 // ── Render grilla de 7 días ──────────────────────────────────────────────────
 function renderRunDias() {
@@ -9661,16 +9696,16 @@ function guardarPlanRunning() {
   const titulo = document.getElementById('run-titulo').value.trim() || 'Plan running';
   if(!alumnoId) { toast('Seleccioná un alumno','error'); return; }
 
+  _runSyncSemana();
   const plan = {
     id: runPlanActualId || genId(),
     alumnoId,
     tipoPlan: 'running',
     titulo,
-    semanaNum: document.getElementById('run-semana-num').value,
-    fechaInicio: document.getElementById('run-fecha-inicio').value,
+    fechaInicio: (runSemanasArray[0] && runSemanasArray[0].fechaInicio) || document.getElementById('run-fecha-inicio').value,
     objetivo: document.getElementById('run-objetivo').value,
     nivel: document.getElementById('run-nivel').value,
-    diasData: runDiasData,
+    semanasArray: runSemanasArray.map((s,i)=>({ semana:i+1, fechaInicio:s.fechaInicio||'', diasData:s.diasData||{} })),
     createdAt: new Date().toISOString()
   };
 
@@ -9699,27 +9734,35 @@ function _importarRunningJSON(){
   if(!txt){ toast('Pegá el JSON','error'); return; }
   let data;
   try{ data=JSON.parse(txt); }catch(e){ toast('JSON inválido: '+e.message,'error'); return; }
-  const arr=Array.isArray(data)?data:[data];
+  // Puede venir: (a) un plan con semanasArray, (b) array de semanas sueltas → se unifican en UN plan-mes
+  let arr = Array.isArray(data) ? data : [data];
   const sel=document.getElementById('run-alumno-select');
   const alumnoId=(sel&&sel.value)||currentAlumnoId;
   if(!alumnoId){ toast('Seleccioná un alumno primero','error'); return; }
-  const planes=getPlanificaciones();
-  const grupoRun = 'gr'+genId();  // agrupa todas las semanas de esta importación en un solo "mes"
-  let n=0;
+
+  let semanas=[]; let titulo='Plan running', objetivo='', nivel='';
   arr.forEach((p,idx)=>{
-    if(!p||!p.diasData) return;
-    planes.push({
-      id: genId(), alumnoId, tipoPlan:'running', grupoRun,
-      titulo: p.titulo||'Plan running', semanaNum: String(p.semanaNum||(idx+1)),
-      fechaInicio: p.fechaInicio||'', objetivo: p.objetivo||'', nivel: p.nivel||'',
-      diasData: p.diasData||{}, createdAt: new Date().toISOString()
-    });
-    n++;
+    if(!p) return;
+    if(idx===0){ titulo=(p.titulo||titulo).split('·')[0].trim(); objetivo=p.objetivo||objetivo; nivel=p.nivel||nivel; }
+    if(Array.isArray(p.semanasArray)){
+      p.semanasArray.forEach(s=>{ if(s&&s.diasData) semanas.push({ fechaInicio:s.fechaInicio||'', diasData:s.diasData }); });
+    } else if(p.diasData){
+      semanas.push({ fechaInicio:p.fechaInicio||'', diasData:p.diasData });
+    }
   });
-  if(!n){ toast('No se encontraron semanas válidas','error'); return; }
+  if(!semanas.length){ toast('No se encontraron semanas válidas','error'); return; }
+  semanas = semanas.map((s,i)=>({ semana:i+1, fechaInicio:s.fechaInicio, diasData:s.diasData }));
+
+  const planes=getPlanificaciones();
+  planes.push({
+    id: genId(), alumnoId, tipoPlan:'running',
+    titulo, objetivo, nivel,
+    fechaInicio: semanas[0].fechaInicio || '',
+    semanasArray: semanas, createdAt: new Date().toISOString()
+  });
   savePlanificaciones(planes);
   closeModal('modal-run-import');
-  toast(n+' semana(s) de running importadas ✓');
+  toast('Plan de running importado ('+semanas.length+' semanas) ✓');
   if(currentAlumnoId) renderPerfilPlanificaciones(currentAlumnoId,'running');
 }
 
@@ -9728,15 +9771,20 @@ function abrirPlanRunningExistente(planId) {
   const p = getPlanificaciones().find(x=>x.id===planId);
   if(!p) return;
   runPlanActualId = planId;
-  runDiasData = p.diasData || {};
+  // Cargar semanas (migrar planes viejos de una sola semana con diasData)
+  if(Array.isArray(p.semanasArray) && p.semanasArray.length){
+    runSemanasArray = p.semanasArray.map((s,i)=>({ semana:i+1, fechaInicio:s.fechaInicio||'', diasData:s.diasData||{} }));
+  } else {
+    runSemanasArray = [{ semana:1, fechaInicio:p.fechaInicio||'', diasData:p.diasData||{} }];
+  }
+  runSemActual = 0;
+  runDiasData = runSemanasArray[0].diasData;
   runDiaAbierto = null;
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
   document.getElementById('view-running').classList.add('active');
   const tit = document.getElementById('run-titulo'); if(tit) tit.value=p.titulo||'';
   const d = document.getElementById('run-titulo-display'); if(d) d.textContent=(p.titulo||'PLAN RUNNING').toUpperCase();
-  const fn = document.getElementById('run-fecha-inicio'); if(fn) fn.value=p.fechaInicio||'';
-  const sn = document.getElementById('run-semana-num'); if(sn) sn.value=p.semanaNum||1;
-  const sl = document.getElementById('run-semana-label'); if(sl) sl.textContent='Semana '+(p.semanaNum||1);
+  const fn = document.getElementById('run-fecha-inicio'); if(fn) fn.value=runSemanasArray[0].fechaInicio||'';
   const ob = document.getElementById('run-objetivo'); if(ob) ob.value=p.objetivo||'';
   const nv = document.getElementById('run-nivel'); if(nv) nv.value=p.nivel||'';
   if(p.alumnoId) currentAlumnoId = p.alumnoId;
@@ -9744,6 +9792,7 @@ function abrirPlanRunningExistente(planId) {
   refreshRunAlumnoSelect();
   document.getElementById('run-alumno-select').value = p.alumnoId||'';
   document.getElementById('run-dia-editor').style.display='none';
+  _runActualizarSemLabel();
   renderRunDias();
 }
 
@@ -12810,7 +12859,10 @@ function renderPerfilDashboard(alumnoId) {
 
   // Contar sesiones de running
   let sesionesRun = 0;
-  planesRun.forEach(p => { sesionesRun += Object.keys(p.diasData || {}).length; });
+  planesRun.forEach(p => {
+    if (p.semanasArray && p.semanasArray.length) p.semanasArray.forEach(s => { sesionesRun += Object.keys(s.diasData || {}).length; });
+    else sesionesRun += Object.keys(p.diasData || {}).length;
+  });
 
   // Próxima sesión en el calendario
   const hoy = new Date().toISOString().split('T')[0];
@@ -12819,7 +12871,7 @@ function renderPerfilDashboard(alumnoId) {
     const tipo = p.tipoPlan || 'fuerza';
     const semanas = tipo === 'fuerza'
       ? (p.semanasArray || [{ fechaInicio: p.fecha, dias: p.diasData || {} }])
-      : [{ fechaInicio: p.fechaInicio, dias: p.diasData || {} }];
+      : ((p.semanasArray && p.semanasArray.length) ? p.semanasArray.map(s=>({ fechaInicio:s.fechaInicio, dias:s.diasData||{} })) : [{ fechaInicio: p.fechaInicio, dias: p.diasData || {} }]);
     semanas.forEach(s => {
       if (!s.fechaInicio) return;
       Object.keys(s.dias || {}).forEach(di => {
@@ -16663,17 +16715,22 @@ function renderCalendario() {
     }
 
     if (tipo === 'running') {
-      const fi = p.fechaInicio;
-      if (!fi) return;
-      const fechaInicio = new Date(fi + 'T00:00:00');
-      if (isNaN(fechaInicio)) return;
-      Object.keys(p.diasData || {}).forEach(diaIdx => {
-        const bloques = p.diasData[diaIdx];
-        if (!bloques || !bloques.length) return;
-        const d = new Date(fechaInicio);
-        d.setDate(d.getDate() + parseInt(diaIdx));
-        addEvento(d.toISOString().split('T')[0], {
-          tipo: 'running', nombre: p.titulo || 'Running', planId: p.id
+      const semanas = (p.semanasArray && p.semanasArray.length)
+        ? p.semanasArray
+        : [{ fechaInicio: p.fechaInicio || '', diasData: p.diasData || {} }];
+      semanas.forEach(sem => {
+        const fi = sem.fechaInicio;
+        if (!fi) return;
+        const fechaInicio = new Date(fi + 'T00:00:00');
+        if (isNaN(fechaInicio)) return;
+        Object.keys(sem.diasData || {}).forEach(diaIdx => {
+          const bloques = sem.diasData[diaIdx];
+          if (!bloques || !bloques.length) return;
+          const d = new Date(fechaInicio);
+          d.setDate(d.getDate() + parseInt(diaIdx));
+          addEvento(d.toISOString().split('T')[0], {
+            tipo: 'running', nombre: p.titulo || 'Running', planId: p.id
+          });
         });
       });
     }
@@ -16862,48 +16919,23 @@ function _faseBloqueHTML(p, faseIdx, auto) {
     + '</div>';
 }
 
-// Running: agrupa las semanas de un mismo bloque en UNA tarjeta-mes
+// Running: cada plan es un MES (con semanasArray adentro). Una tarjeta por plan.
 function _renderRunningGroups(planes){
-  const groups={}; const order=[];
-  planes.forEach(p=>{ const k=p.grupoRun||('obj:'+(p.objetivo||p.id)); if(!groups[k]){groups[k]=[];order.push(k);} groups[k].push(p); });
   let html='<div class="plan-items-grid">';
-  order.forEach(k=>{
-    const semanas=groups[k].slice().sort((a,b)=>{
-      const fa=a.fechaInicio?new Date(a.fechaInicio+'T12:00:00').getTime():0, fb=b.fechaInicio?new Date(b.fechaInicio+'T12:00:00').getTime():0;
-      if(fa!==fb) return fa-fb; return (parseInt(a.semanaNum)||0)-(parseInt(b.semanaNum)||0);
-    });
-    const p0=semanas[0];
-    const mesTit=((p0.titulo||'Plan running').split('·')[0]).trim();
-    if(semanas.length===1){
-      html+='<div class="plan-item"><div style="height:5px;background:linear-gradient(90deg,#3b82f6,#60a5fa);"></div>'+
-        '<div class="plan-item-head" style="background:linear-gradient(160deg,#1e293b,#0b1220);border-radius:0;padding-top:32px;">'+
-          '<button class="plan-item-del-btn" onclick="eliminarPlanificacion(\''+p0.id+'\')" title="Eliminar" style="position:absolute;top:10px;right:10px;">×</button>'+
-          '<span style="position:absolute;top:11px;left:13px;background:#3b82f6;color:#fff;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 9px;border-radius:20px;">🏃 RUNNING</span>'+
-          '<div class="plan-item-name">'+mesTit+'</div>'+(p0.fechaInicio?'<div class="plan-item-meta">'+p0.fechaInicio+'</div>':'')+
-        '</div>'+
-        '<div style="display:flex;gap:6px;padding:12px 14px;">'+
-          '<button onclick="abrirPlanRunningExistente(\''+p0.id+'\')" style="flex:1;background:#1a1a1a;color:#fff;border:none;border-radius:9px;padding:10px;font-size:12px;font-weight:800;cursor:pointer;">▶ ABRIR</button>'+
-          '<button onclick="renombrarPlanificacion(\''+p0.id+'\')" style="background:#f1f3f7;border:none;border-radius:9px;padding:9px 12px;font-size:14px;cursor:pointer;">✏️</button>'+
-          '<button onclick="eliminarPlanificacion(\''+p0.id+'\')" style="background:#fdeaea;border:none;border-radius:9px;padding:9px 12px;font-size:14px;cursor:pointer;color:#c62828;">🗑</button>'+
-        '</div></div>';
-    } else {
-      const rows=semanas.map((s,i)=>{ let rango='';
-        if(s.fechaInicio){const l=new Date(s.fechaInicio+'T12:00:00');const d=new Date(l);d.setDate(d.getDate()+6);const f=x=>x.toLocaleDateString('es-AR',{day:'numeric',month:'short'});rango=f(l)+' — '+f(d);}
-        return '<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid #f0f0f0;">'+
-          '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:700;color:#1a1a1a;">Semana '+(s.semanaNum||(i+1))+'</div>'+(rango?'<div style="font-size:10px;color:#999;">'+rango+'</div>':'')+'</div>'+
-          '<button onclick="abrirPlanRunningExistente(\''+s.id+'\')" style="background:#1a1a1a;color:#fff;border:none;border-radius:7px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;">ABRIR</button>'+
-          '<button onclick="renombrarPlanificacion(\''+s.id+'\')" title="Renombrar" style="background:#f1f3f7;border:none;border-radius:7px;padding:6px 9px;font-size:12px;cursor:pointer;">✏️</button>'+
-          '<button onclick="eliminarPlanificacion(\''+s.id+'\')" title="Borrar semana" style="background:#fdeaea;border:none;border-radius:7px;padding:6px 9px;font-size:12px;cursor:pointer;color:#c62828;">🗑</button>'+
-        '</div>';
-      }).join('');
-      html+='<div class="plan-item" style="grid-column:1/-1;"><div style="height:5px;background:linear-gradient(90deg,#3b82f6,#60a5fa);"></div>'+
-        '<div class="plan-item-head" style="background:linear-gradient(160deg,#1e293b,#0b1220);border-radius:0;padding-top:30px;">'+
-          '<span style="position:absolute;top:11px;left:13px;background:#3b82f6;color:#fff;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 9px;border-radius:20px;">🏃 RUNNING · '+semanas.length+' SEMANAS</span>'+
-          '<div class="plan-item-name" style="font-size:22px;">'+mesTit+'</div>'+(p0.objetivo?'<div class="plan-item-meta">'+p0.objetivo+'</div>':'')+
-        '</div>'+
-        '<div style="padding:2px 6px 10px;">'+rows+'</div>'+
-      '</div>';
-    }
+  planes.forEach(p=>{
+    const semanas = (Array.isArray(p.semanasArray)&&p.semanasArray.length) ? p.semanasArray.length : 1;
+    const mesTit=((p.titulo||'Plan running').split('·')[0]).trim();
+    html+='<div class="plan-item"><div style="height:5px;background:linear-gradient(90deg,#3b82f6,#60a5fa);"></div>'+
+      '<div class="plan-item-head" style="background:linear-gradient(160deg,#1e293b,#0b1220);border-radius:0;padding-top:32px;">'+
+        '<button class="plan-item-del-btn" onclick="eliminarPlanificacion(\''+p.id+'\')" title="Eliminar" style="position:absolute;top:10px;right:10px;">×</button>'+
+        '<span style="position:absolute;top:11px;left:13px;background:#3b82f6;color:#fff;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 9px;border-radius:20px;">🏃 RUNNING · '+semanas+' SEM</span>'+
+        '<div class="plan-item-name">'+mesTit+'</div>'+(p.objetivo?'<div class="plan-item-meta">'+p.objetivo+'</div>':(p.fechaInicio?'<div class="plan-item-meta">'+p.fechaInicio+'</div>':''))+
+      '</div>'+
+      '<div style="display:flex;gap:6px;padding:12px 14px;">'+
+        '<button onclick="abrirPlanRunningExistente(\''+p.id+'\')" style="flex:1;background:#1a1a1a;color:#fff;border:none;border-radius:9px;padding:10px;font-size:12px;font-weight:800;cursor:pointer;">▶ ABRIR</button>'+
+        '<button onclick="renombrarPlanificacion(\''+p.id+'\')" style="background:#f1f3f7;border:none;border-radius:9px;padding:9px 12px;font-size:14px;cursor:pointer;">✏️</button>'+
+        '<button onclick="eliminarPlanificacion(\''+p.id+'\')" style="background:#fdeaea;border:none;border-radius:9px;padding:9px 12px;font-size:14px;cursor:pointer;color:#c62828;">🗑</button>'+
+      '</div></div>';
   });
   return html+'</div>';
 }
