@@ -133,6 +133,21 @@ html.light .hdr{box-shadow:0 6px 18px -12px rgba(0,0,0,.18);}
 .wk-chip.on .wk-n{color:var(--gold);}
 .wk-d{font-size:9px;color:var(--muted);}
 
+/* ── Selector Fuerza / Running ── */
+#modo-chooser{display:none;flex-direction:column;min-height:100vh;min-height:100dvh;max-width:480px;margin:0 auto;padding:34px 22px calc(30px + env(safe-area-inset-bottom,0));justify-content:center;}
+.mc-hi{font-size:15px;color:var(--muted);font-weight:600;}
+.mc-q{font-size:24px;font-weight:900;color:var(--text);margin:3px 0 22px;line-height:1.15;}
+.mc-cards{display:flex;flex-direction:column;gap:16px;}
+.mc-card{position:relative;border-radius:20px;overflow:hidden;cursor:pointer;min-height:172px;display:flex;flex-direction:column;justify-content:flex-end;padding:18px;border:1px solid var(--border);box-shadow:0 14px 34px -14px rgba(0,0,0,.65);transition:transform .15s;}
+.mc-card:active{transform:scale(.99);}
+.mc-fuerza{background:linear-gradient(135deg,#C9A84C,#1a1018);}
+.mc-running{background:linear-gradient(135deg,#1D4ED8,#0a1024);}
+.mc-card::before{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.6),rgba(0,0,0,.03) 60%,rgba(0,0,0,.15));}
+.mc-ico{position:absolute;top:15px;right:18px;font-size:42px;opacity:.92;}
+.mc-label{position:relative;font-size:26px;font-weight:900;color:#fff;letter-spacing:2px;text-shadow:0 1px 6px rgba(0,0,0,.5);}
+.mc-sub{position:relative;font-size:11px;color:rgba(255,255,255,.85);margin-top:3px;}
+.mc-btn{position:relative;margin-top:13px;align-self:flex-start;background:#fff;color:#111;font-size:12px;font-weight:900;padding:8px 22px;border-radius:22px;letter-spacing:.3px;}
+
 .slabel{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--muted);margin-bottom:8px;}
 .dgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px;}
 .dchip{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;background:var(--card);border:1.5px solid var(--border);cursor:pointer;transition:all .15s;position:relative;user-select:none;}
@@ -369,6 +384,27 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
   </div>
 </div>
 
+<div id="modo-chooser">
+  <div>
+    <div class="mc-hi">Hola, <span id="mc-name"></span></div>
+    <div class="mc-q">¿Qué vas a entrenar hoy?</div>
+    <div class="mc-cards">
+      <div class="mc-card mc-fuerza" id="mc-card-fuerza" onclick="_entrarModo('fuerza')">
+        <div class="mc-ico">🏋️</div>
+        <div class="mc-label">FUERZA</div>
+        <div class="mc-sub">Gimnasio · hipertrofia · fuerza</div>
+        <div class="mc-btn">Entrar ›</div>
+      </div>
+      <div class="mc-card mc-running" id="mc-card-running" onclick="_entrarModo('running')">
+        <div class="mc-ico">🏃</div>
+        <div class="mc-label">RUNNING</div>
+        <div class="mc-sub">Carrera · resistencia · ritmo</div>
+        <div class="mc-btn">Entrar ›</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="app">
   <div class="hdr">
     <div class="hdr-row">
@@ -382,6 +418,8 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
         <a id="btn-coach-panel" href="./coach.html" title="Panel Coach"
           style="display:none;background:rgba(201,168,76,.1);border:1.5px solid rgba(201,168,76,.3);border-radius:22px;padding:7px 11px;font-size:15px;text-decoration:none;align-items:center;transition:all .2s;"
           onmouseover="this.style.background='rgba(201,168,76,.2)'" onmouseout="this.style.background='rgba(201,168,76,.1)'">🏋️</a>
+        <button id="btn-modo" onclick="_volverChooser()" title="Cambiar Fuerza / Running"
+          style="display:none;background:var(--card);border:1.5px solid var(--border);border-radius:22px;padding:7px 12px;cursor:pointer;font-size:15px;flex-shrink:0;transition:all .2s;color:var(--gold);align-items:center;">⇄</button>
         <button id="theme-btn" onclick="_toggleTheme()" title="Cambiar tema"
           style="background:var(--card);border:1.5px solid var(--border);border-radius:22px;padding:7px 13px;cursor:pointer;font-size:17px;flex-shrink:0;transition:all .2s;color:var(--text);">🌙</button>
       </div>
@@ -528,8 +566,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260720120642 por un timestamp en cada deploy
-const _APP_VERSION = '20260720120642';
+// deploy.bat reemplaza 20260720122906 por un timestamp en cada deploy
+const _APP_VERSION = '20260720122906';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -729,11 +767,48 @@ function _mostrarPortada(nombre, foto) {
   document.getElementById('portada').style.display = 'flex';
   window.scrollTo(0,0);
 }
+// ── Selector Fuerza / Running ──
+let _modo = null;
+const _MC_IMG_FUERZA = '';   // (opcional) URL de la foto de fuerza — se reemplaza cuando la tengas
+const _MC_IMG_RUNNING = '';  // (opcional) URL de la foto de running
+function _tieneFuerza(){ return (_planesFuerza||[]).length > 0; }
+function _tieneRunning(){ return !!_planRun; }
+
 function entrarApp() {
   document.getElementById('portada').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
+  const f = _tieneFuerza(), r = _tieneRunning();
+  if (f && r) { _mostrarChooser(); return; }
+  _entrarModo((r && !f) ? 'running' : 'fuerza');
+}
+function _mostrarChooser() {
+  const nombre = _data?.perfil?.nombre || _data?.perfil?.name || '';
+  const mn = document.getElementById('mc-name'); if (mn) mn.textContent = nombre;
+  if (_MC_IMG_FUERZA) { const el=document.getElementById('mc-card-fuerza'); if(el) el.style.background='#0a0a12 url('+_MC_IMG_FUERZA+') center/cover no-repeat'; }
+  if (_MC_IMG_RUNNING){ const el=document.getElementById('mc-card-running'); if(el) el.style.background='#0a0a12 url('+_MC_IMG_RUNNING+') center/cover no-repeat'; }
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('portada').style.display = 'none';
+  document.getElementById('modo-chooser').style.display = 'flex';
   window.scrollTo(0,0);
 }
+function _entrarModo(m) {
+  _modo = m;
+  document.getElementById('modo-chooser').style.display = 'none';
+  document.getElementById('portada').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  _configNavModo();
+  goTab(m === 'running' ? 'running' : 'rutina');
+  window.scrollTo(0,0);
+}
+function _configNavModo() {
+  const f = _tieneFuerza(), r = _tieneRunning();
+  const nbRut = document.getElementById('nb-rutina');
+  const nbRun = document.getElementById('nb-running');
+  if (nbRut) nbRut.style.display = (_modo === 'fuerza')  ? '' : 'none';
+  if (nbRun) nbRun.style.display = (_modo === 'running') ? '' : 'none';
+  const bm = document.getElementById('btn-modo');
+  if (bm) bm.style.display = (f && r) ? 'inline-flex' : 'none';
+}
+function _volverChooser() { _mostrarChooser(); }
 
 function goTab(t) {
   ['rutina','running','cargas','stats','medidas'].forEach(x => {
