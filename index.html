@@ -11193,6 +11193,25 @@ function renderPlanDiaEditor(diaIdx) {
             placeholder="Nombre de la sesión  (ej: Piernas · Fuerza, Tren superior · Hipertrofia…)"
             style="width:100%;padding:10px 14px;border:1.5px solid #dde1ea;border-radius:9px;font-size:14px;font-weight:700;color:#1a1a1a;background:#f4f6fb;box-sizing:border-box;outline:none;transition:border .15s;"
             onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='#dde1ea'" />
+          <details style="margin-top:8px;">
+            <summary style="cursor:pointer;font-size:11px;font-weight:800;color:#1d4ed8;padding:4px 0;">📷 Portada e info de la sesión (cómo la ve el alumno)</summary>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+              <input id="plan-ses-imagen" placeholder="Pegá un link o subí una foto →" oninput="_sesImgPrev()" style="flex:1;padding:8px 10px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;box-sizing:border-box;">
+              <button type="button" onclick="document.getElementById('plan-ses-imgfile').click()" style="white-space:nowrap;font-size:12px;padding:8px 12px;border:1px solid #dde1ea;border-radius:8px;background:#f4f6fb;cursor:pointer;">📁 Subir foto</button>
+              <input type="file" id="plan-ses-imgfile" accept="image/*" style="display:none;" onchange="_sesSubirImagen(this)">
+            </div>
+            <div id="plan-ses-imgprev" style="margin-top:6px;"></div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <div style="flex:1;"><div style="font-size:9px;color:#888;font-weight:800;margin-bottom:3px;">LUGAR</div>
+                <select id="plan-ses-lugar" style="width:100%;padding:7px 8px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;"><option value="">(auto)</option><option>Gym</option><option>Casa</option><option>Cualquiera</option></select></div>
+              <div style="flex:1;"><div style="font-size:9px;color:#888;font-weight:800;margin-bottom:3px;">DIFICULTAD</div>
+                <select id="plan-ses-dif" style="width:100%;padding:7px 8px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;"><option value="">—</option><option value="1">Baja</option><option value="2">Media</option><option value="3">Alta</option></select></div>
+              <div style="flex:1;"><div style="font-size:9px;color:#888;font-weight:800;margin-bottom:3px;">DURACIÓN</div>
+                <input id="plan-ses-dur" placeholder="auto" style="width:100%;padding:7px 8px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;box-sizing:border-box;"></div>
+            </div>
+            <textarea id="plan-ses-desc" rows="2" placeholder="Descripción de la sesión (opcional)" style="width:100%;margin-top:8px;padding:8px 10px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;box-sizing:border-box;resize:vertical;"></textarea>
+            <div id="plan-ses-durcalc" style="font-size:11px;color:#059669;font-weight:700;margin-top:6px;"></div>
+          </details>
         </div>
         <div id="plan-dia-bloques-${diaIdx}"></div>
         <div class="plan-add-bloque-zone" onclick="abrirModalNuevoBloque(${diaIdx})">
@@ -11207,8 +11226,64 @@ function renderPlanDiaEditor(diaIdx) {
   if(sesion.bloques && sesion.bloques.length) {
     sesion.bloques.forEach(b => addBloqueDia(diaIdx, b));
   }
-  // Día vacío: se deja en blanco. El coach arma los bloques con "＋ AGREGAR BLOQUE"
-  // (mismo comportamiento que la modalidad CASA).
+  // Restaurar portada e info de la sesión
+  const _si=document.getElementById('plan-ses-imagen'); if(_si) _si.value=sesion.imagen||'';
+  const _sl=document.getElementById('plan-ses-lugar');  if(_sl) _sl.value=sesion.lugar||'';
+  const _sd=document.getElementById('plan-ses-dif');    if(_sd) _sd.value=sesion.dificultad||'';
+  const _su=document.getElementById('plan-ses-dur');    if(_su) _su.value=sesion.duracion||'';
+  const _se=document.getElementById('plan-ses-desc');   if(_se) _se.value=sesion.descripcion||'';
+  _sesImgPrev();
+  _sesActualizarDuracion(sesion.bloques||[]);
+  // Día vacío: se deja en blanco. El coach arma los bloques con "＋ AGREGAR BLOQUE".
+}
+// ── Portada + duración estimada de la sesión ──
+function _sesImgPrev(){
+  const url=(document.getElementById('plan-ses-imagen')?.value||'').trim();
+  const el=document.getElementById('plan-ses-imgprev'); if(!el) return;
+  el.innerHTML = url ? '<img src="'+url.replace(/"/g,'&quot;')+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;" onerror="this.style.display=\'none\'">' : '';
+}
+function _sesSubirImagen(input){
+  const file=input.files&&input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{ const img=new Image(); img.onload=()=>{
+    const maxW=1000, scale=Math.min(1,maxW/img.width), w=Math.round(img.width*scale), h=Math.round(img.height*scale);
+    const cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h);
+    let d; try{ d=cv.toDataURL('image/jpeg',0.72); }catch(err){ toast('No se pudo procesar la imagen','error'); return; }
+    const campo=document.getElementById('plan-ses-imagen'); if(campo) campo.value=d; _sesImgPrev(); toast('Imagen cargada ✓');
+  }; img.onerror=()=>toast('Archivo inválido','error'); img.src=e.target.result; };
+  reader.readAsDataURL(file); input.value='';
+}
+function _serieDurCoach(reps){
+  const s=String(reps||'').toLowerCase(); let m;
+  if((m=s.match(/(\d+)\s*seg/))) return parseInt(m[1]);
+  if((m=s.match(/(\d+)\s*min/))) return parseInt(m[1])*60;
+  if((m=s.match(/(\d+):(\d{2})/))) return parseInt(m[1])*60+parseInt(m[2]);
+  const nums=s.match(/\d+/g); const r=nums?parseInt(nums[nums.length-1]):10;
+  return Math.max(18,r*4);
+}
+function _parseSecsCoach(d){
+  if(!d) return null; const s=String(d).toLowerCase().trim(); let m;
+  if((m=s.match(/(\d+):(\d{2})/))) return parseInt(m[1])*60+parseInt(m[2]);
+  if((m=s.match(/(\d+(?:[.,]\d+)?)\s*min/))) return Math.round(parseFloat(m[1].replace(',','.'))*60);
+  if((m=s.match(/(\d+(?:[.,]\d+)?)\s*(?:seg|s)\b/))) return Math.round(parseFloat(m[1].replace(',','.')));
+  return null;
+}
+function _calcDurSesionCoach(bloques){
+  if(!Array.isArray(bloques)) return 0; let sec=0;
+  bloques.forEach(b=>{ const combo=/biserie|superserie|triserie|gigante|circuito/i.test(b.serieTipo||'');
+    (b.ejercicios||[]).forEach(ej=>{
+      const nSer=Array.isArray(ej.series)&&ej.series.length?ej.series.length:(parseInt(ej.ctrl&&ej.ctrl.series)||1);
+      const s0=(Array.isArray(ej.series)&&ej.series[0])?ej.series[0]:(ej.ctrl||{});
+      const dur=_serieDurCoach(s0.reps); const pausa=_parseSecsCoach(s0.pausa||'')||(combo?25:75);
+      sec+=nSer*dur+nSer*pausa;
+    }); sec+=25;
+  });
+  return Math.round(sec/60);
+}
+function _sesActualizarDuracion(bloques){
+  const el=document.getElementById('plan-ses-durcalc'); if(!el) return;
+  const m=_calcDurSesionCoach(bloques);
+  el.textContent = m ? '⏱ Duración estimada: ~'+m+' min (dejá "auto" para usar esta, o escribí una fija arriba)' : '';
 }
 
 function cerrarPlanDiaEditor() {
@@ -11246,13 +11321,18 @@ function _switchEditorTab(tabIdx, diaIdx) {
   // Nombre de sesión
   const nomInput = document.getElementById('plan-sesion-nombre');
   if (nomInput) nomInput.value = sesion.nombre || '';
+  // Portada e info del nuevo tab
+  const _si=document.getElementById('plan-ses-imagen'); if(_si) _si.value=sesion.imagen||'';
+  const _sl=document.getElementById('plan-ses-lugar');  if(_sl) _sl.value=sesion.lugar||'';
+  const _sd=document.getElementById('plan-ses-dif');    if(_sd) _sd.value=sesion.dificultad||'';
+  const _su=document.getElementById('plan-ses-dur');    if(_su) _su.value=sesion.duracion||'';
+  const _se=document.getElementById('plan-ses-desc');   if(_se) _se.value=sesion.descripcion||'';
+  _sesImgPrev();
   // Cargar bloques
   if (sesion.bloques && sesion.bloques.length) {
     sesion.bloques.forEach(b => addBloqueDia(diaIdx, b));
-  } else {
-    // Casa vacía: no cargar SOCC default, dejar en blanco para que el coach la arme
-    const addZone = contenedor?.parentElement?.querySelector('.plan-add-bloque-zone');
   }
+  _sesActualizarDuracion(sesion.bloques||[]);
 }
 
 // ── Copiloto embebido en editor de día ───────────────────────────────────────
@@ -11656,7 +11736,16 @@ function guardarEstadoDiaActual() {
   if(!planSemanasArray[planSemEditando]) return;
   if(!planSemanasArray[planSemEditando].dias[diaIdx]) planSemanasArray[planSemEditando].dias[diaIdx] = [{}];
   const _nombreSesion = document.getElementById('plan-sesion-nombre')?.value?.trim() || '';
-  planSemanasArray[planSemEditando].dias[diaIdx][_editorModTab] = { bloques, nombre: _nombreSesion };
+  const _prevSes = planSemanasArray[planSemEditando].dias[diaIdx][_editorModTab] || {};
+  const _g = (id, f) => { const e=document.getElementById(id); return e ? (e.value||'').trim() : (_prevSes[f]||''); };
+  planSemanasArray[planSemEditando].dias[diaIdx][_editorModTab] = {
+    bloques, nombre: _nombreSesion,
+    imagen: _g('plan-ses-imagen','imagen'),
+    lugar: _g('plan-ses-lugar','lugar'),
+    dificultad: _g('plan-ses-dif','dificultad'),
+    duracion: _g('plan-ses-dur','duracion'),
+    descripcion: _g('plan-ses-desc','descripcion')
+  };
   planDiasData = planSemanasArray[planSemEditando].dias;
 }
 

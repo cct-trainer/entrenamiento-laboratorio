@@ -576,8 +576,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260720203627 por un timestamp en cada deploy
-const _APP_VERSION = '20260720203627';
+// deploy.bat reemplaza 20260720204859 por un timestamp en cada deploy
+const _APP_VERSION = '20260720204859';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1497,6 +1497,52 @@ function _toggleFicha(uid) {
   if (arr) arr.style.transform = open ? '' : 'rotate(180deg)';
 }
 
+// ── Duración estimada de una sesión (series × tiempo + descansos) ──
+function _serieDur(reps){
+  const s=String(reps||'').toLowerCase(); let m;
+  if((m=s.match(/(\d+)\s*seg/))) return parseInt(m[1]);
+  if((m=s.match(/(\d+)\s*min/))) return parseInt(m[1])*60;
+  if((m=s.match(/(\d+):(\d{2})/))) return parseInt(m[1])*60+parseInt(m[2]);
+  const nums=s.match(/\d+/g);
+  const r = nums ? parseInt(nums[nums.length-1]) : 10;
+  return Math.max(18, r*4); // ~4s por rep, mínimo 18s
+}
+function _calcDuracionSesion(ses){
+  if(!ses || !Array.isArray(ses.bloques)) return 0;
+  let sec=0;
+  ses.bloques.forEach(b=>{
+    const combo=/biserie|superserie|triserie|gigante|circuito/i.test(b.serieTipo||'');
+    (b.ejercicios||[]).forEach(ej=>{
+      const nSer = Array.isArray(ej.series)&&ej.series.length ? ej.series.length : (parseInt(ej.ctrl&&ej.ctrl.series)||1);
+      const s0 = (Array.isArray(ej.series)&&ej.series[0]) ? ej.series[0] : (ej.ctrl||{});
+      const dur = _serieDur(s0.reps);
+      const pausa = _parseSecs(s0.pausa||'') || (combo?25:75);
+      sec += nSer*dur + nSer*pausa;
+    });
+    sec += 25; // transición por bloque
+  });
+  return Math.round(sec/60);
+}
+function _sesDetalleHTML(ses){
+  if(!ses) return '';
+  const durVal = ses.duracion || (()=>{ const mm=_calcDuracionSesion(ses); return mm ? '~'+mm+' min' : ''; })();
+  const dif = parseInt(ses.dificultad||'')||0;
+  const dots = dif ? [1,2,3].map(i=>'<span style="width:9px;height:9px;border-radius:50%;background:'+(i<=dif?'var(--green)':'rgba(255,255,255,.15)')+';display:inline-block;"></span>').join('') : '';
+  const cover = ses.imagen
+    ? '<div style="height:200px;margin:0 -16px;background:#0a0a12 url(\''+String(ses.imagen).replace(/'/g,'%27')+'\') center/cover no-repeat;"></div>'
+    : '';
+  let info = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;'+(ses.imagen?'margin-top:-42px;position:relative;box-shadow:0 10px 30px -14px rgba(0,0,0,.55);':'')+'">';
+  info += '<div style="font-size:19px;font-weight:900;color:var(--text);line-height:1.15;">'+((ses.nombre||DN[_diaIdx])).toUpperCase()+'</div>';
+  info += '<div style="display:flex;flex-direction:column;gap:9px;margin-top:13px;">';
+  info += '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🏋️</span>'+_compEsc(ses.lugar||(_diaModTab===1?'Casa':'Gym'))+'</div>';
+  if(durVal) info += '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🕐</span>'+_compEsc(durVal)+'</div>';
+  if(dots)   info += '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);">'+dots+' <span style="margin-left:3px;">Dificultad</span></div>';
+  info += '</div>';
+  if(ses.descripcion) info += '<div style="font-size:13px;color:var(--muted);line-height:1.55;margin-top:13px;padding-top:13px;border-top:1px solid var(--border);">'+_compEsc(ses.descripcion)+'</div>';
+  info += '</div>';
+  return cover + info;
+}
+
 function renderSesion() {
   const ctn=document.getElementById('sesion-ctn');
   if (_diaIdx===null||!_plan) { ctn.innerHTML=''; return; }
@@ -1527,11 +1573,11 @@ function renderSesion() {
     'color:'+(active?'var(--gold)':'var(--muted)')+';transition:all .15s;">'+
     icon+' '+label+'</button>';
 
-  const tabs =
+  const tabs = hasCasa ?
     '<div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:14px;">'+
       _tabBtn(0,'','GYM', _diaModTab===0)+
       _tabBtn(1,'','CASA', _diaModTab===1)+
-    '</div>';
+    '</div>' : '';
 
   const ses = _diaModTab === 0 ? sesGym : sesCasa;
 
@@ -1546,8 +1592,8 @@ function renderSesion() {
     return;
   }
 
-  ctn.innerHTML= back + tabs +
-    '<div style="padding-bottom:4px;"><div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--gold);margin-bottom:12px;">'+(ses.nombre||DN[_diaIdx]).toUpperCase()+'</div>'+
+  ctn.innerHTML= back + tabs + _sesDetalleHTML(ses) +
+    '<div style="padding-bottom:4px;"><div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--text);margin-bottom:12px;">TU ENTRENAMIENTO</div>'+
     ses.bloques.map((b,bi) => {
       const letra='ABCDEFGHIJ'[bi]||(bi+1);
       const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>_ejCard(ej,'b'+bi+'e'+ei)).join('');
