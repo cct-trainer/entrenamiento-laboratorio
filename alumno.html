@@ -566,8 +566,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260720123850 por un timestamp en cada deploy
-const _APP_VERSION = '20260720123850';
+// deploy.bat reemplaza 20260720131225 por un timestamp en cada deploy
+const _APP_VERSION = '20260720131225';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -769,8 +769,8 @@ function _mostrarPortada(nombre, foto) {
 }
 // ── Selector Fuerza / Running ──
 let _modo = null;
-const _MC_IMG_FUERZA = '';   // (opcional) URL de la foto de fuerza — se reemplaza cuando la tengas
-const _MC_IMG_RUNNING = '';  // (opcional) URL de la foto de running
+const _MC_IMG_FUERZA = 'mc-fuerza.jpg';   // foto poster de fuerza (en el repo, junto a alumno.html)
+const _MC_IMG_RUNNING = 'mc-running.jpg'; // foto poster de running
 function _tieneFuerza(){ return (_planesFuerza||[]).length > 0; }
 function _tieneRunning(){ return !!_planRun; }
 
