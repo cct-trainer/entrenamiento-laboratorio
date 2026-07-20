@@ -16768,6 +16768,34 @@ function abrirCalModal(fechaStr) {
 function cerrarCalModal() {
   document.getElementById('cal-modal').classList.remove('open');
 }
+// ── MACROCICLO: fases anuales (cada mes = un mesociclo) ──
+const FASES_MACRO = [
+  { n:'Acumulación / Hipertrofia', obj:'Construir masa muscular y capacidad de trabajo', par:'Mayor volumen · 6–15+ reps · RIR 1–3', color:'#10b981' },
+  { n:'Fuerza–Hipertrofia',        obj:'Consolidar músculo y aumentar cargas',         par:'5–12 reps · progresión de cargas · RIR 1–3', color:'#3b82f6' },
+  { n:'Intensificación / Fuerza',  obj:'Mejorar fuerza y eficiencia con cargas altas',  par:'Básicos 3–6 reps · accesorios 6–15 · menor volumen', color:'#f59e0b' },
+  { n:'Realización + Reacumulación', obj:'Expresar ganancias y preparar un nuevo ciclo', par:'Peak breve · descarga · retorno progresivo al volumen', color:'#a855f7' }
+];
+function _faseAutoIdx(pos) { return Math.min(3, Math.floor(pos / 3)); } // 3 meses por fase
+function _setFaseMacro(planId, val) {
+  const planes = getPlanificaciones();
+  const p = planes.find(x => x.id === planId);
+  if (!p) return;
+  p.faseMacro = (val === '' || val == null) ? null : parseInt(val, 10);
+  savePlanificaciones(planes);
+  renderPerfilPlanificaciones(p.alumnoId, 'fuerza');
+}
+function _faseBloqueHTML(p, faseIdx, auto) {
+  const f = FASES_MACRO[faseIdx] || FASES_MACRO[0];
+  const opts = ['<option value=""'+(auto?' selected':'')+'>Automático (por orden)</option>']
+    .concat(FASES_MACRO.map((ff,ii)=>'<option value="'+ii+'"'+(!auto&&faseIdx===ii?' selected':'')+'>'+ff.n+'</option>')).join('');
+  return '<div style="margin:12px 12px 0;background:'+f.color+'14;border-left:3px solid '+f.color+';border-radius:0 8px 8px 0;padding:9px 11px;">'
+    + '<div style="font-size:11px;font-weight:800;color:'+f.color+';letter-spacing:.2px;">'+f.n+(auto?' · <span style="color:#aaa;font-weight:600;">auto</span>':'')+'</div>'
+    + '<div style="font-size:10.5px;color:#555;margin-top:3px;line-height:1.35;">'+f.obj+'</div>'
+    + '<div style="font-size:10px;color:#888;margin-top:3px;line-height:1.35;">'+f.par+'</div>'
+    + '<select onchange="_setFaseMacro(\''+p.id+'\',this.value)" style="margin-top:7px;font-size:10px;padding:4px 6px;border:1px solid #ddd;border-radius:5px;width:100%;background:#fff;color:#333;cursor:pointer;">'+opts+'</select>'
+    + '</div>';
+}
+
 function renderPerfilPlanificaciones(alumnoId, tipo) {
   // tipo = 'fuerza' | 'running'
   const listId = tipo === 'running' ? 'perfil-plan-list-running' : 'perfil-plan-list-fuerza';
@@ -16787,7 +16815,20 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
   const alumnoOpts = getAlumnos().filter(a => a.id !== alumnoId)
     .map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
 
-  c.innerHTML = '<div class="plan-items-grid">' + planes.map(p => {
+  // Fase automática por orden cronológico (mes 1 = el más antiguo)
+  const _autoFase = {};
+  if (tipo === 'fuerza') {
+    [...planes].sort((a,b)=>{
+      const fa = a.fecha ? new Date(a.fecha+'T12:00:00').getTime() : 0;
+      const fb = b.fecha ? new Date(b.fecha+'T12:00:00').getTime() : 0;
+      return fa - fb;
+    }).forEach((p,i) => { _autoFase[p.id] = _faseAutoIdx(i); });
+  }
+  const macroHeader = (tipo === 'fuerza' && planes.length)
+    ? '<div style="font-size:10px;font-weight:800;letter-spacing:1px;color:#C9A84C;margin:0 0 12px;">🗓️ MACROCICLO ANUAL · cada mes es un mesociclo</div>'
+    : '';
+
+  c.innerHTML = macroHeader + '<div class="plan-items-grid">' + planes.map(p => {
     const isRun = (p.tipoPlan||'fuerza') === 'running';
     const semanas = p.semanasArray ? p.semanasArray.length : 1;
     const metaStr = [p.fecha, semanas > 1 ? semanas+' sem.' : ''].filter(Boolean).join(' · ');
@@ -16810,6 +16851,8 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
         mesDisplay = meses[fd.getMonth()].toUpperCase();
       }
     }
+    const faseIdx = (p.faseMacro !== undefined && p.faseMacro !== null) ? p.faseMacro : (_autoFase[p.id] ?? 0);
+    const faseHTML = isRun ? '' : _faseBloqueHTML(p, faseIdx, (p.faseMacro === undefined || p.faseMacro === null));
     return `<div class="plan-item">
       <div class="plan-item-head">
         <button class="plan-item-del-btn" onclick="eliminarPlanificacion('${p.id}')" title="Eliminar" style="position:absolute;top:10px;right:10px;">×</button>
@@ -16817,6 +16860,7 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
         <div class="plan-item-name">${mesDisplay}</div>
         ${metaStr ? `<div class="plan-item-meta">${metaStr}</div>` : ''}
       </div>
+      ${faseHTML}
       <div class="plan-item-actions">
         ${actionsBtns}
         <button class="plan-item-action-btn" onclick="renombrarPlanificacion('${p.id}')">RENOMBRAR</button>
