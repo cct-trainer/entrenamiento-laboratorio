@@ -4078,6 +4078,7 @@ select.toolbox-input option:disabled { color: #888; }
       <button class="btn-run btn-run-outline" onclick="showView('inicio')">← Inicio</button>
       <button class="btn-run btn-run-outline" onclick="volverAlPerfil()" style="background:#e8f0fe;color:#1a3a6a;border-color:#1a3a6a;font-weight:700;">← Volver al alumno</button>
       <button class="btn-run btn-run-outline" onclick="irAPlanFuerza()" style="background:#FDF6E3;color:#9A7A28;border-color:#90caf9;">💪 Fuerza</button>
+      <button class="btn-run btn-run-outline" onclick="abrirRunImport()" style="background:#eef7ee;color:#166534;border-color:#22c55e;">📥 Importar (JSON)</button>
       <button class="btn-run btn-run-guardar" onclick="guardarPlanRunning()">✓ Guardar semana</button>
     </div>
 
@@ -4470,6 +4471,24 @@ select.toolbox-input option:disabled { color: #888; }
   </div>
 </div>
 <datalist id="comp-ej-datalist"></datalist>
+
+<!-- MODAL IMPORTAR RUNNING (JSON) -->
+<div class="modal-overlay" id="modal-run-import">
+  <div class="modal" style="width:560px;max-width:94vw;max-height:90vh;overflow-y:auto;">
+    <div class="modal-header">
+      <h2>📥 Importar plan de running (JSON)</h2>
+      <button class="modal-close" onclick="closeModal('modal-run-import')">×</button>
+    </div>
+    <div style="padding:14px 18px;">
+      <div style="font-size:12px;color:#666;margin-bottom:8px;line-height:1.5;">Pegá el JSON del plan (una semana o un array de semanas). Se cargan al alumno seleccionado en el planificador de running.</div>
+      <textarea id="run-import-txt" style="width:100%;height:220px;border:1.5px solid #dde1ea;border-radius:8px;padding:10px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder='[ { "tipoPlan":"running", "titulo":"...", "semanaNum":"1", "fechaInicio":"2026-07-20", "diasData": { "0":[...] } } ]'></textarea>
+    </div>
+    <div style="padding:12px 18px;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #eee;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-run-import')">Cancelar</button>
+      <button class="btn btn-primary" onclick="_importarRunningJSON()">Importar</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL ASIGNAR SESIÓN (multi-alumno, merge automático) -->
 <div class="modal-overlay" id="modal-asignar-sesion">
@@ -9668,6 +9687,39 @@ function guardarPlanRunning() {
     toast('Plan de running guardado ✓');
     if(currentAlumnoId) { renderPerfilPlanificaciones(currentAlumnoId,'running'); }
   } catch(e) { toast('Error al guardar','error'); }
+}
+
+// ── IMPORTAR RUNNING (JSON) — carga una o varias semanas al alumno ──
+function abrirRunImport(){
+  const t=document.getElementById('run-import-txt'); if(t) t.value='';
+  document.getElementById('modal-run-import').classList.add('open');
+}
+function _importarRunningJSON(){
+  const txt=(document.getElementById('run-import-txt').value||'').trim();
+  if(!txt){ toast('Pegá el JSON','error'); return; }
+  let data;
+  try{ data=JSON.parse(txt); }catch(e){ toast('JSON inválido: '+e.message,'error'); return; }
+  const arr=Array.isArray(data)?data:[data];
+  const sel=document.getElementById('run-alumno-select');
+  const alumnoId=(sel&&sel.value)||currentAlumnoId;
+  if(!alumnoId){ toast('Seleccioná un alumno primero','error'); return; }
+  const planes=getPlanificaciones();
+  let n=0;
+  arr.forEach(p=>{
+    if(!p||!p.diasData) return;
+    planes.push({
+      id: genId(), alumnoId, tipoPlan:'running',
+      titulo: p.titulo||'Plan running', semanaNum: String(p.semanaNum||1),
+      fechaInicio: p.fechaInicio||'', objetivo: p.objetivo||'', nivel: p.nivel||'',
+      diasData: p.diasData||{}, createdAt: new Date().toISOString()
+    });
+    n++;
+  });
+  if(!n){ toast('No se encontraron semanas válidas','error'); return; }
+  savePlanificaciones(planes);
+  closeModal('modal-run-import');
+  toast(n+' semana(s) de running importadas ✓');
+  if(currentAlumnoId) renderPerfilPlanificaciones(currentAlumnoId,'running');
 }
 
 // ── VER PLANIFICACIÓN RUNNING (desde el perfil) ───────────────────────────────
