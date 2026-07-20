@@ -16817,12 +16817,13 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
 
   // Fase automática por orden cronológico (mes 1 = el más antiguo)
   const _autoFase = {};
+  const _mesNum = {};
   if (tipo === 'fuerza') {
     [...planes].sort((a,b)=>{
       const fa = a.fecha ? new Date(a.fecha+'T12:00:00').getTime() : 0;
       const fb = b.fecha ? new Date(b.fecha+'T12:00:00').getTime() : 0;
       return fa - fb;
-    }).forEach((p,i) => { _autoFase[p.id] = _faseAutoIdx(i); });
+    }).forEach((p,i) => { _autoFase[p.id] = _faseAutoIdx(i); _mesNum[p.id] = i+1; });
   }
   const macroHeader = (tipo === 'fuerza' && planes.length)
     ? '<div style="font-size:10px;font-weight:800;letter-spacing:1px;color:#C9A84C;margin:0 0 12px;">🗓️ MACROCICLO ANUAL · cada mes es un mesociclo</div>'
@@ -16836,13 +16837,7 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
     const iconClass = isRun ? 'running' : 'fuerza';
     const iconEmoji = isRun ? '🏃' : '💪';
 
-    const actionsBtns = isRun ? `
-      <button class="plan-item-action-btn" onclick="abrirPlanRunningExistente('${p.id}')">ABRIR</button>
-    ` : `
-      <button class="plan-item-action-btn" onclick="abrirPlanFuerzaExistente('${p.id}')">ABRIR</button>
-    `;
-
-    // Extract month label from fecha for display
+    // Nombre del mes (por fecha)
     let mesDisplay = p.titulo || p.nombre || '—';
     if(p.fecha) {
       const fd = new Date(p.fecha + 'T12:00:00');
@@ -16851,31 +16846,62 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
         mesDisplay = meses[fd.getMonth()].toUpperCase();
       }
     }
-    const faseIdx = (p.faseMacro !== undefined && p.faseMacro !== null) ? p.faseMacro : (_autoFase[p.id] ?? 0);
-    const faseHTML = isRun ? '' : _faseBloqueHTML(p, faseIdx, (p.faseMacro === undefined || p.faseMacro === null));
-    return `<div class="plan-item">
-      <div class="plan-item-head">
-        <button class="plan-item-del-btn" onclick="eliminarPlanificacion('${p.id}')" title="Eliminar" style="position:absolute;top:10px;right:10px;">×</button>
-        <div class="plan-item-icon ${iconClass}">${iconEmoji}</div>
-        <div class="plan-item-name">${mesDisplay}</div>
-        ${metaStr ? `<div class="plan-item-meta">${metaStr}</div>` : ''}
-      </div>
-      ${faseHTML}
-      <div class="plan-item-actions">
-        ${actionsBtns}
-        <button class="plan-item-action-btn" onclick="renombrarPlanificacion('${p.id}')">RENOMBRAR</button>
-        <button class="plan-item-action-btn danger" onclick="eliminarPlanificacion('${p.id}')">BORRAR</button>
-      </div>
-      <div class="plan-item-copy-row">
+    const abrirFn = isRun ? `abrirPlanRunningExistente('${p.id}')` : `abrirPlanFuerzaExistente('${p.id}')`;
+    const acciones = `<div style="display:flex;gap:6px;padding:12px 14px 6px;">
+        <button onclick="${abrirFn}" style="flex:1;background:#1a1a1a;color:#fff;border:none;border-radius:9px;padding:10px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;">▶ ABRIR</button>
+        <button onclick="renombrarPlanificacion('${p.id}')" title="Renombrar" style="background:#f1f3f7;border:none;border-radius:9px;padding:9px 12px;font-size:14px;cursor:pointer;">✏️</button>
+        <button onclick="eliminarPlanificacion('${p.id}')" title="Borrar" style="background:#fdeaea;border:none;border-radius:9px;padding:9px 12px;font-size:14px;cursor:pointer;color:#c62828;">🗑</button>
+      </div>`;
+    const copyRow = `<div class="plan-item-copy-row">
         <div class="plan-item-copy-lbl">📋 Copiar y enviar a:</div>
         <div class="plan-item-copy-inner">
-          <select id="${copySelId}" class="plan-item-copy-sel">
-            <option value="">Seleccionar alumno...</option>
-            ${alumnoOpts}
-          </select>
+          <select id="${copySelId}" class="plan-item-copy-sel"><option value="">Seleccionar alumno...</option>${alumnoOpts}</select>
           <button class="plan-item-copy-go" onclick="copiarPlanInline('${p.id}','${copySelId}')">Enviar</button>
         </div>
+      </div>`;
+
+    if (isRun) {
+      return `<div class="plan-item" style="position:relative;">
+        <div style="height:5px;background:linear-gradient(90deg,#3b82f6,#60a5fa);"></div>
+        <div class="plan-item-head" style="background:linear-gradient(160deg,#1e293b,#0b1220);border-radius:0;padding-top:32px;">
+          <button class="plan-item-del-btn" onclick="eliminarPlanificacion('${p.id}')" title="Eliminar" style="position:absolute;top:10px;right:10px;">×</button>
+          <span style="position:absolute;top:11px;left:13px;background:#3b82f6;color:#fff;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 9px;border-radius:20px;">🏃 RUNNING</span>
+          <div class="plan-item-name">${mesDisplay}</div>
+          ${metaStr ? `<div class="plan-item-meta">${metaStr}</div>` : ''}
+        </div>
+        ${acciones}
+        ${copyRow}
+      </div>`;
+    }
+
+    // ── FUERZA: mes con fase del macrociclo ──
+    const faseIdx = (p.faseMacro !== undefined && p.faseMacro !== null) ? p.faseMacro : (_autoFase[p.id] ?? 0);
+    const auto = (p.faseMacro === undefined || p.faseMacro === null);
+    const f = FASES_MACRO[faseIdx] || FASES_MACRO[0];
+    const mesN = _mesNum[p.id] || 1;
+    const chips = (f.par||'').split('·').map(s=>s.trim()).filter(Boolean)
+      .map(c=>`<span style="background:${f.color}1f;color:${f.color};font-size:9.5px;font-weight:800;padding:3px 9px;border-radius:20px;white-space:nowrap;">${c}</span>`).join('');
+    const dots = FASES_MACRO.map((ff,i)=>`<div style="flex:1;height:4px;border-radius:2px;background:${i<=faseIdx?ff.color:'rgba(255,255,255,.16)'};"></div>`).join('');
+    const opts = ['<option value=""'+(auto?' selected':'')+'>Automático (por orden)</option>']
+      .concat(FASES_MACRO.map((ff,ii)=>'<option value="'+ii+'"'+(!auto&&faseIdx===ii?' selected':'')+'>'+ff.n+'</option>')).join('');
+
+    return `<div class="plan-item" style="position:relative;">
+      <div style="height:5px;background:linear-gradient(90deg,${f.color},${f.color}88);"></div>
+      <div class="plan-item-head" style="background:linear-gradient(160deg,#242424,#111);border-radius:0;padding-top:34px;">
+        <button class="plan-item-del-btn" onclick="eliminarPlanificacion('${p.id}')" title="Eliminar" style="position:absolute;top:10px;right:10px;">×</button>
+        <span style="position:absolute;top:11px;left:13px;background:${f.color};color:#fff;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 9px;border-radius:20px;">FASE ${faseIdx+1}/4</span>
+        <div class="plan-item-name">${mesDisplay}</div>
+        <div class="plan-item-meta">${[p.fecha, semanas>1?semanas+' sem.':'', 'Mes '+mesN].filter(Boolean).join(' · ')}</div>
+        <div style="display:flex;gap:4px;width:82%;margin:11px auto 0;">${dots}</div>
       </div>
+      <div style="padding:13px 14px 2px;">
+        <div style="font-size:13px;font-weight:900;color:${f.color};line-height:1.2;">${f.n}${auto?' <span style="font-size:9px;color:#bbb;font-weight:700;">· auto</span>':''}</div>
+        <div style="font-size:11px;color:#666;margin-top:4px;line-height:1.4;">${f.obj}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;">${chips}</div>
+        <select onchange="_setFaseMacro('${p.id}',this.value)" style="margin-top:11px;font-size:10px;padding:5px 7px;border:1px solid #e2e2e2;border-radius:6px;width:100%;background:#fafafa;color:#555;cursor:pointer;">${opts}</select>
+      </div>
+      ${acciones}
+      ${copyRow}
     </div>`;
   }).join('') + '</div>';
 }
