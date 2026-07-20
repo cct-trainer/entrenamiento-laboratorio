@@ -16784,6 +16784,19 @@ function _setFaseMacro(planId, val) {
   savePlanificaciones(planes);
   renderPerfilPlanificaciones(p.alumnoId, 'fuerza');
 }
+function _toggleActivoMes(planId) {
+  const planes = getPlanificaciones();
+  const p = planes.find(x => x.id === planId);
+  if (!p) return;
+  const nuevo = !p.activo;
+  if (nuevo) {
+    // Exclusivo: solo un mes activo por alumno (fuerza)
+    planes.forEach(x => { if (x.alumnoId === p.alumnoId && (x.tipoPlan||'fuerza') !== 'running') x.activo = false; });
+  }
+  p.activo = nuevo;
+  savePlanificaciones(planes);
+  renderPerfilPlanificaciones(p.alumnoId, 'fuerza');
+}
 function _faseBloqueHTML(p, faseIdx, auto) {
   const f = FASES_MACRO[faseIdx] || FASES_MACRO[0];
   const opts = ['<option value=""'+(auto?' selected':'')+'>Automático (por orden)</option>']
@@ -16884,12 +16897,14 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
     const dots = FASES_MACRO.map((ff,i)=>`<div style="flex:1;height:4px;border-radius:2px;background:${i<=faseIdx?ff.color:'rgba(255,255,255,.16)'};"></div>`).join('');
     const opts = ['<option value=""'+(auto?' selected':'')+'>Automático (por orden)</option>']
       .concat(FASES_MACRO.map((ff,ii)=>'<option value="'+ii+'"'+(!auto&&faseIdx===ii?' selected':'')+'>'+ff.n+'</option>')).join('');
+    const activo = !!p.activo;
 
-    return `<div class="plan-item" style="position:relative;">
+    return `<div class="plan-item" style="position:relative;${activo?'box-shadow:0 0 0 2px #22c55e, 0 8px 20px rgba(34,197,94,.25);':''}">
       <div style="height:5px;background:linear-gradient(90deg,${f.color},${f.color}88);"></div>
       <div class="plan-item-head" style="background:linear-gradient(160deg,#242424,#111);border-radius:0;padding-top:34px;">
         <button class="plan-item-del-btn" onclick="eliminarPlanificacion('${p.id}')" title="Eliminar" style="position:absolute;top:10px;right:10px;">×</button>
         <span style="position:absolute;top:11px;left:13px;background:${f.color};color:#fff;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 9px;border-radius:20px;">FASE ${faseIdx+1}/4</span>
+        ${activo?'<span style="position:absolute;top:11px;right:34px;background:#22c55e;color:#fff;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 9px;border-radius:20px;">● ACTIVO</span>':''}
         <div class="plan-item-name">${mesDisplay}</div>
         <div class="plan-item-meta">${[p.fecha, semanas>1?semanas+' sem.':'', 'Mes '+mesN].filter(Boolean).join(' · ')}</div>
         <div style="display:flex;gap:4px;width:82%;margin:11px auto 0;">${dots}</div>
@@ -16899,6 +16914,7 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
         <div style="font-size:11px;color:#666;margin-top:4px;line-height:1.4;">${f.obj}</div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;">${chips}</div>
         <select onchange="_setFaseMacro('${p.id}',this.value)" style="margin-top:11px;font-size:10px;padding:5px 7px;border:1px solid #e2e2e2;border-radius:6px;width:100%;background:#fafafa;color:#555;cursor:pointer;">${opts}</select>
+        <button onclick="_toggleActivoMes('${p.id}')" style="width:100%;margin-top:9px;padding:9px;border-radius:9px;border:1.5px solid ${activo?'#22c55e':'#d5d9e0'};background:${activo?'#22c55e':'#fff'};color:${activo?'#fff':'#666'};font-size:11px;font-weight:800;letter-spacing:.3px;cursor:pointer;">${activo?'● MES ACTIVO — quitar':'○ Marcar como mes activo'}</button>
       </div>
       ${acciones}
       ${copyRow}

@@ -528,8 +528,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260719232406 por un timestamp en cada deploy
-const _APP_VERSION = '20260719232406';
+// deploy.bat reemplaza 20260720120642 por un timestamp en cada deploy
+const _APP_VERSION = '20260720120642';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -619,7 +619,9 @@ const TIPOS_RUN = {
     // Separar planes de fuerza y running
     _planesFuerza        = planes.filter(p => p.tipoPlan !== 'running');
     const planesRunning  = planes.filter(p => p.tipoPlan === 'running');
-    _planIdx = _planesFuerza.length ? _planesFuerza.length - 1 : 0;
+    // Abrir primero el mes marcado como ACTIVO; si no hay, el último
+    const _activoIdx = _planesFuerza.findIndex(p => p && p.activo);
+    _planIdx = _activoIdx >= 0 ? _activoIdx : (_planesFuerza.length ? _planesFuerza.length - 1 : 0);
     _plan    = _planesFuerza.length ? _planesFuerza[_planIdx]  : null;
     _planRun = planesRunning.length ? planesRunning[planesRunning.length-1] : null;
     if (_plan) {
