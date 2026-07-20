@@ -675,14 +675,14 @@ function renderFeedback() {
       </div>
       <div class="fb-metrics">`;
 
-    const mets=[['Energía','energia'],['Estrés','estres'],['Motivación','motivacion'],
-                ['Dolor','dolor'],['Recuperación','recuperacion'],['Pump','pump'],['Volumen','volumen']];
+    const mets=[['Sesión','sesion'],['RPE','rpe'],['Molestia','molestia'],['Cierre','cierre'],
+                ['Energía','energia'],['Estrés','estres'],['Motivación','motivacion'],['Dolor','dolor']];
     for (const [lbl,k] of mets) {
       if (fb[k]!==undefined&&fb[k]!=='') h+=`<div class="fb-met"><span class="fb-met-lbl">${lbl}</span><span class="fb-met-val">${fb[k]}</span></div>`;
     }
     if (fb['sueño_h']) h+=`<div class="fb-met"><span class="fb-met-lbl">Sueño</span><span class="fb-met-val">${fb['sueño_h']}h</span></div>`;
-    if (fb['sueño_q']) h+=`<div class="fb-met"><span class="fb-met-lbl">Calidad</span><span class="fb-met-val">${fb['sueño_q']}/10</span></div>`;
     h+=`</div>`;
+    if (fb.molestiaDonde) h+=`<div class="fb-obs">Molestia en: ${fb.molestiaDonde}</div>`;
     if (fb.obs) h+=`<div class="fb-obs">"${fb.obs}"</div>`;
     h+=`</div>`;
   }
@@ -872,10 +872,11 @@ function _buildDetailHTML() {
       h += `<div class="fb-card" style="margin-bottom:8px;">
         <div style="font-size:10px;color:var(--muted);margin-bottom:8px;font-weight:700;">${fecha}${fb.sesion?' · '+fb.sesion:''}</div>
         <div class="fb-metrics">`;
-      for (const [lbl,k] of [['Energía','energia'],['Estrés','estres'],['Motivación','motivacion'],['Dolor','dolor'],['Recuperación','recuperacion'],['Pump','pump']]) {
+      for (const [lbl,k] of [['Sesión','sesion'],['RPE','rpe'],['Molestia','molestia'],['Cierre','cierre'],['Dolor','dolor'],['Energía','energia']]) {
         if (fb[k]!==undefined&&fb[k]!=='') h+=`<div class="fb-met"><span class="fb-met-lbl">${lbl}</span><span class="fb-met-val">${fb[k]}</span></div>`;
       }
       h += `</div>`;
+      if (fb.molestiaDonde) h += `<div class="fb-obs">Molestia en: ${fb.molestiaDonde}</div>`;
       if (fb.obs) h += `<div class="fb-obs">"${fb.obs}"</div>`;
       h += `</div>`;
     }

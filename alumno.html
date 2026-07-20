@@ -576,8 +576,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260720151914 por un timestamp en cada deploy
-const _APP_VERSION = '20260720151914';
+// deploy.bat reemplaza 20260720203240 por un timestamp en cada deploy
+const _APP_VERSION = '20260720203240';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2587,10 +2587,9 @@ function _calcProgresion(uid, sp_base) {
 // FEEDBACK POST-ENTRENAMIENTO
 // ════════════════════════════════════════════════════════════════════════════
 const _FB = {
-  dolor:        { label:'DOLOR ARTICULAR',     opts:['Sin dolor','Dolor leve','Dolor moderado','Mucho dolor'] },
-  recuperacion: { label:'RECUPERACIÓN MUSCULAR', opts:['No tuve dolor','Recuperé rápido','Recuperé justo','Todavía dolorido'] },
-  pump:         { label:'PUMP',                opts:['Bajo','Medio','Alto'] },
-  volumen:      { label:'VOLUMEN',             opts:['Poco','Adecuado','Muy exigente','Excesivo'] },
+  sesion:   { label:'¿CÓMO TE FUE LA SESIÓN?', opts:['La completé','Casi toda','A medias','No pude'] },
+  molestia: { label:'¿DOLOR O MOLESTIA?',      opts:['No','Leve','En un ejercicio'] },
+  cierre:   { label:'¿CÓMO TERMINASTE?',       opts:['Con energía','Bien','Cansado','Muy cansado'] },
 };
 let _fbState = {};
 
@@ -2604,35 +2603,24 @@ function _abrirFeedback() {
 function _cerrarFeedback() {
   document.getElementById('feedback-overlay').style.display = 'none';
 }
+function _fbSecOpts(key){
+  const sec=_FB[key]; let h='<div class="fb-section"><div class="fb-ttl">'+sec.label+'</div><div class="fb-opts" id="fb_'+key+'">';
+  sec.opts.forEach(opt=>{ h+='<button class="fb-opt" onclick="_fbSel(\''+key+'\',\''+opt+'\',this)">'+opt+'</button>'; });
+  return h+'</div></div>';
+}
 function _buildFeedbackHTML(sesNombre) {
-  let h = '<div style="font-size:12px;color:var(--muted);margin-bottom:20px;">'+sesNombre+'</div>';
-  // Secciones de opciones múltiples
-  Object.entries(_FB).forEach(([key, sec]) => {
-    h += '<div class="fb-section"><div class="fb-ttl">'+sec.label+'</div><div class="fb-opts" id="fb_'+key+'">';
-    sec.opts.forEach(opt => {
-      h += '<button class="fb-opt" onclick="_fbSel(\''+key+'\',\''+opt+'\',this)">'+opt+'</button>';
-    });
-    h += '</div></div>';
-  });
-  // Escalas numéricas
-  ['energía','estrés','motivación'].forEach(k => {
-    h += '<div class="fb-section"><div class="fb-ttl">'+k.toUpperCase()+' (1-10)</div><div class="fb-scale" id="fb_'+k+'">';
-    for (let n=1;n<=10;n++) h += '<button class="fb-num" onclick="_fbSel(\''+k+'\','+n+',this)">'+n+'</button>';
-    h += '</div></div>';
-  });
-  // Sueño
-  h += '<div class="fb-section"><div class="fb-ttl">SUEÑO</div><div class="fb-row2">'+
-    '<div><div style="font-size:9px;color:var(--muted);margin-bottom:6px;">HORAS</div>'+
-    '<input class="fb-input" id="fb_sueño_h" type="number" min="0" max="24" step=".5" placeholder="Hs dormidas" oninput="_fbVal(\'sueño_h\',this.value)"></div>'+
-    '<div><div style="font-size:9px;color:var(--muted);margin-bottom:6px;">CALIDAD (1-10)</div>'+
-    '<div class="fb-scale" id="fb_sueño_q" style="gap:3px;">';
-  for (let n=1;n<=10;n++) h += '<button class="fb-num" style="width:30px;height:30px;font-size:11px;" onclick="_fbSel(\'sueño_q\','+n+',this)">'+n+'</button>';
-  h += '</div></div></div></div>';
-  // Observaciones
-  h += '<div class="fb-section"><div class="fb-ttl">OBSERVACIONES</div>'+
-    '<textarea class="fb-input" rows="3" placeholder="Notas libres sobre el entrenamiento..." oninput="_fbVal(\'obs\',this.value)" style="resize:none;"></textarea></div>';
-  // Botón guardar
-  h += '<button onclick="_guardarFeedback()" style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-d));color:#0d0d1a;border:none;border-radius:14px;padding:16px;font-size:15px;font-weight:900;cursor:pointer;margin-top:4px;">💾 Guardar feedback</button>'+
+  let h = '<div style="font-size:13px;font-weight:900;color:var(--gold);margin-bottom:2px;">Feedback de la sesión</div>'+
+          '<div style="font-size:12px;color:var(--muted);margin-bottom:16px;">'+sesNombre+'</div>';
+  h += _fbSecOpts('sesion');
+  h += '<div class="fb-section"><div class="fb-ttl">ESFUERZO DE LA SESIÓN (RPE 1-10)</div><div class="fb-scale" id="fb_rpe">';
+  for (let n=1;n<=10;n++) h += '<button class="fb-num" onclick="_fbSel(\'rpe\','+n+',this)">'+n+'</button>';
+  h += '</div><div style="font-size:9px;color:var(--muted);margin-top:5px;">1 = muy suave · 10 = máximo esfuerzo</div></div>';
+  h += _fbSecOpts('molestia');
+  h += '<div class="fb-section" style="margin-top:-8px;"><input class="fb-input" placeholder="¿En qué ejercicio? (opcional)" oninput="_fbVal(\'molestiaDonde\',this.value)"></div>';
+  h += _fbSecOpts('cierre');
+  h += '<div class="fb-section"><div class="fb-ttl">COMENTARIO (opcional)</div>'+
+    '<textarea class="fb-input" rows="2" placeholder="Algo puntual sobre la sesión..." oninput="_fbVal(\'obs\',this.value)" style="resize:none;"></textarea></div>';
+  h += '<button onclick="_guardarFeedback()" style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-d));color:#0d0d1a;border:none;border-radius:14px;padding:16px;font-size:15px;font-weight:900;cursor:pointer;margin-top:4px;">💾 Enviar feedback</button>'+
        '<button onclick="_cerrarFeedback()" style="width:100%;background:transparent;border:1.5px solid rgba(255,255,255,.1);color:var(--muted);border-radius:14px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;">Cancelar</button>';
   return h;
 }
