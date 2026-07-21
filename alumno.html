@@ -633,6 +633,75 @@ let _LANG = (function(){ try { return localStorage.getItem('SOCC_LANG') || 'es';
 function _t(k){ const d=_I18N[_LANG]||_I18N.es; return (k in d) ? d[k] : (_I18N.es[k] || k); }
 function _locale(){ return _t('_locale'); }
 
+// ── Glosario de contenido ───────────────────────────────────────────────────
+// Traduce términos fijos que usa el sistema (tipos de serie, nombres de bloque,
+// músculos). Lo que el coach escribe libre queda como lo escribió.
+const _GLOS = {
+  // Tipos de serie / estructura
+  'serie simple':'Straight Set', 'series simples':'Straight Sets',
+  'biserie':'Superset (2)', 'triserie':'Tri-set', 'superserie':'Superset',
+  'serie gigante':'Giant Set', 'circuito':'Circuit',
+  'calentamiento':'Warm-up', 'aproximación':'Warm-up Set', 'aproximacion':'Warm-up Set',
+  'regular':'Working Set', 'isométrica':'Isometric', 'excéntrica':'Eccentric',
+  // Bloques / fases de la sesión
+  'movilidad y calentamiento':'Mobility & Warm-up',
+  'movilidad':'Mobility',
+  'activación y core':'Activation & Core', 'activacion y core':'Activation & Core',
+  'activación':'Activation', 'activacion':'Activation',
+  'calentamiento específico':'Specific Warm-up', 'calentamiento especifico':'Specific Warm-up',
+  'pre-agotamiento':'Pre-exhaustion', 'preagotamiento':'Pre-exhaustion',
+  'postagotamiento':'Post-exhaustion',
+  'fuerza principal':'Main Strength', 'fuerza principal / potencia':'Main Strength / Power',
+  'potencia':'Power',
+  'desarrollo / hipertrofia':'Development / Hypertrophy', 'desarrollo':'Development',
+  'hipertrofia':'Hypertrophy', 'zona media':'Core',
+  'enfriamiento final':'Cool-down', 'enfriamiento':'Cool-down',
+  'pliometría':'Plyometrics', 'pliometria':'Plyometrics',
+  'cardio':'Cardio', 'personalizado':'Custom',
+  'descanso':'Rest', 'descanso activo':'Active Recovery', 'descanso pasivo':'Passive Rest',
+  // Músculos
+  'pectoral mayor':'Pectoralis major', 'pectoral menor':'Pectoralis minor', 'pectorales':'Chest',
+  'dorsales':'Lats', 'dorsal ancho':'Latissimus dorsi', 'romboides':'Rhomboids',
+  'trapecio':'Trapezius', 'trapecios medios':'Mid traps', 'trapecio superior':'Upper traps',
+  'deltoides':'Deltoids', 'deltoides anterior':'Front delts',
+  'deltoides lateral':'Lateral delts', 'deltoides posterior':'Rear delts',
+  'bíceps':'Biceps', 'biceps':'Biceps', 'tríceps':'Triceps', 'triceps':'Triceps',
+  'antebrazo':'Forearms', 'cuádriceps':'Quadriceps', 'cuadriceps':'Quadriceps',
+  'isquiosurales':'Hamstrings', 'isquiotibiales':'Hamstrings', 'femoral':'Hamstrings',
+  'glúteo mayor':'Gluteus maximus', 'gluteo mayor':'Gluteus maximus',
+  'glúteo medio':'Gluteus medius', 'gluteo medio':'Gluteus medius', 'glúteos':'Glutes', 'gluteos':'Glutes',
+  'aductores':'Adductors', 'abductores':'Abductors', 'gemelos':'Calves', 'sóleo':'Soleus', 'soleo':'Soleus',
+  'core':'Core', 'abdominales':'Abs', 'oblicuos':'Obliques',
+  'erectores espinales':'Spinal erectors', 'erectores':'Erectors', 'lumbares':'Lower back',
+  'cadera':'Hip', 'espalda':'Back', 'hombro':'Shoulder', 'hombros':'Shoulders', 'pecho':'Chest',
+  'pierna':'Leg', 'piernas':'Legs', 'brazos':'Arms', 'tobillo':'Ankle', 'rodilla':'Knee',
+  // Lugares
+  'gym':'Gym', 'gimnasio':'Gym', 'casa':'Home', 'aire libre':'Outdoors', 'parque':'Park'
+};
+
+// Traduce un texto de contenido si está en el glosario. Soporta listas separadas
+// por coma (ej: "Dorsales, Romboides") traduciendo cada parte.
+function _tc(txt){
+  if (_LANG !== 'en' || !txt) return txt || '';
+  const s = String(txt).trim();
+  const directo = _GLOS[s.toLowerCase()];
+  if (directo) return directo;
+  if (s.indexOf(',') > -1) {
+    const partes = s.split(',').map(p => {
+      const k = p.trim().toLowerCase();
+      return _GLOS[k] || p.trim();
+    });
+    return partes.join(', ');
+  }
+  return s;
+}
+
+// Nombre del ejercicio según idioma (usa el nombre en inglés de la biblioteca)
+function _nomEj(ej){
+  if (_LANG === 'en' && ej && ej.nombreIngles) return ej.nombreIngles;
+  return (ej && ej.nombre) || '';
+}
+
 // Aplica el idioma a los textos estáticos marcados con data-i18n
 function _aplicarIdioma(){
   DN = _t('_dn').slice();
@@ -702,8 +771,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260721150512 por un timestamp en cada deploy
-const _APP_VERSION = '20260721150512';
+// deploy.bat reemplaza 20260721151011 por un timestamp en cada deploy
+const _APP_VERSION = '20260721151011';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1619,8 +1688,8 @@ function _ejCard(ej, uid) {
 
   return '<div id="'+uid+'-card" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .2s;">'+
     '<div style="padding:12px 14px 12px;">'+
-      '<div style="font-size:16px;font-weight:900;color:var(--text);margin-bottom:3px;line-height:1.2;border-left:3px solid var(--gold);padding-left:9px;">'+(ej.nombre||'—')+'</div>'+
-      (ej.musculos ? '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;padding-left:12px;">'+ej.musculos+'</div>' : '')+
+      '<div style="font-size:16px;font-weight:900;color:var(--text);margin-bottom:3px;line-height:1.2;border-left:3px solid var(--gold);padding-left:9px;">'+(_nomEj(ej)||'—')+'</div>'+
+      (ej.musculos ? '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;padding-left:12px;">'+_tc(ej.musculos)+'</div>' : '')+
       (ej.nota ? '<div style="font-size:12.5px;font-weight:600;color:var(--gold);margin:3px 0 7px;padding:6px 10px 6px 12px;background:rgba(201,168,76,.08);border-radius:7px;font-style:italic;line-height:1.45;">📝 '+ej.nota+'</div>' : '')+
       (sEfec ? '' : ctrlGrid)+
       pesoRef+
@@ -1682,7 +1751,7 @@ function _sesDetalleHTML(ses){
   let info = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;position:relative;box-shadow:0 10px 30px -14px rgba(0,0,0,.4);">';
   info += '<div style="font-size:15px;font-weight:800;color:var(--text);line-height:1.25;">'+((ses.nombre||DN[_diaIdx])).toUpperCase()+'</div>';
   info += '<div style="display:flex;flex-direction:column;gap:9px;margin-top:13px;">';
-  info += '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🏋️</span>'+_compEsc(ses.lugar||(_diaModTab===1?_t('casa'):_t('gym')))+'</div>';
+  info += '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🏋️</span>'+_compEsc(_tc(ses.lugar)||(_diaModTab===1?_t('casa'):_t('gym')))+'</div>';
   if(durVal) info += '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🕐</span>'+_compEsc(durVal)+'</div>';
   if(dots)   info += '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);">'+dots+' <span style="margin-left:3px;">'+_t('dificultad')+'</span></div>';
   info += '</div>';
@@ -1749,7 +1818,7 @@ function renderSesion() {
       return '<div class="blk" style="margin-bottom:14px;">'+
         '<div class="blk-hdr open" onclick="this.classList.toggle(\'open\');var nx=this.nextElementSibling;nx.style.display=this.classList.contains(\'open\')?\'block\':\'none\'">'+
           '<div class="blk-letra">'+letra+'</div>'+
-          '<div class="blk-txt"><div class="blk-n">'+(b.nombre||b.tipo||_t('bloque'))+'</div><div class="blk-t">'+(b.serieTipo||'')+'</div></div>'+
+          '<div class="blk-txt"><div class="blk-n">'+_tc(b.nombre||b.tipo||_t('bloque'))+'</div><div class="blk-t">'+_tc(b.serieTipo||'')+'</div></div>'+
           '<div class="blk-arr">&#9660;</div>'+
         '</div>'+
         '<div class="blk-body" style="padding:8px 4px 4px;">'+ejesHTML+'</div>'+
@@ -2351,7 +2420,7 @@ function _abrirCompDetalle(id) {
     const ytId = _ytId(ej.video||'');
     ejes += '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px 15px;margin-bottom:10px;">'+
       '<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;">'+
-        '<div style="font-size:14px;font-weight:800;color:var(--text);border-left:3px solid var(--gold);padding-left:9px;line-height:1.25;">'+_compEsc(ej.nombre||'')+'</div>'+
+        '<div style="font-size:14px;font-weight:800;color:var(--text);border-left:3px solid var(--gold);padding-left:9px;line-height:1.25;">'+_compEsc(_nomEj(ej)||'')+'</div>'+
         (ej.detalle?'<div style="font-size:13px;font-weight:800;color:var(--gold);white-space:nowrap;flex-shrink:0;">'+_compEsc(ej.detalle)+'</div>':'')+
       '</div>'+
       (ej.nota?'<div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.45;background:rgba(201,168,76,.07);border-radius:8px;padding:8px 10px;">📝 '+_compEsc(ej.nota)+'</div>':'')+

@@ -21189,12 +21189,14 @@ async function forzarSyncFirebase() {
         const libEj = lib.find(e => e.nombre && e.nombre.toLowerCase() === (ej.nombre||'').toLowerCase()) || {};
         // Completar video desde la biblioteca si falta
         const video = ej.video || libEj.video || '';
+        // Nombre en inglés (para el portal del alumno en modo English)
+        const nombreIngles = ej.nombreIngles || libEj.nombreIngles || '';
         // Solo enriquecer ficha si faltan los campos
-        if (ej.ejecucion || ej.musculos) return (ej.video || !video) ? ej : { ...ej, video };
+        if (ej.ejecucion || ej.musculos) return { ...ej, video, nombreIngles };
         const ejecucion = (ej.ficha && (ej.ficha['Descripción'] || ej.ficha['DESCRIPCIÓN'])) || libEj.ejecucion || libEj.desc || '';
         const musculos  = (ej.ficha && ej.ficha['MÚSCULOS']) || (libEj.musculos || libEj.principales || []).join(', ') || '';
         const tipo      = (ej.ficha && ej.ficha['TIPO']) || libEj.tipoTrabajo || libEj.cat || '';
-        return { ...ej, ejecucion, musculos, tipo, video };
+        return { ...ej, ejecucion, musculos, tipo, video, nombreIngles };
       };
       const enrichBloques = bloques => bloques.map(b =>
         (b && b.ejercicios && b.ejercicios.length) ? { ...b, ejercicios: b.ejercicios.map(enrichEj) } : b
