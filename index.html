@@ -21050,13 +21050,69 @@ function initFirebase() {
   }
 }
 
+// ── Backup partido en documentos ────────────────────────────────────────────
+// Firestore permite máximo 1 MB por documento. Con fotos de perfil en base64 y
+// planificaciones completas, un único documento se pasa del límite y la
+// sincronización falla. Por eso el backup se guarda en partes.
+const _BK_MAX_BYTES = 700000; // margen sobre el límite de 1 MB
+
+function _bkPartir(datos) {
+  const partes = [];
+  let actual = [], tam = 0;
+  (datos || []).forEach(item => {
+    const s = JSON.stringify(item) || '';
+    // Si el ítem solo ya es enorme, va en su propia parte
+    if (tam + s.length > _BK_MAX_BYTES && actual.length) { partes.push(actual); actual = []; tam = 0; }
+    actual.push(item); tam += s.length;
+  });
+  if (actual.length) partes.push(actual);
+  return partes;
+}
+
+// Guarda un conjunto en documentos backups/<nombre>_0, _1, ... y devuelve cuántos usó
+async function _bkGuardar(nombre, datos, ts) {
+  const partes = _bkPartir(datos);
+  for (let i = 0; i < partes.length; i++) {
+    await window._db.collection('backups').doc(nombre + '_' + i)
+      .set({ items: partes[i], updatedAt: ts });
+  }
+  return partes.length;
+}
+
+// Lee y reensambla un conjunto guardado en partes
+async function _bkLeer(nombre, cantidad) {
+  let out = [];
+  for (let i = 0; i < (cantidad || 0); i++) {
+    const d = await window._db.collection('backups').doc(nombre + '_' + i).get();
+    if (d.exists && Array.isArray(d.data().items)) out = out.concat(d.data().items);
+  }
+  return out;
+}
+
+// Devuelve los datos del backup, sea formato nuevo (por partes) o viejo (todo junto)
+async function _bkCargarTodo(data) {
+  if (data && data.partes) {
+    const p = data.partes;
+    return {
+      alumnos:         await _bkLeer('alumnos',         p.alumnos),
+      planificaciones: await _bkLeer('planificaciones', p.planificaciones),
+      objetivos:       await _bkLeer('objetivos',       p.objetivos),
+      antropometria:   await _bkLeer('antropometria',   p.antropometria),
+      articulos:       await _bkLeer('articulos',       p.articulos),
+      updatedAt:       data.updatedAt
+    };
+  }
+  return data || {};
+}
+
 async function cargarDesdeFirestore() {
   if (!window._db) return;
   try {
     const doc = await window._db.collection('backups').doc('main').get();
     const localAlumnos = JSON.parse(localStorage.getItem('LAB_ALUMNOS') || '[]');
     if (doc.exists) {
-      const data = doc.data();
+      // Reensambla el backup (formato nuevo por partes, o el viejo todo junto)
+      const data = await _bkCargarTodo(doc.data());
       const remoteAlumnos = data.alumnos || [];
       // PROTECCIÓN DE ARTÍCULOS: si la nube tiene más artículos que local, traerlos
       // ANTES de cualquier subida (evita que un auto-sync los pise con una lista vacía).
@@ -21104,13 +21160,19 @@ async function forzarSyncFirebase() {
     const articulos      = JSON.parse(localStorage.getItem('LAB_ARTICULOS')       || '[]');
 
     // ── Backup general (coach) ────────────────────────────────────────────────
-    // Si este documento falla (por ejemplo, si supera el límite de 1 MB por
-    // documento de Firestore), NO debe impedir que se publiquen los portales.
+    // Se guarda partido en varios documentos para no chocar con el límite de
+    // 1 MB de Firestore. En backups/main queda solo el índice de partes.
+    // Si falla, NO debe impedir que se publiquen los portales de los alumnos.
     let _okBackup = true;
     try {
-      await window._db.collection('backups').doc('main').set({
-        alumnos, planificaciones, objetivos, antropometria, articulos, updatedAt: ts
-      });
+      const partes = {
+        alumnos:         await _bkGuardar('alumnos',         alumnos,         ts),
+        planificaciones: await _bkGuardar('planificaciones', planificaciones, ts),
+        objetivos:       await _bkGuardar('objetivos',       objetivos,       ts),
+        antropometria:   await _bkGuardar('antropometria',   antropometria,   ts),
+        articulos:       await _bkGuardar('articulos',       articulos,       ts)
+      };
+      await window._db.collection('backups').doc('main').set({ partes, updatedAt: ts });
     } catch (errBk) {
       _okBackup = false;
       console.warn('Backup general falló (continúo con los portales):', errBk);
