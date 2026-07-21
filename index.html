@@ -21104,9 +21104,17 @@ async function forzarSyncFirebase() {
     const articulos      = JSON.parse(localStorage.getItem('LAB_ARTICULOS')       || '[]');
 
     // ── Backup general (coach) ────────────────────────────────────────────────
-    await window._db.collection('backups').doc('main').set({
-      alumnos, planificaciones, objetivos, antropometria, articulos, updatedAt: ts
-    });
+    // Si este documento falla (por ejemplo, si supera el límite de 1 MB por
+    // documento de Firestore), NO debe impedir que se publiquen los portales.
+    let _okBackup = true;
+    try {
+      await window._db.collection('backups').doc('main').set({
+        alumnos, planificaciones, objetivos, antropometria, articulos, updatedAt: ts
+      });
+    } catch (errBk) {
+      _okBackup = false;
+      console.warn('Backup general falló (continúo con los portales):', errBk);
+    }
 
     // ── Enriquecer ejercicios con datos de la biblioteca ─────────────────────
     // Agrega ejecucion/musculos/tipo a cada ejercicio para que alumno.html
@@ -21154,7 +21162,6 @@ async function forzarSyncFirebase() {
     }
 
     // ── Documentos por alumno (portal del estudiante) ─────────────────────────
-    const batch = window._db.batch();
     const articulosPublicados = articulos.filter(a => a.publicado !== false);
     // Asignar accessUntil por defecto (30 días) a alumnos que no lo tengan
     let _alumnosActualizados = false;
@@ -21167,28 +21174,43 @@ async function forzarSyncFirebase() {
     });
     if (_alumnosActualizados) saveAlumnos(alumnos);
 
+    // Se escribe alumno por alumno (no en batch): si el documento de uno falla,
+    // los portales de los demás igual se publican.
+    const _fallidos = [];
     for (const al of alumnos) {
-      const ref = window._db.collection('alumnos').doc(al.id);
-      const planesAlumno = _enrichPlanes(planificaciones.filter(p => p.alumnoId === al.id));
-      // merge:true → preserva los campos escritos por el alumno
-      // (antroAlumno, antroUnlock, actividad, feedbackHistorial)
-      batch.set(ref, {
-        perfil:          al,
-        planificaciones: planesAlumno,
-        antropometria:   antropometria.filter(r => r.alumnoId === al.id),
-        articulos:       articulosPublicados,
-        updatedAt:       ts,
-        accessUntil:     al.accessUntil || '',
-        macrociclo:      al.macrociclo   || null,
+      try {
+        const planesAlumno = _enrichPlanes(planificaciones.filter(p => p.alumnoId === al.id));
+        // merge:true → preserva los campos escritos por el alumno
+        // (antroAlumno, antroUnlock, actividad, feedbackHistorial)
+        await window._db.collection('alumnos').doc(al.id).set({
+          perfil:          al,
+          planificaciones: planesAlumno,
+          antropometria:   antropometria.filter(r => r.alumnoId === al.id),
+          articulos:       articulosPublicados,
+          updatedAt:       ts,
+          accessUntil:     al.accessUntil || '',
+          macrociclo:      al.macrociclo   || null,
         }, { merge: true });
+      } catch (errAl) {
+        _fallidos.push(al.nombre || al.id);
+        console.warn('No se pudo publicar el portal de', al.nombre || al.id, errAl);
+      }
     }
-    await batch.commit();
 
     localStorage.setItem('LAB_UPDATED_AT', ts);
-    _syncStatusIcon('✓', 'Guardado en la nube');
+    if (_fallidos.length) {
+      _syncStatusIcon('⚠️', 'No se pudo publicar: ' + _fallidos.join(', '));
+      if (typeof toast === 'function') toast('No se pudo publicar el portal de: ' + _fallidos.join(', '), 'error');
+    } else if (!_okBackup) {
+      _syncStatusIcon('⚠️', 'Portales publicados ✓ — falló el backup general (probablemente supera 1 MB)');
+      if (typeof toast === 'function') toast('Portales publicados ✓ — el backup general falló (datos muy grandes)', 'error');
+    } else {
+      _syncStatusIcon('✓', 'Guardado en la nube');
+    }
   } catch(err) {
-    _syncStatusIcon('⚠️', 'Error al guardar');
+    _syncStatusIcon('⚠️', 'Error al guardar: ' + (err && err.message ? err.message : err));
     console.warn('Sync error:', err);
+    if (typeof toast === 'function') toast('Error al sincronizar: ' + (err && err.message ? err.message : err), 'error');
   }
 }
 
