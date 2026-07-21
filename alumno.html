@@ -576,8 +576,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260720210146 por un timestamp en cada deploy
-const _APP_VERSION = '20260720210146';
+// deploy.bat reemplaza 20260720210533 por un timestamp en cada deploy
+const _APP_VERSION = '20260720210533';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1532,7 +1532,7 @@ function _sesDetalleHTML(ses){
   const _img = ses.imagen || _SES_IMG_DEFAULT;
   const cover = '<div style="height:200px;margin:0 -16px;background:#0a0a12 url(\''+String(_img).replace(/'/g,'%27')+'\') center/cover no-repeat;"></div>';
   let info = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;margin-top:-42px;position:relative;box-shadow:0 10px 30px -14px rgba(0,0,0,.55);">';
-  info += '<div style="font-size:19px;font-weight:900;color:var(--text);line-height:1.15;">'+((ses.nombre||DN[_diaIdx])).toUpperCase()+'</div>';
+  info += '<div style="font-size:15px;font-weight:800;color:var(--text);line-height:1.25;">'+((ses.nombre||DN[_diaIdx])).toUpperCase()+'</div>';
   info += '<div style="display:flex;flex-direction:column;gap:9px;margin-top:13px;">';
   info += '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🏋️</span>'+_compEsc(ses.lugar||(_diaModTab===1?'Casa':'Gym'))+'</div>';
   if(durVal) info += '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🕐</span>'+_compEsc(durVal)+'</div>';
