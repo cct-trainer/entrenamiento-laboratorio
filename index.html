@@ -11241,7 +11241,7 @@ function _sesImgPrev(){
   const url=(document.getElementById('plan-ses-imagen')?.value||'').trim();
   const el=document.getElementById('plan-ses-imgprev'); if(!el) return;
   if(url){ el.innerHTML='<img src="'+url.replace(/"/g,'&quot;')+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;" onerror="this.style.display=\'none\'">'; }
-  else { el.innerHTML='<div style="position:relative;"><img src="ses-default.jpg" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;opacity:.85;" onerror="this.style.display=\'none\'"><span style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,.6);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;">POR DEFECTO</span></div>'; }
+  else { el.innerHTML='<div style="position:relative;"><img src="ses-portada.jpg" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;opacity:.85;" onerror="this.style.display=\'none\'"><span style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,.6);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;">POR DEFECTO</span></div>'; }
 }
 function _sesSubirImagen(input){
   const file=input.files&&input.files[0]; if(!file) return;

@@ -576,8 +576,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260720225531 por un timestamp en cada deploy
-const _APP_VERSION = '20260720225531';
+// deploy.bat reemplaza 20260720230259 por un timestamp en cada deploy
+const _APP_VERSION = '20260720230259';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1523,7 +1523,7 @@ function _calcDuracionSesion(ses){
   });
   return Math.round(sec/60);
 }
-const _SES_IMG_DEFAULT = 'ses-default.jpg'; // portada por defecto de todas las sesiones
+const _SES_IMG_DEFAULT = 'ses-portada.jpg'; // portada por defecto de todas las sesiones
 function _sesDetalleHTML(ses){
   if(!ses) return '';
   const durVal = ses.duracion || (()=>{ const mm=_calcDuracionSesion(ses); return mm ? '~'+mm+' min' : ''; })();
