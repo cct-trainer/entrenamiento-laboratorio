@@ -21223,8 +21223,19 @@ async function forzarSyncFirebase() {
       });
     }
 
-    // ── Documentos por alumno (portal del estudiante) ─────────────────────────
+    // ── Artículos: un único documento global ──────────────────────────────────
+    // Antes se copiaban enteros dentro del documento de CADA alumno, lo que
+    // inflaba cada portal y podía superar el límite de 1 MB. Ahora se guardan
+    // una sola vez y todos los portales leen de ahí.
     const articulosPublicados = articulos.filter(a => a.publicado !== false);
+    try {
+      await window._db.collection('alumnos').doc('zz_articulos_global')
+        .set({ articulos: articulosPublicados, updatedAt: ts });
+    } catch (errArt) {
+      console.warn('No se pudieron guardar los artículos globales:', errArt);
+    }
+
+    // ── Documentos por alumno (portal del estudiante) ─────────────────────────
     // Asignar accessUntil por defecto (30 días) a alumnos que no lo tengan
     let _alumnosActualizados = false;
     alumnos.forEach((al, idx) => {
@@ -21248,7 +21259,8 @@ async function forzarSyncFirebase() {
           perfil:          al,
           planificaciones: planesAlumno,
           antropometria:   antropometria.filter(r => r.alumnoId === al.id),
-          articulos:       articulosPublicados,
+          // Los artículos ya no viven acá: se borra la copia vieja para aligerar
+          articulos:       firebase.firestore.FieldValue.delete(),
           updatedAt:       ts,
           accessUntil:     al.accessUntil || '',
           macrociclo:      al.macrociclo   || null,

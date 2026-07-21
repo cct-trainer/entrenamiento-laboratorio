@@ -86,6 +86,11 @@ html.light .pt-enter{box-shadow:0 12px 34px -12px rgba(29,78,216,.5);}
 .pt-enter:active{transform:scale(.98);}
 .pt-enter span{font-size:21px;line-height:1;margin-top:-2px;}
 .pt-date{font-size:11px;color:var(--muted);letter-spacing:.3px;text-transform:capitalize;}
+/* Selector de idioma */
+.lang-sel{display:inline-flex;align-items:center;gap:0;background:var(--card);border:1px solid var(--border);border-radius:22px;padding:3px;}
+.lang-opt{border:none;background:transparent;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.6px;padding:7px 15px;border-radius:19px;cursor:pointer;transition:all .15s;font-family:inherit;}
+.lang-opt.on{background:var(--gold);color:var(--letra-text);}
+.lang-lbl{font-size:10px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:7px;}
 
 .hdr{position:sticky;top:0;z-index:90;background:var(--bg);border-bottom:1px solid var(--border);padding:calc(18px + env(safe-area-inset-top,0)) 20px 14px;box-shadow:0 6px 18px -10px rgba(0,0,0,.6);transition:background .25s;}
 html.light .hdr{box-shadow:0 6px 18px -12px rgba(0,0,0,.18);}
@@ -370,17 +375,24 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
     <div class="pt-brand">
       <img class="pt-logo" src="https://cct-trainer.github.io/entrenamiento-laboratorio/icon-512.png" alt="Christian Cattaneo" onerror="this.style.display='none'">
       <div class="pt-brand-name">CHRISTIAN CATTANEO</div>
-      <div class="pt-brand-sub">ENTRENADOR</div>
+      <div class="pt-brand-sub" data-i18n="entrenador">ENTRENADOR</div>
     </div>
     <div class="pt-hero">
       <div class="pt-av" id="pt-av">?</div>
-      <div class="pt-hello">Hola,</div>
+      <div class="pt-hello" data-i18n="hola">Hola,</div>
       <div class="pt-name" id="pt-name">—</div>
       <div class="pt-frase" id="pt-frase"></div>
       <div class="pt-plan" id="pt-plan"></div>
     </div>
     <div class="pt-foot">
-      <button class="pt-enter" onclick="entrarApp()">Entrar a mi entrenamiento <span>›</span></button>
+      <button class="pt-enter" onclick="entrarApp()"><span data-i18n="entrar_app">Entrar a mi entrenamiento</span> <span>›</span></button>
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="lang-lbl" data-i18n="idioma">Idioma</div>
+        <div class="lang-sel" role="group" aria-label="Idioma / Language">
+          <button type="button" class="lang-opt on" data-lang="es" onclick="_setLang('es')">ESPAÑOL</button>
+          <button type="button" class="lang-opt" data-lang="en" onclick="_setLang('en')">ENGLISH</button>
+        </div>
+      </div>
       <div class="pt-date" id="pt-date"></div>
     </div>
   </div>
@@ -388,20 +400,20 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
 
 <div id="modo-chooser">
   <div>
-    <div class="mc-hi">Hola, <span id="mc-name"></span></div>
-    <div class="mc-q">¿Qué vas a entrenar hoy?</div>
+    <div class="mc-hi"><span data-i18n="hola">Hola,</span> <span id="mc-name"></span></div>
+    <div class="mc-q" data-i18n="que_entrenas">¿Qué vas a entrenar hoy?</div>
     <div class="mc-cards">
       <div class="mc-card mc-fuerza" id="mc-card-fuerza" onclick="_entrarModo('fuerza')">
         <div class="mc-ico">🏋️</div>
-        <div class="mc-label">FUERZA</div>
-        <div class="mc-sub">Gimnasio · hipertrofia · fuerza</div>
-        <div class="mc-btn">Entrar ›</div>
+        <div class="mc-label" data-i18n="fuerza">FUERZA</div>
+        <div class="mc-sub" data-i18n="fuerza_sub">Gimnasio · hipertrofia · fuerza</div>
+        <div class="mc-btn"><span data-i18n="entrar">Entrar</span> ›</div>
       </div>
       <div class="mc-card mc-running" id="mc-card-running" onclick="_entrarModo('running')">
         <div class="mc-ico">🏃</div>
-        <div class="mc-label">RUNNING</div>
-        <div class="mc-sub">Carrera · resistencia · ritmo</div>
-        <div class="mc-btn">Entrar ›</div>
+        <div class="mc-label" data-i18n="running">RUNNING</div>
+        <div class="mc-sub" data-i18n="running_sub">Carrera · resistencia · ritmo</div>
+        <div class="mc-btn"><span data-i18n="entrar">Entrar</span> ›</div>
       </div>
     </div>
   </div>
@@ -432,7 +444,7 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
     <div id="mes-nav"></div>
     <div id="meso-block"></div>
     <div id="week-sel"></div>
-    <div class="slabel" id="dias-slabel">DÍAS DE ENTRENAMIENTO</div>
+    <div class="slabel" id="dias-slabel" data-i18n="dias_entrenamiento">DÍAS DE ENTRENAMIENTO</div>
     <div class="dlist" id="dgrid"></div>
     <div id="sesion-ctn"></div>
   </div>
@@ -479,27 +491,27 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
   <nav class="bnav">
     <button class="nb on" id="nb-rutina" onclick="goTab('rutina')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7h8M8 12h8M8 17h5"/></svg>
-      RUTINA
+      <span data-i18n="nav_rutina">RUTINA</span>
     </button>
     <button class="nb" id="nb-running" onclick="goTab('running')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="m7.5 13.5 2.5-3 3 2.5 2-2.5"/><path d="M17 17H7l-2-8h14l-2 8z"/></svg>
-      RUNNING
+      <span data-i18n="nav_running">RUNNING</span>
     </button>
     <button class="nb" id="nb-cargas" onclick="goTab('cargas')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-      COMPLEMENTOS
+      <span data-i18n="nav_complementos">COMPLEMENTOS</span>
     </button>
     <button class="nb" id="nb-stats" onclick="goTab('stats')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-      STATS
+      <span data-i18n="nav_stats">STATS</span>
     </button>
     <button class="nb" id="nb-medidas" onclick="goTab('medidas')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4l-14 14l-4 -4z"/><path d="M16 7l-1.5 -1.5"/><path d="M13 10l-1.5 -1.5"/><path d="M10 13l-1.5 -1.5"/><path d="M7 16l-1.5 -1.5"/></svg>
-      MEDIDAS
+      <span data-i18n="nav_medidas">MEDIDAS</span>
     </button>
     <button class="nb" id="nb-coach" onclick="goTab('coach')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-      COACH
+      <span data-i18n="nav_coach">COACH</span>
     </button>
   </nav>
 </div>
@@ -520,7 +532,7 @@ const CFG = {
   messagingSenderId:'399177627945',
   appId:'1:399177627945:web:2b4fef0894480f70dc1f38'
 };
-const DN = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+let DN = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 let _db = null; // referencia global a Firestore
 
 const SERIE_TIPOS = {
@@ -544,7 +556,119 @@ const SERIE_TIPOS = {
   preago:        { icon:'⚡', label:'Preagotamiento',    color:'#fb923c' },
   postago:       { icon:'🔋', label:'Postagotamiento',   color:'#86efac' },
 };
-const DS = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+let DS = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+
+// ══════════════════════════════════════════════════════════════════════════
+// IDIOMA — Español / English (solo interfaz; el contenido queda como lo carga el coach)
+// ══════════════════════════════════════════════════════════════════════════
+const _I18N = {
+  es: {
+    _dn: ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'],
+    _ds: ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'],
+    _locale: 'es-AR',
+    entrenador:'ENTRENADOR', hola:'Hola,', entrar_app:'Entrar a mi entrenamiento',
+    idioma:'Idioma',
+    que_entrenas:'¿Qué vas a entrenar hoy?',
+    fuerza:'FUERZA', fuerza_sub:'Gimnasio · hipertrofia · fuerza',
+    running:'RUNNING', running_sub:'Carrera · resistencia · ritmo',
+    entrar:'Entrar',
+    coach_de:'Coach:', plan_activo:'Plan activo',
+    nav_rutina:'RUTINA', nav_running:'RUNNING', nav_complementos:'COMPLEMENTOS',
+    nav_stats:'STATS', nav_medidas:'MEDIDAS', nav_coach:'COACH',
+    dias_entrenamiento:'DÍAS DE ENTRENAMIENTO',
+    semanas:'SEMANAS', semana:'Semana',
+    volver_dias:'Volver a los días', tu_entrenamiento:'TU ENTRENAMIENTO',
+    gym:'Gym', casa:'Casa', dificultad:'Dificultad', min:'min',
+    feedback:'Feedback', bloque:'Bloque',
+    sin_sesion_gym:'Sin sesión de gimnasio para el',
+    sin_sesion_casa:'No hay sesión en casa para este día',
+    sin_sesion_casa_sub:'Tu coach todavía no cargó una sesión en casa.',
+    sin_sesiones_semana:'No hay sesiones cargadas para esta semana.',
+    descanso:'Descanso',
+    sin_plan_run:'Sin plan de running', sin_plan_run_sub:'Tu coach aún no cargó un plan de running.',
+    exportar_reloj:'⌚ EXPORTAR SEMANA AL RELOJ (.TCX)',
+    coach_online:'Coach Online',
+    coach_online_sub:'Tu coach va a subir videos y artículos sobre preparación, mentalidad y psicología del deporte para que rindas siempre al 100.',
+    cargando:'Cargando…',
+    buscar:'Buscar…', filtros:'Filtros', entrenar:'Entrenar',
+    sin_complementos:'Todavía no hay complementos cargados.',
+    enlace_invalido:'Enlace no válido',
+    volver:'Volver'
+  },
+  en: {
+    _dn: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+    _ds: ['MON','TUE','WED','THU','FRI','SAT','SUN'],
+    _locale: 'en-US',
+    entrenador:'COACH', hola:'Hi,', entrar_app:'Start my training',
+    idioma:'Language',
+    que_entrenas:'What are you training today?',
+    fuerza:'STRENGTH', fuerza_sub:'Gym · hypertrophy · strength',
+    running:'RUNNING', running_sub:'Running · endurance · pace',
+    entrar:'Enter',
+    coach_de:'Coach:', plan_activo:'Active plan',
+    nav_rutina:'PROGRAM', nav_running:'RUNNING', nav_complementos:'EXTRAS',
+    nav_stats:'STATS', nav_medidas:'MEASURES', nav_coach:'COACH',
+    dias_entrenamiento:'TRAINING DAYS',
+    semanas:'WEEKS', semana:'Week',
+    volver_dias:'Back to days', tu_entrenamiento:'YOUR WORKOUT',
+    gym:'Gym', casa:'Home', dificultad:'Difficulty', min:'min',
+    feedback:'Feedback', bloque:'Block',
+    sin_sesion_gym:'No gym session for',
+    sin_sesion_casa:'No home session for this day',
+    sin_sesion_casa_sub:'Your coach hasn\'t added a home session yet.',
+    sin_sesiones_semana:'No sessions scheduled for this week.',
+    descanso:'Rest',
+    sin_plan_run:'No running plan', sin_plan_run_sub:'Your coach hasn\'t added a running plan yet.',
+    exportar_reloj:'⌚ EXPORT WEEK TO WATCH (.TCX)',
+    coach_online:'Coach Online',
+    coach_online_sub:'Your coach will upload videos and articles on preparation, mindset and sport psychology so you always perform at your best.',
+    cargando:'Loading…',
+    buscar:'Search…', filtros:'Filters', entrenar:'Start',
+    sin_complementos:'No extras have been added yet.',
+    enlace_invalido:'Invalid link',
+    volver:'Back'
+  }
+};
+let _LANG = (function(){ try { return localStorage.getItem('SOCC_LANG') || 'es'; } catch(e){ return 'es'; } })();
+function _t(k){ const d=_I18N[_LANG]||_I18N.es; return (k in d) ? d[k] : (_I18N.es[k] || k); }
+function _locale(){ return _t('_locale'); }
+
+// Aplica el idioma a los textos estáticos marcados con data-i18n
+function _aplicarIdioma(){
+  DN = _t('_dn').slice();
+  DS = _t('_ds').slice();
+  document.documentElement.lang = _LANG;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    const txt = _t(k);
+    const slot = el.querySelector('[data-i18n-text]');
+    if (slot) slot.textContent = txt; else el.textContent = txt;
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    el.setAttribute('placeholder', _t(el.getAttribute('data-i18n-ph')));
+  });
+  document.querySelectorAll('.lang-opt').forEach(b => {
+    b.classList.toggle('on', b.getAttribute('data-lang') === _LANG);
+  });
+}
+
+function _setLang(l){
+  if (l !== 'es' && l !== 'en') l = 'es';
+  _LANG = l;
+  try { localStorage.setItem('SOCC_LANG', l); } catch(e){}
+  _aplicarIdioma();
+  // Redibujar lo que esté visible para que tome el idioma nuevo
+  try {
+    const pt = document.getElementById('portada');
+    if (pt && pt.style.display === 'flex' && typeof _mostrarPortada === 'function') _mostrarPortada();
+    if (typeof renderRutina  === 'function' && typeof _plan    !== 'undefined' && _plan)    renderRutina();
+    if (typeof renderRunning === 'function' && typeof _planRun !== 'undefined' && _planRun) renderRunning();
+  } catch(e){}
+}
+
+// Aplicar el idioma guardado apenas esté disponible el DOM
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _aplicarIdioma);
+else _aplicarIdioma();
 
 // ── Fases del macrociclo (mismo esquema que el portal del coach) ──
 const FASES_MACRO = [
@@ -578,8 +702,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260721144746 por un timestamp en cada deploy
-const _APP_VERSION = '20260721144746';
+// deploy.bat reemplaza 20260721150512 por un timestamp en cada deploy
+const _APP_VERSION = '20260721150512';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -759,31 +883,49 @@ function render() {
 }
 
 // ── PORTADA: pantalla de bienvenida antes de entrar a la app ──
-const _FRASES_PORTADA = [
-  'Hoy es tu día. ¡Vamos!',
-  'Cada serie suma. A darle.',
-  'Tu mejor versión se entrena hoy.',
-  'Un día más, un paso más fuerte.',
-  'La constancia gana. ¡Vamos!',
-  'Hoy entrenás tu futuro.',
-  'Fuerte de la cabeza a los pies.',
-  'El progreso te está esperando.',
-  'Disciplina hoy, orgullo mañana.',
-  'Dale que se puede. ¡A entrenar!'
-];
+const _FRASES_PORTADA = {
+  es: [
+    'Hoy es tu día. ¡Vamos!',
+    'Cada serie suma. A darle.',
+    'Tu mejor versión se entrena hoy.',
+    'Un día más, un paso más fuerte.',
+    'La constancia gana. ¡Vamos!',
+    'Hoy entrenás tu futuro.',
+    'Fuerte de la cabeza a los pies.',
+    'El progreso te está esperando.',
+    'Disciplina hoy, orgullo mañana.',
+    'Dale que se puede. ¡A entrenar!'
+  ],
+  en: [
+    'Today is your day. Let\'s go!',
+    'Every set counts. Get after it.',
+    'Your best version is built today.',
+    'One more day, one step stronger.',
+    'Consistency wins. Let\'s go!',
+    'Today you train your future.',
+    'Strong from head to toe.',
+    'Progress is waiting for you.',
+    'Discipline today, pride tomorrow.',
+    'You\'ve got this. Time to train!'
+  ]
+};
+let _ptNombre = '', _ptFoto = '';
 function _mostrarPortada(nombre, foto) {
+  if (nombre !== undefined) { _ptNombre = nombre; _ptFoto = foto; }
+  nombre = _ptNombre; foto = _ptFoto;
   const av = document.getElementById('pt-av');
   if (foto) { av.innerHTML = '<img src="'+foto+'" alt="'+nombre+'">'; }
   else { av.textContent = (nombre||'?').charAt(0).toUpperCase(); }
   document.getElementById('pt-name').textContent = nombre;
-  const frase = _FRASES_PORTADA[Math.floor(Math.random()*_FRASES_PORTADA.length)];
+  const frases = _FRASES_PORTADA[_LANG] || _FRASES_PORTADA.es;
+  const frase = frases[Math.floor(Math.random()*frases.length)];
   document.getElementById('pt-frase').textContent = frase;
   const pl = document.getElementById('pt-plan');
-  const planNom = _plan ? (_plan.nombre || 'Plan activo') : '';
+  const planNom = _plan ? (_plan.nombre || _t('plan_activo')) : '';
   if (planNom) { pl.textContent = planNom.toUpperCase(); pl.style.display = ''; }
   else { pl.style.display = 'none'; }
   document.getElementById('pt-date').textContent =
-    new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+    new Date().toLocaleDateString(_locale(),{weekday:'long',day:'numeric',month:'long'});
   document.getElementById('app').style.display = 'none';
   document.getElementById('portada').style.display = 'flex';
   window.scrollTo(0,0);
@@ -1540,9 +1682,9 @@ function _sesDetalleHTML(ses){
   let info = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;position:relative;box-shadow:0 10px 30px -14px rgba(0,0,0,.4);">';
   info += '<div style="font-size:15px;font-weight:800;color:var(--text);line-height:1.25;">'+((ses.nombre||DN[_diaIdx])).toUpperCase()+'</div>';
   info += '<div style="display:flex;flex-direction:column;gap:9px;margin-top:13px;">';
-  info += '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🏋️</span>'+_compEsc(ses.lugar||(_diaModTab===1?'Casa':'Gym'))+'</div>';
+  info += '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🏋️</span>'+_compEsc(ses.lugar||(_diaModTab===1?_t('casa'):_t('gym')))+'</div>';
   if(durVal) info += '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🕐</span>'+_compEsc(durVal)+'</div>';
-  if(dots)   info += '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);">'+dots+' <span style="margin-left:3px;">Dificultad</span></div>';
+  if(dots)   info += '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);">'+dots+' <span style="margin-left:3px;">'+_t('dificultad')+'</span></div>';
   info += '</div>';
   if(ses.descripcion) info += '<div style="font-size:13px;color:var(--muted);line-height:1.55;margin-top:13px;padding-top:13px;border-top:1px solid var(--border);">'+_compEsc(ses.descripcion)+'</div>';
   info += '</div>';
@@ -1563,11 +1705,11 @@ function renderSesion() {
   const _dnum = sem?.fechaInicio ? (()=>{const d=new Date(sem.fechaInicio+'T12:00:00');d.setDate(d.getDate()+_diaIdx);return d.getDate();})() : _diaIdx+1;
   const back =
     '<div class="ses-head">'+
-      '<button class="ses-back" onclick="volverDias()"><i>‹</i> Volver a los días</button>'+
+      '<button class="ses-back" onclick="volverDias()"><i>‹</i> '+_t('volver_dias')+'</button>'+
       '<div class="ses-head-day">'+
         '<span class="ses-head-dow">'+DS[_diaIdx]+'</span>'+
         '<span class="ses-head-num">'+_dnum+'</span>'+
-        '<span class="ses-head-sem">Semana '+(_semIdx+1)+'</span>'+
+        '<span class="ses-head-sem">'+_t('semana')+' '+(_semIdx+1)+'</span>'+
       '</div>'+
     '</div>';
 
@@ -1588,11 +1730,11 @@ function renderSesion() {
   const ses = _diaModTab === 0 ? sesGym : sesCasa;
 
   if (!ses?.bloques?.length) {
-    const msgGym = '<div class="empty" style="padding:20px"><div class="empty-txt">Sin sesión de gimnasio para el '+DN[_diaIdx]+'</div></div>';
+    const msgGym = '<div class="empty" style="padding:20px"><div class="empty-txt">'+_t('sin_sesion_gym')+' '+DN[_diaIdx]+'</div></div>';
     const msgCasa= '<div class="empty" style="padding:20px">'+
       '<div style="font-size:36px;margin-bottom:10px;">🏠</div>'+
-      '<div class="empty-txt">No hay sesión en casa para este día</div>'+
-      '<div style="font-size:12px;color:var(--muted);margin-top:6px;">Tu coach todavía no cargó una sesión en casa.</div>'+
+      '<div class="empty-txt">'+_t('sin_sesion_casa')+'</div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-top:6px;">'+_t('sin_sesion_casa_sub')+'</div>'+
     '</div>';
     ctn.innerHTML = back + tabs + (_diaModTab===0 ? msgGym : msgCasa);
     return;
@@ -1600,14 +1742,14 @@ function renderSesion() {
 
   const _sesImg = String(ses.imagen || _sesImgDefault()).replace(/'/g,'%27');
   const _bloquesHTML =
-    '<div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--text);margin-bottom:12px;">TU ENTRENAMIENTO</div>'+
+    '<div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--text);margin-bottom:12px;">'+_t('tu_entrenamiento')+'</div>'+
     ses.bloques.map((b,bi) => {
       const letra='ABCDEFGHIJ'[bi]||(bi+1);
       const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>_ejCard(ej,'b'+bi+'e'+ei)).join('');
       return '<div class="blk" style="margin-bottom:14px;">'+
         '<div class="blk-hdr open" onclick="this.classList.toggle(\'open\');var nx=this.nextElementSibling;nx.style.display=this.classList.contains(\'open\')?\'block\':\'none\'">'+
           '<div class="blk-letra">'+letra+'</div>'+
-          '<div class="blk-txt"><div class="blk-n">'+(b.nombre||b.tipo||'Bloque')+'</div><div class="blk-t">'+(b.serieTipo||'')+'</div></div>'+
+          '<div class="blk-txt"><div class="blk-n">'+(b.nombre||b.tipo||_t('bloque'))+'</div><div class="blk-t">'+(b.serieTipo||'')+'</div></div>'+
           '<div class="blk-arr">&#9660;</div>'+
         '</div>'+
         '<div class="blk-body" style="padding:8px 4px 4px;">'+ejesHTML+'</div>'+
@@ -1739,7 +1881,7 @@ function _renderDiaRunning_LEGACY() {
 // ── RUNNING con el MISMO estilo que Fuerza (renglones + hoja de detalle dorada) ──
 function renderRunning() {
   const ctn = document.getElementById('running-ctn');
-  if (!_planRun || !_runSemanas.length) { ctn.innerHTML = noData('🏃','Sin plan de running','Tu coach aún no cargó un plan de running.'); return; }
+  if (!_planRun || !_runSemanas.length) { ctn.innerHTML = noData('🏃',_t('sin_plan_run'),_t('sin_plan_run_sub')); return; }
   if (_runSemIdx >= _runSemanas.length) _runSemIdx = _runSemanas.length-1;
   const semana = _runSemanas[_runSemIdx] || {};
   const diasData = semana.diasData || {};
@@ -1758,23 +1900,23 @@ function renderRunning() {
       '<div class="mes-nav-info"><div class="mes-nav-title" style="font-size:17px;">'+_compEsc(mesTitulo).toUpperCase()+'</div>'+
       (_planRun.objetivo?'<div class="mes-nav-sub">'+_compEsc(_planRun.objetivo)+'</div>':'')+'</div>'+
       '<span style="width:38px;"></span></div>'+
-    '<button onclick="_exportarRunReloj()" style="width:100%;margin-bottom:14px;padding:12px;border-radius:12px;border:1px solid rgba(201,168,76,.4);background:color-mix(in srgb,var(--gold) 8%,var(--card));color:var(--gold);font-size:12px;font-weight:800;letter-spacing:.3px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">⌚ EXPORTAR SEMANA AL RELOJ (.TCX)</button>';
+    '<button onclick="_exportarRunReloj()" style="width:100%;margin-bottom:14px;padding:12px;border-radius:12px;border:1px solid rgba(201,168,76,.4);background:color-mix(in srgb,var(--gold) 8%,var(--card));color:var(--gold);font-size:12px;font-weight:800;letter-spacing:.3px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">'+_t('exportar_reloj')+'</button>';
 
   // Selector de semanas (el mes completo)
   if (_runSemanas.length > 1) {
-    h += '<div class="slabel">SEMANAS</div><div class="wk-row">'+
+    h += '<div class="slabel">'+_t('semanas')+'</div><div class="wk-row">'+
       _runSemanas.map((s,i)=>{
         const on=i===_runSemIdx; let rango='';
-        if(s.fechaInicio){ const l=new Date(s.fechaInicio+'T12:00:00'); const d=new Date(l); d.setDate(d.getDate()+6); const f=x=>x.toLocaleDateString('es-AR',{day:'numeric',month:'short'}); rango=f(l)+' — '+f(d); }
-        return '<button class="wk-chip'+(on?' on':'')+'" onclick="_selRunSemana('+i+')"><span class="wk-n">Semana '+(s.semana||(i+1))+'</span>'+(rango?'<span class="wk-d">'+rango+'</span>':'')+'</button>';
+        if(s.fechaInicio){ const l=new Date(s.fechaInicio+'T12:00:00'); const d=new Date(l); d.setDate(d.getDate()+6); const f=x=>x.toLocaleDateString(_locale(),{day:'numeric',month:'short'}); rango=f(l)+' — '+f(d); }
+        return '<button class="wk-chip'+(on?' on':'')+'" onclick="_selRunSemana('+i+')"><span class="wk-n">'+_t('semana')+' '+(s.semana||(i+1))+'</span>'+(rango?'<span class="wk-d">'+rango+'</span>':'')+'</button>';
       }).join('')+'</div>';
   }
-  h += '<div class="slabel">DÍAS DE ENTRENAMIENTO</div>';
+  h += '<div class="slabel">'+_t('dias_entrenamiento')+'</div>';
 
   const diasE = [];
   for (let i=0;i<7;i++){ if((diasData[i]||[]).length) diasE.push(i); }
   if (!diasE.length) {
-    h += '<div class="dr-empty">No hay sesiones cargadas para esta semana.</div>';
+    h += '<div class="dr-empty">'+_t('sin_sesiones_semana')+'</div>';
   } else {
     h += '<div class="dlist">'+diasE.map(i=>{
       const bloques = diasData[i]||[];
@@ -1806,8 +1948,8 @@ function _runDetalleHTML(i){
   const bloques = diasData[i]||[];
   const fx = semana.fechaInicio;
   const dnum = fx ? (()=>{const d=new Date(fx+'T12:00:00');d.setDate(d.getDate()+i);return d.getDate();})() : i+1;
-  const back = '<div class="ses-head"><button class="ses-back" onclick="_volverRunDias()"><i>‹</i> Volver a los días</button>'+
-    '<div class="ses-head-day"><span class="ses-head-dow">'+DS[i]+'</span><span class="ses-head-num">'+dnum+'</span><span class="ses-head-sem">Semana '+((semana.semana)||(_runSemIdx+1))+'</span></div></div>';
+  const back = '<div class="ses-head"><button class="ses-back" onclick="_volverRunDias()"><i>‹</i> '+_t('volver_dias')+'</button>'+
+    '<div class="ses-head-day"><span class="ses-head-dow">'+DS[i]+'</span><span class="ses-head-num">'+dnum+'</span><span class="ses-head-sem">'+_t('semana')+' '+((semana.semana)||(_runSemIdx+1))+'</span></div></div>';
   const b0 = bloques[0]||{};
   const _rImg = String(b0.imagen || _sesImgDefault()).replace(/'/g,'%27');
   return back +
@@ -1967,13 +2109,24 @@ const _INFO_COLORS = {
 };
 
 let _infoArtOpen = null; // índice del artículo abierto, o null = lista
+let _ARTS = null;        // artículos globales (se cargan una sola vez)
 
-function renderInfo() {
+async function renderInfo() {
   const ctn = document.getElementById('coach-ctn');
   if (!ctn) return;
-  const arts = (_data && _data.articulos) ? _data.articulos.filter(a => a.publicado !== false) : [];
+  // Los artículos viven en un único documento global (no duplicados en cada alumno)
+  if (_ARTS === null) {
+    ctn.innerHTML = '<div class="empty" style="padding:40px 20px;"><div class="empty-txt">Cargando…</div></div>';
+    try {
+      const doc = await _db.collection('alumnos').doc('zz_articulos_global').get();
+      _ARTS = (doc.exists && Array.isArray(doc.data().articulos)) ? doc.data().articulos : [];
+    } catch(e) { _ARTS = []; }
+    // Compatibilidad: si el documento global todavía no existe, usar los del alumno
+    if (!_ARTS.length && _data && Array.isArray(_data.articulos)) _ARTS = _data.articulos;
+  }
+  const arts = _ARTS.filter(a => a.publicado !== false);
   if (!arts.length) {
-    ctn.innerHTML = noData('🎓','Coach Online','Tu coach va a subir videos y artículos sobre preparación, mentalidad y psicología del deporte para que rindas siempre al 100.');
+    ctn.innerHTML = noData('🎓',_t('coach_online'),_t('coach_online_sub'));
     return;
   }
   if (_infoArtOpen !== null && arts[_infoArtOpen]) {
@@ -2113,7 +2266,7 @@ function _renderComplementos(ctn) {
   if (!_COMPS || !_COMPS.length) {
     ctn.innerHTML = '<div class="empty" style="padding:40px 20px;text-align:center;">'+
       '<div style="font-size:36px;margin-bottom:10px;">🧩</div>'+
-      '<div class="empty-txt">Todavía no hay complementos cargados</div>'+
+      '<div class="empty-txt">'+_t('sin_complementos')+'</div>'+
       '<div style="font-size:12px;color:var(--muted);margin-top:6px;">Tu coach los va a ir sumando acá.</div></div>';
     return;
   }
@@ -2121,11 +2274,11 @@ function _renderComplementos(ctn) {
   if (_compFilterIdx >= _compCats.length) _compFilterIdx = -1;
   ctn.innerHTML =
     '<div style="margin:2px 0 11px;">'+
-      '<input id="comp-search" type="search" placeholder="Busca un entrenamiento" oninput="_compGrid()" autocomplete="off" '+
+      '<input id="comp-search" type="search" placeholder="'+_t('buscar')+'" oninput="_compGrid()" autocomplete="off" '+
         'style="width:100%;padding:13px 15px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;outline:none;box-sizing:border-box;">'+
     '</div>'+
     '<div style="margin-bottom:13px;">'+
-      '<button onclick="_compToggleFiltros()" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:22px;border:1px solid var(--border);background:var(--card);color:var(--gold);font-size:13px;font-weight:800;cursor:pointer;">🔽 Filtros</button>'+
+      '<button onclick="_compToggleFiltros()" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:22px;border:1px solid var(--border);background:var(--card);color:var(--gold);font-size:13px;font-weight:800;cursor:pointer;">🔽 '+_t('filtros')+'</button>'+
       '<div id="comp-filtros" style="display:none;flex-wrap:wrap;gap:7px;margin-top:10px;">'+
         _compChip(-1,'Todas') + _compCats.map((c,i)=>_compChip(i,c)).join('')+
       '</div>'+
