@@ -17028,6 +17028,11 @@ function _toggleActivoMes(planId) {
   p.activo = nuevo;
   savePlanificaciones(planes);
   renderPerfilPlanificaciones(p.alumnoId, 'fuerza');
+  // Subir el cambio a la nube para que el portal del alumno abra el mes activo
+  if (typeof forzarSyncFirebase === 'function') {
+    forzarSyncFirebase();
+    toast(nuevo ? '● Mes activo — sincronizado ✓' : 'Mes desactivado — sincronizado ✓');
+  }
 }
 function _faseBloqueHTML(p, faseIdx, auto) {
   const f = FASES_MACRO[faseIdx] || FASES_MACRO[0];
