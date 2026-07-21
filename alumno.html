@@ -576,8 +576,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260720230858 por un timestamp en cada deploy
-const _APP_VERSION = '20260720230858';
+// deploy.bat reemplaza 20260721084507 por un timestamp en cada deploy
+const _APP_VERSION = '20260721084507';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1523,18 +1523,19 @@ function _calcDuracionSesion(ses){
   });
   return Math.round(sec/60);
 }
-const _SES_IMG_DEFAULT = 'ses-portada.jpg'; // portada por defecto de todas las sesiones
+// Portada por defecto según el sexo del alumno (el coach puede sobreescribirla por sesión)
+const _SES_IMG_HOMBRE = 'ses-hombre.jpg';
+const _SES_IMG_MUJER  = 'ses-mujer.jpg';
+function _sesImgDefault(){
+  const s = String(_data?.perfil?.sexo || _data?.sexo || '').trim().toLowerCase();
+  return (s.startsWith('f') || s.startsWith('muj')) ? _SES_IMG_MUJER : _SES_IMG_HOMBRE;
+}
 function _sesDetalleHTML(ses){
   if(!ses) return '';
   const durVal = ses.duracion || (()=>{ const mm=_calcDuracionSesion(ses); return mm ? '~'+mm+' min' : ''; })();
   const dif = parseInt(ses.dificultad||'')||0;
   const dots = dif ? [1,2,3].map(i=>'<span style="width:9px;height:9px;border-radius:50%;background:'+(i<=dif?'var(--green)':'rgba(255,255,255,.15)')+';display:inline-block;"></span>').join('') : '';
-  const _img = ses.imagen || _SES_IMG_DEFAULT;
-  const cover = '<div style="position:relative;height:230px;margin:0 -16px;">'+
-      '<div style="position:absolute;inset:0;background:#0a0a12 url(\''+String(_img).replace(/'/g,'%27')+'\') center/cover no-repeat;"></div>'+
-      '<div style="position:absolute;inset:0;background:linear-gradient(to bottom, transparent 40%, color-mix(in srgb,var(--bg) 55%,transparent) 72%, var(--bg));"></div>'+
-    '</div>';
-  let info = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;margin-top:-46px;position:relative;box-shadow:0 10px 30px -14px rgba(0,0,0,.4);">';
+  let info = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;position:relative;box-shadow:0 10px 30px -14px rgba(0,0,0,.4);">';
   info += '<div style="font-size:15px;font-weight:800;color:var(--text);line-height:1.25;">'+((ses.nombre||DN[_diaIdx])).toUpperCase()+'</div>';
   info += '<div style="display:flex;flex-direction:column;gap:9px;margin-top:13px;">';
   info += '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🏋️</span>'+_compEsc(ses.lugar||(_diaModTab===1?'Casa':'Gym'))+'</div>';
@@ -1543,7 +1544,7 @@ function _sesDetalleHTML(ses){
   info += '</div>';
   if(ses.descripcion) info += '<div style="font-size:13px;color:var(--muted);line-height:1.55;margin-top:13px;padding-top:13px;border-top:1px solid var(--border);">'+_compEsc(ses.descripcion)+'</div>';
   info += '</div>';
-  return cover + info;
+  return info;
 }
 
 function renderSesion() {
@@ -1595,8 +1596,9 @@ function renderSesion() {
     return;
   }
 
-  ctn.innerHTML= back + tabs + _sesDetalleHTML(ses) +
-    '<div style="padding-bottom:4px;"><div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--text);margin-bottom:12px;">TU ENTRENAMIENTO</div>'+
+  const _sesImg = String(ses.imagen || _sesImgDefault()).replace(/'/g,'%27');
+  const _bloquesHTML =
+    '<div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--text);margin-bottom:12px;">TU ENTRENAMIENTO</div>'+
     ses.bloques.map((b,bi) => {
       const letra='ABCDEFGHIJ'[bi]||(bi+1);
       const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>_ejCard(ej,'b'+bi+'e'+ei)).join('');
@@ -1608,15 +1610,27 @@ function renderSesion() {
         '</div>'+
         '<div class="blk-body" style="padding:8px 4px 4px;">'+ejesHTML+'</div>'+
       '</div>';
-    }).join('')+
+    }).join('');
+
+  ctn.innerHTML= back + tabs +
+    '<div style="position:relative;margin:0 -16px;padding:150px 16px 4px;">'+
+      // Capa de imagen: anclada arriba, ocupa toda la sesión hacia abajo
+      '<div style="position:absolute;top:0;left:0;right:0;bottom:0;z-index:0;pointer-events:none;overflow:hidden;">'+
+        '<div style="position:absolute;top:0;left:0;right:0;height:900px;background:#0a0a12 url(\''+_sesImg+'\') top center/cover no-repeat;"></div>'+
+        // Esfumado: transparente arriba → color del tema hacia abajo (baja hasta el fondo de la sesión)
+        '<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(to bottom, transparent 0px, color-mix(in srgb,var(--bg) 40%,transparent) 150px, color-mix(in srgb,var(--bg) 82%,transparent) 400px, color-mix(in srgb,var(--bg) 96%,transparent) 620px, var(--bg) 760px);"></div>'+
+      '</div>'+
+      '<div style="position:relative;z-index:1;">'+
+        _sesDetalleHTML(ses) + _bloquesHTML +
+      '</div>'+
+    '</div>'+
     '<div style="height:80px;"></div>'+
     '<div style="position:fixed;bottom:calc(70px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:448px;z-index:200;">'+
       '<div style="display:flex;gap:8px;">'+
         '<button onclick="_abrirFeedback()" style="flex:1;background:linear-gradient(135deg,#C9A84C,#9A7A28);color:#fff;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">📋 Feedback</button>'+
         '<button onclick="_enviarWA()" style="flex:1;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">📲 WhatsApp</button>'+
       '</div>'+
-    '</div>'+
-  '</div>';
+    '</div>';
 }
 
 // ── RUNNING (el render nuevo, estilo Fuerza, está más abajo) ──
