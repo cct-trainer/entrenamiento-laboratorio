@@ -576,8 +576,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260720230259 por un timestamp en cada deploy
-const _APP_VERSION = '20260720230259';
+// deploy.bat reemplaza 20260720230858 por un timestamp en cada deploy
+const _APP_VERSION = '20260720230858';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1530,8 +1530,11 @@ function _sesDetalleHTML(ses){
   const dif = parseInt(ses.dificultad||'')||0;
   const dots = dif ? [1,2,3].map(i=>'<span style="width:9px;height:9px;border-radius:50%;background:'+(i<=dif?'var(--green)':'rgba(255,255,255,.15)')+';display:inline-block;"></span>').join('') : '';
   const _img = ses.imagen || _SES_IMG_DEFAULT;
-  const cover = '<div style="height:200px;margin:0 -16px;background:#0a0a12 url(\''+String(_img).replace(/'/g,'%27')+'\') center/cover no-repeat;"></div>';
-  let info = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;margin-top:-42px;position:relative;box-shadow:0 10px 30px -14px rgba(0,0,0,.55);">';
+  const cover = '<div style="position:relative;height:230px;margin:0 -16px;">'+
+      '<div style="position:absolute;inset:0;background:#0a0a12 url(\''+String(_img).replace(/'/g,'%27')+'\') center/cover no-repeat;"></div>'+
+      '<div style="position:absolute;inset:0;background:linear-gradient(to bottom, transparent 40%, color-mix(in srgb,var(--bg) 55%,transparent) 72%, var(--bg));"></div>'+
+    '</div>';
+  let info = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;margin-top:-46px;position:relative;box-shadow:0 10px 30px -14px rgba(0,0,0,.4);">';
   info += '<div style="font-size:15px;font-weight:800;color:var(--text);line-height:1.25;">'+((ses.nombre||DN[_diaIdx])).toUpperCase()+'</div>';
   info += '<div style="display:flex;flex-direction:column;gap:9px;margin-top:13px;">';
   info += '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🏋️</span>'+_compEsc(ses.lugar||(_diaModTab===1?'Casa':'Gym'))+'</div>';
