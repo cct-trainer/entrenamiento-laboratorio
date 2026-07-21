@@ -33,6 +33,7 @@
   --ctx-bg:#14142b;--ctx-border:rgba(201,168,76,.3);--ctx-text:#e8e8f0;
   --letra-text:#0d0d1a;
   --avatar-grad:linear-gradient(135deg,#C9A84C,#7a5a10);
+  --ses-panel:#413c34; /* gris topo (fondo de la sesión, tema oscuro) */
 }
 
 /* ── TEMA CLARO ────────────────────────────────────────────────────── */
@@ -47,6 +48,7 @@ html.light{
   --ctx-bg:#ffffff;--ctx-border:rgba(29,78,216,.2);--ctx-text:#0d0f1a;
   --letra-text:#ffffff;
   --avatar-grad:linear-gradient(135deg,#1d4ed8,#1e3a8a);
+  --ses-panel:#ece7d9; /* tiza (fondo de la sesión, tema claro) */
 }
 
 html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;transition:background .25s,color .25s;}
@@ -576,8 +578,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260721084507 por un timestamp en cada deploy
-const _APP_VERSION = '20260721084507';
+// deploy.bat reemplaza 20260721085332 por un timestamp en cada deploy
+const _APP_VERSION = '20260721085332';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1613,18 +1615,15 @@ function renderSesion() {
     }).join('');
 
   ctn.innerHTML= back + tabs +
-    '<div style="position:relative;margin:0 -16px;padding:150px 16px 4px;">'+
-      // Capa de imagen: anclada arriba, ocupa toda la sesión hacia abajo
-      '<div style="position:absolute;top:0;left:0;right:0;bottom:0;z-index:0;pointer-events:none;overflow:hidden;">'+
-        '<div style="position:absolute;top:0;left:0;right:0;height:900px;background:#0a0a12 url(\''+_sesImg+'\') top center/cover no-repeat;"></div>'+
-        // Esfumado: transparente arriba → color del tema hacia abajo (baja hasta el fondo de la sesión)
-        '<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(to bottom, transparent 0px, color-mix(in srgb,var(--bg) 40%,transparent) 150px, color-mix(in srgb,var(--bg) 82%,transparent) 400px, color-mix(in srgb,var(--bg) 96%,transparent) 620px, var(--bg) 760px);"></div>'+
-      '</div>'+
-      '<div style="position:relative;z-index:1;">'+
-        _sesDetalleHTML(ses) + _bloquesHTML +
-      '</div>'+
+    // Foto limpia arriba (con un pequeño degradado final hacia el rectángulo)
+    '<div style="position:relative;height:220px;margin:0 -16px;background:#0a0a12 url(\''+_sesImg+'\') center/cover no-repeat;">'+
+      '<div style="position:absolute;left:0;right:0;bottom:0;height:64px;background:linear-gradient(to bottom, transparent, var(--ses-panel));"></div>'+
     '</div>'+
-    '<div style="height:80px;"></div>'+
+    // Rectángulo de fondo (gris topo / tiza) con todo el contenido de la sesión
+    '<div style="margin:0 -16px;padding:16px 16px 4px;background:var(--ses-panel);">'+
+      _sesDetalleHTML(ses) + _bloquesHTML +
+    '</div>'+
+    '<div style="height:80px;background:var(--ses-panel);margin:0 -16px;"></div>'+
     '<div style="position:fixed;bottom:calc(70px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:448px;z-index:200;">'+
       '<div style="display:flex;gap:8px;">'+
         '<button onclick="_abrirFeedback()" style="flex:1;background:linear-gradient(135deg,#C9A84C,#9A7A28);color:#fff;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">📋 Feedback</button>'+
@@ -1809,7 +1808,16 @@ function _runDetalleHTML(i){
   const dnum = fx ? (()=>{const d=new Date(fx+'T12:00:00');d.setDate(d.getDate()+i);return d.getDate();})() : i+1;
   const back = '<div class="ses-head"><button class="ses-back" onclick="_volverRunDias()"><i>‹</i> Volver a los días</button>'+
     '<div class="ses-head-day"><span class="ses-head-dow">'+DS[i]+'</span><span class="ses-head-num">'+dnum+'</span><span class="ses-head-sem">Semana '+((semana.semana)||(_runSemIdx+1))+'</span></div></div>';
-  return back + '<div>'+bloques.map(_runBloqueHTML).join('')+'</div>';
+  const b0 = bloques[0]||{};
+  const _rImg = String(b0.imagen || _sesImgDefault()).replace(/'/g,'%27');
+  return back +
+    '<div style="position:relative;height:220px;margin:0 -16px;background:#0a0a12 url(\''+_rImg+'\') center/cover no-repeat;">'+
+      '<div style="position:absolute;left:0;right:0;bottom:0;height:64px;background:linear-gradient(to bottom, transparent, var(--ses-panel));"></div>'+
+    '</div>'+
+    '<div style="margin:0 -16px;padding:16px 16px 4px;background:var(--ses-panel);">'+
+      bloques.map(_runBloqueHTML).join('')+
+    '</div>'+
+    '<div style="height:24px;background:var(--ses-panel);margin:0 -16px;"></div>';
 }
 function _runBloqueHTML(b){
   const tipoObj = TIPOS_RUN[b.tipo] || {icon:'🏃', label:b.label||b.tipo||'Sesión'};
