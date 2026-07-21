@@ -12816,6 +12816,8 @@ function guardarAlumno() {
     showView('inicio');
   }
   toast(editingAlumnoId ? 'Alumno actualizado ✓' : 'Alumno guardado ✓');
+  // Publicar en la nube: sin esto el portal del alumno muestra "Enlace no válido"
+  if (typeof forzarSyncFirebase === 'function') forzarSyncFirebase();
 }
 
 function eliminarAlumno() {
@@ -13504,6 +13506,8 @@ function _copiarLinkPortal(id) {
   // Usar siempre la URL de GitHub Pages, independientemente de dónde esté corriendo
   const PORTAL_BASE = 'https://cct-trainer.github.io/entrenamiento-laboratorio/';
   const url = PORTAL_BASE + 'alumno.html?id=' + encodeURIComponent(id);
+  // Sincronizar antes de compartir: evita mandar un link que muestre "Enlace no válido"
+  if (typeof forzarSyncFirebase === 'function') forzarSyncFirebase();
   navigator.clipboard.writeText(url)
     .then(() => toast('Link copiado — mandáselo al alumno por WhatsApp'))
     .catch(() => { prompt('Copiá este link y mandáselo al alumno:', url); });
