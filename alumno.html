@@ -91,8 +91,7 @@ html.light .pt-enter{box-shadow:0 12px 34px -12px rgba(29,78,216,.5);}
 .lang-opt{border:none;background:transparent;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.6px;padding:7px 15px;border-radius:19px;cursor:pointer;transition:all .15s;font-family:inherit;}
 .lang-opt.on{background:var(--gold);color:var(--letra-text);}
 .lang-lbl{font-size:10px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:7px;}
-@keyframes tmrpulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(.7);}}
-.tmr-chip{transition:background .15s,border-color .15s;}
+.tmr{transition:color .15s,opacity .15s;}
 
 .hdr{position:sticky;top:0;z-index:90;background:var(--bg);border-bottom:1px solid var(--border);padding:calc(18px + env(safe-area-inset-top,0)) 20px 14px;box-shadow:0 6px 18px -10px rgba(0,0,0,.6);transition:background .25s;}
 html.light .hdr{box-shadow:0 6px 18px -12px rgba(0,0,0,.18);}
@@ -789,8 +788,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260722155114 por un timestamp en cada deploy
-const _APP_VERSION = '20260722155114';
+// deploy.bat reemplaza 20260722160120 por un timestamp en cada deploy
+const _APP_VERSION = '20260722160120';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1534,20 +1533,19 @@ function _tmrStep(tid){
   if (st.rem <= 0){ st.rem = 0; st.running = false; st.done = true; clearInterval(st.iv); _tmrBeep(); }
   _tmrPaint(tid);
 }
+// Solo cambia texto y color: sin recuadro, ícono ni fondo (queda como texto natural)
 function _tmrPaint(tid){
   const el = document.getElementById('tmr_'+tid);
   const st = _tmrState[tid];
   if (!el || !st) return;
-  const base = 'display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:800;padding:5px 11px;border-radius:16px;white-space:nowrap;user-select:none;-webkit-user-select:none;';
   if (st.done){
-    el.style.cssText = base + 'background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.5);color:var(--green);font-size:13px;';
-    el.innerHTML = '✓ ' + (_LANG==='en' ? 'Done' : 'Listo');
-  } else if (st.running){
-    el.style.cssText = base + 'background:color-mix(in srgb,var(--gold) 20%,transparent);border:1px solid var(--gold);color:var(--gold);font-size:17px;';
-    el.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:var(--gold);display:inline-block;animation:tmrpulse 1s infinite;"></span> ' + _tmrFmt(st.rem);
-  } else { // pausado
-    el.style.cssText = base + 'background:rgba(201,168,76,.10);border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);color:var(--gold);font-size:15px;opacity:.85;';
-    el.innerHTML = '⏸ ' + _tmrFmt(st.rem);
+    el.style.color = 'var(--green)';
+    el.style.opacity = '1';
+    el.textContent = (_LANG==='en' ? 'Done' : 'Listo');
+  } else {
+    el.style.color = 'var(--gold)';
+    el.style.opacity = st.running ? '1' : '0.55';
+    el.textContent = String(st.rem);   // cuenta simple: 30 → 29 → 28 …
   }
 }
 
@@ -1609,9 +1607,9 @@ function _ejCard(ej, uid) {
       const _tid  = sp || (uid+'_'+offset+'_'+i);
       const editableReps = (!!spBase && !sfx); // reps editables solo en bilateral
       const repsCel = _segR
-        ? '<span class="tmr-chip" id="tmr_'+_tid+'" data-total="'+_segR+'" '+
+        ? '<span class="tmr" id="tmr_'+_tid+'" data-total="'+_segR+'" '+
             'onclick="event.stopPropagation();_tmrTap(\''+_tid+'\')" ontouchstart="event.stopPropagation()" '+
-            'style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;background:rgba(201,168,76,.14);border:1px solid color-mix(in srgb,var(--gold) 50%,transparent);color:var(--gold);font-size:13px;font-weight:800;padding:5px 11px;border-radius:16px;white-space:nowrap;user-select:none;-webkit-user-select:none;">▶ '+_compEsc(repsVal)+'</span>'
+            'style="color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;user-select:none;-webkit-user-select:none;">'+_compEsc(repsVal)+'</span>'
         : (editableReps
           ? '<input id="inp_'+sp+'_reps" type="text" inputmode="decimal" value="'+repsVal+'" placeholder="—" '+
             'onchange="_guardarEdit(\''+sp+'\',\'reps\',this.value)" onclick="event.stopPropagation()" '+
@@ -1636,9 +1634,9 @@ function _ejCard(ej, uid) {
       const _segP  = _segDe(s.pausa);
       const _ptid  = (sp || (uid+'_'+offset+'_'+i)) + '_p';
       const pausaCel = _segP
-        ? '<span class="tmr-chip" id="tmr_'+_ptid+'" data-total="'+_segP+'" '+
+        ? '<span class="tmr" id="tmr_'+_ptid+'" data-total="'+_segP+'" '+
             'onclick="event.stopPropagation();_tmrTap(\''+_ptid+'\')" ontouchstart="event.stopPropagation()" '+
-            'style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;background:transparent;border:1px solid color-mix(in srgb,var(--gold) 35%,transparent);color:var(--gold);font-size:11px;font-weight:700;padding:4px 9px;border-radius:14px;white-space:nowrap;user-select:none;-webkit-user-select:none;">▶ '+_compEsc(s.pausa)+'</span>'
+            'style="color:var(--gold);font-size:11px;font-weight:700;cursor:pointer;user-select:none;-webkit-user-select:none;">'+_compEsc(s.pausa)+'</span>'
         : (s.pausa||'—');
       const serieLbl = 'S'+(offset+i+1) + (lado ? ' <span style="color:var(--muted);font-weight:600;">'+lado+'</span>' : '') + tipoBadge;
       return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+'" '+touch+'>'+
@@ -1662,9 +1660,9 @@ function _ejCard(ej, uid) {
     const _ctrlChip = (val, key) => {
       const sec = _segDe(val); if (!sec) return _compEsc(val);
       const tid = uid+'_ctrl_'+key;
-      return '<span class="tmr-chip" id="tmr_'+tid+'" data-total="'+sec+'" '+
+      return '<span class="tmr" id="tmr_'+tid+'" data-total="'+sec+'" '+
         'onclick="event.stopPropagation();_tmrTap(\''+tid+'\')" ontouchstart="event.stopPropagation()" '+
-        'style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;background:rgba(201,168,76,.14);border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);color:var(--gold);font-size:15px;font-weight:800;padding:4px 11px;border-radius:15px;white-space:nowrap;user-select:none;-webkit-user-select:none;">▶ '+_compEsc(val)+'</span>';
+        'style="color:var(--gold);cursor:pointer;user-select:none;-webkit-user-select:none;">'+_compEsc(val)+'</span>';
     };
     const cols = [
       cs  ? ['SERIES', cs]                 : null,
