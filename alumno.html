@@ -788,8 +788,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260722161626 por un timestamp en cada deploy
-const _APP_VERSION = '20260722161626';
+// deploy.bat reemplaza 20260722162423 por un timestamp en cada deploy
+const _APP_VERSION = '20260722162423';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1504,22 +1504,29 @@ function _esFemAlumno(){
 }
 function _spVoiceFor(fem, lang){
   if (!_spVoices.length) _spLoad();
-  const pref = (lang === 'en') ? 'en' : 'es';
-  let pool = _spVoices.filter(v => (v.lang||'').toLowerCase().startsWith(pref));
+  const es = (lang !== 'en');
+  let pool = _spVoices.filter(v => (v.lang||'').toLowerCase().startsWith(es ? 'es' : 'en'));
   if (!pool.length) pool = _spVoices.slice();
-  // Nombres típicos de voces adultas por género
-  const F = /female|mujer|m[oó]nica|paulina|helena|laura|luciana|catalina|sabina|marisol|esperanza|elvira|luc[ií]a|carmen|zira|hazel|susan|catherine|linda|sonia|female/i;
-  const M = /male|hombre|jorge|diego|pablo|carlos|enrique|juan|miguel|david|george|arthur|daniel|james|william|guy|ryan|male/i;
-  // Preferir voces naturales/adultas; penalizar infantiles/artificiales
+  // Nombres de voces adultas por género (incluye voces argentinas/latinas: Elena, Tomás, Diego…)
+  const F = /female|mujer|elena|isabela|dalia|paloma|m[oó]nica|paulina|helena|laura|luc[ií]a|carmen|catalina|sonia|zira|hazel|susan|catherine/i;
+  const M = /male|hombre|tom[aá]s|diego|jorge|pablo|carlos|enrique|juan|miguel|david|george|arthur|daniel|james|guy|ryan/i;
   const good = /natural|neural|enhanced|premium|google|microsoft/i;
   const bad  = /kid|child|junior|infantil|ni[nñ]o|ni[nñ]a|novelty|whisper|zarvox|bells|bubbles|robot|organ|cellos|trinoids/i;
+  // Preferencia de acento: argentino primero, luego latinoamericano, castellano último
+  const loc = v => {
+    const l = (v.lang||'').toLowerCase();
+    if (!es) return l.startsWith('en') ? 2 : 0;
+    if (l.startsWith('es-ar')) return 7;
+    if (/^es-(419|mx|us|co|cl|pe|uy|py|bo|ve|ec|gt)/.test(l)) return 4;
+    if (l.startsWith('es-es')) return 1;         // castellano de España: menos preferido
+    return l.startsWith('es') ? 2 : 0;
+  };
   const score = v => {
-    const n = v.name || ''; let sc = 0;
+    const n = v.name || ''; let sc = loc(v);
     if ((fem ? F : M).test(n)) sc += 6;
     if ((fem ? M : F).test(n)) sc -= 6;
     if (good.test(n)) sc += 3;
     if (bad.test(n))  sc -= 8;
-    if ((v.lang||'').toLowerCase().startsWith(pref)) sc += 2;
     return sc;
   };
   pool.sort((a,b) => score(b) - score(a));
@@ -1553,12 +1560,36 @@ function _tmrTap(tid){
     _spWarm();
     st = { total, rem: total, running: true, done: false };
     _tmrState[tid] = st;
-    st.iv = setInterval(() => _tmrStep(tid), 1000);
-    _tmrPaint(tid);
+    if (_tmrKind(tid) === 'time'){            // EJERCICIO → preparación 3·2·1·Vamos, luego arranca
+      st.lead = 3;
+      el.style.color = 'var(--gold)'; el.style.opacity = '1'; el.textContent = '3';
+      _speak('3');
+      st.iv = setInterval(() => _tmrLead(tid), 1000);
+    } else {                                 // DESCANSO → arranca directo, sin aviso inicial
+      st.iv = setInterval(() => _tmrStep(tid), 1000);
+      _tmrPaint(tid);
+    }
     return;
   }
+  if (st.lead != null) return;               // durante el 3·2·1 de preparación, ignorar toques
   if (st.running){ st.running = false; clearInterval(st.iv); _tmrPaint(tid); return; }  // pausar
   st.running = true; st.iv = setInterval(() => _tmrStep(tid), 1000); _tmrPaint(tid);     // reanudar
+}
+// Cuenta de preparación del ejercicio: 3 · 2 · 1 · Vamos
+function _tmrLead(tid){
+  const st = _tmrState[tid];
+  const el = document.getElementById('tmr_'+tid);
+  if (!st) return;
+  if (!el){ clearInterval(st.iv); delete _tmrState[tid]; return; }
+  st.lead--;
+  if (st.lead > 0){ _speak(String(st.lead)); el.textContent = String(st.lead); }
+  else {
+    clearInterval(st.iv);
+    _speak(_LANG === 'en' ? "Let's start" : 'Vamos');
+    delete st.lead;
+    st.iv = setInterval(() => _tmrStep(tid), 1000);
+    _tmrPaint(tid);                          // muestra el tiempo del ejercicio y empieza a contar
+  }
 }
 function _tmrStep(tid){
   const st = _tmrState[tid];
@@ -1566,12 +1597,12 @@ function _tmrStep(tid){
   if (!st) return;
   if (!el){ clearInterval(st.iv); delete _tmrState[tid]; return; } // se salió de la sesión
   st.rem--;
-  if (st.rem > 0 && st.rem <= 3) _speak(String(st.rem));   // 3 · 2 · 1
+  const rest = _tmrKind(tid) === 'rest';
+  if (rest && st.rem > 0 && st.rem <= 3) _speak(String(st.rem));   // solo el descanso avisa 3·2·1
   if (st.rem <= 0){
     st.rem = 0; st.running = false; st.done = true; clearInterval(st.iv);
     try { if (navigator.vibrate) navigator.vibrate([200,100,200]); } catch(e){}
-    // Ejercicio por tiempo termina → a descansar; descanso termina → a entrenar
-    const rest = _tmrKind(tid) === 'rest';
+    // Ejercicio termina → "Descanso"; descanso termina → "A entrenar"
     _speak(_LANG === 'en' ? (rest ? "Let's train" : 'Rest') : (rest ? 'A entrenar' : 'Descanso'));
   }
   _tmrPaint(tid);
