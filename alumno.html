@@ -788,8 +788,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260722160816 por un timestamp en cada deploy
-const _APP_VERSION = '20260722160816';
+// deploy.bat reemplaza 20260722161626 por un timestamp en cada deploy
+const _APP_VERSION = '20260722161626';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1505,13 +1505,25 @@ function _esFemAlumno(){
 function _spVoiceFor(fem, lang){
   if (!_spVoices.length) _spLoad();
   const pref = (lang === 'en') ? 'en' : 'es';
-  const pool = _spVoices.filter(v => (v.lang||'').toLowerCase().startsWith(pref));
-  const cand = pool.length ? pool : _spVoices;
-  const F = /female|mujer|m[oó]nica|paulina|helena|laura|luciana|catalina|sabina|marisol|esperanza|zira|samantha|victoria|karen|tessa|fiona|serena|susan|allison|ava|emma|google espa[nñ]ol|google.*female/i;
-  const M = /male|hombre|jorge|diego|pablo|carlos|enrique|juan|david|mark|daniel|alex|fred|thomas|george|arthur|rishi|guy/i;
-  let v = cand.find(x => (fem ? F : M).test(x.name));
-  if (!v) v = cand.find(x => !(fem ? M : F).test(x.name)); // evitar el género opuesto
-  return v || cand[0] || null;
+  let pool = _spVoices.filter(v => (v.lang||'').toLowerCase().startsWith(pref));
+  if (!pool.length) pool = _spVoices.slice();
+  // Nombres típicos de voces adultas por género
+  const F = /female|mujer|m[oó]nica|paulina|helena|laura|luciana|catalina|sabina|marisol|esperanza|elvira|luc[ií]a|carmen|zira|hazel|susan|catherine|linda|sonia|female/i;
+  const M = /male|hombre|jorge|diego|pablo|carlos|enrique|juan|miguel|david|george|arthur|daniel|james|william|guy|ryan|male/i;
+  // Preferir voces naturales/adultas; penalizar infantiles/artificiales
+  const good = /natural|neural|enhanced|premium|google|microsoft/i;
+  const bad  = /kid|child|junior|infantil|ni[nñ]o|ni[nñ]a|novelty|whisper|zarvox|bells|bubbles|robot|organ|cellos|trinoids/i;
+  const score = v => {
+    const n = v.name || ''; let sc = 0;
+    if ((fem ? F : M).test(n)) sc += 6;
+    if ((fem ? M : F).test(n)) sc -= 6;
+    if (good.test(n)) sc += 3;
+    if (bad.test(n))  sc -= 8;
+    if ((v.lang||'').toLowerCase().startsWith(pref)) sc += 2;
+    return sc;
+  };
+  pool.sort((a,b) => score(b) - score(a));
+  return pool[0] || _spVoices[0] || null;
 }
 function _spWarm(){ // desbloquea la voz dentro del gesto del usuario (iOS)
   try { if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; window.speechSynthesis.speak(u); } } catch(e){}
@@ -1523,8 +1535,9 @@ function _speak(text){
     const fem = _esFemAlumno();
     const v = _spVoiceFor(fem, _LANG);
     if (v){ u.voice = v; u.lang = v.lang; } else { u.lang = (_LANG === 'en') ? 'en-US' : 'es-ES'; }
-    u.pitch = fem ? 1.35 : 0.7;   // refuerza el género aunque la voz del sistema sea neutra
-    u.rate = 1.05; u.volume = 1;
+    // Tono adulto y natural: apenas por debajo del neutro, ritmo calmo
+    u.pitch = fem ? 0.98 : 0.85;
+    u.rate = 0.92; u.volume = 1;
     window.speechSynthesis.speak(u);
   } catch(e){}
 }
@@ -1557,8 +1570,9 @@ function _tmrStep(tid){
   if (st.rem <= 0){
     st.rem = 0; st.running = false; st.done = true; clearInterval(st.iv);
     try { if (navigator.vibrate) navigator.vibrate([200,100,200]); } catch(e){}
+    // Ejercicio por tiempo termina → a descansar; descanso termina → a entrenar
     const rest = _tmrKind(tid) === 'rest';
-    _speak(_LANG === 'en' ? (rest ? 'Rest' : 'Time') : (rest ? 'Descanso' : 'Tiempo'));
+    _speak(_LANG === 'en' ? (rest ? "Let's train" : 'Rest') : (rest ? 'A entrenar' : 'Descanso'));
   }
   _tmrPaint(tid);
 }
