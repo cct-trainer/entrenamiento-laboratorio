@@ -398,10 +398,47 @@ async function _initFirebase() {
     // Cargar backup principal (alumnos, planes, antropometría)
     const snap = await _db.collection('backups').doc('main').get();
     if (!snap.exists) { _showAppErr('Sin datos en la nube. Sincronizá desde la app del coach.'); return; }
-    const d = snap.data();
+    let d = snap.data();
+    // Formato nuevo: el backup está partido en varios documentos (backups/<nombre>_N).
+    // Formato viejo: todo dentro de backups/main. Soportamos los dos.
+    if (d && d.partes) {
+      const _leer = async (nombre, cant) => {
+        let out = [];
+        for (let i = 0; i < (cant||0); i++) {
+          const dd = await _db.collection('backups').doc(nombre+'_'+i).get();
+          if (dd.exists && Array.isArray(dd.data().items)) out = out.concat(dd.data().items);
+        }
+        return out;
+      };
+      d = {
+        alumnos:         await _leer('alumnos',         d.partes.alumnos),
+        planificaciones: await _leer('planificaciones', d.partes.planificaciones),
+        antropometria:   await _leer('antropometria',   d.partes.antropometria)
+      };
+    }
     _alumnos = _arr(d.alumnos);
     _planes  = _arr(d.planificaciones);
     _antro   = _arr(d.antropometria);
+
+    // Red de seguridad: si el backup viniera vacío, reconstruir leyendo el
+    // documento de cada alumno (colección "alumnos"), que nunca se borra.
+    if (!_alumnos.length) {
+      try {
+        const all = await _db.collection('alumnos').get();
+        const al = [], pl = [], an = [];
+        all.forEach(docu => {
+          const id = docu.id;
+          if (id.indexOf('zz_') === 0) return;
+          const x = docu.data() || {};
+          if (!x.perfil) return;
+          if (!x.perfil.id) x.perfil.id = id;
+          al.push(x.perfil);
+          _arr(x.planificaciones).forEach(p => { if (p && !p.alumnoId) p.alumnoId = id; pl.push(p); });
+          _arr(x.antropometria).forEach(r => an.push(r));
+        });
+        if (al.length) { _alumnos = al; _planes = pl; _antro = an; }
+      } catch(e){ console.warn('Reconstrucción por alumno falló:', e); }
+    }
 
     // Cargar feedback de cada alumno desde alumnos/{id}
     await Promise.all(_alumnos.filter(al=>al&&al.id).map(async al => {
