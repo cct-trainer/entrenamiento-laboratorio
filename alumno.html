@@ -695,7 +695,13 @@ const _GLOS = {
   'cadera':'Hip', 'espalda':'Back', 'hombro':'Shoulder', 'hombros':'Shoulders', 'pecho':'Chest',
   'pierna':'Leg', 'piernas':'Legs', 'brazos':'Arms', 'tobillo':'Ankle', 'rodilla':'Knee',
   // Lugares
-  'gym':'Gym', 'gimnasio':'Gym', 'casa':'Home', 'aire libre':'Outdoors', 'parque':'Park'
+  'gym':'Gym', 'gimnasio':'Gym', 'casa':'Home', 'aire libre':'Outdoors', 'parque':'Park',
+  // Equipamiento
+  'mancuernas':'Dumbbells', 'mancuerna':'Dumbbell', 'barra':'Barbell', 'polea':'Cable',
+  'banda':'Band', 'bandas':'Bands', 'máquina':'Machine', 'maquina':'Machine',
+  'kettlebell':'Kettlebell', 'disco':'Plate', 'discos':'Plates', 'banco':'Bench',
+  'peso corporal':'Bodyweight', 'sin equipamiento':'No equipment', 'cajón':'Box', 'cajon':'Box',
+  'smith':'Smith machine', 'prensa':'Leg press', 'trx':'TRX', 'colchoneta':'Mat'
 };
 
 // Traduce un texto de contenido si está en el glosario. Soporta listas separadas
@@ -790,8 +796,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260722171646 por un timestamp en cada deploy
-const _APP_VERSION = '20260722171646';
+// deploy.bat reemplaza 20260722172703 por un timestamp en cada deploy
+const _APP_VERSION = '20260722172703';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1945,10 +1951,36 @@ function _sesImgDefault(){
   const s = String(_data?.perfil?.sexo || _data?.sexo || '').trim().toLowerCase();
   return (s.startsWith('f') || s.startsWith('muj')) ? _SES_IMG_MUJER : _SES_IMG_HOMBRE;
 }
+// Nivel: usa el de la sesión; si no hay, el del perfil del alumno
+function _nivelSes(ses){
+  let dif = parseInt(ses.dificultad||'')||0;
+  if(!dif){
+    const n = String(_data?.perfil?.nivel||'').toLowerCase();
+    if(/avanz|advanced/.test(n)) dif=3; else if(/interm/.test(n)) dif=2; else if(/princ|beginner|inicial|basic/.test(n)) dif=1;
+  }
+  return dif;
+}
+// Objetivo: usa el de la sesión; si no hay, el objetivo de la fase del mes
+function _objetivoSes(ses){
+  if(ses.objetivo) return ses.objetivo;
+  try{ const fi=_faseDePlan(_plan).idx; const f=FASES_MACRO[fi]; return f ? (f.obj||f.n||'') : ''; }catch(e){ return ''; }
+}
+// Equipamiento: usa el de la sesión; si no hay, lo junta desde los ejercicios
+function _equipoSes(ses){
+  if(ses.equipo) return _tc(ses.equipo);
+  const set=new Set();
+  (ses.bloques||[]).forEach(b=>(b.ejercicios||[]).forEach(ej=>{ const e=(ej.equipo||'').trim(); if(e) set.add(e); }));
+  if(!set.size) return '';
+  const arr=[...set];
+  if(arr.every(e=>/peso corporal|bodyweight|sin equip/i.test(e))) return _LANG==='en'?'No equipment':'Sin equipamiento';
+  const conCarga = arr.filter(e=>!/peso corporal|bodyweight/i.test(e));
+  return (conCarga.length?conCarga:arr).map(e=>_tc(e)).join(', ');
+}
+
 function _sesDetalleHTML(ses){
   if(!ses) return '';
   const durVal = ses.duracion || (()=>{ const mm=_calcDuracionSesion(ses); return mm ? '~'+mm+' min' : ''; })();
-  const dif = parseInt(ses.dificultad||'')||0;
+  const dif = _nivelSes(ses);
   const dots = dif ? [1,2,3].map(i=>'<span style="width:9px;height:9px;border-radius:50%;background:'+(i<=dif?'var(--green)':'rgba(255,255,255,.15)')+';display:inline-block;"></span>').join('') : '';
   // Fila estándar: icono + texto
   const row = (ico, txt) => '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">'+ico+'</span><span>'+txt+'</span></div>';
@@ -1961,10 +1993,12 @@ function _sesDetalleHTML(ses){
   if(durVal) info += row('🕐', _compEsc(durVal));
   // Nivel (puntos + texto)
   if(dif) info += '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);"><span style="width:18px;display:flex;gap:3px;justify-content:center;flex-shrink:0;">'+dots+'</span><span>'+_t('nivel')+' '+_t('niv_'+dif)+'</span></div>';
-  // Objetivo
-  if(ses.objetivo) info += row('🎯', _compEsc(_tc(ses.objetivo)));
-  // Equipamiento
-  if(ses.equipo)   info += row('🧰', _compEsc(_tc(ses.equipo)));
+  // Objetivo (sesión o fase del mes)
+  const _obj = _objetivoSes(ses);
+  if(_obj) info += row('🎯', _compEsc(_obj));
+  // Equipamiento (sesión o calculado desde los ejercicios)
+  const _eq = _equipoSes(ses);
+  if(_eq) info += row('🧰', _compEsc(_eq));
   info += '</div>';
   if(ses.descripcion) info += '<div style="font-size:13px;color:var(--muted);line-height:1.55;margin-top:13px;padding-top:13px;border-top:1px solid var(--border);">'+_compEsc(ses.descripcion)+'</div>';
   info += '</div>';

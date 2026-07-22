@@ -21303,12 +21303,13 @@ async function forzarSyncFirebase() {
         const video = ej.video || libEj.video || '';
         // Nombre en inglés (para el portal del alumno en modo English)
         const nombreIngles = ej.nombreIngles || libEj.nombreIngles || '';
+        const equipo = ej.equipo || libEj.equipo || '';   // para calcular el equipamiento de la sesión
         // Solo enriquecer ficha si faltan los campos
-        if (ej.ejecucion || ej.musculos) return { ...ej, video, nombreIngles };
+        if (ej.ejecucion || ej.musculos) return { ...ej, video, nombreIngles, equipo };
         const ejecucion = (ej.ficha && (ej.ficha['Descripción'] || ej.ficha['DESCRIPCIÓN'])) || libEj.ejecucion || libEj.desc || '';
         const musculos  = (ej.ficha && ej.ficha['MÚSCULOS']) || (libEj.musculos || libEj.principales || []).join(', ') || '';
         const tipo      = (ej.ficha && ej.ficha['TIPO']) || libEj.tipoTrabajo || libEj.cat || '';
-        return { ...ej, ejecucion, musculos, tipo, video, nombreIngles };
+        return { ...ej, ejecucion, musculos, tipo, video, nombreIngles, equipo };
       };
       const enrichBloques = bloques => bloques.map(b =>
         (b && b.ejercicios && b.ejercicios.length) ? { ...b, ejercicios: b.ejercicios.map(enrichEj) } : b
