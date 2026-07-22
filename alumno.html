@@ -789,8 +789,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260722151452 por un timestamp en cada deploy
-const _APP_VERSION = '20260722151452';
+// deploy.bat reemplaza 20260722153741 por un timestamp en cada deploy
+const _APP_VERSION = '20260722153741';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1590,27 +1590,29 @@ function _ejCard(ej, uid) {
       (hasRir   ? '<th style="'+thStyle+'">RIR</th>'  : '')+
       (hasPausa ? '<th style="'+thStyle+'">PAUSA</th>': '')+
     '</tr>';
-    const rows = arr.map((s,i) => {
-      const sp = savePrefix ? savePrefix+'_'+i : '';
-      // Valores editados o del plan
-      const repsVal = (sp ? _getEdit(sp,'reps') : '') || s.reps || '';
+    // Ejecución unilateral → cada serie se divide en Derecha e Izquierda
+    const _uni = !!(ej && ej.unilateral);
+    // Construye UNA fila. sfx: '' (bilateral) | '_d' (der) | '_i' (izq); lado: etiqueta gris
+    function _mkRow(s, i, sfx, lado){
+      const spBase = savePrefix ? savePrefix+'_'+i : '';
+      const sp     = spBase ? spBase+sfx : '';        // clave de edición (por lado si unilateral)
+      const repsVal = (spBase ? _getEdit(spBase,'reps') : '') || s.reps || '';
       const pesoRaw = (sp ? _getEdit(sp,'peso') : '') || (s.peso ? String(s.peso).replace(/kg$/i,'').trim() : '');
       const omitida = sp ? _getEdit(sp,'omitida')==='1' : false;
-      // Badge de tipo
       const tipoKey = sp ? _getEdit(sp,'tipo') : '';
       const tipoInfo = tipoKey && SERIE_TIPOS[tipoKey] ? SERIE_TIPOS[tipoKey] : null;
       const tipoBadge = tipoInfo
         ? '<span class="s-tipo" style="color:'+tipoInfo.color+';background:'+tipoInfo.color+'22;" onclick="event.stopPropagation();_showCtxMenu(event,\''+sp+'\',\''+uid+'\')">'+tipoInfo.icon+' '+tipoInfo.label+'</span>'
         : '';
-      // Inputs editables
-      // Serie por tiempo → chip temporizador (cuenta regresiva); si no, reps normales
+      // Serie por tiempo → chip temporizador (uno por lado); si no, reps
       const _segR = _segDe(repsVal);
       const _tid  = sp || (uid+'_'+offset+'_'+i);
+      const editableReps = (!!spBase && !sfx); // reps editables solo en bilateral
       const repsCel = _segR
         ? '<span class="tmr-chip" id="tmr_'+_tid+'" data-total="'+_segR+'" '+
             'onclick="event.stopPropagation();_tmrTap(\''+_tid+'\')" ontouchstart="event.stopPropagation()" '+
             'style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;background:rgba(201,168,76,.14);border:1px solid color-mix(in srgb,var(--gold) 50%,transparent);color:var(--gold);font-size:13px;font-weight:800;padding:5px 11px;border-radius:16px;white-space:nowrap;user-select:none;-webkit-user-select:none;">▶ '+_compEsc(repsVal)+'</span>'
-        : (sp
+        : (editableReps
           ? '<input id="inp_'+sp+'_reps" type="text" inputmode="decimal" value="'+repsVal+'" placeholder="—" '+
             'onchange="_guardarEdit(\''+sp+'\',\'reps\',this.value)" onclick="event.stopPropagation()" '+
             'style="'+inpStyle+'font-size:13px;">'
@@ -1620,26 +1622,29 @@ function _ejCard(ej, uid) {
           'onchange="_guardarEdit(\''+sp+'\',\'peso\',this.value)" onclick="event.stopPropagation()" '+
           'style="'+inpStyle+'">'
         : (pesoRaw ? pesoRaw+' kg' : '—');
-      // RIR editable
       const rirRaw = (sp ? _getEdit(sp,'rir') : '') || s.rir || '';
       const rirCel = sp
         ? '<input id="inp_'+sp+'_rir" type="text" inputmode="text" value="'+rirRaw+'" placeholder="—" '+
           'onchange="_guardarEdit(\''+sp+'\',\'rir\',this.value)" onclick="event.stopPropagation()" '+
           'style="'+inpStyle+'font-size:11px;">'
         : (rirRaw ? 'RIR '+rirRaw : '—');
-      // Long press touch handlers
       const uid_safe = uid || '';
       const touch = sp
         ? 'ontouchstart="_lpStart(event,\''+sp+'\',\''+uid_safe+'\')" ontouchend="_lpEnd()" ontouchmove="_lpEnd()" oncontextmenu="_showCtxMenu(event,\''+sp+'\',\''+uid_safe+'\');return false"'
         : '';
+      const serieLbl = 'S'+(offset+i+1) + (lado ? ' <span style="color:var(--muted);font-weight:600;">'+lado+'</span>' : '') + tipoBadge;
       return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+'" '+touch+'>'+
-        '<td style="'+tdBase+'font-size:11px;font-weight:800;">S'+(offset+i+1)+tipoBadge+'</td>'+
+        '<td style="'+tdBase+'font-size:11px;font-weight:800;">'+serieLbl+'</td>'+
         '<td style="'+tdBase+'">'+repsCel+'</td>'+
         (hasPeso  ? '<td style="'+tdBase+'">'+pesoCel+'</td>' : '')+
         (hasRir   ? '<td style="'+tdBase+'">'+rirCel+'</td>' : '')+
         (hasPausa ? '<td style="'+tdBase+'font-size:11px;">'+(s.pausa||'—')+'</td>' : '')+
       '</tr>';
-    }).join('');
+    }
+    const rows = arr.map((s,i) =>
+      _uni ? (_mkRow(s,i,'_d','Der') + _mkRow(s,i,'_i','Izq'))
+           : _mkRow(s,i,'','')
+    ).join('');
     return '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div>';
   }
 
@@ -1792,6 +1797,7 @@ function _ejCard(ej, uid) {
     '<div style="padding:12px 14px 12px;">'+
       '<div style="font-size:16px;font-weight:900;color:var(--text);margin-bottom:3px;line-height:1.2;border-left:3px solid var(--gold);padding-left:9px;">'+(_nomEj(ej)||'—')+'</div>'+
       (ej.musculos ? '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;padding-left:12px;">'+_tc(ej.musculos)+'</div>' : '')+
+      (ej.unilateral ? '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;padding-left:12px;">'+(_LANG==='en'?'Unilateral · do each set on both sides':'Unilateral · cada serie se hace de los dos lados')+'</div>' : '')+
       (ej.nota ? '<div style="font-size:12.5px;font-weight:600;color:var(--gold);margin:3px 0 7px;padding:6px 10px 6px 12px;background:rgba(201,168,76,.08);border-radius:7px;font-style:italic;line-height:1.45;">📝 '+ej.nota+'</div>' : '')+
       (sEfec ? '' : ctrlGrid)+
       pesoRef+
