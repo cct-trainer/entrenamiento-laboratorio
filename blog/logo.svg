@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1450 240" role="img" aria-label="Christian Cattaneo - Entrenador">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f9d999"/>
+      <stop offset="45%" stop-color="#e0a83f"/>
+      <stop offset="100%" stop-color="#8a5511"/>
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6f8ff0"/>
+      <stop offset="50%" stop-color="#2c4bb5"/>
+      <stop offset="100%" stop-color="#0e1d47"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Monogram: two interlocking C shapes, transparent background -->
+  <circle cx="150" cy="118" r="95" fill="none" stroke="url(#goldGrad)"
+          stroke-width="58" stroke-linecap="round"
+          stroke-dasharray="472.5 124.4" stroke-dashoffset="-62.2"/>
+  <circle cx="196" cy="156" r="80" fill="none" stroke="url(#blueGrad)"
+          stroke-width="50" stroke-linecap="round"
+          stroke-dasharray="398 104.7" stroke-dashoffset="-52.4"/>
+
+  <!-- Wordmark -->
+  <text x="298" y="108" font-family="Arial, Helvetica, sans-serif" font-weight="800"
+        font-size="76" letter-spacing="1" fill="url(#goldGrad)">CHRISTIAN CATTANEO</text>
+  <text x="300" y="172" font-family="Arial, Helvetica, sans-serif" font-weight="400"
+        font-size="48" letter-spacing="6" fill="#f2f2f2">ENTRENADOR</text>
+</svg>

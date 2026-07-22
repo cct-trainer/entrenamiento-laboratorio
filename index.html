@@ -2984,6 +2984,7 @@ select.toolbox-input option:disabled { color: #888; }
     <span id="sync-status" title="Estado de sincronización con la nube" style="font-size:18px;cursor:default;" onclick="forzarSyncFirebase()">☁️</span>
     <button onclick="_generarReporteMensual()" class="pln-btn pln-btn-outline" title="Reporte mensual de actividad de alumnos">Reporte</button>
     <button onclick="document.getElementById('backup-import-input').click()" class="pln-btn pln-btn-outline" title="Restaurar base de datos desde backup JSON">Restaurar</button>
+    <button onclick="recuperarDesdePortales()" class="pln-btn pln-btn-outline" title="Recuperar tus alumnos leyendo sus documentos en la nube" style="border-color:#22c55e;color:#166534;">↻ Recuperar</button>
     <button onclick="exportarBackupCompleto()" class="pln-btn pln-btn-guardar" title="Descargar backup completo de toda la base de datos">Backup</button>
     <button onclick="limpiarStorageEmergencia()" style="background:none;border:1px solid #ddd;color:#bbb;padding:7px 12px;border-radius:5px;font-size:11px;cursor:pointer;" title="Liberar espacio si hay errores de almacenamiento">🗑</button>
   </div>
@@ -21044,6 +21045,62 @@ function renderSalud(alumnoId) {
 function _syncStatusIcon(icon, text) {
   var el = document.getElementById('sync-status');
   if (el) { el.textContent = icon; el.title = text; }
+}
+
+// ── RECUPERACIÓN DE EMERGENCIA ───────────────────────────────────────────────
+// Rearma la lista de alumnos leyendo el documento de cada uno en la nube
+// (colección "alumnos"). Fuente de verdad: los portales, que nunca se borran.
+// NO sube nada: solo baja. Después el coach puede revisar y recién ahí sincronizar.
+async function recuperarDesdePortales() {
+  if (!window._db) { toast('No hay conexión con la nube todavía. Esperá unos segundos y reintentá.', 'error'); return; }
+  if (!confirm('Voy a recuperar tus alumnos leyendo sus documentos de la nube. Esto NO borra nada. ¿Continuar?')) return;
+  try {
+    _syncStatusIcon('⏳', 'Recuperando desde la nube...');
+    const snap = await window._db.collection('alumnos').get();
+    const alumnos = [], planificaciones = [], antropometria = [];
+    let n = 0;
+    snap.forEach(docu => {
+      const id = docu.id;
+      if (id.indexOf('zz_') === 0) return; // saltar documentos globales (complementos, artículos, charlas)
+      const d = docu.data() || {};
+      const perfil = d.perfil || null;
+      if (!perfil) return;
+      if (!perfil.id) perfil.id = id;
+      if (d.accessUntil && !perfil.accessUntil) perfil.accessUntil = d.accessUntil;
+      if (d.macrociclo && !perfil.macrociclo) perfil.macrociclo = d.macrociclo;
+      alumnos.push(perfil);
+      (Array.isArray(d.planificaciones) ? d.planificaciones : []).forEach(p => {
+        if (p && !p.alumnoId) p.alumnoId = id;
+        planificaciones.push(p);
+      });
+      (Array.isArray(d.antropometria) ? d.antropometria : []).forEach(r => antropometria.push(r));
+      n++;
+    });
+    if (!n) { _syncStatusIcon('⚠️', 'No se encontraron alumnos en la nube'); toast('No se encontraron alumnos en la nube.', 'error'); return; }
+
+    // Artículos globales (si existen)
+    try {
+      const ga = await window._db.collection('alumnos').doc('zz_articulos_global').get();
+      if (ga.exists && Array.isArray(ga.data().articulos)) localStorage.setItem('LAB_ARTICULOS', JSON.stringify(ga.data().articulos));
+    } catch(e){}
+    // Charlas globales (si existen)
+    try {
+      const gc = await window._db.collection('alumnos').doc('zz_charlas_global').get();
+      if (gc.exists && Array.isArray(gc.data().charlas)) localStorage.setItem('LAB_CHARLAS', JSON.stringify(gc.data().charlas));
+    } catch(e){}
+
+    localStorage.setItem('LAB_ALUMNOS', JSON.stringify(alumnos));
+    localStorage.setItem('LAB_PLANIFICACIONES', JSON.stringify(planificaciones));
+    localStorage.setItem('LAB_ANTROPOMETRIA', JSON.stringify(antropometria));
+    _syncStatusIcon('✓', 'Recuperados ' + n + ' alumnos');
+    toast('✅ Recuperados ' + n + ' alumnos desde la nube');
+    if (typeof renderAlumnosGrid === 'function') renderAlumnosGrid();
+    if (typeof showView === 'function') showView('inicio');
+  } catch(err) {
+    _syncStatusIcon('⚠️', 'Error al recuperar');
+    console.error('recuperarDesdePortales:', err);
+    toast('Error al recuperar: ' + (err && err.message ? err.message : err), 'error');
+  }
 }
 
 function initFirebase() {

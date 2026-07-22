@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Christian Cattaneo | Entrenamiento basado en evidencia — Fuerza, hipertrofia y salud</title>
+<meta name="description" content="Blog de entrenamiento basado en evidencia científica: fuerza, hipertrofia, biomecánica, movilidad y salud. Aprendé a entrenar con criterio, no con mitos. Por Christian Cattaneo, entrenador personal.">
+<meta name="keywords" content="entrenamiento basado en evidencia, hipertrofia, fuerza, biomecánica, movilidad, Christian Cattaneo, entrenador personal">
+<meta name="author" content="Christian Cattaneo">
+<link rel="canonical" href="https://christiancattaneo.com/">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Christian Cattaneo | Entrenamiento basado en evidencia">
+<meta property="og:description" content="Aprendé a entrenar con criterio, no con mitos. Fuerza, hipertrofia, biomecánica y salud, con respaldo científico.">
+<meta property="og:image" content="img/cover-biomecanica-sentadilla.svg">
+<meta property="og:locale" content="es_AR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Christian Cattaneo | Entrenamiento basado en evidencia">
+<meta name="twitter:description" content="Aprendé a entrenar con criterio, no con mitos.">
+<meta name="twitter:image" content="img/cover-biomecanica-sentadilla.svg">
+
+<link rel="icon" type="image/svg+xml" href="img/cc-monogram.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Christian Cattaneo — Entrenamiento basado en evidencia",
+  "url": "https://christiancattaneo.com/",
+  "author": { "@type": "Person", "name": "Christian Cattaneo", "jobTitle": "Entrenador personal" }
+}
+</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="nav-wrap">
+    <a href="index.html" class="brand" aria-label="Inicio — Christian Cattaneo">
+      <img class="logo-img" src="img/logo-header.png" alt="Christian Cattaneo — Entrenador">
+    </a>
+    <nav class="main-nav" id="mainNav" aria-label="Navegación principal">
+      <a href="index.html">Inicio</a>
+      <a href="#articulos">Artículos</a>
+      <a href="#categorias">Categorías</a>
+      <a href="#sobre-mi">Sobre mí</a>
+    </nav>
+    <div class="header-actions">
+      <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema claro/oscuro" title="Cambiar tema">&#127769;</button>
+      <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">&#9776;</button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div>
+      <span class="hero-tag">Entrenamiento basado en evidencia</span>
+      <h1>Aprendé a entrenar con <span class="accent">criterio</span>, no con mitos.</h1>
+      <p class="lead">Artículos claros y aplicables sobre fuerza, hipertrofia, biomecánica, movilidad y salud — respaldados en ciencia y en años de experiencia en el gimnasio.</p>
+      <div class="hero-cta">
+        <a href="#articulos" class="btn btn-primary">Explorar artículos</a>
+        <a href="#sobre-mi" class="btn btn-secondary">Sobre mí</a>
+      </div>
+    </div>
+    <aside class="hero-card">
+      <h3>Qué vas a encontrar acá</h3>
+      <ul>
+        <li><strong>Sin humo.</strong> Ninguna afirmación se presenta como hecho sin evidencia que la respalde.</li>
+        <li><strong>Aplicable.</strong> Cada artículo incluye una sección de aplicación práctica.</li>
+        <li><strong>Honesto con la incertidumbre.</strong> Cuando la evidencia es débil o hay controversia, se dice.</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+<section class="section" id="destacados">
+  <div class="section-head"><div><span class="eyebrow">Lo más reciente</span><h2>Últimos artículos</h2></div></div>
+  <div class="featured-grid" id="featuredGrid"></div>
+</section>
+
+<section class="section" id="articulos">
+  <div class="section-head" id="categorias"><div><span class="eyebrow">Biblioteca</span><h2>Todos los artículos</h2></div></div>
+  <div class="controls">
+    <div class="search-wrap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input type="search" id="searchInput" placeholder="Buscar por título o tema…" aria-label="Buscar artículos">
+    </div>
+    <div class="chips" id="chips" role="tablist" aria-label="Filtrar por categoría"></div>
+  </div>
+  <div class="article-grid" id="articleGrid"></div>
+</section>
+
+<section class="about-block" id="sobre-mi">
+  <div class="about-inner">
+    <div class="avatar" aria-hidden="true"><span class="c1">C</span><span class="c2">C</span></div>
+    <div>
+      <h2>Sobre Christian Cattaneo</h2>
+      <p>Soy entrenador personal y trabajo con entrenamiento basado en evidencia. Mi objetivo con este blog es enseñar a entrenar mejor mediante información clara, práctica y científicamente fundamentada, sin vender humo ni fórmulas mágicas.</p>
+      <p>Cada artículo se apoya en literatura científica actual y en el trabajo de referentes como Brad Schoenfeld, Bret Contreras, Mike Israetel, Stuart McGill, Eric Helms, Greg Nuckols, Michael Boyle y Jeff Nippard — no como argumento de autoridad, sino como punto de partida para analizar la evidencia.</p>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <h2>Entrená con criterio</h2>
+  <p>Seguí el blog y mis redes para no perderte los artículos nuevos sobre fuerza, hipertrofia y salud basados en evidencia.</p>
+  <div class="social-links">
+    <a href="https://instagram.com/" target="_blank" rel="noopener">&#128248; Instagram</a>
+    <a href="https://youtube.com/" target="_blank" rel="noopener">&#9654;&#65039; YouTube</a>
+    <a href="mailto:chfeder16@hotmail.com">&#9993;&#65039; Contacto</a>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand"><img src="img/cc-monogram.svg" alt="Logo CC de Christian Cattaneo"><strong>Christian Cattaneo</strong></div>
+      <p class="footer-tagline">Entrenamiento basado en evidencia. Aprendé a entrenar con criterio, no con mitos.</p>
+    </div>
+    <div>
+      <h4>Categorías</h4>
+      <a href="#articulos">Fuerza</a><a href="#articulos">Hipertrofia</a><a href="#articulos">Biomecánica</a><a href="#articulos">Salud y dolor</a>
+    </div>
+    <div>
+      <h4>Enlaces</h4>
+      <a href="#sobre-mi">Sobre mí</a>
+      <a href="https://instagram.com/" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://youtube.com/" target="_blank" rel="noopener">YouTube</a>
+      <a href="mailto:chfeder16@hotmail.com">Contacto</a>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2026 Christian Cattaneo — Entrenamiento basado en evidencia. Todos los derechos reservados.</div>
+</footer>
+
+<script src="articles.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
