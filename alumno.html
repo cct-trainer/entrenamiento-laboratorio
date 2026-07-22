@@ -91,6 +91,8 @@ html.light .pt-enter{box-shadow:0 12px 34px -12px rgba(29,78,216,.5);}
 .lang-opt{border:none;background:transparent;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.6px;padding:7px 15px;border-radius:19px;cursor:pointer;transition:all .15s;font-family:inherit;}
 .lang-opt.on{background:var(--gold);color:var(--letra-text);}
 .lang-lbl{font-size:10px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:7px;}
+@keyframes tmrpulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(.7);}}
+.tmr-chip{transition:background .15s,border-color .15s;}
 
 .hdr{position:sticky;top:0;z-index:90;background:var(--bg);border-bottom:1px solid var(--border);padding:calc(18px + env(safe-area-inset-top,0)) 20px 14px;box-shadow:0 6px 18px -10px rgba(0,0,0,.6);transition:background .25s;}
 html.light .hdr{box-shadow:0 6px 18px -12px rgba(0,0,0,.18);}
@@ -787,8 +789,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260722145005 por un timestamp en cada deploy
-const _APP_VERSION = '20260722145005';
+// deploy.bat reemplaza 20260722151452 por un timestamp en cada deploy
+const _APP_VERSION = '20260722151452';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1473,6 +1475,82 @@ function _rerenderEjCard(uid) {
   card.replaceWith(tmp.firstElementChild);
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// TEMPORIZADOR EN LÍNEA — para series prescritas por tiempo (planchas, isométricos…)
+// Aparece en lugar de las repeticiones cuando la serie está en segundos/minutos.
+// ══════════════════════════════════════════════════════════════════════════
+// Devuelve los segundos si el texto es "por tiempo" (40 seg, 1 min, 1:30). Si no, 0.
+function _segDe(v){
+  const s = String(v||'').toLowerCase().trim();
+  if (!s) return 0;
+  let m;
+  if ((m = s.match(/(\d+)\s*:\s*(\d{1,2})/)))            return parseInt(m[1])*60 + parseInt(m[2]);
+  if ((m = s.match(/(\d+)\s*min/))) { let sec = parseInt(m[1])*60; const s2 = s.match(/min[^\d]*(\d+)/); if (s2) sec += parseInt(s2[1]); return sec; }
+  if ((m = s.match(/(\d+)\s*"/)))                            return parseInt(m[1]);
+  if ((m = s.match(/(\d+)\s*(seg|segundos|sec|secs|s)\b/)))  return parseInt(m[1]);
+  return 0; // número pelado (12, 8-10) = repeticiones
+}
+function _tmrFmt(sec){ sec = Math.max(0, sec|0); return Math.floor(sec/60) + ':' + String(sec%60).padStart(2,'0'); }
+
+const _tmrState = {};
+let _tmrAC = null;
+function _tmrBeepInit(){ try { if (!_tmrAC) _tmrAC = new (window.AudioContext||window.webkitAudioContext)(); if (_tmrAC.state === 'suspended') _tmrAC.resume(); } catch(e){} }
+function _tmrBeep(){
+  try { if (_tmrAC) { const t0 = _tmrAC.currentTime; [0,0.24,0.48].forEach(off => {
+    const o = _tmrAC.createOscillator(), g = _tmrAC.createGain();
+    o.type = 'sine'; o.frequency.value = 880; o.connect(g); g.connect(_tmrAC.destination);
+    g.gain.setValueAtTime(0.0001, t0+off);
+    g.gain.exponentialRampToValueAtTime(0.4, t0+off+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+off+0.2);
+    o.start(t0+off); o.stop(t0+off+0.22);
+  }); } } catch(e){}
+  try { if (navigator.vibrate) navigator.vibrate([220,120,220]); } catch(e){}
+}
+function _tmrTick(){ try { if (_tmrAC){ const o=_tmrAC.createOscillator(),g=_tmrAC.createGain(); o.type='sine'; o.frequency.value=1200; o.connect(g); g.connect(_tmrAC.destination); const t=_tmrAC.currentTime; g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.18,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+0.09); o.start(t); o.stop(t+0.1);} } catch(e){} }
+
+function _tmrTap(tid){
+  const el = document.getElementById('tmr_'+tid);
+  if (!el) return;
+  let st = _tmrState[tid];
+  const total = parseInt(el.getAttribute('data-total')) || 0;
+  if (!st || st.done){                       // iniciar de cero
+    _tmrBeepInit();
+    st = { total, rem: total, running: true, done: false };
+    _tmrState[tid] = st;
+    st.iv = setInterval(() => _tmrStep(tid), 1000);
+    _tmrPaint(tid);
+    return;
+  }
+  if (st.running){ st.running = false; clearInterval(st.iv); _tmrPaint(tid); return; }  // pausar
+  st.running = true; st.iv = setInterval(() => _tmrStep(tid), 1000); _tmrPaint(tid);     // reanudar
+}
+function _tmrStep(tid){
+  const st = _tmrState[tid];
+  const el = document.getElementById('tmr_'+tid);
+  if (!st) return;
+  if (!el){ clearInterval(st.iv); delete _tmrState[tid]; return; } // se salió de la sesión
+  st.rem--;
+  if (st.rem > 0 && st.rem <= 3) _tmrTick();
+  if (st.rem <= 0){ st.rem = 0; st.running = false; st.done = true; clearInterval(st.iv); _tmrBeep(); }
+  _tmrPaint(tid);
+}
+function _tmrPaint(tid){
+  const el = document.getElementById('tmr_'+tid);
+  const st = _tmrState[tid];
+  if (!el || !st) return;
+  const base = 'display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:800;padding:5px 11px;border-radius:16px;white-space:nowrap;user-select:none;-webkit-user-select:none;';
+  if (st.done){
+    el.style.cssText = base + 'background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.5);color:var(--green);font-size:13px;';
+    el.innerHTML = '✓ ' + (_LANG==='en' ? 'Done' : 'Listo');
+  } else if (st.running){
+    el.style.cssText = base + 'background:color-mix(in srgb,var(--gold) 20%,transparent);border:1px solid var(--gold);color:var(--gold);font-size:17px;';
+    el.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:var(--gold);display:inline-block;animation:tmrpulse 1s infinite;"></span> ' + _tmrFmt(st.rem);
+  } else { // pausado
+    el.style.cssText = base + 'background:rgba(201,168,76,.10);border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);color:var(--gold);font-size:15px;opacity:.85;';
+    el.innerHTML = '⏸ ' + _tmrFmt(st.rem);
+  }
+}
+
 // Construye la card completa de un ejercicio
 function _ejCard(ej, uid) {
   _ejStore[uid] = ej; // guardar para re-render posterior
@@ -1525,11 +1603,18 @@ function _ejCard(ej, uid) {
         ? '<span class="s-tipo" style="color:'+tipoInfo.color+';background:'+tipoInfo.color+'22;" onclick="event.stopPropagation();_showCtxMenu(event,\''+sp+'\',\''+uid+'\')">'+tipoInfo.icon+' '+tipoInfo.label+'</span>'
         : '';
       // Inputs editables
-      const repsCel = sp
-        ? '<input id="inp_'+sp+'_reps" type="text" inputmode="decimal" value="'+repsVal+'" placeholder="—" '+
-          'onchange="_guardarEdit(\''+sp+'\',\'reps\',this.value)" onclick="event.stopPropagation()" '+
-          'style="'+inpStyle+'font-size:13px;">'
-        : (repsVal||'—');
+      // Serie por tiempo → chip temporizador (cuenta regresiva); si no, reps normales
+      const _segR = _segDe(repsVal);
+      const _tid  = sp || (uid+'_'+offset+'_'+i);
+      const repsCel = _segR
+        ? '<span class="tmr-chip" id="tmr_'+_tid+'" data-total="'+_segR+'" '+
+            'onclick="event.stopPropagation();_tmrTap(\''+_tid+'\')" ontouchstart="event.stopPropagation()" '+
+            'style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;background:rgba(201,168,76,.14);border:1px solid color-mix(in srgb,var(--gold) 50%,transparent);color:var(--gold);font-size:13px;font-weight:800;padding:5px 11px;border-radius:16px;white-space:nowrap;user-select:none;-webkit-user-select:none;">▶ '+_compEsc(repsVal)+'</span>'
+        : (sp
+          ? '<input id="inp_'+sp+'_reps" type="text" inputmode="decimal" value="'+repsVal+'" placeholder="—" '+
+            'onchange="_guardarEdit(\''+sp+'\',\'reps\',this.value)" onclick="event.stopPropagation()" '+
+            'style="'+inpStyle+'font-size:13px;">'
+          : (repsVal||'—'));
       const pesoCel = sp
         ? '<input id="inp_'+sp+'_peso" type="text" inputmode="decimal" value="'+pesoRaw+'" placeholder="—" '+
           'onchange="_guardarEdit(\''+sp+'\',\'peso\',this.value)" onclick="event.stopPropagation()" '+
