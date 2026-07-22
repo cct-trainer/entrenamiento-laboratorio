@@ -788,8 +788,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260722163923 por un timestamp en cada deploy
-const _APP_VERSION = '20260722163923';
+// deploy.bat reemplaza 20260722170131 por un timestamp en cada deploy
+const _APP_VERSION = '20260722170131';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1251,9 +1251,13 @@ function renderRutina() {
     const fx = _planFecha(_plan);
     const fxLabel = fx ? new Date(fx+'T12:00:00').toLocaleDateString('es-AR',{month:'long',year:'numeric'}) : '';
     const prevDis = _planIdx<=0, nextDis = _planIdx>=_planesFuerza.length-1;
+    const esActivo = !!(_plan && _plan.activo);
+    const activoTag = esActivo
+      ? '<div style="font-size:9px;font-weight:900;letter-spacing:1.2px;color:var(--gold);margin-top:3px;">'+(_LANG==='en'?'CURRENT MONTH':'MES ACTUAL')+'</div>'
+      : '';
     mesNavEl.innerHTML = '<div class="mes-nav">'
       + (varios ? '<button class="mes-nav-btn"'+(prevDis?' disabled':'')+' onclick="_switchPlan('+(_planIdx-1)+')">&#8249;</button>' : '<span style="width:38px;"></span>')
-      + '<div class="mes-nav-info"><div class="mes-nav-title">'+mesNom+'</div>'+(fxLabel?'<div class="mes-nav-sub" style="text-transform:capitalize;">'+fxLabel+'</div>':'')+'</div>'
+      + '<div class="mes-nav-info"><div class="mes-nav-title">'+mesNom+'</div>'+(fxLabel?'<div class="mes-nav-sub" style="text-transform:capitalize;">'+fxLabel+'</div>':'')+activoTag+'</div>'
       + (varios ? '<button class="mes-nav-btn"'+(nextDis?' disabled':'')+' onclick="_switchPlan('+(_planIdx+1)+')">&#8250;</button>' : '<span style="width:38px;"></span>')
       + '</div>';
   }
