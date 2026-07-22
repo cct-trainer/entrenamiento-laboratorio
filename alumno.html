@@ -789,8 +789,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260722153741 por un timestamp en cada deploy
-const _APP_VERSION = '20260722153741';
+// deploy.bat reemplaza 20260722155114 por un timestamp en cada deploy
+const _APP_VERSION = '20260722155114';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1632,13 +1632,21 @@ function _ejCard(ej, uid) {
       const touch = sp
         ? 'ontouchstart="_lpStart(event,\''+sp+'\',\''+uid_safe+'\')" ontouchend="_lpEnd()" ontouchmove="_lpEnd()" oncontextmenu="_showCtxMenu(event,\''+sp+'\',\''+uid_safe+'\');return false"'
         : '';
+      // Pausa → chip temporizador opcional (si no se toca, queda como info)
+      const _segP  = _segDe(s.pausa);
+      const _ptid  = (sp || (uid+'_'+offset+'_'+i)) + '_p';
+      const pausaCel = _segP
+        ? '<span class="tmr-chip" id="tmr_'+_ptid+'" data-total="'+_segP+'" '+
+            'onclick="event.stopPropagation();_tmrTap(\''+_ptid+'\')" ontouchstart="event.stopPropagation()" '+
+            'style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;background:transparent;border:1px solid color-mix(in srgb,var(--gold) 35%,transparent);color:var(--gold);font-size:11px;font-weight:700;padding:4px 9px;border-radius:14px;white-space:nowrap;user-select:none;-webkit-user-select:none;">▶ '+_compEsc(s.pausa)+'</span>'
+        : (s.pausa||'—');
       const serieLbl = 'S'+(offset+i+1) + (lado ? ' <span style="color:var(--muted);font-weight:600;">'+lado+'</span>' : '') + tipoBadge;
       return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+'" '+touch+'>'+
         '<td style="'+tdBase+'font-size:11px;font-weight:800;">'+serieLbl+'</td>'+
         '<td style="'+tdBase+'">'+repsCel+'</td>'+
         (hasPeso  ? '<td style="'+tdBase+'">'+pesoCel+'</td>' : '')+
         (hasRir   ? '<td style="'+tdBase+'">'+rirCel+'</td>' : '')+
-        (hasPausa ? '<td style="'+tdBase+'font-size:11px;">'+(s.pausa||'—')+'</td>' : '')+
+        (hasPausa ? '<td style="'+tdBase+'font-size:11px;">'+pausaCel+'</td>' : '')+
       '</tr>';
     }
     const rows = arr.map((s,i) =>
@@ -1650,11 +1658,19 @@ function _ejCard(ej, uid) {
 
   // Grid SERIES / REPS / PAUSA / RIR  (resumen de series efectivas)
   const ctrlGrid = hasCtrl ? (() => {
+    // Chip temporizador para valores por tiempo (reps o pausa) del resumen
+    const _ctrlChip = (val, key) => {
+      const sec = _segDe(val); if (!sec) return _compEsc(val);
+      const tid = uid+'_ctrl_'+key;
+      return '<span class="tmr-chip" id="tmr_'+tid+'" data-total="'+sec+'" '+
+        'onclick="event.stopPropagation();_tmrTap(\''+tid+'\')" ontouchstart="event.stopPropagation()" '+
+        'style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;background:rgba(201,168,76,.14);border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);color:var(--gold);font-size:15px;font-weight:800;padding:4px 11px;border-radius:15px;white-space:nowrap;user-select:none;-webkit-user-select:none;">▶ '+_compEsc(val)+'</span>';
+    };
     const cols = [
-      cs  ? ['SERIES', cs]  : null,
-      cr  ? ['REPS',   cr]  : null,
-      cpa ? ['PAUSA',  cpa] : null,
-      ci  ? ['RIR',    ci]  : null,
+      cs  ? ['SERIES', cs]                 : null,
+      cr  ? ['REPS',   _ctrlChip(cr,'r')]  : null,
+      cpa ? ['PAUSA',  _ctrlChip(cpa,'p')] : null,
+      ci  ? ['RIR',    ci]                 : null,
     ].filter(Boolean);
     return '<div style="display:grid;grid-template-columns:repeat('+cols.length+',1fr);border:1px solid color-mix(in srgb,var(--gold) 25%,transparent);border-radius:8px;overflow:hidden;margin:10px 0;">'+
       cols.map((c,i) =>
