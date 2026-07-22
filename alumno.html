@@ -592,6 +592,7 @@ const _I18N = {
     semanas:'SEMANAS', semana:'Semana',
     volver_dias:'Volver a los días', tu_entrenamiento:'TU ENTRENAMIENTO',
     gym:'Gym', casa:'Casa', dificultad:'Dificultad', min:'min',
+    nivel:'Nivel', niv_1:'Principiante', niv_2:'Intermedio', niv_3:'Avanzado',
     feedback:'Feedback', bloque:'Bloque',
     sin_sesion_gym:'Sin sesión de gimnasio para el',
     sin_sesion_casa:'No hay sesión en casa para este día',
@@ -629,6 +630,7 @@ const _I18N = {
     semanas:'WEEKS', semana:'Week',
     volver_dias:'Back to days', tu_entrenamiento:'YOUR WORKOUT',
     gym:'Gym', casa:'Home', dificultad:'Difficulty', min:'min',
+    nivel:'Level', niv_1:'Beginner', niv_2:'Intermediate', niv_3:'Advanced',
     feedback:'Feedback', bloque:'Block',
     sin_sesion_gym:'No gym session for',
     sin_sesion_casa:'No home session for this day',
@@ -788,8 +790,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260722170131 por un timestamp en cada deploy
-const _APP_VERSION = '20260722170131';
+// deploy.bat reemplaza 20260722171646 por un timestamp en cada deploy
+const _APP_VERSION = '20260722171646';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1948,12 +1950,21 @@ function _sesDetalleHTML(ses){
   const durVal = ses.duracion || (()=>{ const mm=_calcDuracionSesion(ses); return mm ? '~'+mm+' min' : ''; })();
   const dif = parseInt(ses.dificultad||'')||0;
   const dots = dif ? [1,2,3].map(i=>'<span style="width:9px;height:9px;border-radius:50%;background:'+(i<=dif?'var(--green)':'rgba(255,255,255,.15)')+';display:inline-block;"></span>').join('') : '';
+  // Fila estándar: icono + texto
+  const row = (ico, txt) => '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">'+ico+'</span><span>'+txt+'</span></div>';
   let info = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;position:relative;box-shadow:0 10px 30px -14px rgba(0,0,0,.4);">';
   info += '<div style="font-size:15px;font-weight:800;color:var(--text);line-height:1.25;">'+((ses.nombre||DN[_diaIdx])).toUpperCase()+'</div>';
   info += '<div style="display:flex;flex-direction:column;gap:9px;margin-top:13px;">';
-  info += '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🏋️</span>'+_compEsc(_tc(ses.lugar)||(_diaModTab===1?_t('casa'):_t('gym')))+'</div>';
-  if(durVal) info += '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🕐</span>'+_compEsc(durVal)+'</div>';
-  if(dots)   info += '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);">'+dots+' <span style="margin-left:3px;">'+_t('dificultad')+'</span></div>';
+  // Lugar
+  info += row('🏋️', _compEsc(_tc(ses.lugar)||(_diaModTab===1?_t('casa'):_t('gym'))));
+  // Duración
+  if(durVal) info += row('🕐', _compEsc(durVal));
+  // Nivel (puntos + texto)
+  if(dif) info += '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);"><span style="width:18px;display:flex;gap:3px;justify-content:center;flex-shrink:0;">'+dots+'</span><span>'+_t('nivel')+' '+_t('niv_'+dif)+'</span></div>';
+  // Objetivo
+  if(ses.objetivo) info += row('🎯', _compEsc(_tc(ses.objetivo)));
+  // Equipamiento
+  if(ses.equipo)   info += row('🧰', _compEsc(_tc(ses.equipo)));
   info += '</div>';
   if(ses.descripcion) info += '<div style="font-size:13px;color:var(--muted);line-height:1.55;margin-top:13px;padding-top:13px;border-top:1px solid var(--border);">'+_compEsc(ses.descripcion)+'</div>';
   info += '</div>';

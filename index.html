@@ -11221,10 +11221,16 @@ function renderPlanDiaEditor(diaIdx) {
             <div style="display:flex;gap:8px;margin-top:8px;">
               <div style="flex:1;"><div style="font-size:9px;color:#888;font-weight:800;margin-bottom:3px;">LUGAR</div>
                 <select id="plan-ses-lugar" style="width:100%;padding:7px 8px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;"><option value="">(auto)</option><option>Gym</option><option>Casa</option><option>Cualquiera</option></select></div>
-              <div style="flex:1;"><div style="font-size:9px;color:#888;font-weight:800;margin-bottom:3px;">DIFICULTAD</div>
-                <select id="plan-ses-dif" style="width:100%;padding:7px 8px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;"><option value="">—</option><option value="1">Baja</option><option value="2">Media</option><option value="3">Alta</option></select></div>
+              <div style="flex:1;"><div style="font-size:9px;color:#888;font-weight:800;margin-bottom:3px;">NIVEL</div>
+                <select id="plan-ses-dif" style="width:100%;padding:7px 8px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;"><option value="">—</option><option value="1">Principiante</option><option value="2">Intermedio</option><option value="3">Avanzado</option></select></div>
               <div style="flex:1;"><div style="font-size:9px;color:#888;font-weight:800;margin-bottom:3px;">DURACIÓN</div>
                 <input id="plan-ses-dur" placeholder="auto" style="width:100%;padding:7px 8px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;box-sizing:border-box;"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <div style="flex:1;"><div style="font-size:9px;color:#888;font-weight:800;margin-bottom:3px;">OBJETIVO</div>
+                <input id="plan-ses-obj" placeholder="Ej: Hipertrofia de espalda" style="width:100%;padding:7px 8px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;box-sizing:border-box;"></div>
+              <div style="flex:1;"><div style="font-size:9px;color:#888;font-weight:800;margin-bottom:3px;">EQUIPAMIENTO</div>
+                <input id="plan-ses-equipo" placeholder="Ej: Mancuernas, banda" style="width:100%;padding:7px 8px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;box-sizing:border-box;"></div>
             </div>
             <textarea id="plan-ses-desc" rows="2" placeholder="Descripción de la sesión (opcional)" style="width:100%;margin-top:8px;padding:8px 10px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;box-sizing:border-box;resize:vertical;"></textarea>
             <div id="plan-ses-durcalc" style="font-size:11px;color:#059669;font-weight:700;margin-top:6px;"></div>
@@ -11248,6 +11254,8 @@ function renderPlanDiaEditor(diaIdx) {
   const _sl=document.getElementById('plan-ses-lugar');  if(_sl) _sl.value=sesion.lugar||'';
   const _sd=document.getElementById('plan-ses-dif');    if(_sd) _sd.value=sesion.dificultad||'';
   const _su=document.getElementById('plan-ses-dur');    if(_su) _su.value=sesion.duracion||'';
+  const _so=document.getElementById('plan-ses-obj');    if(_so) _so.value=sesion.objetivo||'';
+  const _sq=document.getElementById('plan-ses-equipo'); if(_sq) _sq.value=sesion.equipo||'';
   const _se=document.getElementById('plan-ses-desc');   if(_se) _se.value=sesion.descripcion||'';
   _sesImgPrev();
   _sesActualizarDuracion(sesion.bloques||[]);
@@ -11353,6 +11361,8 @@ function _switchEditorTab(tabIdx, diaIdx) {
   const _sl=document.getElementById('plan-ses-lugar');  if(_sl) _sl.value=sesion.lugar||'';
   const _sd=document.getElementById('plan-ses-dif');    if(_sd) _sd.value=sesion.dificultad||'';
   const _su=document.getElementById('plan-ses-dur');    if(_su) _su.value=sesion.duracion||'';
+  const _so=document.getElementById('plan-ses-obj');    if(_so) _so.value=sesion.objetivo||'';
+  const _sq=document.getElementById('plan-ses-equipo'); if(_sq) _sq.value=sesion.equipo||'';
   const _se=document.getElementById('plan-ses-desc');   if(_se) _se.value=sesion.descripcion||'';
   _sesImgPrev();
   // Cargar bloques
@@ -11771,6 +11781,8 @@ function guardarEstadoDiaActual() {
     lugar: _g('plan-ses-lugar','lugar'),
     dificultad: _g('plan-ses-dif','dificultad'),
     duracion: _g('plan-ses-dur','duracion'),
+    objetivo: _g('plan-ses-obj','objetivo'),
+    equipo: _g('plan-ses-equipo','equipo'),
     descripcion: _g('plan-ses-desc','descripcion')
   };
   planDiasData = planSemanasArray[planSemEditando].dias;
