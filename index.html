@@ -2986,6 +2986,7 @@ select.toolbox-input option:disabled { color: #888; }
     <button onclick="document.getElementById('backup-import-input').click()" class="pln-btn pln-btn-outline" title="Restaurar base de datos desde backup JSON">Restaurar</button>
     <button onclick="abrirSolicitudes()" class="pln-btn pln-btn-outline" title="Solicitudes de prueba gratis pendientes" style="border-color:#C9A84C;color:#9A7A28;position:relative;">Solicitudes<span id="sol-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="abrirSuscripciones()" class="pln-btn pln-btn-outline" title="Planes, pagos y vencimientos" style="border-color:#C9A84C;color:#9A7A28;position:relative;">Suscripciones<span id="venc-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#f59e0b;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
+    <button onclick="abrirMetricas()" class="pln-btn pln-btn-outline" title="Métricas del piloto de adquisición" style="border-color:#1d4ed8;color:#1d4ed8;">📊 Métricas</button>
     <button onclick="recuperarDesdePortales()" class="pln-btn pln-btn-outline" title="Recuperar tus alumnos leyendo sus documentos en la nube" style="border-color:#22c55e;color:#166534;">↻ Recuperar</button>
     <button onclick="exportarBackupCompleto()" class="pln-btn pln-btn-guardar" title="Descargar backup completo de toda la base de datos">Backup</button>
     <button onclick="limpiarStorageEmergencia()" style="background:none;border:1px solid #ddd;color:#bbb;padding:7px 12px;border-radius:5px;font-size:11px;cursor:pointer;" title="Liberar espacio si hay errores de almacenamiento">🗑</button>
@@ -13699,6 +13700,7 @@ function _renovarAcceso(id, dias) {
   const base = new Date();
   base.setDate(base.getDate() + dias);
   alumnos[idx].accessUntil = base.toISOString().slice(0,10);
+  alumnos[idx].estado = 'activo';   // renovar = cliente convertido (para métricas del piloto)
   saveAlumnos(alumnos);
   toast('Acceso renovado hasta ' + new Date(alumnos[idx].accessUntil+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}));
   renderSidebarAlumno(id);
@@ -21582,6 +21584,90 @@ function _renovarVenc(id, dias){
   if(typeof _renovarAcceso==='function'){ _renovarAcceso(id, dias); }
   _refreshVencBadge();
   abrirSuscripciones();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// MÉTRICAS DEL PILOTO — embudo por país y canal (solo lectura de Firestore)
+// ══════════════════════════════════════════════════════════════════════════
+const PAIS_NOMBRE={AR:'Argentina',ES:'España',MX:'México',CL:'Chile',UY:'Uruguay',CO:'Colombia',PE:'Perú',OTRO:'Otro','—':'Sin país'};
+async function abrirMetricas(){
+  if(!window._db){ toast('Necesitás conexión (presioná Backup)','error'); return; }
+  toast('Cargando métricas…');
+  // 1. Solicitudes (cuestionarios completados)
+  let sols=[];
+  try{
+    const snap=await window._db.collection('alumnos').where('estado','in',['pendiente','aprobada','descartada']).get();
+    snap.forEach(d=>{ const x=d.data()||{}; x._id=d.id; sols.push(x); });
+  }catch(e){ console.warn('métricas solicitudes:',e); }
+  const alumnosLocal=getAlumnos();
+  // 2. Para las aprobadas, traer nº de sesiones completadas del alumno
+  const aprob=sols.filter(s=>s.estado==='aprobada' && s.alumnoId);
+  const compMap={};
+  await Promise.all(aprob.map(async s=>{
+    try{ const d=await window._db.collection('alumnos').doc(s.alumnoId).get(); compMap[s.alumnoId]=(d.exists&&Array.isArray(d.data().sesionesCompletadas))?d.data().sesionesCompletadas.length:0; }
+    catch(e){ compMap[s.alumnoId]=0; }
+  }));
+  // 3. Un registro por solicitud
+  const regs=sols.map(s=>{
+    const aprobada=s.estado==='aprobada';
+    const al=aprobada?alumnosLocal.find(a=>a.id===s.alumnoId):null;
+    const frec=parseInt((s.solicitud&&s.solicitud.frecuencia)||(al&&al.dias)||0)||0;
+    const comp=aprobada?(compMap[s.alumnoId]||0):0;
+    let pago=false;
+    if(al){ if(al.estado==='activo') pago=true; else if(al.accessUntil&&al.trialInicio){ if((new Date(al.accessUntil)-new Date(al.trialInicio))/86400000>10) pago=true; } }
+    return { pais:(s.pais||'—'), canal:(s.canal||'directo'), act:aprobada, ent:comp>=1, comp:(frec?comp>=frec:comp>=3), pago };
+  });
+  const T={ cuest:regs.length, act:0, ent:0, comp:0, pago:0 };
+  regs.forEach(r=>{ if(r.act)T.act++; if(r.ent)T.ent++; if(r.comp)T.comp++; if(r.pago)T.pago++; });
+  const agg=(key)=>{ const m={}; regs.forEach(r=>{ const k=r[key]||'—'; const o=(m[k]=m[k]||{cuest:0,act:0,ent:0,comp:0,pago:0}); o.cuest++; if(r.act)o.act++; if(r.ent)o.ent++; if(r.comp)o.comp++; if(r.pago)o.pago++; }); return m; };
+  const porPais=agg('pais'), porCanal=agg('canal');
+  const spend=parseFloat(localStorage.getItem('LAB_ADSPEND')||'0')||0;
+  const cac = T.pago>0 ? (spend/T.pago) : 0;
+  const pct=(a,b)=> b>0?Math.round(a/b*100)+'%':'—';
+
+  const stat=(lbl,val,sub)=>'<div style="flex:1;min-width:96px;background:#f7f8fa;border-radius:10px;padding:12px;text-align:center;"><div style="font-size:22px;font-weight:900;color:#1a1a2e;">'+val+'</div><div style="font-size:10px;color:#888;font-weight:700;letter-spacing:.3px;margin-top:2px;">'+lbl+'</div>'+(sub?'<div style="font-size:10px;color:#1d4ed8;margin-top:2px;">'+sub+'</div>':'')+'</div>';
+  const tabla=(titulo,m,nombres)=>{
+    const rows=Object.keys(m).sort((a,b)=>m[b].pago-m[a].pago||m[b].cuest-m[a].cuest).map(k=>{
+      const o=m[k]; const nm=nombres?(nombres[k]||k):k;
+      return '<tr>'
+        +'<td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;font-weight:700;color:#1a1a2e;">'+nm+'</td>'
+        +'<td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;">'+o.cuest+'</td>'
+        +'<td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;">'+o.act+'</td>'
+        +'<td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;">'+o.ent+'</td>'
+        +'<td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;">'+o.comp+'</td>'
+        +'<td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;font-weight:800;color:#166534;">'+o.pago+'</td>'
+        +'<td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;color:#1d4ed8;font-weight:700;">'+pct(o.pago,o.cuest)+'</td>'
+        +'</tr>';
+    }).join('');
+    return '<div style="font-size:12px;font-weight:800;color:#555;margin:16px 0 6px;">'+titulo+'</div>'
+      +'<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="color:#999;font-size:9px;letter-spacing:.5px;">'
+      +'<th style="text-align:left;padding:4px 8px;">'+(nombres?'PAÍS':'CANAL')+'</th><th style="padding:4px;">CUEST.</th><th style="padding:4px;">ACTIVÓ</th><th style="padding:4px;">ENTRENÓ</th><th style="padding:4px;">COMPLETÓ</th><th style="padding:4px;">PAGÓ</th><th style="padding:4px;">CONV.</th></tr></thead><tbody>'
+      +(rows||'<tr><td colspan="7" style="padding:10px;color:#999;text-align:center;">Sin datos.</td></tr>')+'</tbody></table>';
+  };
+
+  let ov=document.getElementById('met-overlay'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='met-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:6000;display:flex;align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto;';
+  ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+  ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:640px;width:100%;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.25);" onclick="event.stopPropagation()">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">📊 Métricas del piloto</div><button onclick="document.getElementById(\'met-overlay\').remove()" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;">×</button></div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+    +   stat('CUESTIONARIOS',T.cuest)
+    +   stat('ACTIVARON',T.act,pct(T.act,T.cuest))
+    +   stat('ENTRENARON',T.ent,pct(T.ent,T.act))
+    +   stat('COMPLETARON',T.comp,pct(T.comp,T.act))
+    +   stat('PAGARON',T.pago,pct(T.pago,T.cuest))
+    + '</div>'
+    + '<div style="display:flex;gap:8px;align-items:center;margin-top:12px;background:#eef2ff;border-radius:10px;padding:10px 12px;">'
+    +   '<span style="font-size:12px;color:#1a1a2e;font-weight:700;">Gasto en ads:</span>'
+    +   '<input id="met-spend" type="number" value="'+(spend||'')+'" placeholder="0" oninput="localStorage.setItem(\'LAB_ADSPEND\',this.value); document.getElementById(\'met-cac\').textContent=(this.value>0&&'+T.pago+'>0)?((this.value/'+T.pago+').toFixed(0)):\'—\';" style="width:110px;padding:6px 8px;border:1px solid #ccd;border-radius:8px;font-size:12px;">'
+    +   '<span style="font-size:12px;color:#1a1a2e;font-weight:700;margin-left:auto;">CAC: <span id="met-cac" style="color:#1d4ed8;font-weight:900;">'+(cac>0?cac.toFixed(0):'—')+'</span> / cliente</span>'
+    + '</div>'
+    + tabla('Por país', porPais, PAIS_NOMBRE)
+    + tabla('Por canal', porCanal, null)
+    + '<div style="font-size:10px;color:#aaa;margin-top:12px;">CONV. = pagaron ÷ cuestionarios. "Pagó" = alumno con acceso renovado más allá de la prueba. Las impresiones y visitas se miden en Meta Ads / Pixel.</div>'
+    + '</div>';
+  document.body.appendChild(ov);
 }
 
 function initFirebase() {
