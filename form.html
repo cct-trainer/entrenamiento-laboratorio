@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Prueba gratis 7 días — Christian Cattaneo</title>
+<meta name="theme-color" content="#0d0d1a">
+<style>
+  :root{--bg:#0d0d1a;--card:#13132a;--gold:#C9A84C;--gold-d:#9A7A28;--blue:#1d4ed8;--text:#e8e8f0;--muted:#8888aa;--border:rgba(255,255,255,.1);--input:rgba(255,255,255,.05);}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.5;}
+  .wrap{max-width:520px;margin:0 auto;padding:26px 20px 60px;}
+  .brand{text-align:center;margin-bottom:22px;}
+  .brand img{width:64px;height:64px;border-radius:16px;object-fit:cover;}
+  .brand-name{font-size:16px;font-weight:900;letter-spacing:1px;margin-top:8px;}
+  .brand-sub{font-size:10px;color:var(--muted);letter-spacing:2px;}
+  .hero{background:linear-gradient(135deg,rgba(201,168,76,.14),rgba(29,78,216,.10));border:1px solid var(--border);border-radius:16px;padding:18px;text-align:center;margin-bottom:22px;}
+  .hero h1{font-size:19px;margin:0 0 6px;}
+  .hero p{font-size:13px;color:var(--muted);margin:0;}
+  .hero .tag{display:inline-block;background:var(--gold);color:#0d0d1a;font-size:11px;font-weight:900;letter-spacing:.5px;padding:4px 12px;border-radius:20px;margin-bottom:10px;}
+  label{display:block;font-size:11px;font-weight:800;letter-spacing:.4px;color:var(--muted);margin:16px 0 6px;text-transform:uppercase;}
+  label .req{color:var(--gold);}
+  input,select,textarea{width:100%;background:var(--input);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:15px;color:var(--text);font-family:inherit;outline:none;}
+  input:focus,select:focus,textarea:focus{border-color:var(--gold);}
+  select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238888aa' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px;}
+  textarea{resize:vertical;min-height:70px;}
+  .row{display:flex;gap:10px;}
+  .row>div{flex:1;}
+  .days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:6px;}
+  .day{border:1px solid var(--border);border-radius:9px;padding:9px 0;text-align:center;font-size:11px;font-weight:800;cursor:pointer;user-select:none;color:var(--muted);}
+  .day.on{background:var(--gold);color:#0d0d1a;border-color:var(--gold);}
+  .btn{width:100%;margin-top:26px;background:linear-gradient(135deg,var(--gold),var(--gold-d));color:#0d0d1a;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:900;letter-spacing:.3px;cursor:pointer;}
+  .btn:disabled{opacity:.6;cursor:default;}
+  .err{color:#f87171;font-size:12px;margin-top:8px;text-align:center;min-height:16px;}
+  .note{font-size:11px;color:var(--muted);text-align:center;margin-top:12px;line-height:1.5;}
+  #ok{display:none;text-align:center;padding:30px 10px;}
+  #ok .big{font-size:52px;}
+  #ok h2{font-size:20px;margin:14px 0 8px;}
+  #ok p{font-size:14px;color:var(--muted);}
+  .ok-steps{text-align:left;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:18px;font-size:13px;color:var(--text);}
+  .ok-steps div{margin:8px 0;display:flex;gap:9px;}
+  .ok-steps b{color:var(--gold);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <img src="https://cct-trainer.github.io/entrenamiento-laboratorio/icon-512.png" alt="Christian Cattaneo" onerror="this.style.display='none'">
+    <div class="brand-name">CHRISTIAN CATTANEO</div>
+    <div class="brand-sub">ENTRENADOR</div>
+  </div>
+
+  <div id="formView">
+    <div class="hero">
+      <div class="tag">PRUEBA GRATIS · 7 DÍAS</div>
+      <h1>Empezá a entrenar con un plan a tu medida</h1>
+      <p>Completá tus datos y armo tu semana de entrenamiento según tu objetivo, nivel y disponibilidad.</p>
+    </div>
+
+    <label>Nombre y apellido <span class="req">*</span></label>
+    <input id="f-nombre" type="text" placeholder="Tu nombre completo" autocomplete="name">
+
+    <div class="row">
+      <div>
+        <label>WhatsApp <span class="req">*</span></label>
+        <input id="f-tel" type="tel" placeholder="Ej: 11 5555 5555" inputmode="tel" autocomplete="tel">
+      </div>
+      <div>
+        <label>Email</label>
+        <input id="f-email" type="email" placeholder="tu@email.com" inputmode="email" autocomplete="email">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Fecha de nacimiento</label>
+        <input id="f-nac" type="date">
+      </div>
+      <div>
+        <label>Sexo</label>
+        <select id="f-sexo"><option value="">—</option><option>Masculino</option><option>Femenino</option><option>Otro</option></select>
+      </div>
+    </div>
+
+    <label>Tu objetivo principal <span class="req">*</span></label>
+    <select id="f-objetivo">
+      <option value="">Elegí una opción…</option>
+      <option>Ganar masa muscular</option>
+      <option>Perder grasa</option>
+      <option>Ganar fuerza</option>
+      <option>Salud y movilidad</option>
+      <option>Rendimiento deportivo</option>
+      <option>Volver a entrenar</option>
+    </select>
+
+    <label>Nivel de experiencia <span class="req">*</span></label>
+    <select id="f-nivel">
+      <option value="">Elegí una opción…</option>
+      <option>Principiante</option>
+      <option>Intermedio</option>
+      <option>Avanzado</option>
+    </select>
+
+    <label>¿Dónde vas a entrenar? <span class="req">*</span></label>
+    <select id="f-lugar">
+      <option value="">Elegí una opción…</option>
+      <option>Gimnasio</option>
+      <option>En casa</option>
+      <option>Ambos</option>
+    </select>
+
+    <label>Equipamiento disponible</label>
+    <input id="f-equipo" type="text" placeholder="Ej: mancuernas, banda, barra, ninguno…">
+
+    <div class="row">
+      <div>
+        <label>Sesiones por semana <span class="req">*</span></label>
+        <select id="f-frec">
+          <option value="">—</option>
+          <option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+        </select>
+      </div>
+      <div>
+        <label>Duración por sesión</label>
+        <select id="f-dur">
+          <option value="">—</option>
+          <option>30 min</option><option>45 min</option><option>60 min</option><option>75 min o más</option>
+        </select>
+      </div>
+    </div>
+
+    <label>Días preferidos</label>
+    <div class="days" id="f-dias">
+      <div class="day" data-d="L">L</div><div class="day" data-d="M">M</div><div class="day" data-d="X">X</div>
+      <div class="day" data-d="J">J</div><div class="day" data-d="V">V</div><div class="day" data-d="S">S</div><div class="day" data-d="D">D</div>
+    </div>
+
+    <label>Lesiones o limitaciones</label>
+    <textarea id="f-lesiones" placeholder="Contame si tenés alguna lesión, dolor o limitación a tener en cuenta"></textarea>
+
+    <label>Algo más que quieras contarme</label>
+    <textarea id="f-obs" placeholder="Opcional"></textarea>
+
+    <button class="btn" id="f-enviar" onclick="enviar()">Quiero mi prueba de 7 días</button>
+    <div class="err" id="f-err"></div>
+    <div class="note">Al enviar, tus datos quedan registrados para armar tu plan. No compartimos tu información.</div>
+  </div>
+
+  <div id="ok">
+    <div class="big">✅</div>
+    <h2>¡Recibí tus datos!</h2>
+    <p>Christian va a revisar tu información y activar tu <b>prueba gratis de 7 días</b>.</p>
+    <div class="ok-steps">
+      <div><b>1.</b> Armo tu semana de entrenamiento a tu medida.</div>
+      <div><b>2.</b> Te envío el <b>link de acceso por WhatsApp</b>.</div>
+      <div><b>3.</b> Abrís el link, lo instalás en tu teléfono y empezás a entrenar.</div>
+    </div>
+    <p style="margin-top:18px;font-size:13px;">Cualquier duda, escribime por WhatsApp.</p>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+const CFG = {
+  apiKey:'AIzaSyDkSgbqAJJRdlLwzcn-2vSMjVIUJbkVUGQ',
+  authDomain:'entrenamiento-laboratorio.firebaseapp.com',
+  projectId:'entrenamiento-laboratorio',
+  storageBucket:'entrenamiento-laboratorio.firebasestorage.app',
+  messagingSenderId:'399177627945',
+  appId:'1:399177627945:web:2b4fef0894480f70dc1f38'
+};
+let _db=null;
+try{ firebase.initializeApp(CFG); _db=firebase.firestore(); }catch(e){ console.warn('firebase',e); }
+
+// Días preferidos (toggle)
+document.querySelectorAll('#f-dias .day').forEach(d=>d.onclick=()=>d.classList.toggle('on'));
+
+function _val(id){ return (document.getElementById(id).value||'').trim(); }
+function _genId(){ return 'sol_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+async function enviar(){
+  const err=document.getElementById('f-err'); err.textContent='';
+  const nombre=_val('f-nombre'), tel=_val('f-tel'), objetivo=_val('f-objetivo'),
+        nivel=_val('f-nivel'), lugar=_val('f-lugar'), frec=_val('f-frec');
+  if(!nombre){ err.textContent='Poné tu nombre y apellido.'; return; }
+  if(!tel){ err.textContent='Dejá tu WhatsApp para poder mandarte el acceso.'; return; }
+  if(!objetivo){ err.textContent='Elegí tu objetivo principal.'; return; }
+  if(!nivel){ err.textContent='Elegí tu nivel de experiencia.'; return; }
+  if(!lugar){ err.textContent='Indicá dónde vas a entrenar.'; return; }
+  if(!frec){ err.textContent='Elegí cuántas sesiones por semana.'; return; }
+
+  const dias=[...document.querySelectorAll('#f-dias .day.on')].map(d=>d.getAttribute('data-d'));
+  const btn=document.getElementById('f-enviar'); btn.disabled=true; btn.textContent='Enviando…';
+
+  const id=_genId();
+  const doc={
+    id, estado:'pendiente', tipoSolicitud:'trial',
+    createdAt:new Date().toISOString(),
+    perfil:{
+      nombre, telefono:tel, email:_val('f-email'), nacimiento:_val('f-nac'),
+      sexo:_val('f-sexo'), objetivo, nivel,
+      lesiones:_val('f-lesiones'), observaciones:_val('f-obs')
+    },
+    solicitud:{
+      lugar, equipo:_val('f-equipo'),
+      frecuencia:parseInt(frec)||0,
+      duracion:_val('f-dur'),
+      diasPreferidos:dias
+    }
+  };
+  try{
+    if(!_db) throw new Error('sin conexión');
+    await _db.collection('alumnos').doc(id).set(doc);
+    document.getElementById('formView').style.display='none';
+    document.getElementById('ok').style.display='block';
+    window.scrollTo(0,0);
+  }catch(e){
+    console.error(e);
+    err.textContent='No se pudo enviar. Revisá tu conexión e intentá de nuevo.';
+    btn.disabled=false; btn.textContent='Quiero mi prueba de 7 días';
+  }
+}
+</script>
+</body>
+</html>

@@ -2984,6 +2984,7 @@ select.toolbox-input option:disabled { color: #888; }
     <span id="sync-status" title="Estado de sincronización con la nube" style="font-size:18px;cursor:default;" onclick="forzarSyncFirebase()">☁️</span>
     <button onclick="_generarReporteMensual()" class="pln-btn pln-btn-outline" title="Reporte mensual de actividad de alumnos">Reporte</button>
     <button onclick="document.getElementById('backup-import-input').click()" class="pln-btn pln-btn-outline" title="Restaurar base de datos desde backup JSON">Restaurar</button>
+    <button onclick="abrirSolicitudes()" class="pln-btn pln-btn-outline" title="Solicitudes de prueba gratis pendientes" style="border-color:#C9A84C;color:#9A7A28;position:relative;">Solicitudes<span id="sol-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="recuperarDesdePortales()" class="pln-btn pln-btn-outline" title="Recuperar tus alumnos leyendo sus documentos en la nube" style="border-color:#22c55e;color:#166534;">↻ Recuperar</button>
     <button onclick="exportarBackupCompleto()" class="pln-btn pln-btn-guardar" title="Descargar backup completo de toda la base de datos">Backup</button>
     <button onclick="limpiarStorageEmergencia()" style="background:none;border:1px solid #ddd;color:#bbb;padding:7px 12px;border-radius:5px;font-size:11px;cursor:pointer;" title="Liberar espacio si hay errores de almacenamiento">🗑</button>
@@ -21293,8 +21294,9 @@ async function recuperarDesdePortales() {
     let n = 0;
     snap.forEach(docu => {
       const id = docu.id;
-      if (id.indexOf('zz_') === 0) return; // saltar documentos globales (complementos, artículos, charlas)
+      if (id.indexOf('zz_') === 0 || id.indexOf('sol_') === 0) return; // saltar globales y solicitudes de prueba
       const d = docu.data() || {};
+      if (d.estado === 'pendiente') return;   // solicitud sin aprobar: no es un alumno todavía
       const perfil = d.perfil || null;
       if (!perfil) return;
       if (!perfil.id) perfil.id = id;
@@ -21335,6 +21337,87 @@ async function recuperarDesdePortales() {
   }
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// SOLICITUDES DE PRUEBA GRATIS — formulario público → aprobación con un clic
+// ══════════════════════════════════════════════════════════════════════════
+let _SOLICITUDES = [];
+async function _fetchSolicitudes(){
+  if(!window._db) return;
+  try{
+    const snap = await window._db.collection('alumnos').where('estado','==','pendiente').get();
+    _SOLICITUDES = [];
+    snap.forEach(d => { const x=d.data()||{}; x._id=d.id; _SOLICITUDES.push(x); });
+    _SOLICITUDES.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  }catch(e){ console.warn('solicitudes:', e); _SOLICITUDES=[]; }
+  const b=document.getElementById('sol-badge');
+  if(b){ if(_SOLICITUDES.length){ b.textContent=_SOLICITUDES.length; b.style.display='block'; } else b.style.display='none'; }
+}
+async function abrirSolicitudes(){
+  await _fetchSolicitudes();
+  let ov=document.getElementById('sol-overlay'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='sol-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:6000;display:flex;align-items:flex-start;justify-content:center;padding:36px 16px;overflow-y:auto;';
+  ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+  const DN=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const mapD={L:'Lun',M:'Mar',X:'Mié',J:'Jue',V:'Vie',S:'Sáb',D:'Dom'};
+  const items = _SOLICITUDES.length ? _SOLICITUDES.map(s=>{
+    const p=s.perfil||{}, q=s.solicitud||{};
+    const dias=(q.diasPreferidos||[]).map(d=>mapD[d]||d).join(', ');
+    const fecha = s.createdAt ? new Date(s.createdAt).toLocaleDateString('es-AR',{day:'numeric',month:'short'}) : '';
+    return '<div style="border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">'+(p.nombre||'—')+'</div><div style="font-size:11px;color:#999;">'+fecha+'</div></div>'
+      + '<div style="font-size:12px;color:#555;margin:8px 0;line-height:1.7;">'
+      +   '<b>Objetivo:</b> '+(p.objetivo||'—')+' &nbsp;·&nbsp; <b>Nivel:</b> '+(p.nivel||'—')+'<br>'
+      +   '<b>Lugar:</b> '+(q.lugar||'—')+' &nbsp;·&nbsp; <b>Frecuencia:</b> '+(q.frecuencia||'—')+'x/sem &nbsp;·&nbsp; <b>Duración:</b> '+(q.duracion||'—')+'<br>'
+      +   (q.equipo?'<b>Equipo:</b> '+q.equipo+'<br>':'')
+      +   (dias?'<b>Días:</b> '+dias+'<br>':'')
+      +   (p.lesiones?'<b>Lesiones:</b> '+p.lesiones+'<br>':'')
+      +   '<b>WhatsApp:</b> '+(p.telefono||'—')+(p.email?' &nbsp;·&nbsp; '+p.email:'')
+      + '</div>'
+      + '<div style="display:flex;gap:8px;margin-top:6px;">'
+      +   '<button onclick="aprobarSolicitud(\''+s._id+'\')" style="flex:1;background:#C9A84C;color:#fff;border:none;border-radius:8px;padding:10px;font-size:12px;font-weight:800;cursor:pointer;">✓ Aprobar prueba 7 días</button>'
+      +   '<button onclick="descartarSolicitud(\''+s._id+'\')" style="background:#fee2e2;color:#c62828;border:none;border-radius:8px;padding:10px 12px;font-size:12px;font-weight:700;cursor:pointer;">Descartar</button>'
+      + '</div></div>';
+  }).join('') : '<div style="text-align:center;color:#999;padding:30px;font-size:13px;">No hay solicitudes pendientes.</div>';
+  ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:560px;width:100%;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.25);" onclick="event.stopPropagation()">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">Solicitudes de prueba · '+_SOLICITUDES.length+'</div>'
+    + '<button onclick="document.getElementById(\'sol-overlay\').remove()" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;">×</button></div>'
+    + items + '</div>';
+  document.body.appendChild(ov);
+}
+async function aprobarSolicitud(solId){
+  const s=_SOLICITUDES.find(x=>x._id===solId); if(!s) return;
+  const p=s.perfil||{}, q=s.solicitud||{};
+  const hasta=new Date(); hasta.setDate(hasta.getDate()+7);
+  const nuevo={
+    id: genId(), createdAt:new Date().toISOString(),
+    nombre:p.nombre||'Alumno', nacimiento:p.nacimiento||'', sexo:p.sexo||'',
+    telefono:p.telefono||'', email:p.email||'',
+    objetivo:p.objetivo||'', nivel:p.nivel||'',
+    dias:String(q.frecuencia||''), inicio:new Date().toISOString().slice(0,10),
+    lesiones:p.lesiones||'', observaciones:(p.observaciones||'')+(q.equipo?(' · Equipo: '+q.equipo):'')+(q.lugar?(' · '+q.lugar):''),
+    accessUntil: hasta.toISOString().slice(0,10),
+    estado:'trial', trialInicio:new Date().toISOString().slice(0,10)
+  };
+  const alumnos=getAlumnos(); alumnos.push(nuevo); saveAlumnos(alumnos);
+  try{ if(window._db) await window._db.collection('alumnos').doc(solId).update({ estado:'aprobada', alumnoId:nuevo.id }); }catch(e){}
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+  const link='https://cct-trainer.github.io/entrenamiento-laboratorio/alumno.html?id='+nuevo.id;
+  try{ await navigator.clipboard.writeText(link); }catch(e){}
+  toast('Prueba activada 7 días · link copiado ✓');
+  renderAlumnosGrid();
+  abrirSolicitudes();
+  // Ofrecer mandar por WhatsApp
+  const tel=(p.telefono||'').replace(/\D/g,'');
+  if(tel){ const msg=encodeURIComponent('¡Hola '+(p.nombre||'')+'! Activé tu prueba gratis de 7 días. Este es tu acceso: '+link+' — Abrilo y guardalo en tu teléfono. Cualquier duda, escribime.'); window.open('https://wa.me/'+tel+'?text='+msg,'_blank'); }
+}
+async function descartarSolicitud(solId){
+  if(!confirm('¿Descartar esta solicitud?')) return;
+  try{ if(window._db) await window._db.collection('alumnos').doc(solId).update({ estado:'descartada' }); }catch(e){}
+  _SOLICITUDES=_SOLICITUDES.filter(x=>x._id!==solId);
+  abrirSolicitudes();
+}
+
 function initFirebase() {
   try {
     var config = {
@@ -21349,6 +21432,7 @@ function initFirebase() {
     window._db = firebase.firestore();
     _syncStatusIcon('⏳', 'Cargando datos...');
     cargarDesdeFirestore();
+    setTimeout(() => { try { _fetchSolicitudes(); } catch(e){} }, 1500);   // contador de solicitudes de prueba
   } catch(err) {
     console.warn('Firebase init error:', err);
     _syncStatusIcon('⚠️', 'Firebase no disponible');
