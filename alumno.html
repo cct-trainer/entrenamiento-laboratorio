@@ -592,8 +592,8 @@ const _I18N = {
     semanas:'SEMANAS', semana:'Semana',
     volver_dias:'Volver a los días', tu_entrenamiento:'TU ENTRENAMIENTO',
     terminar:'Terminé mi entrenamiento', completado:'Entrenamiento completado',
-    terminar_ok:'¡Listo! La semana que viene ya tiene tu progresión.',
-    terminar_confirm:'¿Terminaste este entrenamiento? Se guarda como completado y se crea la semana siguiente con tus datos.',
+    terminar_ok:'¡Entrenamiento completado! Tus resultados quedaron guardados.',
+    terminar_confirm:'¿Terminaste este entrenamiento? Se marca como completado y se guardan tus resultados.',
     gym:'Gym', casa:'Casa', dificultad:'Dificultad', min:'min',
     nivel:'Nivel', niv_1:'Principiante', niv_2:'Intermedio', niv_3:'Avanzado',
     feedback:'Feedback', bloque:'Bloque',
@@ -633,8 +633,8 @@ const _I18N = {
     semanas:'WEEKS', semana:'Week',
     volver_dias:'Back to days', tu_entrenamiento:'YOUR WORKOUT',
     terminar:'I Finished My Workout', completado:'Workout completed',
-    terminar_ok:'Done! Next week is ready with your progression.',
-    terminar_confirm:'Did you finish this workout? It will be saved as completed and next week will be created with your data.',
+    terminar_ok:'Workout completed! Your results have been saved.',
+    terminar_confirm:'Did you finish this workout? It will be marked as completed and your results saved.',
     gym:'Gym', casa:'Home', dificultad:'Difficulty', min:'min',
     nivel:'Level', niv_1:'Beginner', niv_2:'Intermediate', niv_3:'Advanced',
     feedback:'Feedback', bloque:'Block',
@@ -802,8 +802,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260723000455 por un timestamp en cada deploy
-const _APP_VERSION = '20260723000455';
+// deploy.bat reemplaza 20260723001611 por un timestamp en cada deploy
+const _APP_VERSION = '20260723001611';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -894,7 +894,6 @@ const TIPOS_RUN = {
     _planesFuerza        = planes.filter(p => p.tipoPlan !== 'running');
     const planesRunning  = planes.filter(p => p.tipoPlan === 'running');
     // Abrir primero el mes marcado como ACTIVO; si no hay, el último
-    _aplicarProgresiones();   // sumar las semanas generadas por "Terminé mi entrenamiento"
     const _activoIdx = _planesFuerza.findIndex(p => p && p.activo);
     _planIdx = _activoIdx >= 0 ? _activoIdx : (_planesFuerza.length ? _planesFuerza.length - 1 : 0);
     _plan    = _planesFuerza.length ? _planesFuerza[_planIdx]  : null;
@@ -2023,54 +2022,6 @@ function _sesionCompletada(planId, sem, dia, mod){
   const arr = (_data && _data.sesionesCompletadas) || [];
   return arr.some(c => c && c.planId===planId && c.sem===sem && c.dia===dia && c.mod===mod);
 }
-// Valor registrado por el alumno para una serie (contempla unilateral: der/izq)
-function _valLog(sem, dia, bi, ei, secc, i, campo){
-  const base = sem+'_'+dia+'_b'+bi+'e'+ei+'_'+secc+'_'+i;
-  return _getEdit(base, campo) || _getEdit(base+'_d', campo) || _getEdit(base+'_i', campo) || '';
-}
-// Construye la sesión progresada: misma estructura, con reps/peso/rir de lo hecho
-function _buildProgresion(ses, sem, dia){
-  const nueva = JSON.parse(JSON.stringify(ses));
-  (nueva.bloques||[]).forEach((b, bi) => {
-    (b.ejercicios||[]).forEach((ej, ei) => {
-      [['series','efec'],['seriesApro','apro'],['dropset','drop']].forEach(([prop, secc]) => {
-        if (!Array.isArray(ej[prop])) return;
-        ej[prop].forEach((s, i) => {
-          if (!s) return;
-          const r = _valLog(sem, dia, bi, ei, secc, i, 'reps');
-          const p = _valLog(sem, dia, bi, ei, secc, i, 'peso');
-          const rr= _valLog(sem, dia, bi, ei, secc, i, 'rir');
-          if (r)  s.reps = r;
-          if (p)  s.peso = p;
-          if (rr) s.rir  = rr;
-        });
-      });
-    });
-  });
-  nueva._prog = true;   // marca de progresión generada por el alumno
-  return nueva;
-}
-// Aplica las progresiones guardadas sobre los planes en memoria (crea semanas si faltan)
-function _aplicarProgresiones(){
-  const progs = (_data && _data.progresiones) || [];
-  progs.forEach(pr => {
-    if (!pr || !pr.ses) return;
-    const plan = _planesFuerza.find(p => p && p.id === pr.planId);
-    if (!plan) return;
-    if (!Array.isArray(plan.semanasArray)) plan.semanasArray = [];
-    // Crear semanas faltantes hasta la destino
-    while (plan.semanasArray.length <= pr.sem){
-      const prev = plan.semanasArray[plan.semanasArray.length-1] || {};
-      let fx = '';
-      if (prev.fechaInicio){ const d=new Date(prev.fechaInicio+'T12:00:00'); d.setDate(d.getDate()+7); fx=d.toISOString().slice(0,10); }
-      plan.semanasArray.push({ semana: plan.semanasArray.length+1, fechaInicio: fx, dias: {} });
-    }
-    const sem = plan.semanasArray[pr.sem];
-    if (!sem.dias) sem.dias = {};
-    if (!Array.isArray(sem.dias[pr.dia])) sem.dias[pr.dia] = [];
-    sem.dias[pr.dia][pr.mod] = pr.ses;   // overlay: reemplaza/crea la sesión de ese día
-  });
-}
 async function _terminarEntrenamiento(){
   if (!_plan) return;
   if (!confirm(_t('terminar_confirm'))) return;
@@ -2079,32 +2030,25 @@ async function _terminarEntrenamiento(){
   if (!ses) return;
   const planId = _plan.id;
   const fecha = new Date().toISOString().slice(0,10);
-  // 1) Registro de completado (historial — no se pisa la sesión original)
-  const completa = { planId, sem:_semIdx, dia:_diaIdx, mod:_diaModTab, fecha, nombre: ses.nombre || DN[_diaIdx] };
-  // 2) Progresión para la semana siguiente
-  const prog = { planId, sem:_semIdx+1, dia:_diaIdx, mod:_diaModTab, ts:new Date().toISOString(), ses:_buildProgresion(ses, _semIdx, _diaIdx) };
+  // Snapshot de los resultados que registró el alumno para ESTA sesión
+  const pref = _semIdx+'_'+_diaIdx+'_';
+  const resultados = {};
+  Object.keys(_pesoEdits||{}).forEach(k => { if (k.indexOf(pref)===0) resultados[k] = _pesoEdits[k]; });
+  // Registro de completado (con los resultados adentro). No se crea semana nueva.
+  const completa = { planId, sem:_semIdx, dia:_diaIdx, mod:_diaModTab, fecha, nombre: ses.nombre || DN[_diaIdx], resultados };
 
-  // Estado local
   if (!_data.sesionesCompletadas) _data.sesionesCompletadas = [];
   _data.sesionesCompletadas.push(completa);
-  if (!_data.progresiones) _data.progresiones = [];
-  // Si ya había una progresión para ese destino, reemplazarla
-  _data.progresiones = _data.progresiones.filter(x => !(x && x.planId===planId && x.sem===prog.sem && x.dia===prog.dia && x.mod===prog.mod));
-  _data.progresiones.push(prog);
 
-  // Guardar en la nube (campos propios del alumno; el coach no los sobreescribe)
   try {
     if (_db && _alumnoId){
       await _db.collection('alumnos').doc(_alumnoId).set({
-        sesionesCompletadas: firebase.firestore.FieldValue.arrayUnion(completa),
-        progresiones: _data.progresiones
+        sesionesCompletadas: firebase.firestore.FieldValue.arrayUnion(completa)
       }, { merge: true });
     }
   } catch(e){ console.warn('terminar entrenamiento:', e); }
 
-  _aplicarProgresiones();       // que aparezca la semana siguiente ya mismo
-  renderRutina();
-  renderSesion();
+  renderSesion();   // pasa a estado "Completado"
   try { if (typeof toast === 'function') toast(_t('terminar_ok')); else alert(_t('terminar_ok')); } catch(e){ alert(_t('terminar_ok')); }
 }
 
