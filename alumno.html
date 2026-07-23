@@ -802,8 +802,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260723000314 por un timestamp en cada deploy
-const _APP_VERSION = '20260723000314';
+// deploy.bat reemplaza 20260723000455 por un timestamp en cada deploy
+const _APP_VERSION = '20260723000455';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1974,14 +1974,16 @@ function _objetivoSes(ses){
 }
 // Equipamiento: usa el de la sesión; si no hay, lo junta desde los ejercicios
 function _equipoSes(ses){
-  if(ses.equipo) return _tc(ses.equipo);
+  // Si el coach cargó equipo a mano, respetarlo (salvo que diga "sin equipamiento")
+  if(ses.equipo){
+    if(/sin equip|no equip|ninguno|peso corporal|bodyweight/i.test(ses.equipo)) return '';
+    return _tc(ses.equipo);
+  }
+  // Calcular desde los ejercicios, ignorando el peso corporal
   const set=new Set();
-  (ses.bloques||[]).forEach(b=>(b.ejercicios||[]).forEach(ej=>{ const e=(ej.equipo||'').trim(); if(e) set.add(e); }));
-  if(!set.size) return '';
-  const arr=[...set];
-  if(arr.every(e=>/peso corporal|bodyweight|sin equip/i.test(e))) return _LANG==='en'?'No equipment':'Sin equipamiento';
-  const conCarga = arr.filter(e=>!/peso corporal|bodyweight/i.test(e));
-  return (conCarga.length?conCarga:arr).map(e=>_tc(e)).join(', ');
+  (ses.bloques||[]).forEach(b=>(b.ejercicios||[]).forEach(ej=>{ const e=(ej.equipo||'').trim(); if(e && !/peso corporal|bodyweight/i.test(e)) set.add(e); }));
+  if(!set.size) return '';   // sin equipamiento real → no mostrar la fila
+  return [...set].map(e=>_tc(e)).join(', ');
 }
 
 function _sesDetalleHTML(ses){
