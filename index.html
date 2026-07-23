@@ -10549,8 +10549,147 @@ function onPlanFechaChange(val) {
   }
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// REVISIÓN DE CAMBIOS DEL ALUMNO — lo prescripto vs. lo que realmente hizo
+// ══════════════════════════════════════════════════════════════════════════
+let _COMPLETADAS = [];
+let _completadasFetchAlumno = null;
+async function _fetchCompletadas(alumnoId){
+  if(!alumnoId){ _COMPLETADAS=[]; return; }
+  if(!window._db) return;                       // reintenta cuando haya conexión
+  if(_completadasFetchAlumno===alumnoId) return;
+  _completadasFetchAlumno = alumnoId;
+  try{
+    const d = await window._db.collection('alumnos').doc(alumnoId).get();
+    _COMPLETADAS = (d.exists && Array.isArray(d.data().sesionesCompletadas)) ? d.data().sesionesCompletadas : [];
+  }catch(e){ _COMPLETADAS=[]; }
+  renderPlanMes();
+}
+function _revReviewedSet(){
+  try{ return new Set(JSON.parse(localStorage.getItem('LAB_REV_'+(_completadasFetchAlumno||''))||'[]')); }catch(e){ return new Set(); }
+}
+function _revMarcar(sem,dia,mod){
+  const s=_revReviewedSet(); s.add(sem+'::'+dia+'::'+mod);
+  try{ localStorage.setItem('LAB_REV_'+(_completadasFetchAlumno||''), JSON.stringify([...s])); }catch(e){}
+}
+function _revEstaRevisado(sem,dia,mod){ return _revReviewedSet().has(sem+'::'+dia+'::'+mod); }
+function _completadaDe(sem,dia,mod){
+  return _COMPLETADAS.find(c => c && c.planId===planSemActualId && c.sem===sem && c.dia===dia && c.mod===mod);
+}
+function _diffsDe(ses, sem, dia, resultados){
+  const out=[];
+  if(!ses || !resultados) return out;
+  (ses.bloques||[]).forEach((b,bi)=>(b.ejercicios||[]).forEach((ej,ei)=>{
+    [['series','efec'],['seriesApro','apro'],['dropset','drop']].forEach(([prop,secc])=>{
+      if(!Array.isArray(ej[prop])) return;
+      ej[prop].forEach((s,i)=>{
+        const base=sem+'_'+dia+'_b'+bi+'e'+ei+'_'+secc+'_'+i;
+        const r=resultados[base]||resultados[base+'_d']||resultados[base+'_i'];
+        if(!r) return;
+        [['peso','kg'],['reps','reps'],['rir','RIR']].forEach(([campo,unidad])=>{
+          const nuevo=(r[campo]==null?'':String(r[campo])).trim();
+          const viejo=(s[campo]==null?'':String(s[campo])).replace(/kg$/i,'').trim();
+          if(nuevo && nuevo!==viejo) out.push({ ej: ej.nombre||('Ejercicio '+(ei+1)), serie:'S'+(i+1), campo, unidad, de: viejo||'—', a: nuevo });
+        });
+      });
+    });
+  }));
+  return out;
+}
+function _nDiffs(sem,dia,mod){
+  if(_revEstaRevisado(sem,dia,mod)) return 0;
+  const c=_completadaDe(sem,dia,mod); if(!c) return 0;
+  const ses = planSemanasArray[sem] && planSemanasArray[sem].dias && planSemanasArray[sem].dias[dia] && planSemanasArray[sem].dias[dia][mod];
+  return _diffsDe(ses, sem, dia, c.resultados||{}).length;
+}
+function _persistPlanMes(){
+  if(!planSemActualId) return;
+  const planes=getPlanificaciones();
+  const idx=planes.findIndex(x=>x.id===planSemActualId);
+  if(idx!==-1){
+    planes[idx].semanasArray=planSemanasArray;
+    planes[idx].diasData=planSemanasArray[0]?.dias||{};
+    savePlanificaciones(planes);
+    if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+  }
+}
+function _aplicarResultados(ses, sem, dia, resultados){
+  (ses.bloques||[]).forEach((b,bi)=>(b.ejercicios||[]).forEach((ej,ei)=>{
+    [['series','efec'],['seriesApro','apro'],['dropset','drop']].forEach(([prop,secc])=>{
+      if(!Array.isArray(ej[prop])) return;
+      ej[prop].forEach((s,i)=>{
+        const base=sem+'_'+dia+'_b'+bi+'e'+ei+'_'+secc+'_'+i;
+        const r=resultados[base]||resultados[base+'_d']||resultados[base+'_i'];
+        if(r){ if(r.reps)s.reps=r.reps; if(r.peso)s.peso=r.peso; if(r.rir)s.rir=r.rir; }
+      });
+    });
+  }));
+}
+function _abrirRevision(sem,dia,mod){
+  const c=_completadaDe(sem,dia,mod); if(!c) return;
+  const ses = planSemanasArray[sem]?.dias?.[dia]?.[mod];
+  const diffs=_diffsDe(ses, sem, dia, c.resultados||{});
+  const lbl={peso:'peso',reps:'reps',rir:'RIR'};
+  const filas = diffs.map(d =>
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:12px;">'
+    + '<span style="color:#1a1a2e;">'+d.ej+' · '+d.serie+' · '+lbl[d.campo]+'</span>'
+    + '<span><span style="color:#999;">'+d.de+'</span> <span style="color:#bbb;">→</span> <span style="color:#9A7A28;font-weight:700;">'+d.a+(d.campo==='peso'?' kg':'')+'</span></span>'
+    + '</div>').join('') || '<div style="padding:14px;color:#999;font-size:12px;text-align:center;">Sin cambios registrados.</div>';
+  let ov=document.getElementById('rev-overlay');
+  if(ov) ov.remove();
+  ov=document.createElement('div');
+  ov.id='rev-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:5000;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;';
+  ov.onclick=(e)=>{ if(e.target===ov) ov.remove(); };
+  ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:520px;width:100%;padding:18px 18px 16px;box-shadow:0 20px 60px rgba(0,0,0,.25);" onclick="event.stopPropagation()">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;"><div style="font-size:14px;font-weight:800;color:#1a1a2e;">Cambios de '+(c.nombre||'la sesión')+' · '+diffs.length+'</div>'
+    + '<button onclick="document.getElementById(\'rev-overlay\').remove()" style="background:none;border:none;font-size:20px;color:#999;cursor:pointer;line-height:1;">×</button></div>'
+    + '<div style="font-size:11px;color:#888;margin-bottom:12px;">Prescripto → Realizado</div>'
+    + '<div style="border:1px solid #eee;border-radius:8px;overflow:hidden;">'+filas+'</div>'
+    + '<div style="display:flex;gap:8px;margin-top:14px;">'
+    +   '<button onclick="_revAccion(\'mantener\','+sem+','+dia+','+mod+')" style="flex:1;border:1px solid #d5d9e0;background:#fff;color:#555;font-size:12px;font-weight:700;padding:10px;border-radius:8px;cursor:pointer;">Mantener original</button>'
+    +   '<button onclick="_revAccion(\'aceptar\','+sem+','+dia+','+mod+')" style="flex:1;border:1px solid #d5d9e0;background:#fff;color:#555;font-size:12px;font-weight:700;padding:10px;border-radius:8px;cursor:pointer;">Aceptar cambios</button>'
+    +   '<button onclick="_revAccion(\'proxima\','+sem+','+dia+','+mod+')" style="flex:1.4;border:none;background:#C9A84C;color:#fff;font-size:12px;font-weight:800;padding:10px;border-radius:8px;cursor:pointer;">Aplicar a la próxima ✓</button>'
+    + '</div>'
+    + '<div style="font-size:10px;color:#aaa;text-align:right;margin-top:6px;">Recomendado · no toca el historial</div>'
+    + '</div>';
+  document.body.appendChild(ov);
+}
+function _revAccion(tipo, sem, dia, mod){
+  const c=_completadaDe(sem,dia,mod); if(!c) return;
+  const resultados=c.resultados||{};
+  if(tipo==='aceptar'){
+    const ses=planSemanasArray[sem]?.dias?.[dia]?.[mod];
+    if(ses){ _aplicarResultados(ses, sem, dia, resultados); _persistPlanMes(); toast('Sesión actualizada con lo que hizo ✓'); }
+  } else if(tipo==='proxima'){
+    // Asegurar semana siguiente
+    while(planSemanasArray.length<=sem+1){
+      const prev=planSemanasArray[planSemanasArray.length-1]||{};
+      let fx=''; if(prev.fechaInicio){ const d=new Date(prev.fechaInicio+'T12:00:00'); d.setDate(d.getDate()+7); fx=d.toISOString().slice(0,10); }
+      planSemanasArray.push({ semana: planSemanasArray.length+1, fechaInicio: fx, dias:{} });
+    }
+    const orig=planSemanasArray[sem]?.dias?.[dia]?.[mod];
+    if(orig){
+      const copia=JSON.parse(JSON.stringify(orig));
+      _aplicarResultados(copia, sem, dia, resultados);
+      const destino=planSemanasArray[sem+1];
+      if(!destino.dias) destino.dias={};
+      if(!Array.isArray(destino.dias[dia])) destino.dias[dia]=[];
+      destino.dias[dia][mod]=copia;
+      _persistPlanMes();
+      toast('Aplicado a la semana siguiente ✓');
+    }
+  } else {
+    toast('Se mantuvo tu prescripción original');
+  }
+  _revMarcar(sem,dia,mod);
+  const ov=document.getElementById('rev-overlay'); if(ov) ov.remove();
+  renderPlanMes();
+}
+
 // ── Render vista mensual (semanas apiladas) ───────────────────────────────────
 function renderPlanMes() {
+  _fetchCompletadas(planSemOriginalAlumnoId || currentAlumnoId);
   const container = document.getElementById('plan-mes-container');
   if(!container) return;
   container.innerHTML = planSemanasArray.map((sem, semIdx) => {
@@ -10566,11 +10705,16 @@ function renderPlanMes() {
         const bc = (s.bloques||[]).length;
         const primera = s.bloques&&s.bloques[0] ? (s.bloques[0].nombre||s.bloques[0].tipo||'Bloque') : 'Sesion';
         const nomSes = s.nombre ? '<div style="font-size:11px;color:#fde68a;font-weight:800;margin-bottom:2px;padding-right:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+s.nombre+'</div>' : '';
+        const nd = _nDiffs(semIdx, i, sIdx);
+        const revBadge = nd>0
+          ? '<div onclick="event.stopPropagation();_abrirRevision('+semIdx+','+i+','+sIdx+')" title="Revisar lo que hizo el alumno" style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:#FDF6E3;border:1px solid #C9A84C;color:#9A7A28;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;cursor:pointer;">'+nd+' cambio'+(nd!==1?'s':'')+' para revisar</div>'
+          : '';
         return '<div class="plan-dia-mini">'
              + '<button class="plan-dia-mini-del" onclick="event.stopPropagation();eliminarSesionDia('+i+','+semIdx+','+sIdx+')" title="Eliminar sesión">✕</button>'
              + nomSes
              + '<div class="plan-dia-mini-tipo">'+bc+' bloque'+(bc!==1?'s':'')+'</div>'
              + (s.nombre ? '' : '<div style="font-size:10px;color:#fff;font-weight:600;padding-right:14px;">'+primera+(bc>1?' + mas':'')+'</div>')
+             + revBadge
              + '</div>';
       }).join('');
       return '<div class="plan-dia-card'+(tiene?' tiene-sesion':'')+'" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'"'+(tiene?' draggable="true"':'')+' onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
