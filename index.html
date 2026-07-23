@@ -17716,30 +17716,11 @@ function addEjercicio(bloqueId) {
 
     <div style="padding: 0 0 4px;">
 
-      <!-- SERIES DE APROXIMACIÓN -->
-      <div class="series-section">
-        <div class="series-sec-header apro" onclick="toggleSeriesSec('${ejId}','apro')">
-          <span class="series-sec-icon" id="${ejId}-apro-icon">▸</span>
-          SERIES DE APROXIMACIÓN
-        </div>
-        <div class="series-sec-body" id="${ejId}-apro-body">
-          <table class="series-table">
-            <thead><tr>
-              <th>Apro</th><th>Reps</th><th>Peso</th><th>RIR</th><th>Pausa</th><th></th>
-            </tr></thead>
-            <tbody id="${ejId}-apro-tbody"></tbody>
-          </table>
-        </div>
-        <div class="series-sec-footer" id="${ejId}-apro-footer" style="display:none;">
-          <span class="series-agregar-link" onclick="addSerieApro('${ejId}')">＋ Agregar serie de aproximación</span>
-        </div>
-      </div>
-
-      <!-- SERIES EFECTIVAS -->
+      <!-- SERIES (única sección) -->
       <div class="series-section">
         <div class="series-sec-header efec" onclick="toggleSeriesSec('${ejId}','efec')">
           <span class="series-sec-icon" id="${ejId}-efec-icon">▸</span>
-          SERIES EFECTIVAS
+          SERIES
         </div>
         <div class="series-sec-body" id="${ejId}-efec-body">
           <table class="series-table">
@@ -17750,7 +17731,7 @@ function addEjercicio(bloqueId) {
           </table>
         </div>
         <div class="series-sec-footer" id="${ejId}-efec-footer" style="display:none;">
-          <span class="series-agregar-link" onclick="addSerieEfec('${ejId}')">＋ Agregar serie efectiva</span>
+          <span class="series-agregar-link" onclick="addSerieEfec('${ejId}')">＋ Agregar serie</span>
         </div>
       </div>
 
@@ -18410,29 +18391,10 @@ function renderPlanHTML(p) {
         <div id="panel-reg-${_uid}" style="padding:12px 14px;">
           ${ctrlHTML}
 
-          <!-- SERIES DE APROXIMACI\u00d3N -->
-          <div style="border:1px solid #dbeafe;border-radius:8px;margin-bottom:8px;overflow:hidden;">
-            <button onclick="toggleReg('apro-${_uid}')" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:none;background:#eff6ff;cursor:pointer;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">
-              <span style="font-size:10px;font-weight:800;color:#1d4ed8;letter-spacing:1px;text-transform:uppercase;">SERIES DE APROXIMACI\u00d3N</span>
-              <span id="icon-apro-${_uid}" style="font-size:12px;color:#1d4ed8;font-weight:700;">${(ej.seriesApro && ej.seriesApro.length) ? '\u25bc' : '\u25b6'}</span>
-            </button>
-            <div id="apro-${_uid}" style="display:${(ej.seriesApro && ej.seriesApro.length) ? 'block' : 'none'};padding:10px 12px;">
-              <table style="width:100%;border-collapse:collapse;font-size:11px;">
-                <thead><tr>
-                  <th style="background:#dbeafe;padding:5px 6px;border:1px solid #bfdbfe;font-size:9px;font-weight:700;color:#1d4ed8;text-align:center;text-transform:uppercase;width:32px;">A#</th>
-                  <th style="background:#dbeafe;padding:5px 6px;border:1px solid #bfdbfe;font-size:9px;font-weight:700;color:#1d4ed8;text-align:center;text-transform:uppercase;">PESO</th>
-                  <th style="background:#dbeafe;padding:5px 6px;border:1px solid #bfdbfe;font-size:9px;font-weight:700;color:#1d4ed8;text-align:center;text-transform:uppercase;">REPS</th>
-                  <th style="background:#dbeafe;padding:5px 6px;border:1px solid #bfdbfe;font-size:9px;font-weight:700;color:#1d4ed8;text-align:center;text-transform:uppercase;">NOTA</th>
-                </tr></thead>
-                <tbody>${aproRows}</tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- SERIES EFECTIVAS -->
+          <!-- SERIES -->
           <div style="border:1px solid #e8e8e8;border-radius:8px;overflow:hidden;">
             <button onclick="toggleReg('efec-${_uid}')" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:none;background:#f5f5f5;cursor:pointer;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">
-              <span style="font-size:10px;font-weight:800;color:#111;letter-spacing:1px;text-transform:uppercase;">SERIES EFECTIVAS</span>
+              <span style="font-size:10px;font-weight:800;color:#111;letter-spacing:1px;text-transform:uppercase;">SERIES</span>
               <span id="icon-efec-${_uid}" style="font-size:12px;color:#555;font-weight:700;">\u25bc</span>
             </button>
             <div id="efec-${_uid}" style="display:block;padding:10px 12px;">
@@ -24700,7 +24662,7 @@ function _iaBuildPrompt() {
   prompt += `\nDiseñá el programa completo para ${dias} días de entrenamiento. Para cada día indicá:\n`;
   prompt += `- División muscular del día y justificación\n`;
   prompt += `- Todos los ejercicios con series, repeticiones, tiempos de descanso\n`;
-  prompt += `- En los ejercicios principales, indicá SIEMPRE por separado las SERIES DE APROXIMACIÓN (entrada en calor ascendente, con peso y reps de cada una) y las SERIES EFECTIVAS (las de trabajo real). No las mezcles.\n`;
+  prompt += `- NO separes series de aproximación. Cargá TODAS las series como series de trabajo, con su peso y reps. No uses el concepto de "series de aproximación".\n`;
   prompt += `- Técnicas especiales de intensidad cuando corresponda\n`;
   prompt += `- Indicaciones biomecánicas clave\n\n`;
 
@@ -24985,25 +24947,24 @@ function _iaJSONaPlanificacion(data, alumnoId) {
       const serieTipo = TIPOS_SERIE_F.includes(b.serieTipo) ? b.serieTipo : 'Serie Simple';
       const ejercicios = (b.ejercicios || []).map(ej => {
         const nSer = Math.min(parseInt(ej.series) || 3, 10);
-        const apro = Array.isArray(ej.seriesApro)
-          ? ej.seriesApro.slice(0, 6).map(s => ({ reps: String(s.reps || ''), peso: String(s.peso || ''), rir: '', pausa: '', comentarios: '' }))
+        // Aproximación eliminada: si la IA la generó, se pliega como series de trabajo normales.
+        const aproFold = Array.isArray(ej.seriesApro)
+          ? ej.seriesApro.slice(0, 6).map(s => ({ reps: String(s.reps || ''), peso: String(s.peso || ''), rir: '', pausa: String(ej.pausa || ''), comentarios: '' }))
           : [];
-        // SANEO DE PESO: nunca aceptar referencias de texto en las series efectivas.
-        // Si la IA puso "ver series de aproximación" (o similar), calcular el peso de
-        // trabajo desde la última aproximación (+5%, redondeado a 2.5 kg).
         let pesoEf = String(ej.peso || '').trim();
         if (/aproximaci|ver serie|ver apro|seg[uú]n/i.test(pesoEf)) {
-          const ultApro = apro.length ? parseFloat(String(apro[apro.length - 1].peso).replace(',', '.')) : NaN;
+          const ultApro = aproFold.length ? parseFloat(String(aproFold[aproFold.length - 1].peso).replace(',', '.')) : NaN;
           pesoEf = !isNaN(ultApro) ? (Math.round((ultApro * 1.05) / 2.5) * 2.5) + ' kg' : '';
         }
         const fila = { reps: String(ej.reps || ''), peso: pesoEf, rir: String(ej.rir || ''), pausa: String(ej.pausa || ''), comentarios: '' };
+        const seriesTrabajo = aproFold.concat(Array.from({ length: nSer }, () => ({ ...fila })));
         return {
           nombre: _iaMatchBiblioteca(String(ej.nombre || '').trim()),
           nota: String(ej.nota || '').trim(),
           ctrl: { series: String(ej.series || ''), reps: String(ej.reps || ''), peso: pesoEf, pausa: String(ej.pausa || ''), rir: String(ej.rir || '') },
           video: '', ficha: null,
-          series: Array.from({ length: nSer }, () => ({ ...fila })),
-          seriesApro: apro, dropset: []
+          series: seriesTrabajo,
+          seriesApro: [], dropset: []
         };
       }).filter(e => e.nombre);
       let cardioData = null;
@@ -25099,8 +25060,7 @@ ESQUEMA:
           "serieTipo": "uno de: ${TIPOS_SERIE_F.join(' | ')}",
           "ejercicios": [
             { "nombre": "Nombre del ejercicio", "series": "4", "reps": "8-12", "peso": "70kg o RPE 8", "pausa": "90 seg", "rir": "2",
-              "nota": "aclaración de ejecución (ej: pausa de 2 seg arriba, excéntrica en 3 seg, dropset en la última)",
-              "seriesApro": [ { "reps": "12", "peso": "barra sola" }, { "reps": "8", "peso": "50%" } ] }
+              "nota": "aclaración de ejecución (ej: pausa de 2 seg arriba, excéntrica en 3 seg, dropset en la última)" }
           ],
           "cardio": { "actividad": "", "duracion": "", "zona": "", "rpe": "", "observaciones": "" }
         }
@@ -25114,7 +25074,7 @@ REGLAS:
 - Estructurá cada sesión con los bloques SOCC en este orden: Movilidad y Calentamiento → Activación y Core → Calentamiento Específico (si aplica) → Fuerza Principal / Potencia y/o Desarrollo / Hipertrofia → Cardio (si aplica) → Enfriamiento Final.
 - "cardio" solo va si tipo="Cardio"; en ese caso "ejercicios" es []. Usá bloques Cardio para rodajes, series de carrera, fartlek, tiradas largas, etc. — detallá distancias, ritmos y zonas en "observaciones".
 - Incluí TODOS los ejercicios del plan original con sus series, reps, pesos/intensidades, pausas y RIR. Las técnicas especiales y aclaraciones de ejecución (drop-sets, iso-holds, parciales, tempo, pausas arriba/abajo, cues técnicos) van SIEMPRE en el campo "nota" del ejercicio — nunca en el nombre ni mezcladas en "reps". Si no hay aclaración, "nota" es "".
-- SERIES DE APROXIMACIÓN vs EFECTIVAS: "series"/"reps"/"peso" describen SOLO las series efectivas (de trabajo). Si el plan indica series de aproximación, calentamiento ascendente o ramp-up para un ejercicio, cargalas como filas explícitas en "seriesApro" (cada una con sus reps y peso). Si no hay, "seriesApro" es [].
+- SERIES: cargá TODAS las series como series de trabajo en "series"/"reps"/"peso". NO uses aproximación ni calentamiento ascendente como sección aparte; "seriesApro" siempre es [].
 - El "peso" de las series efectivas debe ser SIEMPRE un valor concreto (kg, % o RIR/RPE). PROHIBIDO poner textos como "ver series de aproximación" o referencias cruzadas. Si el plan original solo da la escalera de aproximación, el peso de trabajo efectivo es igual o mayor que la última aproximación — calculalo y ponelo en kg.
 - MOVILIDAD: todo ejercicio de movilidad va con "series":"1" y "reps":"8 por lado" si es unilateral o "reps":"10" si es bilateral. Sin peso, sin RIR.
 - Todos los valores son strings salvo "diaSemana".${_iaBibliotecaPrompt()}`;
