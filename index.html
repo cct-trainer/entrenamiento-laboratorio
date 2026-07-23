@@ -17903,7 +17903,56 @@ function toggleSeriesSec(ejId, type) {
 // Defaults de RIR por posición
 const _RIR_APRO = ['3-4','2-3','2-1','2-1','2-1'];   // Apro 1,2,3,4,5+
 const _RIR_EFEC = ['2-3','2-1','1-2','1-0','1-0'];   // S 1,2,3,4,5+
-const _PAUSA_DEFAULT = '1:30';
+// ── Migración global de descansos ───────────────────────────────────────────
+// Regla: bloque combinado (biserie/superserie/circuito o 2+ ejercicios) → 0:30;
+// bloque individual → 1:00. Solo toca descansos "por defecto" (≤ 90 s: 1:30, 0:30,
+// 1:00 o vacío). Los descansos deliberados más largos (2:00, 3:00…) se preservan.
+function _normPausa(pausaStr, combinado){
+  const sec = _parseSecsCoach(pausaStr || '');
+  if (sec != null && sec > 90) return pausaStr;   // descanso largo intencional: no tocar
+  return combinado ? '0:30' : '1:00';
+}
+function migrarDescansosV2(){
+  const planes = getPlanificaciones();
+  let cambios = 0;
+  const norm = (arr, comb) => { (arr||[]).forEach(s => { if(!s) return; const nw = _normPausa(s.pausa||'', comb); if(nw !== (s.pausa||'')){ s.pausa = nw; cambios++; } }); };
+  const procBloques = (bloques) => { (bloques||[]).forEach(b => {
+    const comb = /biserie|triserie|superserie|gigante|circuito/i.test(b.serieTipo||'') || ((b.ejercicios||[]).length > 1);
+    (b.ejercicios||[]).forEach(ej => { norm(ej.series, comb); norm(ej.seriesApro, comb); norm(ej.dropset, comb); });
+  }); };
+  planes.forEach(p => {
+    if (p.bloques) procBloques(p.bloques);
+    if (Array.isArray(p.semanasArray)) p.semanasArray.forEach(sem => {
+      if (sem && sem.dias) Object.values(sem.dias).forEach(arr => (arr||[]).forEach(ses => { if(ses && ses.bloques) procBloques(ses.bloques); }));
+    });
+  });
+  if (cambios) savePlanificaciones(planes);
+  return cambios;
+}
+function _maybeMigrarDescansos(){
+  try{
+    if (localStorage.getItem('LAB_DESCANSOS_V2') === '1') return;
+    const c = migrarDescansosV2();
+    localStorage.setItem('LAB_DESCANSOS_V2', '1');
+    if (c){
+      if (typeof toast === 'function') toast('Descansos actualizados: '+c+' series ✓');
+      if (typeof forzarSyncFirebase === 'function') forzarSyncFirebase();
+    }
+  }catch(e){ console.warn('migración descansos:', e); }
+}
+
+const _PAUSA_DEFAULT = '1:00';
+// Descanso por defecto según el bloque: combinado (biserie/superserie/circuito o 2+ ejercicios) → 0:30; individual → 1:00
+function _pausaDefault(ejId){
+  try{
+    const card = document.getElementById(ejId);
+    const bloque = card ? card.closest('.bloque-wrap') : null;
+    if(!bloque) return _PAUSA_DEFAULT;
+    const st = bloque.querySelector('[id$="-serie-tipo"]')?.value || '';
+    const combinado = /biserie|triserie|superserie|gigante|circuito/i.test(st) || bloque.querySelectorAll('.ej-card').length > 1;
+    return combinado ? '0:30' : '1:00';
+  }catch(e){ return _PAUSA_DEFAULT; }
+}
 
 function _makeSerieRow(ejId, tbodyId, prefix, num, defaults) {
   // defaults = { reps:'', peso:'', rir:'', pausa:'' }  (todos opcionales)
@@ -17914,7 +17963,7 @@ function _makeSerieRow(ejId, tbodyId, prefix, num, defaults) {
     <td><input type="text" placeholder="Reps" value="${d.reps||''}"></td>
     <td><input type="text" placeholder="Kg"   value="${d.peso||''}"></td>
     <td><input type="text" placeholder="RIR"  value="${d.rir||''}"></td>
-    <td><input type="text" placeholder="Pausa" value="${d.pausa||_PAUSA_DEFAULT}"></td>
+    <td><input type="text" placeholder="Pausa" value="${d.pausa||_pausaDefault(ejId)}"></td>
     <td><button class="btn-del-row" onclick="this.closest('tr').remove();_renumRows('${tbodyId}','${prefix}')">×</button></td>`;
   return tr;
 }
@@ -21254,6 +21303,8 @@ async function cargarDesdeFirestore() {
       _syncStatusIcon('☁️', 'Firebase conectado');
       forzarSyncFirebase();
     }
+    // Migración única de descansos (nueva regla por bloque), una vez que los datos ya están locales
+    _maybeMigrarDescansos();
   } catch(err) {
     console.warn('Error cargando desde Firestore:', err);
     _syncStatusIcon('⚠️', 'Error al cargar datos');
