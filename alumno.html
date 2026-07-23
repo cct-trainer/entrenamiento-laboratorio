@@ -802,8 +802,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260723003425 por un timestamp en cada deploy
-const _APP_VERSION = '20260723003425';
+// deploy.bat reemplaza 20260723004133 por un timestamp en cada deploy
+const _APP_VERSION = '20260723004133';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1509,6 +1509,25 @@ function _segDe(v){
 }
 function _tmrFmt(sec){ sec = Math.max(0, sec|0); return Math.floor(sec/60) + ':' + String(sec%60).padStart(2,'0'); }
 
+// ── Unilateral: detección y limpieza de reps ────────────────────────────────
+const _RE_LADO = /(por|c\/?|cada)\s*lado/i;
+// True si el ejercicio es unilateral (por marca del coach o porque las reps dicen "por lado")
+function _esUnilateralEj(ej){
+  if(!ej) return false;
+  if(ej.unilateral) return true;
+  const chk = arr => Array.isArray(arr) && arr.some(s => s && _RE_LADO.test(String(s.reps||'')));
+  return chk(ej.series) || chk(ej.seriesApro) || chk(ej.dropset);
+}
+// En filas unilaterales, dejar solo el número: "10 reps por lado" → "10"
+function _repsSinLado(v){
+  let s = String(v||'');
+  if(!_RE_LADO.test(s)) return s;             // si no dice "por lado", no tocar
+  s = s.replace(/(por|c\/?|cada)\s*lado/ig,'')
+       .replace(/\breps?\b|\brepeticiones?\b/ig,'')
+       .replace(/\s+/g,' ').trim();
+  return s || String(v||'');
+}
+
 const _tmrState = {};
 
 // ── Voz (últimos 3 segundos + señal final) ──────────────────────────────────
@@ -1681,12 +1700,13 @@ function _ejCard(ej, uid) {
       (hasPausa ? '<th style="'+thStyle+'">PAUSA</th>': '')+
     '</tr>';
     // Ejecución unilateral → cada serie se divide en Derecha e Izquierda
-    const _uni = !!(ej && ej.unilateral);
+    const _uni = _esUnilateralEj(ej);
     // Construye UNA fila. sfx: '' (bilateral) | '_d' (der) | '_i' (izq); lado: etiqueta gris
     function _mkRow(s, i, sfx, lado){
       const spBase = savePrefix ? savePrefix+'_'+i : '';
       const sp     = spBase ? spBase+sfx : '';        // clave de edición (por lado si unilateral)
-      const repsVal = (spBase ? _getEdit(spBase,'reps') : '') || s.reps || '';
+      let repsVal = (spBase ? _getEdit(spBase,'reps') : '') || s.reps || '';
+      if(sfx) repsVal = _repsSinLado(repsVal);        // fila unilateral → solo el número
       const pesoRaw = (sp ? _getEdit(sp,'peso') : '') || (s.peso ? String(s.peso).replace(/kg$/i,'').trim() : '');
       const omitida = sp ? _getEdit(sp,'omitida')==='1' : false;
       const tipoKey = sp ? _getEdit(sp,'tipo') : '';
