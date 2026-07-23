@@ -82,6 +82,19 @@
       </div>
     </div>
 
+    <label>País <span class="req">*</span></label>
+    <select id="f-pais">
+      <option value="">Elegí tu país…</option>
+      <option value="AR">Argentina</option>
+      <option value="ES">España</option>
+      <option value="MX">México</option>
+      <option value="CL">Chile</option>
+      <option value="UY">Uruguay</option>
+      <option value="CO">Colombia</option>
+      <option value="PE">Perú</option>
+      <option value="OTRO">Otro</option>
+    </select>
+
     <label>Tu objetivo principal <span class="req">*</span></label>
     <select id="f-objetivo">
       <option value="">Elegí una opción…</option>
@@ -177,15 +190,32 @@ try{ firebase.initializeApp(CFG); _db=firebase.firestore(); }catch(e){ console.w
 // Días preferidos (toggle)
 document.querySelectorAll('#f-dias .day').forEach(d=>d.onclick=()=>d.classList.toggle('on'));
 
+// Atribución: leer parámetros del link (o los que dejó la landing) para saber país y canal
+const _ATRIB=(function(){
+  let qs=location.search;
+  if(!qs){ try{ qs=localStorage.getItem('SOCC_ATRIB')||''; }catch(e){} }
+  const pr=new URLSearchParams(qs||'');
+  const g=(...ks)=>{ for(const k of ks){ const v=pr.get(k); if(v) return v; } return ''; };
+  return {
+    canal:   g('canal','utm_source','fuente'),
+    campaña: g('campaña','campana','utm_campaign'),
+    pais:    (g('pais','country')||'').toUpperCase(),
+    ref:     document.referrer||''
+  };
+})();
+// Pre-cargar el país si vino en el link
+if(_ATRIB.pais){ const sel=document.getElementById('f-pais'); if(sel && [...sel.options].some(o=>o.value===_ATRIB.pais)) sel.value=_ATRIB.pais; }
+
 function _val(id){ return (document.getElementById(id).value||'').trim(); }
 function _genId(){ return 'sol_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
 async function enviar(){
   const err=document.getElementById('f-err'); err.textContent='';
   const nombre=_val('f-nombre'), tel=_val('f-tel'), objetivo=_val('f-objetivo'),
-        nivel=_val('f-nivel'), lugar=_val('f-lugar'), frec=_val('f-frec');
+        nivel=_val('f-nivel'), lugar=_val('f-lugar'), frec=_val('f-frec'), pais=_val('f-pais');
   if(!nombre){ err.textContent='Poné tu nombre y apellido.'; return; }
   if(!tel){ err.textContent='Dejá tu WhatsApp para poder mandarte el acceso.'; return; }
+  if(!pais){ err.textContent='Elegí tu país.'; return; }
   if(!objetivo){ err.textContent='Elegí tu objetivo principal.'; return; }
   if(!nivel){ err.textContent='Elegí tu nivel de experiencia.'; return; }
   if(!lugar){ err.textContent='Indicá dónde vas a entrenar.'; return; }
@@ -198,9 +228,10 @@ async function enviar(){
   const doc={
     id, estado:'pendiente', tipoSolicitud:'trial',
     createdAt:new Date().toISOString(),
+    pais, canal:_ATRIB.canal||'directo', campaña:_ATRIB.campaña||'', referrer:_ATRIB.ref||'',
     perfil:{
       nombre, telefono:tel, email:_val('f-email'), nacimiento:_val('f-nac'),
-      sexo:_val('f-sexo'), objetivo, nivel,
+      sexo:_val('f-sexo'), objetivo, nivel, pais,
       lesiones:_val('f-lesiones'), observaciones:_val('f-obs')
     },
     solicitud:{

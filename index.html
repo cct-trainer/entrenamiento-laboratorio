@@ -2985,6 +2985,7 @@ select.toolbox-input option:disabled { color: #888; }
     <button onclick="_generarReporteMensual()" class="pln-btn pln-btn-outline" title="Reporte mensual de actividad de alumnos">Reporte</button>
     <button onclick="document.getElementById('backup-import-input').click()" class="pln-btn pln-btn-outline" title="Restaurar base de datos desde backup JSON">Restaurar</button>
     <button onclick="abrirSolicitudes()" class="pln-btn pln-btn-outline" title="Solicitudes de prueba gratis pendientes" style="border-color:#C9A84C;color:#9A7A28;position:relative;">Solicitudes<span id="sol-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
+    <button onclick="abrirSuscripciones()" class="pln-btn pln-btn-outline" title="Planes, pagos y vencimientos" style="border-color:#C9A84C;color:#9A7A28;position:relative;">Suscripciones<span id="venc-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#f59e0b;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="recuperarDesdePortales()" class="pln-btn pln-btn-outline" title="Recuperar tus alumnos leyendo sus documentos en la nube" style="border-color:#22c55e;color:#166534;">↻ Recuperar</button>
     <button onclick="exportarBackupCompleto()" class="pln-btn pln-btn-guardar" title="Descargar backup completo de toda la base de datos">Backup</button>
     <button onclick="limpiarStorageEmergencia()" style="background:none;border:1px solid #ddd;color:#bbb;padding:7px 12px;border-radius:5px;font-size:11px;cursor:pointer;" title="Liberar espacio si hay errores de almacenamiento">🗑</button>
@@ -21364,8 +21365,9 @@ async function abrirSolicitudes(){
     const p=s.perfil||{}, q=s.solicitud||{};
     const dias=(q.diasPreferidos||[]).map(d=>mapD[d]||d).join(', ');
     const fecha = s.createdAt ? new Date(s.createdAt).toLocaleDateString('es-AR',{day:'numeric',month:'short'}) : '';
+    const origen = [s.pais, s.canal].filter(Boolean).join(' · ');
     return '<div style="border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;">'
-      + '<div style="display:flex;justify-content:space-between;align-items:baseline;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">'+(p.nombre||'—')+'</div><div style="font-size:11px;color:#999;">'+fecha+'</div></div>'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">'+(p.nombre||'—')+(origen?' <span style="font-size:10px;font-weight:700;color:#9A7A28;background:#FDF6E3;padding:2px 7px;border-radius:10px;">'+origen+'</span>':'')+'</div><div style="font-size:11px;color:#999;">'+fecha+'</div></div>'
       + '<div style="font-size:12px;color:#555;margin:8px 0;line-height:1.7;">'
       +   '<b>Objetivo:</b> '+(p.objetivo||'—')+' &nbsp;·&nbsp; <b>Nivel:</b> '+(p.nivel||'—')+'<br>'
       +   '<b>Lugar:</b> '+(q.lugar||'—')+' &nbsp;·&nbsp; <b>Frecuencia:</b> '+(q.frecuencia||'—')+'x/sem &nbsp;·&nbsp; <b>Duración:</b> '+(q.duracion||'—')+'<br>'
@@ -21380,8 +21382,9 @@ async function abrirSolicitudes(){
       + '</div></div>';
   }).join('') : '<div style="text-align:center;color:#999;padding:30px;font-size:13px;">No hay solicitudes pendientes.</div>';
   ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:560px;width:100%;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.25);" onclick="event.stopPropagation()">'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">Solicitudes de prueba · '+_SOLICITUDES.length+'</div>'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">Solicitudes de prueba · '+_SOLICITUDES.length+'</div>'
     + '<button onclick="document.getElementById(\'sol-overlay\').remove()" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;">×</button></div>'
+    + '<div style="margin-bottom:12px;"><button onclick="abrirPlantillasTrial()" style="background:#FDF6E3;border:1px solid #C9A84C;color:#9A7A28;font-size:11px;font-weight:800;padding:6px 12px;border-radius:8px;cursor:pointer;">⚙ Plantillas de prueba ('+getTrialTemplates().length+')</button></div>'
     + items + '</div>';
   document.body.appendChild(ov);
 }
@@ -21397,14 +21400,29 @@ async function aprobarSolicitud(solId){
     dias:String(q.frecuencia||''), inicio:new Date().toISOString().slice(0,10),
     lesiones:p.lesiones||'', observaciones:(p.observaciones||'')+(q.equipo?(' · Equipo: '+q.equipo):'')+(q.lugar?(' · '+q.lugar):''),
     accessUntil: hasta.toISOString().slice(0,10),
-    estado:'trial', trialInicio:new Date().toISOString().slice(0,10)
+    estado:'trial', trialInicio:new Date().toISOString().slice(0,10),
+    pais: s.pais||p.pais||'', canal: s.canal||'', campaña: s.campaña||''   // atribución para el piloto
   };
   const alumnos=getAlumnos(); alumnos.push(nuevo); saveAlumnos(alumnos);
+
+  // Auto-asignar plantilla de prueba según las respuestas (si hay una que matchee)
+  let planAsignado='';
+  const tpl=_matchTrial(s);
+  if(tpl && Array.isArray(tpl.semanasArray) && tpl.semanasArray.length){
+    const sa=JSON.parse(JSON.stringify(tpl.semanasArray));
+    const d=new Date(); const off=(d.getDay()+6)%7; d.setDate(d.getDate()-off); // lunes de esta semana
+    sa.forEach((w,i)=>{ const dd=new Date(d); dd.setDate(dd.getDate()+i*7); w.fechaInicio=dd.toISOString().slice(0,10); w.semana=i+1; });
+    const planes=getPlanificaciones();
+    planes.push({ id:genId(), alumnoId:nuevo.id, titulo:(tpl.nombre||'Plan de prueba'), tipoPlan:'fuerza', semanasArray:sa, diasData:sa[0]?.dias||{}, activo:true, createdAt:new Date().toISOString() });
+    savePlanificaciones(planes);
+    planAsignado=tpl.nombre||'plantilla';
+  }
+
   try{ if(window._db) await window._db.collection('alumnos').doc(solId).update({ estado:'aprobada', alumnoId:nuevo.id }); }catch(e){}
   if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
   const link='https://cct-trainer.github.io/entrenamiento-laboratorio/alumno.html?id='+nuevo.id;
   try{ await navigator.clipboard.writeText(link); }catch(e){}
-  toast('Prueba activada 7 días · link copiado ✓');
+  toast(planAsignado ? ('Prueba activada + plan "'+planAsignado+'" ✓ · link copiado') : 'Prueba activada 7 días · link copiado (asigná el plan)');
   renderAlumnosGrid();
   abrirSolicitudes();
   // Ofrecer mandar por WhatsApp
@@ -21416,6 +21434,154 @@ async function descartarSolicitud(solId){
   try{ if(window._db) await window._db.collection('alumnos').doc(solId).update({ estado:'descartada' }); }catch(e){}
   _SOLICITUDES=_SOLICITUDES.filter(x=>x._id!==solId);
   abrirSolicitudes();
+}
+
+// ── Plantillas de prueba: planes semanales etiquetados para auto-asignar ──────
+const DB_TRIAL_TPL='LAB_TRIAL_TEMPLATES';
+function getTrialTemplates(){ try{ return JSON.parse(localStorage.getItem(DB_TRIAL_TPL)||'[]'); }catch(e){ return []; } }
+function saveTrialTemplates(d){ localStorage.setItem(DB_TRIAL_TPL, JSON.stringify(d)); }
+function _frecuenciaDeSemanas(sa){
+  const w0=(sa&&sa[0])||{}; const dias=w0.dias||{}; let n=0;
+  Object.keys(dias).forEach(k=>{ const arr=dias[k]||[]; if(arr.some(s=>s&&(s.bloques||[]).length)) n++; });
+  return n;
+}
+function _matchTrial(sol){
+  const tpls=getTrialTemplates(); if(!tpls.length) return null;
+  const q=sol.solicitud||{}, p=sol.perfil||{};
+  const norm=s=>String(s||'').toLowerCase();
+  const lugarSol = /casa|home/.test(norm(q.lugar)) ? 'casa' : (/gym|gimnas/.test(norm(q.lugar)) ? 'gym' : 'ambos');
+  let best=null, bestScore=-1e9;
+  tpls.forEach(t=>{
+    let sc=0;
+    const tf=parseInt(t.frecuencia)||0, qf=parseInt(q.frecuencia)||0;
+    if(tf && qf){ sc += (tf===qf) ? 100 : -Math.abs(tf-qf)*8; }
+    const tl=norm(t.lugar);
+    if(!tl||tl==='ambos') sc+=3; else if(tl===lugarSol||lugarSol==='ambos') sc+=10; else sc-=6;
+    if(t.nivel && norm(t.nivel)===norm(p.nivel)) sc+=6;
+    if(t.objetivo && norm(t.objetivo)===norm(p.objetivo)) sc+=6;
+    if(sc>bestScore){ bestScore=sc; best=t; }
+  });
+  return best;
+}
+function abrirPlantillasTrial(){
+  const ov=document.getElementById('sol-overlay'); if(ov) ov.remove();
+  let m=document.getElementById('tpl-overlay'); if(m) m.remove();
+  m=document.createElement('div'); m.id='tpl-overlay';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:6100;display:flex;align-items:flex-start;justify-content:center;padding:36px 16px;overflow-y:auto;';
+  m.onclick=e=>{ if(e.target===m) m.remove(); };
+  const planes=getPlanificaciones().filter(p=>(p.tipoPlan||'fuerza')==='fuerza' && Array.isArray(p.semanasArray) && p.semanasArray.length);
+  const opts=planes.map(p=>{ const al=getAlumnos().find(a=>a.id===p.alumnoId); const fr=_frecuenciaDeSemanas(p.semanasArray); return '<option value="'+p.id+'">'+(p.titulo||'Plan')+' — '+fr+'x'+(al?(' ('+al.nombre+')'):'')+'</option>'; }).join('');
+  const tpls=getTrialTemplates();
+  const lista = tpls.length ? tpls.map(t=>'<div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #eee;border-radius:8px;padding:9px 12px;margin-bottom:8px;font-size:12px;"><span><b>'+t.nombre+'</b> · '+(t.frecuencia||'?')+'x · '+(t.lugar||'ambos')+(t.nivel?(' · '+t.nivel):'')+(t.objetivo?(' · '+t.objetivo):'')+'</span><button onclick="eliminarTrialTemplate(\''+t.id+'\')" style="background:none;border:none;color:#c62828;font-size:16px;cursor:pointer;">×</button></div>').join('') : '<div style="color:#999;font-size:12px;padding:8px 0;">Todavía no registraste plantillas de prueba.</div>';
+  m.innerHTML='<div style="background:#fff;border-radius:14px;max-width:560px;width:100%;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.25);" onclick="event.stopPropagation()">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">Plantillas de prueba</div><button onclick="document.getElementById(\'tpl-overlay\').remove()" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;">×</button></div>'
+    + '<div style="font-size:11px;color:#888;margin-bottom:12px;">Registrá planes semanales tuyos como plantillas. Al aprobar una solicitud, se asigna la que mejor coincida con frecuencia, lugar, nivel y objetivo.</div>'
+    + lista
+    + '<div style="border-top:1px solid #eee;margin-top:12px;padding-top:12px;">'
+    +   '<div style="font-size:12px;font-weight:800;color:#555;margin-bottom:8px;">Registrar una nueva</div>'
+    +   '<label style="font-size:10px;color:#888;font-weight:700;">PLAN BASE</label><select id="tpl-plan" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:12px;margin:3px 0 8px;">'+(opts||'<option value="">No hay planes armados</option>')+'</select>'
+    +   '<div style="display:flex;gap:8px;">'
+    +     '<div style="flex:1;"><label style="font-size:10px;color:#888;font-weight:700;">FRECUENCIA</label><select id="tpl-frec" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:12px;"><option value="">auto</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>'
+    +     '<div style="flex:1;"><label style="font-size:10px;color:#888;font-weight:700;">LUGAR</label><select id="tpl-lugar" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:12px;"><option>Ambos</option><option>Gym</option><option>Casa</option></select></div>'
+    +   '</div>'
+    +   '<div style="display:flex;gap:8px;margin-top:8px;">'
+    +     '<div style="flex:1;"><label style="font-size:10px;color:#888;font-weight:700;">NIVEL</label><select id="tpl-nivel" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:12px;"><option value="">cualquiera</option><option>Principiante</option><option>Intermedio</option><option>Avanzado</option></select></div>'
+    +     '<div style="flex:1;"><label style="font-size:10px;color:#888;font-weight:700;">OBJETIVO</label><input id="tpl-obj" placeholder="opcional" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:12px;box-sizing:border-box;"></div>'
+    +   '</div>'
+    +   '<button onclick="registrarTrialTemplate()" style="width:100%;margin-top:12px;background:#C9A84C;color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:800;cursor:pointer;">Registrar plantilla</button>'
+    + '</div></div>';
+  document.body.appendChild(m);
+}
+function registrarTrialTemplate(){
+  const planId=document.getElementById('tpl-plan')?.value;
+  const plan=getPlanificaciones().find(p=>p.id===planId);
+  if(!plan){ toast('Elegí un plan base','error'); return; }
+  const frec=document.getElementById('tpl-frec').value || String(_frecuenciaDeSemanas(plan.semanasArray));
+  const tpls=getTrialTemplates();
+  tpls.push({
+    id:'ttpl_'+Date.now(),
+    nombre: plan.titulo||'Plan de prueba',
+    frecuencia: parseInt(frec)||0,
+    lugar: document.getElementById('tpl-lugar').value||'Ambos',
+    nivel: document.getElementById('tpl-nivel').value||'',
+    objetivo: document.getElementById('tpl-obj').value.trim()||'',
+    semanasArray: JSON.parse(JSON.stringify(plan.semanasArray))
+  });
+  saveTrialTemplates(tpls);
+  toast('Plantilla de prueba registrada ✓');
+  abrirPlantillasTrial();
+}
+function eliminarTrialTemplate(id){
+  saveTrialTemplates(getTrialTemplates().filter(t=>t.id!==id));
+  abrirPlantillasTrial();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// SUSCRIPCIONES — config de planes/pago + tablero de vencimientos
+// ══════════════════════════════════════════════════════════════════════════
+let _SUBCFG={};
+function _diasRestantes(iso){ if(!iso) return null; return Math.round((new Date(iso+'T23:59:59') - new Date())/86400000); }
+function _refreshVencBadge(){
+  const alumnos=getAlumnos();
+  const n=alumnos.filter(a=>{ const d=_diasRestantes(a.accessUntil); return d!==null && d<=5; }).length;
+  const b=document.getElementById('venc-badge');
+  if(b){ if(n){ b.textContent=n; b.style.display='block'; } else b.style.display='none'; }
+}
+async function abrirSuscripciones(){
+  try{ if(window._db){ const d=await window._db.collection('alumnos').doc('zz_config_global').get(); _SUBCFG = d.exists ? (d.data()||{}) : {}; } }catch(e){ _SUBCFG={}; }
+  const planes = Array.isArray(_SUBCFG.planes)?_SUBCFG.planes:[];
+  const pl=(i)=>planes[i]||{};
+  const alumnos=getAlumnos().filter(a=>_diasRestantes(a.accessUntil)!==null)
+    .sort((a,b)=>_diasRestantes(a.accessUntil)-_diasRestantes(b.accessUntil));
+  const wa=(_SUBCFG.whatsapp||'').replace(/\D/g,'');
+  const vencList = alumnos.length ? alumnos.map(a=>{
+    const d=_diasRestantes(a.accessUntil);
+    const estado = d<0 ? ('<span style="color:#c62828;font-weight:800;">Vencido hace '+(-d)+'d</span>')
+      : d<=5 ? ('<span style="color:#b45309;font-weight:800;">Vence en '+d+'d</span>')
+      : ('<span style="color:#166534;">'+d+' días</span>');
+    const tel=(a.telefono||'').replace(/\D/g,'');
+    const waMsg=encodeURIComponent('Hola '+(a.nombre||'').split(' ')[0]+', tu acceso '+(d<0?'venció':'está por vencer')+'. ¿Seguimos? Podés renovar acá'+(_SUBCFG.mpLink?(': '+_SUBCFG.mpLink):'.'));
+    return '<div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #eee;border-radius:8px;padding:9px 12px;margin-bottom:7px;font-size:12px;">'
+      + '<div><b style="color:#1a1a2e;">'+(a.nombre||'—')+'</b> · '+estado+(a.estado==='trial'?' <span style="color:#9A7A28;">· prueba</span>':'')+'</div>'
+      + '<div style="display:flex;gap:6px;">'
+      +   (tel?'<a href="https://wa.me/'+tel+'?text='+waMsg+'" target="_blank" style="background:#e7f9ef;color:#128C7E;border-radius:6px;padding:5px 9px;text-decoration:none;font-weight:700;">WhatsApp</a>':'')
+      +   '<button onclick="_renovarVenc(\''+a.id+'\',30)" style="background:#C9A84C;color:#fff;border:none;border-radius:6px;padding:5px 9px;font-weight:700;cursor:pointer;">+30d</button>'
+      +   '<button onclick="_renovarVenc(\''+a.id+'\',90)" style="background:#f1f3f7;color:#555;border:none;border-radius:6px;padding:5px 9px;font-weight:700;cursor:pointer;">+90d</button>'
+      + '</div></div>';
+  }).join('') : '<div style="color:#999;font-size:12px;padding:8px 0;">Ningún alumno con fecha de acceso cargada.</div>';
+
+  let ov=document.getElementById('sub-overlay'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='sub-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:6000;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto;';
+  ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+  const inp='width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:12px;box-sizing:border-box;';
+  const planRow=(i)=>{ const p=pl(i); return '<div style="display:flex;gap:6px;margin-bottom:6px;">'
+    +'<input id="sub-p'+i+'-n" placeholder="Plan '+(i+1)+' (nombre)" value="'+(p.nombre||'').replace(/"/g,'&quot;')+'" style="'+inp+'flex:1.4;">'
+    +'<input id="sub-p'+i+'-pr" placeholder="Precio" value="'+(p.precio||'').replace(/"/g,'&quot;')+'" style="'+inp+'flex:.8;">'
+    +'<input id="sub-p'+i+'-l" placeholder="Link de pago" value="'+(p.link||'').replace(/"/g,'&quot;')+'" style="'+inp+'flex:1.4;">'
+    +'</div>'; };
+  ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:600px;width:100%;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.25);" onclick="event.stopPropagation()">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">Suscripciones</div><button onclick="document.getElementById(\'sub-overlay\').remove()" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;">×</button></div>'
+    + '<div style="font-size:12px;font-weight:800;color:#555;margin-bottom:8px;">Planes y pago (los ve el alumno al vencer)</div>'
+    + '<div style="display:flex;gap:6px;margin-bottom:8px;"><input id="sub-wa" placeholder="WhatsApp (ej: 5491162779993)" value="'+(_SUBCFG.whatsapp||'').replace(/"/g,'&quot;')+'" style="'+inp+'flex:1;"><input id="sub-mp" placeholder="Link Mercado Pago (general, opcional)" value="'+(_SUBCFG.mpLink||'').replace(/"/g,'&quot;')+'" style="'+inp+'flex:1.4;"></div>'
+    + planRow(0)+planRow(1)+planRow(2)
+    + '<button onclick="_guardarConfigSub()" style="background:#C9A84C;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:12px;font-weight:800;cursor:pointer;">Guardar planes</button>'
+    + '<div style="font-size:12px;font-weight:800;color:#555;margin:18px 0 8px;border-top:1px solid #eee;padding-top:14px;">Vencimientos</div>'
+    + vencList
+    + '</div>';
+  document.body.appendChild(ov);
+}
+async function _guardarConfigSub(){
+  const g=id=>(document.getElementById(id)?.value||'').trim();
+  const planes=[0,1,2].map(i=>({ nombre:g('sub-p'+i+'-n'), precio:g('sub-p'+i+'-pr'), link:g('sub-p'+i+'-l') })).filter(p=>p.nombre);
+  _SUBCFG={ whatsapp:g('sub-wa'), mpLink:g('sub-mp'), planes, updatedAt:new Date().toISOString() };
+  try{ if(window._db) await window._db.collection('alumnos').doc('zz_config_global').set(_SUBCFG,{merge:true}); toast('Planes guardados ✓'); }
+  catch(e){ toast('No se pudo guardar en la nube','error'); }
+}
+function _renovarVenc(id, dias){
+  if(typeof _renovarAcceso==='function'){ _renovarAcceso(id, dias); }
+  _refreshVencBadge();
+  abrirSuscripciones();
 }
 
 function initFirebase() {
@@ -21433,6 +21599,7 @@ function initFirebase() {
     _syncStatusIcon('⏳', 'Cargando datos...');
     cargarDesdeFirestore();
     setTimeout(() => { try { _fetchSolicitudes(); } catch(e){} }, 1500);   // contador de solicitudes de prueba
+    setTimeout(() => { try { _refreshVencBadge(); } catch(e){} }, 2000);   // contador de vencimientos próximos
   } catch(err) {
     console.warn('Firebase init error:', err);
     _syncStatusIcon('⚠️', 'Firebase no disponible');

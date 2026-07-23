@@ -802,8 +802,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260723010630 por un timestamp en cada deploy
-const _APP_VERSION = '20260723010630';
+// deploy.bat reemplaza 20260723130614 por un timestamp en cada deploy
+const _APP_VERSION = '20260723130614';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -920,21 +920,44 @@ const TIPOS_RUN = {
   }
 })();
 
-function _showAccesoBloqueado(hasta) {
+async function _showAccesoBloqueado(hasta) {
   document.getElementById('loading').style.display='none';
   const fmtHasta = hasta
     ? new Date(hasta+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})
     : '';
+  // Config de suscripción (planes / pago / whatsapp) que edita el coach
+  let cfg={};
+  try{ const d=await _db.collection('alumnos').doc('zz_config_global').get(); if(d.exists) cfg=d.data()||{}; }catch(e){}
+  const wa = (cfg.whatsapp||'5491162779993').replace(/\D/g,'');
+  const planes = Array.isArray(cfg.planes) ? cfg.planes.filter(p=>p&&p.nombre) : [];
+  const nombre = (_data && _data.perfil && _data.perfil.nombre) ? _data.perfil.nombre.split(' ')[0] : '';
+
+  const planesHTML = planes.length ? planes.map(p=>{
+    const link = p.link || cfg.mpLink || '';
+    const btn = link
+      ? '<a href="'+String(link).replace(/"/g,'&quot;')+'" target="_blank" style="display:block;margin-top:10px;background:linear-gradient(135deg,#C9A84C,#9A7A28);color:#0d0d1a;border-radius:10px;padding:11px;font-size:13px;font-weight:900;text-decoration:none;">Suscribirme</a>'
+      : '';
+    return '<div style="background:#13132a;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:15px;margin-bottom:10px;text-align:left;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="color:#e8e8f0;font-size:15px;font-weight:800;">'+p.nombre+'</span><span style="color:#C9A84C;font-size:15px;font-weight:900;">'+(p.precio||'')+'</span></div>'
+      + (p.detalle?'<div style="color:#8888aa;font-size:12px;margin-top:5px;line-height:1.5;">'+p.detalle+'</div>':'')
+      + btn + '</div>';
+  }).join('') : '';
+
+  const pagoDirecto = (!planes.length && cfg.mpLink)
+    ? '<a href="'+String(cfg.mpLink).replace(/"/g,'&quot;')+'" target="_blank" style="display:block;background:linear-gradient(135deg,#C9A84C,#9A7A28);color:#0d0d1a;border-radius:14px;padding:16px;font-size:15px;font-weight:900;text-decoration:none;margin-bottom:12px;">Suscribirme y seguir entrenando</a>' : '';
+
   document.body.innerHTML = `
     <div style="min-height:100vh;background:#0d0d1a;display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,sans-serif;">
-      <div style="max-width:340px;width:100%;text-align:center;">
-        <div style="font-size:52px;margin-bottom:16px;">🔒</div>
-        <div style="color:#C9A84C;font-size:13px;font-weight:900;letter-spacing:1.5px;margin-bottom:8px;">ACCESO VENCIDO</div>
-        <div style="color:#fff;font-size:16px;font-weight:700;margin-bottom:8px;">Tu plan venció el ${fmtHasta}</div>
-        <div style="color:#888;font-size:13px;line-height:1.6;margin-bottom:28px;">Para continuar entrenando con tu programa personalizado, contactate con tu coach para renovar el acceso.</div>
-        <a href="https://wa.me/5491162779993" target="_blank"
-          style="display:block;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:14px;padding:16px;font-size:15px;font-weight:800;cursor:pointer;text-decoration:none;letter-spacing:.3px;">
-          Contactar a Christian Cattaneo
+      <div style="max-width:360px;width:100%;text-align:center;">
+        <div style="font-size:48px;margin-bottom:14px;">🔒</div>
+        <div style="color:#C9A84C;font-size:12px;font-weight:900;letter-spacing:1.5px;margin-bottom:8px;">TU PRUEBA TERMINÓ</div>
+        <div style="color:#fff;font-size:17px;font-weight:800;margin-bottom:6px;">${nombre?('¡'+nombre+', seguí entrenando!'):'Seguí entrenando'}</div>
+        <div style="color:#888;font-size:13px;line-height:1.6;margin-bottom:22px;">Tu acceso venció el ${fmtHasta}. Elegí un plan para continuar — tu perfil e historial quedan guardados.</div>
+        ${planesHTML}
+        ${pagoDirecto}
+        <a href="https://wa.me/${wa}?text=${encodeURIComponent('Hola Christian, quiero seguir entrenando después de mi prueba.')}" target="_blank"
+          style="display:block;background:transparent;border:1px solid rgba(255,255,255,.2);color:#e8e8f0;border-radius:14px;padding:14px;font-size:14px;font-weight:700;text-decoration:none;margin-top:6px;">
+          Hablar con Christian por WhatsApp
         </a>
       </div>
     </div>`;
