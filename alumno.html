@@ -591,6 +591,7 @@ const _I18N = {
     dias_entrenamiento:'DÍAS DE ENTRENAMIENTO',
     semanas:'SEMANAS', semana:'Semana',
     volver_dias:'Volver a los días', tu_entrenamiento:'TU ENTRENAMIENTO',
+    series_lbl:'SERIES', series_apro:'SERIES DE APROXIMACIÓN', series_drop:'DROPSETS',
     terminar:'Terminé mi entrenamiento', completado:'Entrenamiento completado',
     terminar_ok:'¡Entrenamiento completado! Tus resultados quedaron guardados.',
     terminar_confirm:'¿Terminaste este entrenamiento? Se marca como completado y se guardan tus resultados.',
@@ -632,6 +633,7 @@ const _I18N = {
     dias_entrenamiento:'TRAINING DAYS',
     semanas:'WEEKS', semana:'Week',
     volver_dias:'Back to days', tu_entrenamiento:'YOUR WORKOUT',
+    series_lbl:'SETS', series_apro:'WARM-UP SETS', series_drop:'DROP SETS',
     terminar:'I Finished My Workout', completado:'Workout completed',
     terminar_ok:'Workout completed! Your results have been saved.',
     terminar_confirm:'Did you finish this workout? It will be marked as completed and your results saved.',
@@ -802,8 +804,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260723142925 por un timestamp en cada deploy
-const _APP_VERSION = '20260723142925';
+// deploy.bat reemplaza 20260723201755 por un timestamp en cada deploy
+const _APP_VERSION = '20260723201755';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1825,21 +1827,21 @@ function _ejCard(ej, uid) {
   const nApro = sApro ? sApro.length : 0;
   const nEfec = sEfec ? sEfec.length : 0;
 
-  // Sección de aproximación
+  // Sección de aproximación (solo planes viejos que aún la tengan)
   const aproSection = sApro ? (
-    '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">SERIES DE APROXIMACIÓN</div>'+
+    '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">'+_t('series_apro')+'</div>'+
     _seriesTable(sApro, 'S', _sp+'_apro', uid, 0)
   ) : '';
 
-  // Sección de series efectivas (tabla detallada)
+  // Sección de series (tabla detallada)
   const efecSection = sEfec ? (
-    '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">SERIES EFECTIVAS</div>'+
+    '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">'+_t('series_lbl')+'</div>'+
     _seriesTable(sEfec, 'S', _sp+'_efec', uid, nApro)
   ) : '';
 
   // Sección de dropsets
   const dropSection = sDrop ? (
-    '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">DROPSETS</div>'+
+    '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">'+_t('series_drop')+'</div>'+
     _seriesTable(sDrop, 'S', _sp+'_drop', uid, nApro + nEfec)
   ) : '';
 
