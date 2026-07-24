@@ -804,8 +804,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260724001915 por un timestamp en cada deploy
-const _APP_VERSION = '20260724001915';
+// deploy.bat reemplaza 20260724100757 por un timestamp en cada deploy
+const _APP_VERSION = '20260724100757';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2944,13 +2944,15 @@ const _ANTRO_CAMPOS = [
   { k:'altura',    lb:'Altura',          u:'cm' },
   { k:'cuello',    lb:'Cuello',          u:'cm' },
   { k:'hombros',   lb:'Hombros',         u:'cm' },
-  { k:'pecho',     lb:'Pecho',           u:'cm' },
+  { k:'pecho',     lb:'Pecho / Busto',   u:'cm' },
+  { k:'bajoBusto', lb:'Bajo busto',      u:'cm' },
   { k:'brazoDer',  lb:'Brazo derecho',   u:'cm' },
   { k:'brazoIzq',  lb:'Brazo izquierdo', u:'cm' },
   { k:'cintura',   lb:'Cintura',         u:'cm' },
+  { k:'flancos',   lb:'Flancos',         u:'cm' },
   { k:'cadera',    lb:'Cadera',          u:'cm' },
-  { k:'musloDer',  lb:'Muslo derecho',   u:'cm' },
-  { k:'musloIzq',  lb:'Muslo izquierdo', u:'cm' },
+  { k:'musloDer',  lb:'Pierna derecha',  u:'cm' },
+  { k:'musloIzq',  lb:'Pierna izquierda',u:'cm' },
   { k:'gemeloDer', lb:'Gemelo derecho',  u:'cm' },
   { k:'gemeloIzq', lb:'Gemelo izquierdo',u:'cm' }
 ];
