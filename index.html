@@ -3236,8 +3236,11 @@ select.toolbox-input option:disabled { color: #888; }
 
       <!-- IMAGEN DE PORTADA (todos los tipos) -->
       <div style="margin-bottom:12px;">
-        <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">IMAGEN DE PORTADA <span style="font-weight:400;color:#aaa;">(URL, opcional)</span></label>
-        <input id="blog-art-portada" type="url" placeholder="https://i.imgur.com/..." style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;box-sizing:border-box;" oninput="blogPreviewPortada()">
+        <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">IMAGEN DE PORTADA <span style="font-weight:400;color:#aaa;">(subí una foto o pegá un link, opcional)</span></label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="blog-art-portada" type="text" placeholder="Pegá un link o subí una foto →" style="flex:1;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;box-sizing:border-box;" oninput="blogPreviewPortada()">
+          <label style="background:#eef;border:1px solid #ccd;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;color:#334;white-space:nowrap;">📁 Subir<input type="file" accept="image/*" style="display:none;" onchange="_blogSubirPortada(this)"></label>
+        </div>
         <div id="blog-portada-preview" style="margin-top:6px;display:none;">
           <img id="blog-portada-img" src="" alt="Portada" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0;">
         </div>
@@ -24001,6 +24004,26 @@ function blogPreviewPortada() {
   const img  = document.getElementById('blog-portada-img');
   if (url) { img.src = url; prev.style.display = ''; }
   else { prev.style.display = 'none'; }
+}
+// Subir una imagen de portada desde el equipo (se comprime a base64)
+function _blogSubirPortada(input){
+  const file = input.files && input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX=1280; let w=img.width, h=img.height;
+      if(w>MAX){ h=Math.round(h*MAX/w); w=MAX; }
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      const data=cv.toDataURL('image/jpeg',0.72);
+      const campo=document.getElementById('blog-art-portada'); if(campo) campo.value=data;
+      blogPreviewPortada();
+      toast('Imagen cargada ✓');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 function blogAgregarImagen(url) {
