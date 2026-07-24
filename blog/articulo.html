@@ -45,10 +45,38 @@ const CC_FB = {
 };
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function _param(k){ return new URLSearchParams(location.search).get(k)||''; }
-// Convierte el texto del panel (con \n y algún <b>) en HTML de párrafos
-function contenidoHTML(txt){
-  const partes = String(txt||'').split(/\n\n+/).filter(Boolean);
-  return partes.map(p=>'<p>'+p.replace(/\n/g,'<br>')+'</p>').join('');
+const CAT_CLASS={'Hipertrofia':'cat-hipertrofia','Fuerza':'cat-fuerza','Biomecánica':'cat-biomecanica','Salud y dolor':'cat-salud','Salud':'cat-salud','Movilidad':'cat-movilidad','Nutrición':'cat-nutricion','Rendimiento':'cat-rendimiento'};
+// Inline: **negrita** y [texto](url)
+function inline(s){
+  return esc(s)
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+}
+// Markdown-lite → HTML editorial (##, ###, >, -, ![pie](url))
+function mdToHtml(text){
+  const lines=String(text||'').replace(/\r/g,'').split('\n');
+  let html='', para='', quote=null, listOpen=false; let m;
+  const cP=()=>{ if(para.trim()){ html+='<p>'+inline(para.trim())+'</p>'; } para=''; };
+  const cL=()=>{ if(listOpen){ html+='</ul>'; listOpen=false; } };
+  const cQ=()=>{ if(quote!==null){ html+='<blockquote>'+inline(quote.trim())+'</blockquote>'; quote=null; } };
+  for(const raw of lines){
+    const t=raw.trim();
+    if((m=t.match(/^!\[([^\]]*)\]\((https?:[^)\s]+)\)$/))){ cP();cL();cQ(); html+='<figure><img src="'+esc(m[2])+'" alt="'+esc(m[1])+'">'+(m[1]?'<figcaption>'+esc(m[1])+'</figcaption>':'')+'</figure>'; continue; }
+    if((m=t.match(/^###\s+(.+)/))){ cP();cL();cQ(); html+='<h3>'+inline(m[1])+'</h3>'; continue; }
+    if((m=t.match(/^##\s+(.+)/))){ cP();cL();cQ(); html+='<h2>'+inline(m[1])+'</h2>'; continue; }
+    if((m=t.match(/^>\s?(.*)/))){ cP();cL(); quote=(quote===null?'':quote+' ')+m[1]; continue; }
+    if((m=t.match(/^[-*]\s+(.+)/))){ cP();cQ(); if(!listOpen){ html+='<ul>'; listOpen=true; } html+='<li>'+inline(m[1])+'</li>'; continue; }
+    if(t===''){ cP();cL();cQ(); continue; }
+    cL();cQ(); para += (para?' ':'')+t;
+  }
+  cP();cL();cQ();
+  return html;
+}
+function fuentesHTML(f){
+  if(!f) return '';
+  const arr = Array.isArray(f) ? f : String(f).split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!arr.length) return '';
+  return '<section class="article-refs"><h2>Fuentes</h2>'+arr.map(x=>'<p>'+esc(x)+'</p>').join('')+'</section>';
 }
 (async function(){
   const id=_param('id');
@@ -61,16 +89,21 @@ function contenidoHTML(txt){
     if(!a){ root.innerHTML='<div style="text-align:center;padding:60px 20px;color:#888;">Artículo no disponible. <a href="index.html" style="color:var(--gold,#C9A84C);">Volver al blog</a></div>'; return; }
     document.getElementById('pg-title').textContent = a.titulo + ' · Christian Cattaneo';
     document.title = a.titulo + ' · Christian Cattaneo';
+    const catCls = CAT_CLASS[a.categoria] || 'cat-fuerza';
     const cover = a.portada ? '<div class="article-cover"><img src="'+esc(a.portada)+'" alt="'+esc(a.titulo)+'"></div>' : '';
+    const texto = (a.contenido && /(^|\n)\s*(##|>|[-*]\s|!\[)/.test('\n'+a.contenido)) ? a.contenido : (a.contenido||a.descripcion||'');
+    const lectura = (()=>{ const w=String(texto).replace(/<[^>]*>/g,' ').split(/\s+/).filter(Boolean).length; return Math.max(2,Math.round(w/200)); })();
     root.innerHTML =
       '<div class="breadcrumb"><a href="index.html">Inicio</a> › <a href="index.html#articulos">'+esc(a.categoria||'General')+'</a> › '+esc(a.titulo)+'</div>'
-      + cover
       + '<header class="article-header">'
-      +   '<span class="cat">'+esc(a.categoria||'General')+'</span>'
+      +   '<span class="cat '+catCls+'">'+esc(a.categoria||'General')+'</span>'
       +   '<h1>'+esc(a.titulo)+'</h1>'
-      +   '<div class="article-meta"><div class="author-mini"><div class="badge"><span class="c1">C</span><span class="c2">C</span></div><div><div class="name">Christian Cattaneo</div><div class="role">Entrenador personal</div></div></div>'+(a.fecha?'<span class="dot">·</span><span class="meta-item">'+esc(a.fecha)+'</span>':'')+'</div>'
+      +   (a.subtitulo?'<div class="article-subtitle">'+esc(a.subtitulo)+'</div>':'')
+      +   '<div class="article-meta"><div class="author-mini"><div class="badge"><span class="c1">C</span><span class="c2">C</span></div><div><div class="name">Christian Cattaneo</div><div class="role">Entrenador personal</div></div></div><span class="dot">·</span><span class="meta-item">'+esc(a.fecha||'')+'</span><span class="dot">·</span><span class="meta-item">'+lectura+' min de lectura</span></div>'
       + '</header>'
-      + '<div class="prose">'+contenidoHTML(a.contenido||a.descripcion||'')+'</div>'
+      + cover
+      + '<div class="prose">'+mdToHtml(texto)+'</div>'
+      + fuentesHTML(a.fuentes)
       + '<a class="btn btn-secondary back-blog" href="index.html#articulos">← Volver al blog</a>';
   }catch(e){
     root.innerHTML='<div style="text-align:center;padding:60px 20px;color:#888;">No se pudo cargar. <a href="index.html" style="color:#C9A84C;">Volver al blog</a></div>';

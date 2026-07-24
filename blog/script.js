@@ -33,13 +33,14 @@ async function cargarArticulosNube(){
       .filter(a => a && a.enBlog === true && a.publicado !== false && a.titulo)
       .map(a => {
         const texto = _stripHtml(a.contenido || a.descripcion || '');
+        const bajada = (a.subtitulo && a.subtitulo.trim()) ? a.subtitulo.trim() : (texto.slice(0,150) + (texto.length>150?'…':''));
         return {
           titulo: a.titulo,
           categoria: a.categoria || 'General',
           fecha: a.ts ? new Date(a.ts).toISOString() : (a.fecha || ''),
           fechaTexto: a.fecha || '',
           tiempoLectura: Math.max(2, Math.round(texto.split(' ').length/200)) + ' min',
-          extracto: texto.slice(0,150) + (texto.length>150?'…':''),
+          extracto: bajada,
           imagen: a.portada || 'img/cover-gluteo-mayor-evidencia.svg',
           url: 'articulo.html?id=' + encodeURIComponent(a.id),
           _dinamico: true

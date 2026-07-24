@@ -3234,6 +3234,11 @@ select.toolbox-input option:disabled { color: #888; }
         <input id="blog-art-titulo" type="text" placeholder="Título del artículo..." style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;box-sizing:border-box;">
       </div>
 
+      <div style="margin-bottom:12px;">
+        <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">SUBTÍTULO / BAJADA <span style="font-weight:400;color:#aaa;">(1 frase, opcional)</span></label>
+        <input id="blog-art-subtitulo" type="text" placeholder="Resumen breve que engancha…" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+      </div>
+
       <!-- IMAGEN DE PORTADA (todos los tipos) -->
       <div style="margin-bottom:12px;">
         <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">IMAGEN DE PORTADA <span style="font-weight:400;color:#aaa;">(subí una foto o pegá un link, opcional)</span></label>
@@ -3248,7 +3253,15 @@ select.toolbox-input option:disabled { color: #888; }
 
       <div id="blog-campo-contenido" style="margin-bottom:12px;">
         <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">CONTENIDO</label>
-        <textarea id="blog-art-contenido" rows="8" placeholder="Escribí el contenido del artículo..." style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box;line-height:1.6;"></textarea>
+        <div style="background:#f5f7ff;border-radius:7px;padding:8px 11px;font-size:11px;color:#3a4256;line-height:1.7;margin-bottom:6px;">
+          <b>Formato (se aplica solo al publicar):</b>
+          <code>## Texto</code> → título de sección · <code>### Texto</code> → subtítulo · <code>**palabra**</code> → negrita · <code>&gt; frase</code> → cita · <code>- item</code> → lista · <code>![pie](url)</code> → imagen con pie
+        </div>
+        <textarea id="blog-art-contenido" rows="10" placeholder="Escribí el artículo. Usá ## para los títulos de sección…" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box;line-height:1.6;"></textarea>
+        <div style="margin-top:10px;">
+          <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">FUENTES / REFERENCIAS <span style="font-weight:400;color:#aaa;">(una por línea, opcional)</span></label>
+          <textarea id="blog-art-fuentes" rows="2" placeholder="Autor et al. (2024). Título. Revista." style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:12px;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
+        </div>
         <!-- Imágenes adicionales dentro del artículo -->
         <div style="margin-top:10px;">
           <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:6px;">IMÁGENES DEL ARTÍCULO <span style="font-weight:400;color:#aaa;">(URLs adicionales)</span></label>
@@ -24042,6 +24055,8 @@ function _blogLeerImagenes() {
 function blogNuevoArticulo() {
   document.getElementById('blog-art-id').value = '';
   document.getElementById('blog-art-titulo').value = '';
+  document.getElementById('blog-art-subtitulo').value = '';
+  document.getElementById('blog-art-fuentes').value = '';
   document.getElementById('blog-art-portada').value = '';
   document.getElementById('blog-portada-preview').style.display = 'none';
   document.getElementById('blog-art-contenido').value = '';
@@ -24062,6 +24077,8 @@ function blogEditarArticulo(idx) {
   if (!a) return;
   document.getElementById('blog-art-id').value = a.id || '';
   document.getElementById('blog-art-titulo').value = a.titulo || '';
+  document.getElementById('blog-art-subtitulo').value = a.subtitulo || '';
+  document.getElementById('blog-art-fuentes').value = Array.isArray(a.fuentes) ? a.fuentes.join('\n') : (a.fuentes || '');
   document.getElementById('blog-art-portada').value = a.portada || '';
   document.getElementById('blog-art-cat').value = a.categoria || 'General';
   document.getElementById('blog-art-tipo').value = a.tipo || 'articulo';
@@ -24100,6 +24117,8 @@ function blogGuardarArticulo() {
   const art = {
     id:        idExistente || 'art_' + Date.now(),
     titulo,
+    subtitulo: document.getElementById('blog-art-subtitulo').value.trim(),
+    fuentes:   document.getElementById('blog-art-fuentes').value.split('\n').map(s=>s.trim()).filter(Boolean),
     categoria: document.getElementById('blog-art-cat').value,
     tipo,
     portada:   document.getElementById('blog-art-portada').value.trim(),
