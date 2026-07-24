@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="pg-title">Artículo · Christian Cattaneo</title>
+<meta name="description" id="pg-desc" content="Artículo de Christian Cattaneo — entrenamiento basado en evidencia.">
+<link rel="icon" type="image/svg+xml" href="img/cc-monogram.svg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header"><div class="nav-wrap">
+<a href="index.html" class="brand" aria-label="Inicio — Christian Cattaneo"><img class="logo-img" src="img/logo-header.png" alt="Christian Cattaneo — Entrenador"></a>
+<nav class="main-nav" id="mainNav"><a href="index.html">Inicio</a><a href="index.html#articulos">Artículos</a><a href="index.html#sobre-mi">Sobre mí</a></nav>
+<div class="header-actions"><button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">🌙</button><button class="nav-toggle" id="navToggle" aria-label="Menú" aria-expanded="false">☰</button></div>
+</div></header>
+
+<article class="article-wrap" id="art-root">
+  <div id="art-loading" style="text-align:center;padding:60px 20px;color:#888;">Cargando artículo…</div>
+</article>
+
+<footer class="site-footer"><div class="footer-bottom">© 2026 Christian Cattaneo — Entrenamiento basado en evidencia.</div></footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+// Tema y menú
+(function(){
+  var html=document.documentElement, tb=document.getElementById('themeToggle');
+  var g=localStorage.getItem('cc-tema'); if(g) html.setAttribute('data-theme',g);
+  function paint(){ if(tb) tb.textContent = html.getAttribute('data-theme')==='light'?'☀️':'🌙'; } paint();
+  if(tb) tb.addEventListener('click',function(){ var n=html.getAttribute('data-theme')==='light'?'dark':'light'; html.setAttribute('data-theme',n); localStorage.setItem('cc-tema',n); paint(); });
+  var nt=document.getElementById('navToggle'), nav=document.getElementById('mainNav');
+  if(nt&&nav) nt.addEventListener('click',function(){ nav.classList.toggle('open'); });
+})();
+
+const CC_FB = {
+  apiKey:'AIzaSyDkSgbqAJJRdlLwzcn-2vSMjVIUJbkVUGQ',
+  authDomain:'entrenamiento-laboratorio.firebaseapp.com',
+  projectId:'entrenamiento-laboratorio',
+  storageBucket:'entrenamiento-laboratorio.firebasestorage.app',
+  messagingSenderId:'399177627945',
+  appId:'1:399177627945:web:2b4fef0894480f70dc1f38'
+};
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function _param(k){ return new URLSearchParams(location.search).get(k)||''; }
+// Convierte el texto del panel (con \n y algún <b>) en HTML de párrafos
+function contenidoHTML(txt){
+  const partes = String(txt||'').split(/\n\n+/).filter(Boolean);
+  return partes.map(p=>'<p>'+p.replace(/\n/g,'<br>')+'</p>').join('');
+}
+(async function(){
+  const id=_param('id');
+  const root=document.getElementById('art-root');
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(CC_FB);
+    const doc=await firebase.firestore().collection('alumnos').doc('zz_articulos_global').get();
+    const arts=(doc.exists && Array.isArray(doc.data().articulos)) ? doc.data().articulos : [];
+    const a=arts.find(x=>x && x.id===id && x.enBlog===true && x.publicado!==false);
+    if(!a){ root.innerHTML='<div style="text-align:center;padding:60px 20px;color:#888;">Artículo no disponible. <a href="index.html" style="color:var(--gold,#C9A84C);">Volver al blog</a></div>'; return; }
+    document.getElementById('pg-title').textContent = a.titulo + ' · Christian Cattaneo';
+    document.title = a.titulo + ' · Christian Cattaneo';
+    const cover = a.portada ? '<div class="article-cover"><img src="'+esc(a.portada)+'" alt="'+esc(a.titulo)+'"></div>' : '';
+    root.innerHTML =
+      '<div class="breadcrumb"><a href="index.html">Inicio</a> › <a href="index.html#articulos">'+esc(a.categoria||'General')+'</a> › '+esc(a.titulo)+'</div>'
+      + cover
+      + '<header class="article-header">'
+      +   '<span class="cat">'+esc(a.categoria||'General')+'</span>'
+      +   '<h1>'+esc(a.titulo)+'</h1>'
+      +   '<div class="article-meta"><div class="author-mini"><div class="badge"><span class="c1">C</span><span class="c2">C</span></div><div><div class="name">Christian Cattaneo</div><div class="role">Entrenador personal</div></div></div>'+(a.fecha?'<span class="dot">·</span><span class="meta-item">'+esc(a.fecha)+'</span>':'')+'</div>'
+      + '</header>'
+      + '<div class="prose">'+contenidoHTML(a.contenido||a.descripcion||'')+'</div>'
+      + '<a class="btn btn-secondary back-blog" href="index.html#articulos">← Volver al blog</a>';
+  }catch(e){
+    root.innerHTML='<div style="text-align:center;padding:60px 20px;color:#888;">No se pudo cargar. <a href="index.html" style="color:#C9A84C;">Volver al blog</a></div>';
+  }
+})();
+</script>
+</body>
+</html>

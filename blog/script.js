@@ -8,8 +8,51 @@
    =========================================================== */
 
 /* ---------- 1. Datos ---------- */
-/* Se cargan desde articles.js (incluido antes que este script). */
-const ARTICULOS = Array.isArray(window.ARTICULOS) ? window.ARTICULOS : [];
+/* Estáticos desde articles.js + dinámicos desde la nube (los que marcás "para el blog" en el panel). */
+let ARTICULOS = Array.isArray(window.ARTICULOS) ? window.ARTICULOS.slice() : [];
+
+/* Config Firebase (misma nube del panel/app) */
+const CC_FB = {
+  apiKey:'AIzaSyDkSgbqAJJRdlLwzcn-2vSMjVIUJbkVUGQ',
+  authDomain:'entrenamiento-laboratorio.firebaseapp.com',
+  projectId:'entrenamiento-laboratorio',
+  storageBucket:'entrenamiento-laboratorio.firebasestorage.app',
+  messagingSenderId:'399177627945',
+  appId:'1:399177627945:web:2b4fef0894480f70dc1f38'
+};
+function _stripHtml(s){ return String(s||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim(); }
+function _tsDeId(id){ const m=String(id||'').match(/(\d{10,})/); return m?parseInt(m[1]):0; }
+/* Trae del panel los artículos publicados y marcados para el blog, y los suma a la grilla */
+async function cargarArticulosNube(){
+  try{
+    if(!window.firebase) return;
+    if(!firebase.apps.length) firebase.initializeApp(CC_FB);
+    const doc = await firebase.firestore().collection('alumnos').doc('zz_articulos_global').get();
+    if(!doc.exists) return;
+    const remotos = (doc.data().articulos||[])
+      .filter(a => a && a.enBlog === true && a.publicado !== false && a.titulo)
+      .map(a => {
+        const texto = _stripHtml(a.contenido || a.descripcion || '');
+        return {
+          titulo: a.titulo,
+          categoria: a.categoria || 'General',
+          fecha: a.ts ? new Date(a.ts).toISOString() : (a.fecha || ''),
+          fechaTexto: a.fecha || '',
+          tiempoLectura: Math.max(2, Math.round(texto.split(' ').length/200)) + ' min',
+          extracto: texto.slice(0,150) + (texto.length>150?'…':''),
+          imagen: a.portada || 'img/cover-gluteo-mayor-evidencia.svg',
+          url: 'articulo.html?id=' + encodeURIComponent(a.id),
+          _dinamico: true
+        };
+      });
+    if(remotos.length){
+      // Evitar duplicar si ya existiera algún slug igual
+      ARTICULOS = ARTICULOS.concat(remotos);
+      ordenados = [...ARTICULOS].sort(porFecha);
+      renderDestacados(); renderChips(); renderGrid();
+    }
+  }catch(e){ console.warn('blog nube:', e); }
+}
 
 /* Mapa categoría -> clase de color del chip/etiqueta */
 const CAT_CLASS = {
@@ -43,7 +86,7 @@ function tarjeta(a) {
 }
 
 /* ---------- 3. Render ---------- */
-const ordenados = [...ARTICULOS].sort(porFecha);
+let ordenados = [...ARTICULOS].sort(porFecha);
 
 /* Destacados: los 3 más recientes */
 function renderDestacados() {
@@ -138,4 +181,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initBuscador();
   initTema();
   initMenu();
+  cargarArticulosNube();   // sumar los artículos marcados "para el blog" desde la nube
 });

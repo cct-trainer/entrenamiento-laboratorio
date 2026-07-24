@@ -3264,9 +3264,13 @@ select.toolbox-input option:disabled { color: #888; }
         <input id="blog-art-yt" type="url" placeholder="https://youtube.com/watch?v=..." style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;box-sizing:border-box;">
       </div>
 
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
         <input type="checkbox" id="blog-art-pub" checked style="width:16px;height:16px;cursor:pointer;">
         <label for="blog-art-pub" style="font-size:13px;font-weight:600;color:#333;cursor:pointer;">Publicado (visible para los alumnos)</label>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+        <input type="checkbox" id="blog-art-enblog" style="width:16px;height:16px;cursor:pointer;">
+        <label for="blog-art-enblog" style="font-size:13px;font-weight:600;color:#1d4ed8;cursor:pointer;">🌐 Mostrar también en el blog público</label>
       </div>
 
       <div style="display:flex;gap:10px;justify-content:flex-end;">
@@ -24024,6 +24028,7 @@ function blogNuevoArticulo() {
   document.getElementById('blog-art-cat').value = 'Hipertrofia';
   document.getElementById('blog-art-tipo').value = 'articulo';
   document.getElementById('blog-art-pub').checked = true;
+  document.getElementById('blog-art-enblog').checked = false;
   document.getElementById('blog-editor-titulo').textContent = 'Nuevo artículo';
   blogToggleCampos();
   document.getElementById('modal-blog-editor').style.display = 'flex';
@@ -24041,6 +24046,7 @@ function blogEditarArticulo(idx) {
   document.getElementById('blog-art-url').value = a.url || '';
   document.getElementById('blog-art-yt').value = a.ytId ? 'https://youtube.com/watch?v='+a.ytId : '';
   document.getElementById('blog-art-pub').checked = a.publicado !== false;
+  document.getElementById('blog-art-enblog').checked = a.enBlog === true;
   document.getElementById('blog-editor-titulo').textContent = 'Editar artículo';
   // Cargar imágenes adicionales
   document.getElementById('blog-imgs-lista').innerHTML = '';
@@ -24080,6 +24086,8 @@ function blogGuardarArticulo() {
     ytId:      tipo === 'video' ? _ytIdBlog(document.getElementById('blog-art-yt').value.trim()) : '',
     fecha:     new Date().toLocaleDateString('es-AR', {day:'numeric',month:'long',year:'numeric'}),
     publicado: document.getElementById('blog-art-pub').checked,
+    enBlog:    document.getElementById('blog-art-enblog').checked,
+    ts:        (idExistente && (arts.find(a=>a.id===idExistente)||{}).ts) || Date.now(),
   };
   if (idExistente) {
     const idx = arts.findIndex(a => a.id === idExistente);
