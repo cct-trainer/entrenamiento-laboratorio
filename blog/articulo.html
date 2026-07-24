@@ -52,24 +52,38 @@ function inline(s){
     .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
     .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
 }
-// Markdown-lite → HTML editorial (##, ###, >, -, ![pie](url))
+// Markdown-lite → HTML editorial (####, ###, ##, >, -, tablas |, ![pie](url))
 function mdToHtml(text){
   const lines=String(text||'').replace(/\r/g,'').split('\n');
-  let html='', para='', quote=null, listOpen=false; let m;
+  let html='', para='', quote=null, listOpen=false, table=null; let m;
   const cP=()=>{ if(para.trim()){ html+='<p>'+inline(para.trim())+'</p>'; } para=''; };
   const cL=()=>{ if(listOpen){ html+='</ul>'; listOpen=false; } };
   const cQ=()=>{ if(quote!==null){ html+='<blockquote>'+inline(quote.trim())+'</blockquote>'; quote=null; } };
+  const cells=r=>r.replace(/^\|/,'').replace(/\|$/,'').split('|').map(c=>c.trim());
+  const isSep=r=>cells(r).every(c=>/^:?-{2,}:?$/.test(c));
+  const cT=()=>{
+    if(table&&table.length){
+      const rows=table.slice(); const head=rows.shift();
+      if(rows.length&&isSep(rows[0])) rows.shift();
+      let out='<div class="table-wrap"><table><thead><tr>'+cells(head).map(c=>'<th>'+inline(c)+'</th>').join('')+'</tr></thead><tbody>';
+      rows.forEach(r=>{ out+='<tr>'+cells(r).map(c=>'<td>'+inline(c)+'</td>').join('')+'</tr>'; });
+      html+=out+'</tbody></table></div>';
+    }
+    table=null;
+  };
   for(const raw of lines){
     const t=raw.trim();
-    if((m=t.match(/^!\[([^\]]*)\]\((https?:[^)\s]+)\)$/))){ cP();cL();cQ(); html+='<figure><img src="'+esc(m[2])+'" alt="'+esc(m[1])+'">'+(m[1]?'<figcaption>'+esc(m[1])+'</figcaption>':'')+'</figure>'; continue; }
-    if((m=t.match(/^###\s+(.+)/))){ cP();cL();cQ(); html+='<h3>'+inline(m[1])+'</h3>'; continue; }
-    if((m=t.match(/^##\s+(.+)/))){ cP();cL();cQ(); html+='<h2>'+inline(m[1])+'</h2>'; continue; }
-    if((m=t.match(/^>\s?(.*)/))){ cP();cL(); quote=(quote===null?'':quote+' ')+m[1]; continue; }
-    if((m=t.match(/^[-*]\s+(.+)/))){ cP();cQ(); if(!listOpen){ html+='<ul>'; listOpen=true; } html+='<li>'+inline(m[1])+'</li>'; continue; }
-    if(t===''){ cP();cL();cQ(); continue; }
-    cL();cQ(); para += (para?' ':'')+t;
+    if((m=t.match(/^!\[([^\]]*)\]\((https?:[^)\s]+)\)$/))){ cP();cL();cQ();cT(); html+='<figure><img src="'+esc(m[2])+'" alt="'+esc(m[1])+'">'+(m[1]?'<figcaption>'+esc(m[1])+'</figcaption>':'')+'</figure>'; continue; }
+    if((m=t.match(/^####\s+(.+)/))){ cP();cL();cQ();cT(); html+='<h4>'+inline(m[1])+'</h4>'; continue; }
+    if((m=t.match(/^###\s+(.+)/))){ cP();cL();cQ();cT(); html+='<h3>'+inline(m[1])+'</h3>'; continue; }
+    if((m=t.match(/^##\s+(.+)/))){ cP();cL();cQ();cT(); html+='<h2>'+inline(m[1])+'</h2>'; continue; }
+    if(/^\|(.+)\|$/.test(t)){ cP();cL();cQ(); if(table===null) table=[]; table.push(t); continue; }
+    if((m=t.match(/^>\s?(.*)/))){ cP();cL();cT(); quote=(quote===null?'':quote+' ')+m[1]; continue; }
+    if((m=t.match(/^[-*]\s+(.+)/))){ cP();cQ();cT(); if(!listOpen){ html+='<ul>'; listOpen=true; } html+='<li>'+inline(m[1])+'</li>'; continue; }
+    if(t===''){ cP();cL();cQ();cT(); continue; }
+    cL();cQ();cT(); para += (para?' ':'')+t;
   }
-  cP();cL();cQ();
+  cP();cL();cQ();cT();
   return html;
 }
 function fuentesHTML(f){

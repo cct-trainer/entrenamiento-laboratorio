@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap');
 /* ===========================================================
    Christian Cattaneo — Blog de entrenamiento basado en evidencia
    Hoja de estilos global · Paleta oro + azul · Dark / Light
@@ -23,8 +23,10 @@
   --hero-glow: radial-gradient(1200px 500px at 75% -10%, rgba(29,78,216,0.28), transparent 60%),
                radial-gradient(900px 500px at 10% 10%, rgba(201,168,76,0.14), transparent 55%);
 
-  --font-sans: "Inter", "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-sans: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Bebas Neue", "Barlow Condensed", Impact, sans-serif;
+  --font-cond: "Barlow Condensed", "Barlow", sans-serif;
+  --font-serif: "Barlow", system-ui, sans-serif;
   --max-w: 1180px;
   --radius: 16px;
   --transition: 0.2s ease;
@@ -313,35 +315,123 @@ a:hover { color: var(--blue); }
 }
 
 /* ===========================================================
-   PLANTILLA EDITORIAL — tipografía serif, jerarquía y ritmo
-   Aplica a artículos estáticos y dinámicos (misma hoja)
+   SISTEMA EDITORIAL GLOBAL — Bebas Neue + Barlow + Barlow Condensed
+   Diseño reutilizable: todo artículo (estático o dinámico) hereda
+   fuentes, escala, jerarquía, ritmo y comportamiento responsive.
    =========================================================== */
-.article-wrap { max-width: 720px; }
-.article-header h1 { font-family: var(--font-serif); font-weight: 600; letter-spacing: -0.4px; }
-.article-subtitle { font-family: var(--font-serif); font-style: italic; font-size: 1.3rem; line-height: 1.5; color: var(--text-dim); margin: 2px 0 4px; }
 
-.prose { font-family: var(--font-serif); font-size: 1.2rem; line-height: 1.8; }
-.prose h2 { font-family: var(--font-serif); font-size: clamp(1.7rem, 3.6vw, 2.15rem); font-weight: 600; letter-spacing: -0.4px; margin: 54px 0 16px; padding-top: 0; }
-.prose h3 { font-family: var(--font-serif); font-size: 1.42rem; font-weight: 600; margin: 36px 0 12px; }
-.prose p { margin: 0 0 20px; }
-.prose blockquote { font-family: var(--font-serif); font-size: 1.32rem; border-left: 3px solid var(--gold); background: transparent; border-radius: 0; padding: 4px 0 4px 22px; color: var(--gold); font-style: italic; margin: 30px 0; }
-.prose figure { margin: 34px 0; }
-.prose figure img { margin: 0; width: 100%; border: 1px solid var(--border); border-radius: 12px; }
-.prose figcaption { font-family: var(--font-serif); font-style: italic; font-size: 0.92rem; color: var(--text-dim); text-align: center; margin-top: 9px; }
+/* --- Fuente display de marca: títulos, nav, botones, labels, headers de tabla --- */
+h1, h2, h3,
+.hero h1, .section-head h2, .cta h2, .about-inner h2,
+.faq h2, .related h2, .refs h2, .callout h3,
+.main-nav a, .btn,
+.section-head .eyebrow, .footer-inner h4,
+.cat, .cat-hipertrofia, .cat-fuerza, .cat-biomecanica, .cat-salud, .cat-movilidad, .cat-nutricion, .cat-rendimiento,
+.prose th {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
 
-.article-refs { border-top: 1px solid var(--border); margin-top: 44px; padding-top: 18px; }
-.article-refs h2 { font-family: var(--font-sans); font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim); margin: 0 0 10px; font-weight: 800; }
-.article-refs p, .article-refs li { font-size: 0.9rem; color: var(--text-dim); line-height: 1.65; margin: 0 0 6px; }
+/* --- Home: navegación, botones, hero, secciones --- */
+.main-nav a { font-size: 1.18rem; letter-spacing: 1px; }
+.btn { font-size: 1.2rem; font-weight: 400; letter-spacing: 1px; }
+.hero h1 { font-size: clamp(2.8rem, 7vw, 4.6rem); line-height: 0.98; font-weight: 400; letter-spacing: 0.5px; }
+.section-head h2 { font-size: clamp(2rem, 4vw, 2.6rem); line-height: 1.05; font-weight: 400; letter-spacing: 0.5px; }
+.cta h2 { font-size: clamp(2.2rem, 5vw, 3rem); line-height: 1.02; font-weight: 400; }
+.section-head .eyebrow { font-size: 1rem; letter-spacing: 2px; }
+.footer-inner h4 { font-size: 1.05rem; letter-spacing: 2px; }
 
-/* Tarjetas editoriales */
-.article-card h3 { font-family: var(--font-serif); font-weight: 600; font-size: 1.24rem; }
-.featured-grid .article-card h3 { font-size: 1.5rem; }
-
-/* Sin toggle claro/oscuro (estilo LCMR: tema único) */
-.theme-toggle { display: none !important; }
-
-/* Categorías en texto óxido plano, sin pastilla (como LCMR) */
+/* --- Categorías / eyebrow: texto óxido plano, sin pastilla --- */
 .cat, .cat-hipertrofia, .cat-fuerza, .cat-biomecanica, .cat-salud, .cat-movilidad, .cat-nutricion, .cat-rendimiento {
   background: transparent !important; padding: 0 !important; border-radius: 0 !important;
-  color: var(--gold) !important; font-family: var(--font-sans); font-size: 0.72rem; font-weight: 700; letter-spacing: 1.8px;
+  color: var(--gold) !important; font-size: 1rem; font-weight: 400; letter-spacing: 2px; text-transform: none;
+}
+
+/* --- Tarjetas de artículo (home) --- */
+.article-card h3 { font-family: var(--font-display); font-weight: 400; letter-spacing: 0.5px; font-size: 1.55rem; line-height: 1.05; }
+.featured-grid .article-card h3 { font-size: 2rem; }
+.article-card p.excerpt, .article-card .meta { font-family: var(--font-sans); }
+.article-card .read-more { font-family: var(--font-display); font-weight: 400; letter-spacing: 1px; font-size: 1rem; }
+
+/* ===========================================================
+   PÁGINA DE ARTÍCULO — escala editorial
+   =========================================================== */
+.article-wrap { max-width: 720px; }
+
+/* H1 — título principal (60px desktop) */
+.article-header h1 {
+  font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(2.6rem, 6vw, 3.75rem); line-height: 0.97;
+  letter-spacing: 0.5px; margin: 0 0 18px;
+}
+
+/* Lead / bajada (Barlow 22px) */
+.article-subtitle, .article-lead {
+  font-family: var(--font-sans); font-style: normal; font-weight: 400;
+  font-size: 1.375rem; line-height: 1.45; color: var(--text-dim); margin: 2px 0 4px;
+}
+
+/* Metadata (Barlow 14px) */
+.article-meta .meta-item, .author-mini .role { font-family: var(--font-sans); font-size: 0.875rem; line-height: 1.4; }
+.author-mini .name { font-family: var(--font-sans); font-weight: 600; }
+
+/* --- Cuerpo (Barlow 18px / 1.7) --- */
+.prose { font-family: var(--font-sans); font-size: 1.125rem; line-height: 1.7; }
+.prose > *:first-child { margin-top: 24px; }
+.prose h2 { font-family: var(--font-display); font-weight: 400; font-size: 2.375rem; line-height: 1.05; letter-spacing: 0.5px; margin: 52px 0 16px; padding-top: 0; }
+.prose h3 { font-family: var(--font-display); font-weight: 400; font-size: 1.75rem; line-height: 1.1; letter-spacing: 0.5px; margin: 34px 0 12px; }
+.prose h4 { font-family: var(--font-cond); font-weight: 600; font-size: 1.375rem; line-height: 1.2; letter-spacing: 0.2px; margin: 26px 0 10px; }
+.prose h2 + h3, .prose h3 + h4 { margin-top: 18px; }
+.prose p { margin: 0 0 20px; }
+.prose strong { font-family: var(--font-sans); font-weight: 600; color: var(--text); }
+.prose ul, .prose ol { margin: 0 0 20px; padding-left: 24px; }
+.prose li { margin-bottom: 8px; }
+
+/* Pull quote / declaración destacada (Barlow Condensed SemiBold) */
+.prose blockquote {
+  font-family: var(--font-cond); font-weight: 600; font-style: normal;
+  font-size: 1.625rem; line-height: 1.35; color: var(--text);
+  border-left: 3px solid var(--gold); background: transparent; border-radius: 0;
+  padding: 6px 0 6px 22px; margin: 32px 0;
+}
+
+/* Figuras / epígrafes */
+.prose figure { margin: 34px 0; }
+.prose figure img { margin: 0; width: 100%; border: 1px solid var(--border); border-radius: 12px; }
+.prose figcaption { font-family: var(--font-sans); font-style: normal; font-size: 0.875rem; line-height: 1.45; color: var(--text-dim); text-align: center; margin-top: 9px; }
+
+/* Tablas — header Bebas, contenido Barlow, responsivas */
+.prose .table-wrap { overflow-x: auto; margin: 24px 0; -webkit-overflow-scrolling: touch; }
+.prose table { font-family: var(--font-sans); font-size: 1rem; margin: 0; }
+.prose th { font-family: var(--font-display); font-weight: 400; letter-spacing: 1px; font-size: 1.05rem; background: var(--surface); }
+
+/* Referencias / bibliografía */
+.article-refs { border-top: 1px solid var(--border); margin-top: 44px; padding-top: 18px; }
+.article-refs h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.5rem; letter-spacing: 1px; text-transform: none; color: var(--text); margin: 0 0 12px; }
+.article-refs p, .article-refs li { font-family: var(--font-sans); font-size: 0.9375rem; color: var(--text-dim); line-height: 1.65; margin: 0 0 6px; }
+.refs h2 { font-size: 1.5rem; letter-spacing: 1px; }
+.refs li { font-family: var(--font-sans); }
+
+/* FAQ */
+.faq h2 { font-size: 2rem; letter-spacing: 0.5px; }
+.faq summary { font-family: var(--font-cond); font-weight: 600; }
+
+/* Sin toggle claro/oscuro (tema único) */
+.theme-toggle { display: none !important; }
+
+/* ===========================================================
+   Escala tipográfica — MOBILE
+   =========================================================== */
+@media (max-width: 640px) {
+  .article-header h1 { font-size: 2.5rem; line-height: 1.0; }
+  .article-subtitle, .article-lead { font-size: 1.125rem; }
+  .prose { font-size: 1.0625rem; line-height: 1.7; }
+  .prose h2 { font-size: 2rem; }
+  .prose h3 { font-size: 1.5625rem; }
+  .prose h4 { font-size: 1.25rem; }
+  .prose blockquote { font-size: 1.375rem; }
+  .article-meta .meta-item { font-size: 0.8125rem; }
+  .prose figcaption { font-size: 0.8125rem; }
+  .main-nav a { font-size: 1.15rem; }
 }
