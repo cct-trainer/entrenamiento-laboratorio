@@ -7,18 +7,19 @@
 
 /* ---------- 1. Variables de marca ---------- */
 :root {
-  --gold: #C9A84C;
-  --gold-dark: #9A7A28;
-  --blue: #1D4ED8;
-  --blue-dark: #1E3A8A;
+  /* Paleta LCMR: crema (papel) + negro + óxido/terracota */
+  --gold: #A8461F;
+  --gold-dark: #863618;
+  --blue: #A8461F;
+  --blue-dark: #863618;
 
-  --bg: #0D0D1A;
-  --surface: #13132A;
-  --surface-2: #1a1a38;
-  --border: #26264a;
-  --text: #E8E8F0;
-  --text-dim: #8888AA;
-  --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --bg: #F2EEE7;
+  --surface: #FBFAF6;
+  --surface-2: #EBE6DC;
+  --border: #D9D3C6;
+  --text: #17150F;
+  --text-dim: #6B665C;
+  --card-shadow: 0 10px 28px rgba(30, 25, 15, 0.10);
   --hero-glow: radial-gradient(1200px 500px at 75% -10%, rgba(29,78,216,0.28), transparent 60%),
                radial-gradient(900px 500px at 10% 10%, rgba(201,168,76,0.14), transparent 55%);
 
@@ -29,16 +30,15 @@
   --transition: 0.2s ease;
 }
 
+/* Tema único: la paleta LCMR se usa siempre (sin toggle claro/oscuro) */
 [data-theme="light"] {
-  --bg: #F6F5F1;
-  --surface: #FFFFFF;
-  --surface-2: #F0EFEA;
-  --border: #E2DECF;
-  --text: #1A1A2E;
-  --text-dim: #6B6B80;
-  --card-shadow: 0 10px 28px rgba(30, 30, 60, 0.10);
-  --hero-glow: radial-gradient(1200px 500px at 75% -10%, rgba(29,78,216,0.12), transparent 60%),
-               radial-gradient(900px 500px at 10% 10%, rgba(201,168,76,0.16), transparent 55%);
+  --bg: #F2EEE7;
+  --surface: #FBFAF6;
+  --surface-2: #EBE6DC;
+  --border: #D9D3C6;
+  --text: #17150F;
+  --text-dim: #6B665C;
+  --card-shadow: 0 10px 28px rgba(30, 25, 15, 0.10);
 }
 
 /* ---------- 2. Base ---------- */
@@ -61,10 +61,14 @@ a:hover { color: var(--blue); }
 /* ---------- 3. Header / Nav ---------- */
 .site-header {
   position: sticky; top: 0; z-index: 100;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
+  background: #0E0E0E;
+  border-bottom: 1px solid #0E0E0E;
 }
+/* Header negro con texto claro (estilo LCMR) */
+.site-header .brand { color: #fff; }
+.site-header .brand-tagline { color: #9a958c; }
+.site-header .main-nav a { color: #cfcbc4; }
+.site-header .main-nav a:hover { color: #fff; }
 .nav-wrap {
   max-width: var(--max-w); margin: 0 auto;
   display: flex; align-items: center; justify-content: space-between;
@@ -190,8 +194,12 @@ a:hover { color: var(--blue); }
 .social-links a { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 12px; border: 1px solid var(--border); color: var(--text); font-weight: 600; }
 .social-links a:hover { border-color: var(--gold); color: var(--gold); }
 
-/* ---------- 10. Footer ---------- */
-.site-footer { border-top: 1px solid var(--border); background: var(--bg); }
+/* ---------- 10. Footer (chrome negro, estilo LCMR) ---------- */
+.site-footer { border-top: 1px solid #0E0E0E; background: #0E0E0E; }
+.site-footer .footer-inner a, .site-footer .footer-tagline, .site-footer .footer-bottom { color: #9a958c; }
+.site-footer .footer-inner a:hover { color: #fff; }
+.site-footer .footer-bottom { border-top-color: #262421; }
+.site-footer .footer-brand { color: #fff; }
 .footer-inner { max-width: var(--max-w); margin: 0 auto; padding: 44px 24px; display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 32px; }
 .footer-inner h4 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); margin: 0 0 14px; }
 .footer-inner a { color: var(--text-dim); display: block; margin-bottom: 8px; font-size: 0.9rem; }
@@ -328,3 +336,12 @@ a:hover { color: var(--blue); }
 /* Tarjetas editoriales */
 .article-card h3 { font-family: var(--font-serif); font-weight: 600; font-size: 1.24rem; }
 .featured-grid .article-card h3 { font-size: 1.5rem; }
+
+/* Sin toggle claro/oscuro (estilo LCMR: tema único) */
+.theme-toggle { display: none !important; }
+
+/* Categorías en texto óxido plano, sin pastilla (como LCMR) */
+.cat, .cat-hipertrofia, .cat-fuerza, .cat-biomecanica, .cat-salud, .cat-movilidad, .cat-nutricion, .cat-rendimiento {
+  background: transparent !important; padding: 0 !important; border-radius: 0 !important;
+  color: var(--gold) !important; font-family: var(--font-sans); font-size: 0.72rem; font-weight: 700; letter-spacing: 1.8px;
+}
