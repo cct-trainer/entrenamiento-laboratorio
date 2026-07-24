@@ -24169,12 +24169,14 @@ function guardarNuevaCharla(){
   const g=id=>(document.getElementById(id)?.value||'').trim();
   const titulo=g('ch-titulo');
   if(!titulo){ toast('Poné un título','error'); return; }
+  const yt=_ytIdBlog(g('ch-video'));
+  if(!yt){ toast('Charlas es solo para videos: pegá el link de YouTube. Para una nota de texto, usá Nuevo artículo.','error'); return; }
   const puntos=g('ch-puntos').split('\n').map(s=>s.trim()).filter(Boolean);
   const lista=getCharlas();
   lista.unshift({
     id:'chr_'+Date.now()+Math.random().toString(36).slice(2,5),
     titulo, tema:g('ch-tema')||'General',
-    ytId:_ytIdBlog(g('ch-video'))||'', video:'',
+    ytId:yt, video:'',
     portada:g('ch-portada'), duracion:g('ch-duracion'),
     descripcion:g('ch-desc'), puntos, referencias:[],
     fecha:new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}),
@@ -24184,6 +24186,28 @@ function guardarNuevaCharla(){
   document.getElementById('charla-form-box').style.display='none';
   renderCharlasCoach();
   toast('Charla guardada ✓');
+  forzarSyncFirebase();
+}
+
+// Mover una charla mal cargada (una nota) a Coach Online (artículos). Charlas = solo videos.
+function _charlaAArticulo(id){
+  const l=getCharlas(); const c=l.find(x=>x.id===id); if(!c) return;
+  if(!confirm('¿Mover "'+c.titulo+'" a Coach Online (artículos)? Sale de Charlas.')) return;
+  let contenido=(c.descripcion||'');
+  if(Array.isArray(c.puntos)&&c.puntos.length) contenido += (contenido?'\n\n':'') + c.puntos.map(p=>'• '+p).join('\n');
+  const arts=getArticulos();
+  arts.unshift({
+    id:'art_'+Date.now()+Math.random().toString(36).slice(2,5),
+    titulo:c.titulo, categoria:c.tema||'General', tipo:'articulo',
+    portada:c.portada||'', contenido, imagenes:[], url:'', ytId:'',
+    fecha:c.fecha||new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}),
+    publicado:c.publicado!==false
+  });
+  saveArticulos(arts);
+  saveCharlas(l.filter(x=>x.id!==id));
+  if(typeof renderBlogLista==='function') renderBlogLista();
+  renderCharlasCoach();
+  toast('Movida a Coach Online ✓');
   forzarSyncFirebase();
 }
 
@@ -24211,6 +24235,7 @@ function renderCharlasCoach(){
           '<div style="font-size:11px;color:#888;margin-top:5px;">'+[c.duracion,c.fecha].filter(Boolean).join(' · ')+'</div>'+
           '<div style="display:flex;gap:6px;margin-top:10px;">'+
             '<button onclick="_charlaTogglePub(\''+c.id+'\')" style="flex:1;border:1px solid '+(c.publicado?'#22c55e':'#d5d9e0')+';background:'+(c.publicado?'#22c55e':'#fff')+';color:'+(c.publicado?'#fff':'#666')+';border-radius:8px;padding:7px;font-size:11px;font-weight:800;cursor:pointer;">'+(c.publicado?'● PUBLICADA':'○ Oculta')+'</button>'+
+            '<button onclick="_charlaAArticulo(\''+c.id+'\')" title="Mover a Coach Online (artículos)" style="background:#eef2ff;border:none;border-radius:8px;padding:7px 10px;font-size:11px;font-weight:800;cursor:pointer;color:#1d4ed8;white-space:nowrap;">→ Coach</button>'+
             '<button onclick="_charlaEliminar(\''+c.id+'\')" style="background:#fdeaea;border:none;border-radius:8px;padding:7px 11px;font-size:13px;cursor:pointer;color:#c62828;">🗑</button>'+
           '</div>'+
         '</div></div>';
