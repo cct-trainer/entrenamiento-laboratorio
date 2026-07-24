@@ -804,8 +804,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260723210744 por un timestamp en cada deploy
-const _APP_VERSION = '20260723210744';
+// deploy.bat reemplaza 20260723211637 por un timestamp en cada deploy
+const _APP_VERSION = '20260723211637';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1543,6 +1543,16 @@ function _esUnilateralEj(ej){
   const chk = arr => Array.isArray(arr) && arr.some(s => s && _RE_LADO.test(String(s.reps||'')));
   return chk(ej.series) || chk(ej.seriesApro) || chk(ej.dropset);
 }
+// Nota automática de equipamiento (misma lógica que el panel del coach; [COACH↔APP])
+function _notaEquipo(ej){
+  const e = String((ej&&ej.equipo)||'').toLowerCase();
+  const en = _LANG==='en';
+  if(/mancuerna/.test(e)) return en ? 'Weight is per dumbbell. E.g. 20 kg = a 20 kg dumbbell in each hand.' : 'El peso es por mancuerna. Ej: 20 kg = una mancuerna de 20 kg en cada mano.';
+  if(/banda/.test(e))     return en ? 'Place the resistance band around the knees.' : 'Colocá la banda de resistencia alrededor de las rodillas.';
+  if(/barra/.test(e) && !/smith|m[aá]quina/.test(e)) return en ? "Weight is the total of the plates only — don't include the bar. E.g. 60 kg = 60 kg in plates." : 'El peso es solo el total de los discos. No incluye la barra. Ej: 60 kg = 60 kg en discos.';
+  if(/m[aá]quina|polea|smith|multipower|cable/.test(e)) return en ? 'Weight is the total load selected or loaded on the machine.' : 'El peso es la carga total seleccionada o cargada en la máquina.';
+  return '';
+}
 // En filas unilaterales, dejar solo el número: "10 reps por lado" → "10"
 function _repsSinLado(v){
   let s = String(v||'');
@@ -1949,6 +1959,7 @@ function _ejCard(ej, uid) {
       '<div style="font-size:16px;font-weight:900;color:var(--text);margin-bottom:3px;line-height:1.2;border-left:3px solid var(--gold);padding-left:9px;">'+(_nomEj(ej)||'—')+'</div>'+
       (ej.musculos ? '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;padding-left:12px;">'+_tc(ej.musculos)+'</div>' : '')+
       (ej.unilateral ? '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;padding-left:12px;">'+(_LANG==='en'?'Unilateral · do each set on both sides':'Unilateral · cada serie se hace de los dos lados')+'</div>' : '')+
+      (()=>{ const nq=_notaEquipo(ej); return nq ? '<div style="font-size:10px;color:var(--muted);margin:2px 0 6px;padding-left:12px;line-height:1.45;">💡 '+nq+'</div>' : ''; })()+
       (ej.nota ? '<div style="font-size:12.5px;font-weight:600;color:var(--gold);margin:3px 0 7px;padding:6px 10px 6px 12px;background:rgba(201,168,76,.08);border-radius:7px;font-style:italic;line-height:1.45;">📝 '+ej.nota+'</div>' : '')+
       (sEfec ? '' : ctrlGrid)+
       pesoRef+

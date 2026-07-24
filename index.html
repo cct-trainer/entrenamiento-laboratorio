@@ -17703,7 +17703,7 @@ function addEjercicio(bloqueId) {
       <button class="ej-btn-del" onclick="eliminarEjercicio('${ejId}','${bloqueId}')">🗑</button>
     </div>
     <input type="hidden" class="ej-video-input">
-    <div id="${ejId}-equipo-note" style="display:none;background:#f5f7ff;border:1px solid #e2e8f8;border-radius:7px;padding:8px 11px;font-size:11px;color:#3a4256;line-height:1.5;margin:2px 0 6px;"></div>
+    <div id="${ejId}-equipo-note" style="display:none;font-size:11px;color:#8a8f9c;line-height:1.5;margin:2px 0 6px;padding-left:2px;"></div>
     <input class="ej-nota-input" type="text"
       placeholder="✏️ Aclaración de ejecución (ej: 8 reps con pausa de 2 seg arriba, excéntrica lenta...)"
       style="width:100%;box-sizing:border-box;border:1px dashed #d0d0d8;border-radius:7px;padding:7px 12px;font-size:12px;font-style:italic;color:#555;background:#fafafa;margin:2px 0 8px;">
@@ -17925,9 +17925,13 @@ function _setEquipoNote(ejId, equipo){
   const e = String(equipo||'').toLowerCase();
   let msg = '';
   if(/mancuerna/.test(e)){
-    msg = '💡 El peso prescripto es <b>por mancuerna</b>. Ej: si el plan dice 20 kg, el alumno usa una mancuerna de 20 kg en cada mano.';
-  } else if(/barra/.test(e) && !/smith|m[aá]quina|polea|banda/.test(e)){
-    msg = '💡 El peso prescripto es <b>solo el total de los discos</b>. No incluye el peso de la barra.';
+    msg = '💡 El peso es por mancuerna. Ej: 20 kg = una mancuerna de 20 kg en cada mano.';
+  } else if(/banda/.test(e)){
+    msg = '💡 Colocá la banda de resistencia alrededor de las rodillas.';
+  } else if(/barra/.test(e) && !/smith|m[aá]quina/.test(e)){
+    msg = '💡 El peso es solo el total de los discos. No incluye la barra. Ej: 60 kg = 60 kg en discos.';
+  } else if(/m[aá]quina|polea|smith|multipower|cable/.test(e)){
+    msg = '💡 El peso es la carga total seleccionada o cargada en la máquina.';
   }
   if(msg){ el.innerHTML = msg; el.style.display = 'block'; }
   else { el.innerHTML = ''; el.style.display = 'none'; }
