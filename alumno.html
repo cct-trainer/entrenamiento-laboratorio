@@ -804,8 +804,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260724180850 por un timestamp en cada deploy
-const _APP_VERSION = '20260724180850';
+// deploy.bat reemplaza 20260724185219 por un timestamp en cada deploy
+const _APP_VERSION = '20260724185219';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -849,36 +849,51 @@ const TIPOS_RUN = {
 };
 
 (async function(){
-  const id = new URLSearchParams(location.search).get('id');
-  if (!id) return showErr('No se encontró el identificador en el enlace.');
-  _initEdits(id);
+  const params = new URLSearchParams(location.search);
+  let id = params.get('id');
+  const slug = params.get('u');
+  if (!id && !slug) return showErr('No se encontró el identificador en el enlace.');
 
-  // Manifest dinámico con start_url que incluye el ID del alumno
-  const manifest = {
-    name: 'Christian Cattaneo',
-    short_name: 'C. Cattaneo',
-    description: 'Portal de entrenamiento personalizado',
-    start_url: 'https://cct-trainer.github.io/entrenamiento-laboratorio/alumno.html?id=' + encodeURIComponent(id),
-    display: 'standalone',
-    background_color: '#0d0d1a',
-    theme_color: '#C9A84C',
-    orientation: 'portrait',
-    icons: [
-      { src: 'https://cct-trainer.github.io/entrenamiento-laboratorio/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-      { src: 'https://cct-trainer.github.io/entrenamiento-laboratorio/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
-    ]
-  };
-  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
-  document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
-
-  // Service Worker → habilita "Instalar app" + red-primero (siempre versión fresca)
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-    navigator.serviceWorker.register('alumno-sw.js').catch(()=>{});
-  }
   try {
     firebase.initializeApp(CFG);
     _db = firebase.firestore();
     const db = _db;
+
+    // Links nuevos con el nombre del alumno (?u=juan-perez-26rn) → resolver a su id
+    if (!id && slug) {
+      try {
+        const q = await db.collection('alumnos').where('slug', '==', slug).limit(1).get();
+        if (!q.empty) id = q.docs[0].id;
+      } catch(e) {}
+      if (!id) return showErr('Enlace no válido. Pedile a tu coach que te reenvíe el link del portal.');
+    }
+    _initEdits(id);
+
+    // Manifest dinámico con start_url que conserva el enlace con el que entró el alumno
+    const _startUrl = 'https://cct-trainer.github.io/entrenamiento-laboratorio/alumno.html?'
+      + (slug ? ('u=' + encodeURIComponent(slug)) : ('id=' + encodeURIComponent(id)));
+    const manifest = {
+      name: 'Christian Cattaneo',
+      short_name: 'C. Cattaneo',
+      description: 'Portal de entrenamiento personalizado',
+      start_url: _startUrl,
+      display: 'standalone',
+      background_color: '#0d0d1a',
+      theme_color: '#C9A84C',
+      orientation: 'portrait',
+      icons: [
+        { src: 'https://cct-trainer.github.io/entrenamiento-laboratorio/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+        { src: 'https://cct-trainer.github.io/entrenamiento-laboratorio/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+      ]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+    document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
+
+    // Service Worker → habilita "Instalar app" + red-primero (siempre versión fresca)
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      navigator.serviceWorker.register('alumno-sw.js').catch(()=>{});
+    }
+
     const doc = await db.collection('alumnos').doc(id).get();
     if (!doc.exists) return showErr('Todavía no hay datos para este alumno. Pedile a tu coach que sincronice el portal desde su aplicación.');
     _data = doc.data();

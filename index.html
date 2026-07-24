@@ -13149,9 +13149,8 @@ function openPerfilAlumno(id) {
   const _btnPortal = document.getElementById('btn-portal-alumno');
   if (_btnPortal) {
     _btnPortal.style.display = 'inline-flex';
-    _btnPortal.onclick = () => {
-      const PORTAL_BASE = 'https://cct-trainer.github.io/entrenamiento-laboratorio/';
-      const url = PORTAL_BASE + 'alumno.html?id=' + encodeURIComponent(a.id);
+    _btnPortal.onclick = async () => {
+      const url = await _portalLinkFor(a);
       navigator.clipboard.writeText(url)
         .then(() => toast('🔗 Link del portal copiado — mandáselo al alumno por WhatsApp'))
         .catch(() => { prompt('Copiá este link y mandáselo al alumno:', url); });
@@ -13729,12 +13728,35 @@ function renderSidebarAlumno(id) {
 
   `;
 }
-function _copiarLinkPortal(id) {
-  // Usar siempre la URL de GitHub Pages, independientemente de dónde esté corriendo
-  const PORTAL_BASE = 'https://cct-trainer.github.io/entrenamiento-laboratorio/';
-  const url = PORTAL_BASE + 'alumno.html?id=' + encodeURIComponent(id);
+// ── Slug del portal: la URL usa el NOMBRE del alumno, no un id ─────────────────
+const PORTAL_BASE = 'https://cct-trainer.github.io/entrenamiento-laboratorio/';
+function _slugify(s) {
+  return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'alumno';
+}
+// slug = nombre-del-alumno + sufijo corto único (para que dos homónimos no choquen)
+function _portalSlug(a) {
+  if (a && a.slug) return a.slug;
+  const base = _slugify(a && a.nombre);
+  const suf = String((a && a.id) || '').replace(/[^a-z0-9]/gi, '').slice(-4).toLowerCase()
+    || Math.random().toString(36).slice(2, 6);
+  return base + '-' + suf;
+}
+// Devuelve la URL del portal con el nombre del alumno y persiste el slug en la nube
+async function _portalLinkFor(a) {
+  if (!a || !a.id) return PORTAL_BASE;
+  const slug = _portalSlug(a);
+  if (a.slug !== slug) {
+    a.slug = slug;
+    try { if (window._db) await window._db.collection('alumnos').doc(a.id).set({ slug }, { merge: true }); } catch (e) {}
+  }
+  return PORTAL_BASE + 'alumno.html?u=' + encodeURIComponent(slug);
+}
+async function _copiarLinkPortal(id) {
+  const a = (typeof getAlumnos === 'function' ? getAlumnos() : []).find(x => x.id === id);
   // Sincronizar antes de compartir: evita mandar un link que muestre "Enlace no válido"
   if (typeof forzarSyncFirebase === 'function') forzarSyncFirebase();
+  const url = a ? await _portalLinkFor(a) : (PORTAL_BASE + 'alumno.html?id=' + encodeURIComponent(id));
   navigator.clipboard.writeText(url)
     .then(() => toast('Link copiado — mandáselo al alumno por WhatsApp'))
     .catch(() => { prompt('Copiá este link y mandáselo al alumno:', url); });
@@ -21468,7 +21490,7 @@ async function aprobarSolicitud(solId){
 
   try{ if(window._db) await window._db.collection('alumnos').doc(solId).update({ estado:'aprobada', alumnoId:nuevo.id }); }catch(e){}
   if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
-  const link='https://cct-trainer.github.io/entrenamiento-laboratorio/alumno.html?id='+nuevo.id;
+  const link = await _portalLinkFor(nuevo);
   try{ await navigator.clipboard.writeText(link); }catch(e){}
   toast(planAsignado ? ('Prueba activada + plan "'+planAsignado+'" ✓ · link copiado') : 'Prueba activada 7 días · link copiado (asigná el plan)');
   renderAlumnosGrid();
