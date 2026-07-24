@@ -12082,6 +12082,8 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
     if(datosPrevios.dropset?.length)   toggleSeriesSec(ejId,'drop');
     // Restaurar ficha técnica y video desde la biblioteca
     const exLib = getEjerciciosCompletos().find(e => e.nombre === datosPrevios.nombre);
+    // Nota automática de equipamiento (del ejercicio guardado o de la biblioteca)
+    _setEquipoNote(ejId, datosPrevios.equipo || (exLib && exLib.equipo) || '');
     if(exLib) {
       mostrarFicha(ejId, exLib);
       setVideoEj(ejId, exLib.video || datosPrevios.video || '');
@@ -17701,6 +17703,7 @@ function addEjercicio(bloqueId) {
       <button class="ej-btn-del" onclick="eliminarEjercicio('${ejId}','${bloqueId}')">🗑</button>
     </div>
     <input type="hidden" class="ej-video-input">
+    <div id="${ejId}-equipo-note" style="display:none;background:#f5f7ff;border:1px solid #e2e8f8;border-radius:7px;padding:8px 11px;font-size:11px;color:#3a4256;line-height:1.5;margin:2px 0 6px;"></div>
     <input class="ej-nota-input" type="text"
       placeholder="✏️ Aclaración de ejecución (ej: 8 reps con pausa de 2 seg arriba, excéntrica lenta...)"
       style="width:100%;box-sizing:border-box;border:1px dashed #d0d0d8;border-radius:7px;padding:7px 12px;font-size:12px;font-style:italic;color:#555;background:#fafafa;margin:2px 0 8px;">
@@ -17916,6 +17919,20 @@ function closeDropdown(ejId) {
   const d = document.getElementById(ejId+'-dropdown');
   if (d) d.classList.remove('open');
 }
+// Nota automática de equipamiento (informativa, no editable) según el equipo del ejercicio
+function _setEquipoNote(ejId, equipo){
+  const el = document.getElementById(ejId+'-equipo-note'); if(!el) return;
+  const e = String(equipo||'').toLowerCase();
+  let msg = '';
+  if(/mancuerna/.test(e)){
+    msg = '💡 El peso prescripto es <b>por mancuerna</b>. Ej: si el plan dice 20 kg, el alumno usa una mancuerna de 20 kg en cada mano.';
+  } else if(/barra/.test(e) && !/smith|m[aá]quina|polea|banda/.test(e)){
+    msg = '💡 El peso prescripto es <b>solo el total de los discos</b>. No incluye el peso de la barra.';
+  }
+  if(msg){ el.innerHTML = msg; el.style.display = 'block'; }
+  else { el.innerHTML = ''; el.style.display = 'none'; }
+}
+
 // Selector Bilateral/Unilateral de un ejercicio en el editor
 function _setEjExec(ejId, val){
   const inp = document.getElementById(ejId+'-uni'); if (inp) inp.value = val ? '1' : '0';
@@ -17944,6 +17961,8 @@ function seleccionarEjercicio(ejId, bloqueId, nombreOIdx) {
   closeDropdown(ejId);
   // Prefijar Bilateral/Unilateral según la biblioteca (editable por el coach)
   if (ex.unilateral !== undefined) _setEjExec(ejId, ex.unilateral ? 1 : 0);
+  // Nota automática de equipamiento
+  _setEquipoNote(ejId, ex.equipo || '');
   // Auto-popular video si el ejercicio tiene uno en la biblioteca
   setVideoEj(ejId, ex.video || '');
   // Auto-prescripción de MOVILIDAD: 1 serie efectiva · 8 reps por lado (unilateral) / 10 reps (bilateral)
