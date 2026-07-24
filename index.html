@@ -19303,6 +19303,18 @@ function _compRenderForm(r) {
         <select id="comp-f-dif" style="${inp}">${[['1','Baja'],['2','Media'],['3','Alta']].map(([v,t])=>`<option value="${v}"${String(r.dificultad||'1')===v?' selected':''}>${t}</option>`).join('')}</select>
       </div>
     </div>
+    <div style="display:flex;gap:10px;">
+      <div style="flex:1;">
+        <label style="${lbl}">OBJETIVO</label>
+        <input id="comp-f-obj" list="comp-obj-datalist" style="${inp}" placeholder="Ej: Hipertrofia, Movilidad, Core" value="${(r.objetivo||'').replace(/"/g,'&quot;')}">
+        <datalist id="comp-obj-datalist"><option value="Hipertrofia"><option value="Fuerza"><option value="Movilidad"><option value="Core / Zona media"><option value="Pérdida de grasa"><option value="Rendimiento"></datalist>
+      </div>
+      <div style="flex:1;">
+        <label style="${lbl}">ZONA DEL CUERPO</label>
+        <input id="comp-f-zona" list="comp-zona-datalist" style="${inp}" placeholder="Ej: Glúteos, Core, Piernas" value="${(r.zona||'').replace(/"/g,'&quot;')}">
+        <datalist id="comp-zona-datalist"><option value="Glúteos"><option value="Piernas"><option value="Core / Abdomen"><option value="Espalda"><option value="Pecho"><option value="Hombros"><option value="Brazos"><option value="Cadera"><option value="Cuerpo completo"></datalist>
+      </div>
+    </div>
     <label style="${lbl}">DESCRIPCIÓN (opcional)</label>
     <textarea id="comp-f-desc" rows="2" style="${inp}resize:vertical;" placeholder="Cuándo hacerla, para qué sirve...">${r.descripcion||''}</textarea>
     <label style="${lbl}">EJERCICIOS</label>
@@ -19337,6 +19349,8 @@ function _compGuardarRutina() {
   const lugar = document.getElementById('comp-f-lugar').value;
   const dificultad = document.getElementById('comp-f-dif').value;
   const dur = document.getElementById('comp-f-dur').value.trim();
+  const objetivo = (document.getElementById('comp-f-obj')?.value || '').trim();
+  const zona = (document.getElementById('comp-f-zona')?.value || '').trim();
   const desc = document.getElementById('comp-f-desc').value.trim();
   const ejercicios = [];
   document.querySelectorAll('#comp-f-ejercicios .comp-ej-row').forEach(row => {
@@ -19351,9 +19365,9 @@ function _compGuardarRutina() {
   });
   if (_compEditId && _compEditId !== '_new') {
     const r = _COMPLEMENTOS.find(x => x.id === _compEditId);
-    if (r) { r.categoria=cat; r.titulo=titulo; r.imagen=imagen; r.lugar=lugar; r.dificultad=dificultad; r.duracion=dur; r.descripcion=desc; r.ejercicios=ejercicios; }
+    if (r) { r.categoria=cat; r.titulo=titulo; r.imagen=imagen; r.lugar=lugar; r.dificultad=dificultad; r.duracion=dur; r.objetivo=objetivo; r.zona=zona; r.descripcion=desc; r.ejercicios=ejercicios; }
   } else {
-    _COMPLEMENTOS.push({ id:'comp'+Date.now()+Math.random().toString(36).slice(2,6), categoria:cat, titulo, imagen, lugar, dificultad, duracion:dur, descripcion:desc, ejercicios });
+    _COMPLEMENTOS.push({ id:'comp'+Date.now()+Math.random().toString(36).slice(2,6), categoria:cat, titulo, imagen, lugar, dificultad, duracion:dur, objetivo, zona, descripcion:desc, ejercicios });
   }
   _compSaveFirestore();
   _compVolverLista();

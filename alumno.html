@@ -804,8 +804,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260724122510 por un timestamp en cada deploy
-const _APP_VERSION = '20260724122510';
+// deploy.bat reemplaza 20260724132448 por un timestamp en cada deploy
+const _APP_VERSION = '20260724132448';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2797,8 +2797,14 @@ async function renderComplementos() {
   }
   _renderComplementos(ctn);
 }
-let _compCats = [];
-let _compFilterIdx = -1;
+// Estado de filtros de complementos
+let _compFiltros = { q:'', tipo:'', objetivo:'', zona:'', dur:'', nivel:'' };
+function _compJsEsc(s){ return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function _compEsDesafio(r){ return /desaf|reto|challenge/i.test(r.categoria||''); }
+function _compMin(r){ const m=String(r.duracion||'').match(/(\d+)\s*m/i); return m?parseInt(m[1],10):null; }
+function _compNivelTxt(r){ return ({'1':'Baja','2':'Media','3':'Alta'})[String(r.dificultad||'1')]||'Baja'; }
+function _compValsUnicos(campo){ return [...new Set(_COMPS.map(r=>String(r[campo]||'').trim()).filter(Boolean))]; }
+
 function _renderComplementos(ctn) {
   if (!_COMPS || !_COMPS.length) {
     ctn.innerHTML = '<div class="empty" style="padding:40px 20px;text-align:center;">'+
@@ -2807,69 +2813,109 @@ function _renderComplementos(ctn) {
       '<div style="font-size:12px;color:var(--muted);margin-top:6px;">Tu coach los va a ir sumando acá.</div></div>';
     return;
   }
-  _compCats = [...new Set(_COMPS.map(r => r.categoria || 'General'))];
-  if (_compFilterIdx >= _compCats.length) _compFilterIdx = -1;
   ctn.innerHTML =
-    '<div style="margin:2px 0 11px;">'+
-      '<input id="comp-search" type="search" placeholder="'+_t('buscar')+'" oninput="_compGrid()" autocomplete="off" '+
-        'style="width:100%;padding:13px 15px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;outline:none;box-sizing:border-box;">'+
+    '<style>#info-ctn .comp-row{scrollbar-width:none;}#info-ctn .comp-row::-webkit-scrollbar{display:none;}</style>'+
+    '<div style="margin:2px 0 10px;display:flex;gap:9px;align-items:center;">'+
+      '<input id="comp-search" type="search" placeholder="'+_t('buscar')+'" oninput="_compAplicar()" autocomplete="off" '+
+        'style="flex:1;min-width:0;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;outline:none;box-sizing:border-box;">'+
+      '<button onclick="_compToggleFiltros()" style="display:inline-flex;align-items:center;gap:6px;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--gold);font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;">⚙ '+_t('filtros')+'</button>'+
     '</div>'+
-    '<div style="margin-bottom:13px;">'+
-      '<button onclick="_compToggleFiltros()" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:22px;border:1px solid var(--border);background:var(--card);color:var(--gold);font-size:13px;font-weight:800;cursor:pointer;">🔽 '+_t('filtros')+'</button>'+
-      '<div id="comp-filtros" style="display:none;flex-wrap:wrap;gap:7px;margin-top:10px;">'+
-        _compChip(-1,'Todas') + _compCats.map((c,i)=>_compChip(i,c)).join('')+
-      '</div>'+
-    '</div>'+
-    '<div id="comp-grid"></div>';
-  _compGrid();
-}
-function _compChip(idx, label) {
-  const on = (_compFilterIdx === idx);
-  return '<button class="comp-chip" data-i="'+idx+'" onclick="_compSetFiltro('+idx+')" '+
-    'style="padding:7px 14px;border-radius:20px;border:1px solid '+(on?'var(--gold)':'var(--border)')+';'+
-    'background:'+(on?'rgba(201,168,76,.14)':'var(--card)')+';color:'+(on?'var(--gold)':'var(--muted)')+';'+
-    'font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">'+_compEsc(label)+'</button>';
+    '<div id="comp-filtros" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 13px;margin-bottom:12px;"></div>'+
+    '<div id="comp-secciones"></div>';
+  _compRenderFiltros();
+  _compAplicar();
 }
 function _compToggleFiltros() {
   const el = document.getElementById('comp-filtros');
-  if (el) el.style.display = (el.style.display === 'none' || !el.style.display) ? 'flex' : 'none';
+  if (el) el.style.display = (el.style.display === 'none' || !el.style.display) ? 'block' : 'none';
 }
-function _compSetFiltro(idx) {
-  _compFilterIdx = idx;
-  document.querySelectorAll('.comp-chip').forEach(b => {
-    const on = (parseInt(b.getAttribute('data-i'),10) === idx);
-    b.style.borderColor = on ? 'var(--gold)' : 'var(--border)';
-    b.style.background  = on ? 'rgba(201,168,76,.14)' : 'var(--card)';
-    b.style.color       = on ? 'var(--gold)' : 'var(--muted)';
-  });
-  _compGrid();
+function _compFChip(campo, val, label, on) {
+  return '<button onclick="_compSetF(\''+campo+'\',\''+_compJsEsc(val)+'\')" '+
+    'style="padding:7px 13px;border-radius:18px;border:1px solid '+(on?'var(--gold)':'var(--border)')+';'+
+    'background:'+(on?'rgba(201,168,76,.14)':'transparent')+';color:'+(on?'var(--gold)':'var(--muted)')+';'+
+    'font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">'+_compEsc(label)+'</button>';
 }
-function _compGrid() {
-  const grid = document.getElementById('comp-grid');
-  if (!grid) return;
-  const q = (document.getElementById('comp-search')?.value || '').toLowerCase().trim();
-  const cat = _compFilterIdx >= 0 ? _compCats[_compFilterIdx] : '';
-  const items = _COMPS.filter(r =>
-    (!cat || (r.categoria || 'General') === cat) &&
-    (!q || (r.titulo||'').toLowerCase().includes(q) || (r.categoria||'').toLowerCase().includes(q))
-  );
-  if (!items.length) {
-    grid.innerHTML = '<div class="empty" style="padding:30px 20px;text-align:center;"><div class="empty-txt">Sin resultados</div></div>';
-    return;
-  }
-  grid.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;column-gap:14px;row-gap:20px;">'+items.map(_compCard).join('')+'</div>';
+function _compGrp(label, opts) {
+  const F = _compFiltros;
+  let h = '<div style="margin-bottom:11px;"><div style="font-size:10px;font-weight:900;color:var(--muted);letter-spacing:.6px;margin-bottom:7px;">'+label+'</div><div style="display:flex;flex-wrap:wrap;gap:7px;">';
+  opts.forEach(o => { h += _compFChip(o[0], o[1], o[2], F[o[0]]===o[1]); });
+  return h + '</div></div>';
 }
-function _compCard(r) {
+function _compRenderFiltros() {
+  const box = document.getElementById('comp-filtros');
+  if (!box) return;
+  let h = '';
+  const hayDes = _COMPS.some(_compEsDesafio), hayEnt = _COMPS.some(r=>!_compEsDesafio(r));
+  if (hayDes && hayEnt) h += _compGrp('TIPO', [['tipo','entrenamiento','Entrenamientos'],['tipo','desafio','Desafíos']]);
+  const objs = _compValsUnicos('objetivo');
+  if (objs.length) h += _compGrp('OBJETIVO', objs.map(v=>['objetivo',v,v]));
+  const zonas = _compValsUnicos('zona');
+  if (zonas.length) h += _compGrp('ZONA DEL CUERPO', zonas.map(v=>['zona',v,v]));
+  if (_COMPS.some(r=>_compMin(r)!=null)) h += _compGrp('DURACIÓN', [['dur','0-15','Hasta 15 min'],['dur','15-30','15–30 min'],['dur','30+','+30 min']]);
+  const nivs = [...new Set(_COMPS.map(r=>String(r.dificultad||'1')))].sort();
+  if (nivs.length > 1) h += _compGrp('NIVEL', nivs.map(v=>['nivel',v,({'1':'Baja','2':'Media','3':'Alta'})[v]||v]));
+  const activo = Object.keys(_compFiltros).some(k=>k!=='q' && _compFiltros[k]);
+  if (activo) h += '<button onclick="_compLimpiar()" style="margin-top:2px;padding:6px 12px;border-radius:16px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-weight:800;cursor:pointer;">✕ Limpiar filtros</button>';
+  box.innerHTML = h || '<div style="font-size:12px;color:var(--muted);">Sin filtros disponibles.</div>';
+}
+function _compSetF(campo, val) {
+  _compFiltros[campo] = (_compFiltros[campo] === val) ? '' : val;
+  _compRenderFiltros();
+  _compAplicar();
+}
+function _compLimpiar() {
+  _compFiltros = { q:_compFiltros.q, tipo:'', objetivo:'', zona:'', dur:'', nivel:'' };
+  _compRenderFiltros();
+  _compAplicar();
+}
+function _compMatch(r) {
+  const F = _compFiltros;
+  if (F.q && !((r.titulo||'').toLowerCase().includes(F.q) || (r.categoria||'').toLowerCase().includes(F.q) || (r.objetivo||'').toLowerCase().includes(F.q) || (r.zona||'').toLowerCase().includes(F.q))) return false;
+  if (F.tipo==='desafio' && !_compEsDesafio(r)) return false;
+  if (F.tipo==='entrenamiento' && _compEsDesafio(r)) return false;
+  if (F.objetivo && (r.objetivo||'')!==F.objetivo) return false;
+  if (F.zona && (r.zona||'')!==F.zona) return false;
+  if (F.nivel && String(r.dificultad||'1')!==F.nivel) return false;
+  if (F.dur) { const m=_compMin(r); if (m==null) return false;
+    if (F.dur==='0-15' && !(m<=15)) return false;
+    if (F.dur==='15-30' && !(m>15 && m<=30)) return false;
+    if (F.dur==='30+' && !(m>30)) return false; }
+  return true;
+}
+function _compAplicar() {
+  _compFiltros.q = (document.getElementById('comp-search')?.value || '').toLowerCase().trim();
+  const cont = document.getElementById('comp-secciones');
+  if (!cont) return;
+  const ent = _COMPS.filter(r=>!_compEsDesafio(r) && _compMatch(r));
+  const des = _COMPS.filter(r=>_compEsDesafio(r)  && _compMatch(r));
+  const filtroActivo = !!_compFiltros.q || Object.keys(_compFiltros).some(k=>k!=='q' && _compFiltros[k]);
+  const h = _compSeccion('ENTRENAMIENTOS', ent, filtroActivo, 'Empezar') + _compSeccion('DESAFÍOS', des, filtroActivo, 'Ver');
+  cont.innerHTML = h || '<div class="empty" style="padding:30px 20px;text-align:center;"><div class="empty-txt">Sin resultados</div></div>';
+}
+function _compSeccion(titulo, items, filtroActivo, verbo) {
+  if (!items.length && filtroActivo) return '';
+  let h = '<div style="display:flex;align-items:baseline;justify-content:space-between;padding:14px 2px 10px;">'+
+    '<div style="font-size:12px;letter-spacing:1.2px;color:var(--gold);font-weight:900;">'+titulo+'</div>'+
+    (items.length?'<div style="font-size:11px;color:var(--muted);">'+items.length+'</div>':'')+'</div>';
+  if (!items.length) return h + '<div style="font-size:12px;color:var(--muted);padding:0 2px 6px;">Tu coach los va a ir sumando acá.</div>';
+  h += '<div class="comp-row" style="display:flex;gap:12px;overflow-x:auto;padding:0 2px 6px;-webkit-overflow-scrolling:touch;">'+
+    items.map(r=>_compCard(r, verbo)).join('') + '</div>';
+  return h;
+}
+function _compCard(r, verbo) {
   const bg = r.imagen
     ? 'background:#0a0a12 url(\''+String(r.imagen).replace(/'/g,'%27')+'\') center/cover no-repeat;'
     : 'background:linear-gradient(135deg,#2a2438,#15151c);';
-  return '<div onclick="_abrirCompDetalle(\''+r.id+'\')" style="position:relative;border-radius:16px;overflow:hidden;cursor:pointer;min-height:236px;'+bg+'display:flex;flex-direction:column;justify-content:flex-end;border:1px solid var(--border);box-shadow:0 12px 28px -10px rgba(0,0,0,.65), 0 4px 10px -6px rgba(0,0,0,.5);">'+
-    '<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.92) 0%,rgba(0,0,0,.35) 32%,rgba(0,0,0,0) 62%,rgba(0,0,0,.25) 100%);"></div>'+
-    (!r.imagen?'<div style="position:absolute;top:16px;left:0;right:0;text-align:center;font-size:36px;opacity:.45;">🧩</div>':'')+
-    '<div style="position:relative;padding:13px;">'+
-      '<div style="font-size:15px;font-weight:900;color:#fff;line-height:1.15;text-shadow:0 1px 5px rgba(0,0,0,.6);">'+_compEsc(r.titulo||'Rutina')+'</div>'+
-      '<div style="width:100%;margin-top:11px;background:var(--gold);color:#0d0d1a;font-size:13px;font-weight:900;text-align:center;padding:11px;border-radius:22px;">Entrenar</div>'+
+  const meta = []; const m = _compMin(r);
+  if (m!=null) meta.push(m+' min'); else if (r.duracion) meta.push(_compEsc(r.duracion));
+  meta.push(_compNivelTxt(r));
+  return '<div onclick="_abrirCompDetalle(\''+r.id+'\')" style="flex:0 0 150px;cursor:pointer;">'+
+    '<div style="height:112px;border-radius:14px;overflow:hidden;position:relative;border:1px solid var(--border);'+bg+'">'+
+      (!r.imagen?'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;opacity:.4;">🧩</div>':'')+
     '</div>'+
+    '<div style="font-size:13.5px;font-weight:800;color:var(--text);margin-top:8px;line-height:1.2;">'+_compEsc(r.titulo||'Rutina')+'</div>'+
+    '<div style="font-size:11px;color:var(--muted);margin-top:3px;">'+meta.join(' · ')+'</div>'+
+    '<div style="font-size:12px;color:var(--gold);font-weight:800;margin-top:6px;">'+verbo+' ›</div>'+
   '</div>';
 }
 function _abrirCompDetalle(id) {
@@ -2915,6 +2961,8 @@ function _abrirCompDetalle(id) {
         '<div style="display:flex;flex-direction:column;gap:11px;margin-top:15px;">'+
           '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🏋️</span>'+_compEsc(r.lugar||'Gym')+'</div>'+
           (r.duracion?'<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🕐</span>'+_compEsc(r.duracion)+'</div>':'')+
+          (r.objetivo?'<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">🎯</span>'+_compEsc(r.objetivo)+'</div>':'')+
+          (r.zona?'<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;">📍</span>'+_compEsc(r.zona)+'</div>':'')+
           '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);">'+dots+' <span style="margin-left:3px;">Dificultad</span></div>'+
         '</div>'+
         (r.descripcion?'<div style="font-size:13px;color:var(--muted);line-height:1.55;margin-top:15px;padding-top:15px;border-top:1px solid var(--border);">'+_compEsc(r.descripcion)+'</div>':'')+
