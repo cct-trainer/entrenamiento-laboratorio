@@ -804,8 +804,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260724100757 por un timestamp en cada deploy
-const _APP_VERSION = '20260724100757';
+// deploy.bat reemplaza 20260724122510 por un timestamp en cada deploy
+const _APP_VERSION = '20260724122510';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2996,6 +2996,65 @@ function _antroCicloDia(fechaInicio) {
   return (d >= 1 && d <= 60) ? d : null;
 }
 
+// ── Rediseño MEDIDAS: interpretación en lenguaje simple ──
+function _antroNum(n){ const r=Math.round(n*10)/10; return (''+(r%1===0?r:r.toFixed(1))).replace('.',','); }
+
+// Objetivo del alumno → modo de interpretación (no juzga "bueno/malo" en absoluto)
+function _antroModo(){
+  const o = String((_data&&_data.perfil&&_data.perfil.objetivo) || (_data&&_data.objetivo) || '').toLowerCase();
+  if (/hipertrof|m[úu]scul|masa/.test(o)) return 'musculo';
+  if (/p[eé]rdida|grasa|adelgaz|definic/.test(o)) return 'grasa';
+  return 'neutro';
+}
+
+// Tarjetas a mostrar (promedios para pares Der/Izq)
+const _ANTRO_CARDS = [
+  { k:'peso',    lb:'Peso',              u:'kg', cat:'peso' },
+  { k:'pecho',   lb:'Pecho',             u:'cm', cat:'musculo' },
+  { k:'hombros', lb:'Hombros',           u:'cm', cat:'musculo' },
+  { k:'cintura', lb:'Cintura',           u:'cm', cat:'abdomen' },
+  { k:'flancos', lb:'Flancos',           u:'cm', cat:'abdomen' },
+  { k:'cadera',  lb:'Cadera',            u:'cm', cat:'musculo' },
+  { k:'_brazo',  lb:'Brazo (promedio)',  u:'cm', cat:'musculo' },
+  { k:'_muslo',  lb:'Pierna (promedio)', u:'cm', cat:'musculo' },
+  { k:'_gemelo', lb:'Gemelo (promedio)', u:'cm', cat:'musculo' }
+];
+
+// Definiciones cortas para "¿Qué mide esto?"
+const _ANTRO_DEFS = {
+  peso:'Tu peso corporal total. Cambia por músculo, grasa, agua y comida.',
+  pecho:'La circunferencia de tu pecho. La usamos para ver cambios con el tiempo.',
+  hombros:'El contorno de tus hombros. Ayuda a seguir el desarrollo de la parte alta.',
+  cintura:'El contorno a la altura del abdomen. Sigue los cambios en esa zona.',
+  flancos:'Los costados a la altura de la cintura. Complementa la medida del abdomen.',
+  cadera:'El contorno de la parte más ancha de la cadera y los glúteos.',
+  _brazo:'El contorno de tus brazos. Sigue los cambios de tamaño con el tiempo.',
+  _muslo:'El contorno de tus piernas. Ayuda a ver cambios en el muslo.',
+  _gemelo:'El contorno de tus gemelos (pantorrillas).'
+};
+
+// Interpretación según objetivo. No clasifica todo cambio como bueno o malo.
+function _antroInterp(cat, dUlt, modo){
+  const est = Math.abs(dUlt) < 0.3;
+  if (cat==='peso') return 'El peso sube y baja por músculo, grasa, agua y comida. Por eso lo leemos junto a tus medidas y tu progreso en el entrenamiento, no solo.';
+  if (cat==='abdomen'){
+    if (modo==='grasa'){
+      if (dUlt < -0.3) return 'Una baja en esta zona suele ir en línea con tu objetivo de reducir grasa.';
+      if (dUlt >  0.3) return 'Subió un poco. Una sola medición no marca tendencia: seguimos midiendo.';
+      return 'Se mantuvo. Con más mediciones vemos la tendencia.';
+    }
+    return 'Seguimos los cambios en la zona del abdomen a lo largo del tiempo. Importa la tendencia, no un solo número.';
+  }
+  // perímetros que crecen con el músculo
+  if (modo==='musculo'){
+    if (dUlt >  0.3) return 'Como buscás ganar músculo, un aumento acá junto con más fuerza es una buena señal.';
+    if (est) return 'Se mantuvo. Necesitamos más mediciones para ver la tendencia.';
+    return 'Bajó un poco. Lo miramos junto a tu fuerza en las próximas semanas.';
+  }
+  if (modo==='grasa') return 'Cambio detectado. Lo evaluamos junto a tu cintura y tu fuerza.';
+  return 'Cambio detectado. Con más mediciones evaluamos la tendencia.';
+}
+
 function _antroRenderRegistro() {
   const regs = _antroRegs();
   const dias = _antroDiasRestantes();
@@ -3030,35 +3089,68 @@ function _antroRenderRegistro() {
       + '</div>';
   }
 
-  // ── Comparativas + historial + gráficos ──
+  // ── Resumen + evolución explicada (rediseño para el alumno) ──
+  const getV = (r,k) => {
+    if (k==='_brazo')  { const a=parseFloat(r.brazoDer),  b=parseFloat(r.brazoIzq);  return (!isNaN(a)&&!isNaN(b))?((a+b)/2):(!isNaN(parseFloat(r.brazoDer))?parseFloat(r.brazoDer):parseFloat(r.brazoIzq)); }
+    if (k==='_muslo')  { const a=parseFloat(r.musloDer),  b=parseFloat(r.musloIzq);  return (!isNaN(a)&&!isNaN(b))?((a+b)/2):(!isNaN(parseFloat(r.musloDer))?parseFloat(r.musloDer):parseFloat(r.musloIzq)); }
+    if (k==='_gemelo') { const a=parseFloat(r.gemeloDer), b=parseFloat(r.gemeloIzq); return (!isNaN(a)&&!isNaN(b))?((a+b)/2):(!isNaN(parseFloat(r.gemeloDer))?parseFloat(r.gemeloDer):parseFloat(r.gemeloIzq)); }
+    return parseFloat(r[k]);
+  };
   if (regs.length) {
+    const modo = _antroModo();
     const ult = regs[regs.length-1], ant = regs.length>1 ? regs[regs.length-2] : null, pri = regs[0];
-    h += '<div class="stitle" style="margin-top:4px;">EVOLUCIÓN</div>';
-    const compCampos = [
-      { k:'peso', lb:'Peso', u:'kg', inv:false },
-      { k:'pecho', lb:'Pecho', u:'cm', inv:false },
-      { k:'cintura', lb:'Cintura', u:'cm', inv:true },
-      { k:'cadera', lb:'Cadera', u:'cm', inv:false },
-      { k:'_brazo', lb:'Brazo (prom)', u:'cm', inv:false },
-      { k:'_muslo', lb:'Muslo (prom)', u:'cm', inv:false }
-    ];
-    const getV = (r,k) => {
-      if (k==='_brazo') { const a=parseFloat(r.brazoDer), b=parseFloat(r.brazoIzq); return (!isNaN(a)&&!isNaN(b))?((a+b)/2).toFixed(1):(r.brazoDer||r.brazoIzq||''); }
-      if (k==='_muslo') { const a=parseFloat(r.musloDer), b=parseFloat(r.musloIzq); return (!isNaN(a)&&!isNaN(b))?((a+b)/2).toFixed(1):(r.musloDer||r.musloIzq||''); }
-      return r[k]||'';
-    };
-    compCampos.forEach(c => {
+    h += '<style>#medidas-ctn details>summary{list-style:none;outline:none;}#medidas-ctn summary::-webkit-details-marker{display:none;}</style>';
+
+    // Resumen automático "TU PROGRESO"
+    if (ant) {
+      const partes = [];
+      const dP = getV(ult,'peso')-getV(ant,'peso');
+      const dC = getV(ult,'cintura')-getV(ant,'cintura');
+      if (!isNaN(dP) && Math.abs(dP)>=0.3) partes.push('tu peso '+(dP<0?'bajó':'subió')+' '+_antroNum(Math.abs(dP))+' kg');
+      if (!isNaN(dC) && Math.abs(dC)>=0.3) partes.push('tu cintura '+(dC<0?'bajó':'subió')+' '+_antroNum(Math.abs(dC))+' cm');
+      const linea = partes.length
+        ? ('Desde tu última medición, '+partes.join(' y ')+'. El resto de tus medidas se mantuvo estable.')
+        : 'Tus medidas se mantuvieron estables desde la última vez.';
+      h += '<div style="background:var(--card);border-radius:14px;padding:14px 15px;margin-bottom:14px;border-left:3px solid var(--gold);">'
+        + '<div style="font-size:11px;letter-spacing:1px;color:var(--gold);font-weight:900;margin-bottom:7px;">TU PROGRESO</div>'
+        + '<div style="font-size:13.5px;line-height:1.7;color:var(--text);">'+linea+'</div>'
+        + '<div style="font-size:12px;line-height:1.6;color:var(--muted);margin-top:8px;">Recordá: no miramos un solo número. Evaluamos tus medidas, tu fuerza y cómo cambian con el tiempo.</div></div>';
+    }
+
+    // Tarjetas por medida
+    _ANTRO_CARDS.forEach(c => {
       const v = getV(ult, c.k);
-      if (!v) return;
-      const serie = regs.map(r=>getV(r,c.k)).filter(x=>x!=='');
-      h += '<div style="background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">'
-        + '<div style="flex:1;">'
-        + '<div style="font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.5px;">'+c.lb.toUpperCase()+'</div>'
-        + '<div style="font-size:19px;font-weight:900;color:var(--text);">'+v+' <span style="font-size:11px;color:var(--muted);">'+c.u+'</span></div>'
-        + (ant ? '<div style="margin-top:2px;">vs anterior: '+_antroDelta(v, getV(ant,c.k), c.inv)+'</div>' : '')
-        + (regs.length>1 ? '<div>vs inicio: '+_antroDelta(v, getV(pri,c.k), c.inv)+'</div>' : '')
+      if (isNaN(v)) return;
+      const serie = regs.map(r=>getV(r,c.k)).filter(x=>!isNaN(x));
+      const dUlt = ant ? (v-getV(ant,c.k)) : NaN;
+      const dIni = (regs.length>1) ? (v-getV(pri,c.k)) : NaN;
+      let l1;
+      if (isNaN(dUlt)) l1 = 'Es tu primera medición registrada.';
+      else if (Math.abs(dUlt)<0.05) l1 = 'Se mantuvo igual.';
+      else if (c.cat==='peso') l1 = (dUlt<0?'Bajaste ':'Subiste ')+_antroNum(Math.abs(dUlt))+' kg.';
+      else l1 = (dUlt<0?'Bajó ':'Subió ')+_antroNum(Math.abs(dUlt))+' cm.';
+      let l2='';
+      if (!isNaN(dIni)) {
+        if (Math.abs(dIni)<0.05) l2 = 'Igual que en tu primera medición.';
+        else if (c.cat==='peso') l2 = 'Tu peso '+(dIni<0?'bajó ':'subió ')+_antroNum(Math.abs(dIni))+' kg desde que empezaste.';
+        else l2 = 'Está '+_antroNum(Math.abs(dIni))+' cm '+(dIni<0?'menos':'más')+' que al inicio.';
+      }
+      const interp = _antroInterp(c.cat, isNaN(dUlt)?0:dUlt, modo);
+      const def = _ANTRO_DEFS[c.k] || '';
+      h += '<div style="background:var(--card);border-radius:14px;padding:15px;margin-bottom:12px;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">'
+        +   '<div><div style="font-size:11px;letter-spacing:.8px;color:var(--muted);font-weight:800;">'+c.lb.toUpperCase()+'</div>'
+        +   '<div style="font-size:26px;font-weight:900;margin-top:2px;color:var(--text);">'+_antroNum(v)+' <span style="font-size:13px;color:var(--muted);">'+c.u+'</span></div></div>'
+        +   (serie.length>1 ? '<div style="flex-shrink:0;">'+_antroSpark(serie)+'</div>' : '')
         + '</div>'
-        + (serie.length>1 ? '<div>'+_antroSpark(serie)+'</div>' : '')
+        + '<div style="border-top:1px solid rgba(128,128,128,.2);margin-top:12px;padding-top:11px;font-size:13px;line-height:1.7;color:var(--text);">'
+        +   '<div style="color:var(--muted);font-size:11px;">Desde tu última medición</div><div>'+l1+'</div>'
+        +   (l2?'<div style="color:var(--muted);font-size:11px;margin-top:7px;">Desde que empezaste</div><div>'+l2+'</div>':'')
+        + '</div>'
+        + '<div style="background:var(--bg);border-radius:10px;padding:10px 12px;margin-top:11px;font-size:12px;line-height:1.6;color:var(--muted);">'
+        +   '<span style="color:var(--gold);font-weight:800;">¿Qué significa?</span> '+interp+'</div>'
+        + (def ? '<details style="margin-top:10px;"><summary style="cursor:pointer;font-size:11px;color:var(--gold);font-weight:800;">¿Qué mide esto? ›</summary><div style="font-size:12px;color:var(--muted);line-height:1.6;margin-top:6px;">'+def+'</div></details>' : '')
+        + (serie.length>1 ? '<div style="font-size:11px;color:var(--muted);opacity:.7;margin-top:9px;">Tu evolución en el tiempo</div>' : '')
         + '</div>';
     });
 
@@ -3070,8 +3162,8 @@ function _antroRenderRegistro() {
         + '<div style="font-size:13px;color:var(--text);margin-top:3px;">'+(dia?('Día '+dia+' del ciclo'):'Registrado')+(ult.ciclo.obs?(' · '+ult.ciclo.obs):'')+'</div></div>';
     }
 
-    // Historial completo
-    h += '<div class="stitle" style="margin-top:12px;">HISTORIAL DE REGISTROS</div>';
+    // Historial completo (plegable, referencia)
+    h += '<details style="margin-top:6px;"><summary style="cursor:pointer;font-size:12px;color:var(--gold);font-weight:800;padding:6px 0;">Ver historial de registros ›</summary><div style="margin-top:8px;">';
     [...regs].reverse().forEach(r => {
       const fL = r.fecha ? new Date(r.fecha+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) : '';
       h += '<div class="hist-row"><div style="font-size:11px;color:var(--muted);">'+fL+'</div>'
@@ -3080,9 +3172,10 @@ function _antroRenderRegistro() {
         + (r.cintura?'<span style="font-size:11px;color:var(--muted);">Cin '+r.cintura+'</span>':'')
         + (r.cadera?'<span style="font-size:11px;color:var(--muted);">Cad '+r.cadera+'</span>':'')
         + (r.brazoDer?'<span style="font-size:11px;color:var(--muted);">Br '+r.brazoDer+'</span>':'')
-        + (r.musloDer?'<span style="font-size:11px;color:var(--muted);">Mu '+r.musloDer+'</span>':'')
+        + (r.musloDer?'<span style="font-size:11px;color:var(--muted);">Pi '+r.musloDer+'</span>':'')
         + '</div></div>';
     });
+    h += '</div></details>';
   }
   return h;
 }
