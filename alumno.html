@@ -387,13 +387,6 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
     </div>
     <div class="pt-foot">
       <button class="pt-enter" onclick="entrarApp()"><span data-i18n="entrar_app">Entrar a mi entrenamiento</span> <span>›</span></button>
-      <div style="display:flex;flex-direction:column;align-items:center;">
-        <div class="lang-lbl" data-i18n="idioma">Idioma</div>
-        <div class="lang-sel" role="group" aria-label="Idioma / Language">
-          <button type="button" class="lang-opt on" data-lang="es" onclick="_setLang('es')">ESPAÑOL</button>
-          <button type="button" class="lang-opt" data-lang="en" onclick="_setLang('en')">ENGLISH</button>
-        </div>
-      </div>
       <div class="pt-date" id="pt-date"></div>
     </div>
   </div>
@@ -440,6 +433,8 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
       </div>
     </div>
   </div>
+
+  <div id="novedades-banner" style="display:none;"></div>
 
   <div class="tab on" id="tab-rutina">
     <div id="mes-nav"></div>
@@ -804,8 +799,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260724185219 por un timestamp en cada deploy
-const _APP_VERSION = '20260724185219';
+// deploy.bat reemplaza 20260724225655 por un timestamp en cada deploy
+const _APP_VERSION = '20260724225655';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -931,6 +926,7 @@ const TIPOS_RUN = {
       _semIdx = found;
     }
     render();
+    _novInit();
   } catch(e) {
     console.error(e);
     showErr('Error de conexión. Verificá tu acceso a internet e intentá de nuevo.');
@@ -1126,6 +1122,95 @@ function goTab(t) {
   if (t==='stats')   renderStats();
   if (t==='coach')   renderInfo();
   if (t==='charlas') renderCharlas();
+  if (t==='cargas' || t==='coach' || t==='charlas') _novMarcarVisto(t);
+}
+
+// ── NOVEDADES: aviso in-app de contenido nuevo (charlas, desafíos, notas) ──────
+let _NOV = { cargas:0, coach:0, charlas:0 };
+function _novTs(id){ const m = String(id||'').match(/(\d{13})/); return m ? parseInt(m[1],10) : 0; }
+function _novKey(){ return 'SOCC_NOV_' + _alumnoId; }
+function _novSeen(){ try { return JSON.parse(localStorage.getItem(_novKey())||'null'); } catch(e){ return null; } }
+function _novSaveSeen(o){ try { localStorage.setItem(_novKey(), JSON.stringify(o)); } catch(e){} }
+
+async function _novInit(){
+  if (!_db || !_alumnoId) return;
+  let comps=[], charlas=[], arts=[];
+  try {
+    const [c1,c2,c3] = await Promise.all([
+      _db.collection('alumnos').doc('zz_complementos_global').get(),
+      _db.collection('alumnos').doc('zz_charlas_global').get(),
+      _db.collection('alumnos').doc('zz_articulos_global').get()
+    ]);
+    comps   = (c1.exists && Array.isArray(c1.data().rutinas))   ? c1.data().rutinas   : [];
+    charlas = (c2.exists && Array.isArray(c2.data().charlas))   ? c2.data().charlas   : [];
+    arts    = (c3.exists && Array.isArray(c3.data().articulos)) ? c3.data().articulos : [];
+  } catch(e){ return; }
+  // Cachear para no releer al abrir cada pestaña
+  if (_COMPS === null)   _COMPS = comps;
+  if (_CHARLAS === null) _CHARLAS = charlas;
+  if (_ARTS === null)    _ARTS = arts;
+
+  const charVis = charlas.filter(c => c && c.publicado !== false);
+  const artsVis = arts.filter(a => a && a.publicado !== false);
+
+  let seen = _novSeen();
+  if (!seen) { // primera visita: no inundar, marcar todo como visto
+    seen = { cargas:Date.now(), coach:Date.now(), charlas:Date.now() };
+    _novSaveSeen(seen);
+  }
+  _NOV.cargas  = comps.filter(x   => _novTs(x && x.id)  > (seen.cargas  || 0)).length;
+  _NOV.charlas = charVis.filter(x => _novTs(x && x.id)  > (seen.charlas || 0)).length;
+  _NOV.coach   = artsVis.filter(x => _novTs(x && x.id)  > (seen.coach   || 0)).length;
+  _novRender();
+}
+
+function _novRender(){
+  ['cargas','coach','charlas'].forEach(cat => {
+    const btn = document.getElementById('nb-'+cat);
+    if (!btn) return;
+    btn.style.position = 'relative';
+    let dot = document.getElementById('novdot-'+cat);
+    if (_NOV[cat] > 0) {
+      if (!dot) {
+        dot = document.createElement('span');
+        dot.id = 'novdot-'+cat;
+        dot.style.cssText = 'position:absolute;top:4px;right:16px;min-width:15px;height:15px;padding:0 4px;border-radius:8px;background:var(--gold);color:#0d0d1a;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1;box-sizing:border-box;';
+        btn.appendChild(dot);
+      }
+      dot.textContent = _NOV[cat] > 9 ? '9+' : String(_NOV[cat]);
+    } else if (dot) { dot.remove(); }
+  });
+
+  const bn = document.getElementById('novedades-banner');
+  if (!bn) return;
+  const partes = [];
+  if (_NOV.charlas > 0) partes.push(_NOV.charlas + ' ' + (_NOV.charlas===1?'charla nueva':'charlas nuevas'));
+  if (_NOV.cargas  > 0) partes.push(_NOV.cargas  + ' ' + (_NOV.cargas===1?'entrenamiento/desafío':'entrenamientos/desafíos'));
+  if (_NOV.coach   > 0) partes.push(_NOV.coach   + ' ' + (_NOV.coach===1?'nota del coach':'notas del coach'));
+  if (!partes.length) { bn.style.display='none'; bn.innerHTML=''; return; }
+  const irA = _NOV.charlas>0 ? 'charlas' : (_NOV.cargas>0 ? 'cargas' : 'coach');
+  bn.style.display = 'block';
+  bn.innerHTML =
+    '<div style="display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--gold);border-radius:14px;padding:12px 14px;margin:0 0 14px;">'+
+      '<div style="font-size:20px;">✨</div>'+
+      '<div style="flex:1;font-size:12.5px;color:var(--text);line-height:1.4;"><b style="color:var(--gold);">Novedades</b> · '+partes.join(' · ')+'</div>'+
+      '<button onclick="goTab(\''+irA+'\')" style="background:var(--gold);color:#0d0d1a;border:none;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap;">Ver</button>'+
+      '<button onclick="_novDismiss()" aria-label="Cerrar" style="background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;padding:2px 4px;">×</button>'+
+    '</div>';
+}
+
+function _novMarcarVisto(cat){
+  const seen = _novSeen() || {};
+  seen[cat] = Date.now();
+  _novSaveSeen(seen);
+  _NOV[cat] = 0;
+  _novRender();
+}
+function _novDismiss(){
+  const now = Date.now();
+  _novSaveSeen({ cargas:now, coach:now, charlas:now });
+  _NOV = { cargas:0, coach:0, charlas:0 };
+  _novRender();
 }
 
 // ── PLAN (MACROCICLO) ─────────────────────────────────────────────────────
