@@ -13840,6 +13840,12 @@ function renderSidebarAlumno(id) {
       onmouseover="this.style.background='#7c3aed22'" onmouseout="this.style.background='linear-gradient(135deg,#1e163a,#150f2a)'">
       🔄 Link de actualización
     </button>
+    ${(a.checkins&&a.checkins.length)?`<button onclick="verHistorialCheckins('${id}')"
+      style="width:100%;margin-top:8px;background:none;border:1px solid #7c3aed44;border-radius:6px;
+             color:#a78bfa;font-size:11px;font-weight:700;padding:7px 12px;cursor:pointer;font-family:inherit;"
+      onmouseover="this.style.background='#7c3aed18'" onmouseout="this.style.background='none'">
+      📋 Ver actualizaciones (${a.checkins.length})
+    </button>`:''}
 
     <!-- Control de acceso -->
     ${(()=>{
@@ -25311,7 +25317,7 @@ async function aplicarActualizacion(updId){
   f.checkin=u.resumenEjecutivo||'';
   al.promptMaestro=u.promptMaestro||al.promptMaestro||'';
   al.resumenEjecutivo=u.resumenEjecutivo||'';
-  al.checkins=al.checkins||[]; al.checkins.push({ fecha:u.createdAt, datos:d, resumen:u.resumenEjecutivo });
+  al.checkins=al.checkins||[]; al.checkins.push({ fecha:u.createdAt, datos:d, resumen:u.resumenEjecutivo, prompt:u.promptMaestro });
   al.ultimaActualizacion=new Date().toISOString().slice(0,10);
   saveAlumnos(alumnos);
   try{ if(window._db) await window._db.collection('alumnos').doc(u._id).update({ estado:'aplicada' }); }catch(e){}
@@ -25332,6 +25338,28 @@ async function descartarActualizacion(updId){
   if(_iaUpdActual && _iaUpdActual._id===u._id){ _iaUpdActual=null; const box=document.getElementById('ia-update-banner'); if(box) box.innerHTML=''; }
   _fetchActualizaciones();
   if(document.getElementById('actual-overlay')) abrirActualizaciones();
+}
+// Historial de check-ins guardados en el perfil del alumno (para verlos cuando quieras)
+function verHistorialCheckins(id){
+  const al=getAlumnos().find(a=>a.id===id); if(!al){ toast('No encontré al alumno'); return; }
+  const ch=(al.checkins||[]).slice().sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  let ov=document.getElementById('chk-overlay'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='chk-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:6000;display:flex;align-items:flex-start;justify-content:center;padding:36px 16px;overflow-y:auto;';
+  ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+  const items= ch.length ? ch.map(c=>{
+    const fecha=c.fecha?new Date(c.fecha).toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+    return '<div style="border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;">'
+      +'<div style="font-size:11px;color:#999;margin-bottom:6px;">'+fecha+'</div>'
+      +'<div style="font-size:12px;color:#444;line-height:1.6;">'+_iaEsc(c.resumen||'Actualización aplicada.')+'</div>'
+      +(c.prompt?'<details style="margin-top:8px;"><summary style="cursor:pointer;color:#7c3aed;font-size:12px;font-weight:700;">Ver todo lo que respondió</summary><pre style="white-space:pre-wrap;font-size:11px;color:#333;background:#f7f7fb;border:1px solid #eee;border-radius:8px;padding:10px;margin-top:6px;font-family:inherit;max-height:280px;overflow:auto;">'+_iaEsc(c.prompt)+'</pre></details>':'')
+      +'</div>';
+  }).join('') : '<div style="text-align:center;color:#999;padding:26px;font-size:13px;">Este alumno todavía no tiene actualizaciones aplicadas.</div>';
+  ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:580px;width:100%;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.25);" onclick="event.stopPropagation()">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">🔄 Actualizaciones de '+_iaEsc(al.nombre||'')+'</div>'
+    +'<button onclick="document.getElementById(\'chk-overlay\').remove()" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;">×</button></div>'
+    + items + '</div>';
+  document.body.appendChild(ov);
 }
 
 // Arma el system prompt completo (VPT + metodología ADN + entrenador elegido + cargas)
