@@ -3726,6 +3726,10 @@ select.toolbox-input option:disabled { color: #888; }
               style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;background:#fff;resize:vertical;box-sizing:border-box;"></textarea>
           </div>
 
+          <button onclick="_iaVerPrompt()" id="ia-btn-verprompt"
+            style="width:100%;padding:13px;background:#fff;color:#7c3aed;border:1.5px solid #7c3aed;border-radius:12px;font-size:13px;font-weight:900;letter-spacing:.3px;cursor:pointer;margin-bottom:10px;">
+            📝 Ver / copiar el prompt (sin usar API)
+          </button>
           <button onclick="iaGenerarPlan()" id="ia-btn-generar"
             style="width:100%;padding:14px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:900;letter-spacing:.5px;cursor:pointer;margin-bottom:20px;transition:opacity .2s;">
             🏔️ Generar plan con Mountain Dog
@@ -3794,6 +3798,25 @@ select.toolbox-input option:disabled { color: #888; }
           <div style="position:sticky;bottom:0;background:#fff;padding:14px 26px;border-top:1px solid #eee;display:flex;gap:10px;">
             <button onclick="_iaFichaSave()" style="flex:1;padding:11px;background:#7c3aed;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">Guardar ficha</button>
             <button onclick="document.getElementById('ia-ficha-modal').style.display='none'" style="flex:1;padding:11px;background:#f0f0f0;color:#555;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">Cerrar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Prompt listo (para usar sin API) -->
+      <div id="ia-prompt-modal" onclick="if(event.target===this)this.style.display='none'"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:#fff;border-radius:16px;width:100%;max-width:680px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);" onclick="event.stopPropagation()">
+          <div style="padding:22px 26px 12px;border-bottom:1px solid #eee;">
+            <div style="font-size:16px;font-weight:900;color:#1a1a2e;">📝 Prompt listo para usar</div>
+            <div id="ia-prompt-sub" style="font-size:12px;color:#888;margin-top:4px;">Copialo y pegalo en Claude, ChatGPT u otra IA.</div>
+          </div>
+          <div style="padding:16px 26px;overflow-y:auto;">
+            <textarea id="ia-prompt-text" readonly rows="16" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:12px;font-size:12px;font-family:monospace;line-height:1.5;box-sizing:border-box;resize:vertical;background:#fafafe;"></textarea>
+          </div>
+          <div style="padding:14px 26px;border-top:1px solid #eee;display:flex;gap:10px;flex-wrap:wrap;">
+            <button onclick="_iaCopiarPrompt()" style="flex:1;min-width:150px;padding:11px;background:#7c3aed;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">📋 Copiar prompt</button>
+            <button onclick="document.getElementById('ia-prompt-modal').style.display='none'; iaGenerarPlan();" style="flex:1;min-width:150px;padding:11px;background:#ecfdf5;color:#059669;border:1.5px solid #10b981;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">⚡ Generar con API</button>
+            <button onclick="document.getElementById('ia-prompt-modal').style.display='none'" style="padding:11px 16px;background:#f0f0f0;color:#555;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">Cerrar</button>
           </div>
         </div>
       </div>
@@ -25085,6 +25108,43 @@ function _iaFichaPromptTxt(al){
   return t;
 }
 
+// Arma el system prompt completo (VPT + metodología ADN + entrenador elegido + cargas)
+function _iaSysPrompt(){
+  const t = _iaCurrentTrainer;
+  const sysBase = t==='bc' ? _IA_SYSTEM_PROMPT_BC
+                : t==='eh' ? _IA_SYSTEM_PROMPT_EH
+                : t==='sm' ? _IA_SYSTEM_PROMPT_SM
+                : t==='jd' ? _IA_SYSTEM_PROMPT_JD
+                : t==='ms' ? _IA_SYSTEM_PROMPT_MS
+                : _IA_SYSTEM_PROMPT_JM;
+  return _IA_VPT_PROMPT + _iaAdnPromptTxt() + '\n\n' + sysBase + '\n\n' + _IA_CARGAS_PROMPT;
+}
+
+// Muestra el prompt completo (para copiar y usar en cualquier IA, sin gastar API)
+function _iaVerPrompt(){
+  _iaInitLeerEstado();
+  if (!(_iaInitState.alumnoId && _iaInitState.fecha && _iaInitState.sesion)) { toast('Primero elegí atleta, fecha y sesión'); return; }
+  const entrenador = _IA_TRAINERS[_iaCurrentTrainer] ? _IA_TRAINERS[_iaCurrentTrainer].corto : 'Entrenador';
+  const full =
+    '════════ INSTRUCCIONES PARA LA IA (rol, metodología y estilo) ════════\n\n' +
+    _iaSysPrompt() +
+    '\n\n════════ PEDIDO CONCRETO (perfil del alumno + contexto) ════════\n\n' +
+    _iaBuildPrompt();
+  const ta = document.getElementById('ia-prompt-text');
+  if (ta) ta.value = full;
+  const sub = document.getElementById('ia-prompt-sub');
+  if (sub) sub.textContent = 'Estilo: ' + entrenador + ' · pegalo en Claude, ChatGPT u otra IA.';
+  document.getElementById('ia-prompt-modal').style.display = 'flex';
+}
+function _iaCopiarPrompt(){
+  const ta = document.getElementById('ia-prompt-text');
+  if (!ta) return;
+  ta.select();
+  navigator.clipboard.writeText(ta.value)
+    .then(()=>toast('✅ Prompt copiado — pegalo en la IA que uses'))
+    .catch(()=>{ try{ document.execCommand('copy'); toast('✅ Prompt copiado'); }catch(e){ toast('Copiá el texto manualmente'); } });
+}
+
 function _iaStatusRefresh(){
   const adnS = document.getElementById('ia-adn-status');
   if (adnS){ const a=_iaAdnGet(); const on=!!(a&&Object.keys(a).length); adnS.textContent=on?'Cargada ✓':'Sin cargar'; adnS.style.color=on?'#059669':'#888'; }
@@ -25331,13 +25391,7 @@ async function iaGenerarPlan() {
   const modelo   = document.getElementById('ia-modelo')?.value || 'claude-sonnet-5';
 
   const entrenador = _IA_TRAINERS[_iaCurrentTrainer].corto;
-  const sysBase    = _iaCurrentTrainer === 'bc' ? _IA_SYSTEM_PROMPT_BC
-                   : _iaCurrentTrainer === 'eh' ? _IA_SYSTEM_PROMPT_EH
-                   : _iaCurrentTrainer === 'sm' ? _IA_SYSTEM_PROMPT_SM
-                   : _iaCurrentTrainer === 'jd' ? _IA_SYSTEM_PROMPT_JD
-                   : _iaCurrentTrainer === 'ms' ? _IA_SYSTEM_PROMPT_MS
-                   : _IA_SYSTEM_PROMPT_JM;
-  const sysPrompt  = _IA_VPT_PROMPT + _iaAdnPromptTxt() + '\n\n' + sysBase + '\n\n' + _IA_CARGAS_PROMPT;
+  const sysPrompt  = _iaSysPrompt();
   const accentColor = _IA_TRAINERS[_iaCurrentTrainer].color;
 
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Diseñando programa semanal...'; }
