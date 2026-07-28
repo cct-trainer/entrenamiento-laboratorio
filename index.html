@@ -3411,8 +3411,6 @@ select.toolbox-input option:disabled { color: #888; }
             <p class="mh-sub">Planificación con entrenadores IA especializados</p>
           </div>
           <div class="mh-actions">
-            <button onclick="_iaAdnOpen()" style="font-size:11px;padding:7px 14px;border:1px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:8px;cursor:pointer;font-weight:700;">⚙️ Metodología</button>
-            <button onclick="_iaFichaOpen()" style="font-size:11px;padding:7px 14px;border:1px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:8px;cursor:pointer;font-weight:700;">📋 Ficha del alumno</button>
             <button onclick="_iaShowImportModal()" style="font-size:11px;padding:7px 14px;border:1px solid #10b981;background:#ecfdf5;color:#059669;border-radius:8px;cursor:pointer;font-weight:700;">📥 Importar JSON</button>
             <button onclick="_iaShowKeyModal()" style="font-size:11px;padding:7px 14px;border:1px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:8px;cursor:pointer;font-weight:700;">🔑 API Key</button>
           </div>
@@ -3453,9 +3451,10 @@ select.toolbox-input option:disabled { color: #888; }
             <div id="ia-init-lock" style="margin-top:12px;font-size:12px;color:#a06b00;background:#fff8e6;border:1px solid #f4e0a0;border-radius:9px;padding:9px 12px;">🔒 Elegí <b>atleta</b>, <b>fecha</b> y <b>sesión</b> para habilitar el planner. Los datos del atleta se cargan solos.</div>
           </div>
 
-          <!-- Selector de entrenador -->
+          <!-- ② Selector de entrenador -->
           <div style="margin-bottom:20px;">
-            <label style="font-size:10px;font-weight:900;color:#555;letter-spacing:.5px;display:block;margin-bottom:8px;">ENTRENADOR IA</label>
+            <label style="font-size:10px;font-weight:900;color:#555;letter-spacing:.5px;display:block;margin-bottom:2px;">② ENTRENADOR IA · escuela que lidera el plan</label>
+            <div style="font-size:11px;color:#999;margin-bottom:10px;">Elegí UNO. Define el estilo metodológico del programa.</div>
             <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
               <button id="ia-t-jm" onclick="_iaSelectTrainer('jm')"
                 style="border:2.5px solid #7c3aed;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border-radius:14px;padding:16px 12px;cursor:pointer;text-align:center;transition:all .2s;font-family:inherit;">
@@ -3496,10 +3495,27 @@ select.toolbox-input option:disabled { color: #888; }
             </div>
           </div>
 
-          <!-- Perfil del atleta -->
-          <div style="background:#f8f9fb;border-radius:14px;padding:16px;margin-bottom:14px;border:1.5px solid #e8e8f0;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-              <div style="font-size:10px;font-weight:900;color:#555;letter-spacing:.5px;">PERFIL DEL ATLETA</div>
+          <!-- ③ Metodología y ficha -->
+          <div style="margin-bottom:20px;">
+            <label style="font-size:10px;font-weight:900;color:#555;letter-spacing:.5px;display:block;margin-bottom:2px;">③ TU METODOLOGÍA Y LA FICHA DEL ALUMNO</label>
+            <div style="font-size:11px;color:#999;margin-bottom:10px;">Tu metodología se completa una vez. La ficha, una vez por alumno.</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <button type="button" onclick="_iaAdnOpen()" style="border:1.5px solid #e0d8fb;background:#faf9ff;border-radius:12px;padding:14px;cursor:pointer;text-align:left;font-family:inherit;">
+                <div style="font-size:13px;font-weight:900;color:#7c3aed;">⚙️ Metodología</div>
+                <div id="ia-adn-status" style="font-size:11px;color:#888;margin-top:3px;">Sin cargar</div>
+              </button>
+              <button type="button" onclick="_iaFichaOpen()" style="border:1.5px solid #e0d8fb;background:#faf9ff;border-radius:12px;padding:14px;cursor:pointer;text-align:left;font-family:inherit;">
+                <div style="font-size:13px;font-weight:900;color:#7c3aed;">📋 Ficha del alumno</div>
+                <div id="ia-ficha-status" style="font-size:11px;color:#888;margin-top:3px;">Elegí un atleta</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- ④ Datos técnicos y ajustes (opcional) -->
+          <details style="background:#f8f9fb;border-radius:14px;margin-bottom:14px;border:1.5px solid #e8e8f0;">
+            <summary style="padding:14px 16px;cursor:pointer;font-size:11px;font-weight:900;color:#555;letter-spacing:.5px;">④ DATOS TÉCNICOS Y AJUSTES (opcional) · se cargan solos desde el perfil</summary>
+            <div style="padding:4px 16px 16px;">
+            <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:12px;">
               <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:#555;cursor:pointer;">
                 <input type="checkbox" id="ia-f-dual" onchange="_iaToggleDual()" style="width:15px;height:15px;accent-color:#7c3aed;cursor:pointer;">
                 👥 Entrenamiento en pareja (2 alumnos)
@@ -3690,7 +3706,8 @@ select.toolbox-input option:disabled { color: #888; }
                   style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:12px;font-family:inherit;background:#fff;box-sizing:border-box;margin-top:8px;">
               </div>
             </div>
-          </div>
+            </div>
+          </details>
 
           <!-- Modelo IA -->
           <div style="margin-bottom:14px;">
@@ -24824,6 +24841,7 @@ function _iaEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/<
 
 function renderIAPlanner() {
   _iaInitPoblar();
+  _iaStatusRefresh();
   const out = document.getElementById('ia-output');
   if (out) out.style.display = 'none';
   if (!_iaApiKey()) setTimeout(_iaShowKeyModal, 300);
@@ -24922,6 +24940,7 @@ function _iaInitContexto(){
   if (_iaInitState.sesion && _iaInitState.sesion.startsWith('Día')) t += '- FOCO: planificá en detalle la sesión de "'+_iaInitState.sesion+'" (podés resumir el resto de la semana).\n';
   else if (_iaInitState.sesion==='Sesión nueva') t += '- FOCO: diseñá una sesión suelta (no una semana completa).\n';
   _iaAutoContextTxt = t;
+  _iaStatusRefresh();
 }
 
 function _iaInitCheck(){
@@ -24989,6 +25008,7 @@ function _iaAdnSave(){
   const a={ metodo:document.getElementById('ia-adn-metodo')?.value, maxEj:document.getElementById('ia-adn-maxej')?.value, duracion:document.getElementById('ia-adn-dur')?.value, reps:document.getElementById('ia-adn-reps')?.value, descansos:document.getElementById('ia-adn-desc')?.value, intensidad:radioVal('ia-adn-int'), prioridades:prio, superseries:document.getElementById('ia-adn-super')?.value, biseries:document.getElementById('ia-adn-bi')?.value, dropsets:document.getElementById('ia-adn-drop')?.value, myoreps:document.getElementById('ia-adn-myo')?.value, autores:_iaGetChecks('ia-adn-autor'), filosofia:(document.getElementById('ia-adn-filo')?.value||'').trim() };
   localStorage.setItem('SOCC_COACH_ADN',JSON.stringify(a));
   document.getElementById('ia-adn-modal').style.display='none';
+  _iaStatusRefresh();
   toast('✅ Metodología guardada — se aplica a todas las planificaciones');
 }
 function _iaAdnPromptTxt(){
@@ -25063,6 +25083,19 @@ function _iaFichaPromptTxt(al){
   if(f.equipo&&f.equipo.length) t+='- Equipamiento disponible (usá SOLO esto): '+f.equipo.join(', ')+'\n';
   if(f.distribucion) t+='- Distribución semanal deseada por el coach:\n'+f.distribucion.split('\n').map(l=>'   '+l).join('\n')+'\n';
   return t;
+}
+
+function _iaStatusRefresh(){
+  const adnS = document.getElementById('ia-adn-status');
+  if (adnS){ const a=_iaAdnGet(); const on=!!(a&&Object.keys(a).length); adnS.textContent=on?'Cargada ✓':'Sin cargar'; adnS.style.color=on?'#059669':'#888'; }
+  const fiS = document.getElementById('ia-ficha-status');
+  if (fiS){
+    _iaInitLeerEstado();
+    const al = _iaInitState.alumnoId ? getAlumnos().find(a=>a.id===_iaInitState.alumnoId) : null;
+    if (!al){ fiS.textContent='Elegí un atleta'; fiS.style.color='#888'; }
+    else if (al.fichaPlan && Object.keys(al.fichaPlan).length){ fiS.textContent='Cargada ✓'; fiS.style.color='#059669'; }
+    else { fiS.textContent='Sin cargar (opcional)'; fiS.style.color='#888'; }
+  }
 }
 
 function _iaBuildPrompt() {
