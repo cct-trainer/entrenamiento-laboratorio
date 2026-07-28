@@ -2986,6 +2986,7 @@ select.toolbox-input option:disabled { color: #888; }
     <button onclick="document.getElementById('backup-import-input').click()" class="pln-btn pln-btn-outline" title="Restaurar base de datos desde backup JSON">Restaurar</button>
     <button onclick="abrirSolicitudes()" class="pln-btn pln-btn-outline" title="Solicitudes de prueba gratis pendientes" style="border-color:#C9A84C;color:#9A7A28;position:relative;">Solicitudes<span id="sol-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="abrirAltas()" class="pln-btn pln-btn-outline" title="Alta de nuevos alumnos por formulario de ingreso" style="border-color:#7c3aed;color:#7c3aed;position:relative;">➕ Nuevo alumno<span id="altas-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#7c3aed;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
+    <button onclick="abrirActualizaciones()" class="pln-btn pln-btn-outline" title="Actualizaciones de plan que enviaron tus alumnos" style="border-color:#7c3aed;color:#7c3aed;position:relative;">🔄 Actualizaciones<span id="actual-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="abrirSuscripciones()" class="pln-btn pln-btn-outline" title="Planes, pagos y vencimientos" style="border-color:#C9A84C;color:#9A7A28;position:relative;">Suscripciones<span id="venc-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#f59e0b;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="abrirMetricas()" class="pln-btn pln-btn-outline" title="Métricas del piloto de adquisición" style="border-color:#1d4ed8;color:#1d4ed8;">📊 Métricas</button>
     <button onclick="recuperarDesdePortales()" class="pln-btn pln-btn-outline" title="Recuperar tus alumnos leyendo sus documentos en la nube" style="border-color:#22c55e;color:#166534;">↻ Recuperar</button>
@@ -21993,6 +21994,7 @@ function initFirebase() {
     cargarDesdeFirestore();
     setTimeout(() => { try { _fetchSolicitudes(); } catch(e){} }, 1500);   // contador de solicitudes de prueba
     setTimeout(() => { try { _fetchAltas(); } catch(e){} }, 1700);         // contador de altas nuevas (formulario de ingreso)
+    setTimeout(() => { try { _fetchActualizaciones(); } catch(e){} }, 1850); // contador de actualizaciones de plan
     setTimeout(() => { try { _refreshVencBadge(); } catch(e){} }, 2000);   // contador de vencimientos próximos
   } catch(err) {
     console.warn('Firebase init error:', err);
@@ -25253,11 +25255,51 @@ async function _iaCheckActualizacion(alumnoId){
     }
   }catch(e){ console.warn('checkin:',e); }
 }
-async function aplicarActualizacion(){
-  const u=_iaUpdActual; if(!u){ toast('No hay actualización'); return; }
+// ── Buzón de ACTUALIZACIONES (visible con contador en el encabezado) ──────────
+let _ACTUALIZACIONES=[];
+async function _fetchActualizaciones(){
+  if(!window._db) return;
+  try{
+    const snap=await window._db.collection('alumnos').where('estado','==','actualizacion_pendiente').get();
+    _ACTUALIZACIONES=[]; snap.forEach(dd=>{ const x=dd.data()||{}; x._id=dd.id; _ACTUALIZACIONES.push(x); });
+    _ACTUALIZACIONES.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  }catch(e){ console.warn('actualizaciones:',e); _ACTUALIZACIONES=[]; }
+  const b=document.getElementById('actual-badge');
+  if(b){ if(_ACTUALIZACIONES.length){ b.textContent=_ACTUALIZACIONES.length; b.style.display='block'; } else b.style.display='none'; }
+}
+function _findUpd(id){ return _ACTUALIZACIONES.find(x=>x._id===id) || ((_iaUpdActual&&_iaUpdActual._id===id)?_iaUpdActual:null); }
+function _updNombre(u){ return u.nombre || (u.datos&&u.datos.nombre) || ((getAlumnos().find(a=>a.id===u.alumnoId)||{}).nombre) || '—'; }
+async function abrirActualizaciones(){
+  await _fetchActualizaciones();
+  let ov=document.getElementById('actual-overlay'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='actual-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:6000;display:flex;align-items:flex-start;justify-content:center;padding:36px 16px;overflow-y:auto;';
+  ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+  const items=_ACTUALIZACIONES.length ? _ACTUALIZACIONES.map(u=>{
+    const nom=_updNombre(u);
+    const fecha=u.createdAt?new Date(u.createdAt).toLocaleDateString('es-AR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+    const existe=getAlumnos().some(a=>a.id===u.alumnoId);
+    return '<div style="border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">'+_iaEsc(nom)+(existe?'':' <span style="font-size:10px;color:#c62828;font-weight:600;">(no encontrado)</span>')+'</div><div style="font-size:11px;color:#999;">'+fecha+'</div></div>'
+      +'<div style="font-size:12px;color:#444;margin:8px 0;line-height:1.6;">'+_iaEsc(u.resumenEjecutivo||'Actualización recibida.')+'</div>'
+      +'<details style="margin-bottom:10px;"><summary style="cursor:pointer;color:#7c3aed;font-size:12px;font-weight:700;">Ver todo lo que respondió</summary><pre style="white-space:pre-wrap;font-size:11px;color:#333;background:#f7f7fb;border:1px solid #eee;border-radius:8px;padding:10px;margin-top:6px;font-family:inherit;max-height:280px;overflow:auto;">'+_iaEsc(u.promptMaestro||'(sin detalle)')+'</pre></details>'
+      +'<div style="display:flex;gap:8px;">'
+      +'<button onclick="aplicarActualizacion(\''+u._id+'\')" style="flex:1;background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:10px;font-size:12px;font-weight:800;cursor:pointer;">✓ Aplicar al perfil</button>'
+      +'<button onclick="descartarActualizacion(\''+u._id+'\')" style="background:#fee2e2;color:#c62828;border:none;border-radius:8px;padding:10px 12px;font-size:12px;font-weight:700;cursor:pointer;">Descartar</button>'
+      +'</div></div>';
+  }).join('') : '<div style="text-align:center;color:#999;padding:26px;font-size:13px;">No hay actualizaciones nuevas.<br><span style="font-size:11px;">Cuando un alumno complete su formulario de actualización, aparece acá.</span></div>';
+  ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:600px;width:100%;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.25);" onclick="event.stopPropagation()">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">🔄 Actualizaciones de alumnos ('+_ACTUALIZACIONES.length+')</div>'
+    +'<button onclick="document.getElementById(\'actual-overlay\').remove()" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;">×</button></div>'
+    + items + '</div>';
+  document.body.appendChild(ov);
+}
+async function aplicarActualizacion(updId){
+  const u = updId ? _findUpd(updId) : _iaUpdActual;
+  if(!u){ toast('No hay actualización'); return; }
   const d=u.datos||{};
   const alumnos=getAlumnos(); const al=alumnos.find(a=>a.id===u.alumnoId);
-  if(!al){ toast('No encontré al alumno'); return; }
+  if(!al){ toast('No encontré al alumno de esta actualización'); return; }
   al.fichaPlan=al.fichaPlan||{}; const f=al.fichaPlan;
   const _merge=(a,b)=>[a,b].filter(Boolean).join(', ');
   if(d.objetivoNuevo){ al.objetivo=d.objetivoNuevo; f.objetivos=[d.objetivoNuevo].concat(d.cambiosFisicos||[]); }
@@ -25274,16 +25316,22 @@ async function aplicarActualizacion(){
   saveAlumnos(alumnos);
   try{ if(window._db) await window._db.collection('alumnos').doc(u._id).update({ estado:'aplicada' }); }catch(e){}
   if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
-  _iaUpdActual=null;
-  const box=document.getElementById('ia-update-banner'); if(box) box.innerHTML='<div style="background:#ecfdf5;border:1px solid #10b981;border-radius:10px;padding:10px 12px;margin-top:12px;font-size:12px;color:#059669;font-weight:700;">✓ Actualización aplicada. El nuevo contexto ya se usa al generar.</div>';
-  _iaCargarAlumnoEnForm(al); _iaInitContexto();
+  _ACTUALIZACIONES=_ACTUALIZACIONES.filter(x=>x._id!==u._id);
+  if(_iaUpdActual && _iaUpdActual._id===u._id){ _iaUpdActual=null; const box=document.getElementById('ia-update-banner'); if(box) box.innerHTML='<div style="background:#ecfdf5;border:1px solid #10b981;border-radius:10px;padding:10px 12px;margin-top:12px;font-size:12px;color:#059669;font-weight:700;">✓ Actualización aplicada. El nuevo contexto ya se usa al generar.</div>'; }
+  _fetchActualizaciones();
+  if(document.getElementById('actual-overlay')) abrirActualizaciones();
+  try{ _iaCargarAlumnoEnForm(al); _iaInitContexto(); }catch(e){}
   toast('✅ Actualización aplicada a '+(al.nombre||''));
 }
-async function descartarActualizacion(){
-  const u=_iaUpdActual; if(!u) return;
+async function descartarActualizacion(updId){
+  const u = updId ? _findUpd(updId) : _iaUpdActual;
+  if(!u) return;
   if(!confirm('¿Descartar esta actualización del alumno?')) return;
   try{ if(window._db) await window._db.collection('alumnos').doc(u._id).update({ estado:'descartada' }); }catch(e){}
-  _iaUpdActual=null; const box=document.getElementById('ia-update-banner'); if(box) box.innerHTML='';
+  _ACTUALIZACIONES=_ACTUALIZACIONES.filter(x=>x._id!==u._id);
+  if(_iaUpdActual && _iaUpdActual._id===u._id){ _iaUpdActual=null; const box=document.getElementById('ia-update-banner'); if(box) box.innerHTML=''; }
+  _fetchActualizaciones();
+  if(document.getElementById('actual-overlay')) abrirActualizaciones();
 }
 
 // Arma el system prompt completo (VPT + metodología ADN + entrenador elegido + cargas)
