@@ -3411,6 +3411,8 @@ select.toolbox-input option:disabled { color: #888; }
             <p class="mh-sub">Planificación con entrenadores IA especializados</p>
           </div>
           <div class="mh-actions">
+            <button onclick="_iaAdnOpen()" style="font-size:11px;padding:7px 14px;border:1px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:8px;cursor:pointer;font-weight:700;">⚙️ Metodología</button>
+            <button onclick="_iaFichaOpen()" style="font-size:11px;padding:7px 14px;border:1px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:8px;cursor:pointer;font-weight:700;">📋 Ficha del alumno</button>
             <button onclick="_iaShowImportModal()" style="font-size:11px;padding:7px 14px;border:1px solid #10b981;background:#ecfdf5;color:#059669;border-radius:8px;cursor:pointer;font-weight:700;">📥 Importar JSON</button>
             <button onclick="_iaShowKeyModal()" style="font-size:11px;padding:7px 14px;border:1px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:8px;cursor:pointer;font-weight:700;">🔑 API Key</button>
           </div>
@@ -3743,6 +3745,38 @@ select.toolbox-input option:disabled { color: #888; }
               style="flex:1;padding:11px;background:#7c3aed;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">Guardar</button>
             <button onclick="document.getElementById('ia-key-modal').style.display='none'"
               style="flex:1;padding:11px;background:#f0f0f0;color:#555;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Metodología del Entrenador (ADN — se completa una vez) -->
+      <div id="ia-adn-modal" onclick="if(event.target===this)this.style.display='none'"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:#fff;border-radius:16px;width:100%;max-width:640px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);" onclick="event.stopPropagation()">
+          <div style="position:sticky;top:0;background:#fff;padding:22px 26px 12px;border-bottom:1px solid #eee;">
+            <div style="font-size:16px;font-weight:900;color:#1a1a2e;">⚙️ Metodología del entrenador (tu ADN)</div>
+            <div style="font-size:12px;color:#888;margin-top:4px;">Se completa una vez. Todas las planificaciones futuras respetan estos criterios.</div>
+          </div>
+          <div id="ia-adn-body" style="padding:20px 26px;"></div>
+          <div style="position:sticky;bottom:0;background:#fff;padding:14px 26px;border-top:1px solid #eee;display:flex;gap:10px;">
+            <button onclick="_iaAdnSave()" style="flex:1;padding:11px;background:#7c3aed;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">Guardar metodología</button>
+            <button onclick="document.getElementById('ia-adn-modal').style.display='none'" style="flex:1;padding:11px;background:#f0f0f0;color:#555;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">Cerrar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Ficha de planificación del alumno (por cliente) -->
+      <div id="ia-ficha-modal" onclick="if(event.target===this)this.style.display='none'"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:#fff;border-radius:16px;width:100%;max-width:640px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);" onclick="event.stopPropagation()">
+          <div style="position:sticky;top:0;background:#fff;padding:22px 26px 12px;border-bottom:1px solid #eee;">
+            <div id="ia-ficha-title" style="font-size:16px;font-weight:900;color:#1a1a2e;">📋 Ficha de planificación</div>
+            <div style="font-size:12px;color:#888;margin-top:4px;">Datos del alumno para la planificación. Lo que ya está en su perfil viene precargado.</div>
+          </div>
+          <div id="ia-ficha-body" style="padding:20px 26px;"></div>
+          <div style="position:sticky;bottom:0;background:#fff;padding:14px 26px;border-top:1px solid #eee;display:flex;gap:10px;">
+            <button onclick="_iaFichaSave()" style="flex:1;padding:11px;background:#7c3aed;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">Guardar ficha</button>
+            <button onclick="document.getElementById('ia-ficha-modal').style.display='none'" style="flex:1;padding:11px;background:#f0f0f0;color:#555;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">Cerrar</button>
           </div>
         </div>
       </div>
@@ -24898,6 +24932,139 @@ function _iaInitCheck(){
   if (lock) lock.style.display = ok?'none':'block';
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// FORMULARIOS: ADN del entrenador (una vez) + Ficha del alumno (por cliente)
+// ═══════════════════════════════════════════════════════════════════════════
+const _IA_METODOS    = ['Tradicional','Upper/Lower','Full Body','Push Pull Legs','Torso/Pierna','Híbrido'];
+const _IA_AUTORES    = ['Bret Contreras','Mike Israetel','Eric Helms','Brad Schoenfeld','Michael Boyle','Jeff Nippard','Stuart McGill'];
+const _IA_PRIORIDADES= ['Seguridad','Adherencia','Hipertrofia / objetivo','Progresión','Fatiga baja'];
+const _IA_OBJETIVOS  = ['Hipertrofia','Recomposición corporal','Fuerza','Descenso de grasa','Rendimiento deportivo','Salud','Rehabilitación','Estética','Mantenimiento','Otro'];
+const _IA_LESIONES   = ['Lumbar','Rodilla','Hombro','Cadera','Tobillo','Muñeca','Cervical','Ninguna','Otra'];
+const _IA_EQUIPO     = ['Smith','Rack','Barra olímpica','Mancuernas','Poleas','Prensa','Banco','TRX','Bandas','Kettlebells','Máquina aductores','Máquina abductores','Camilla femoral','Extensión de cuádriceps','Máquinas varias','Cardio'];
+const _IA_LUGARES    = ['Gimnasio completo','Gimnasio básico','Casa','Aire libre','Mixto'];
+let _iaFichaAlId = '';
+const _iaInpCss = 'width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;background:#fff;';
+function _iaFieldWrap(lb, inner){ return '<div style="margin-bottom:14px;"><label style="font-size:10px;font-weight:800;color:#666;letter-spacing:.4px;display:block;margin-bottom:6px;">'+lb+'</label>'+inner+'</div>'; }
+function _iaSelectHTML(id, opts, val){ return '<select id="'+id+'" style="'+_iaInpCss+'">'+opts.map(o=>'<option'+(o===val?' selected':'')+'>'+_iaEsc(o)+'</option>').join('')+'</select>'; }
+function _iaChecksHTML(name, opts, selArr){ const sel=new Set(selArr||[]); return '<div style="display:flex;flex-wrap:wrap;gap:7px;">'+opts.map(o=>'<label style="display:inline-flex;align-items:center;gap:5px;background:#f6f6fb;border:1px solid #e2e2ee;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;"><input type="checkbox" class="'+name+'" value="'+_iaEsc(o)+'"'+(sel.has(o)?' checked':'')+' style="accent-color:#7c3aed;"> '+_iaEsc(o)+'</label>').join('')+'</div>'; }
+function _iaGetChecks(name){ return Array.from(document.querySelectorAll('.'+name+':checked')).map(c=>c.value); }
+
+// ── ADN del entrenador (localStorage, se completa una vez) ──
+function _iaAdnGet(){ try{ return JSON.parse(localStorage.getItem('SOCC_COACH_ADN')||'{}'); }catch(e){ return {}; } }
+function _iaAdnOpen(){ _iaAdnRender(); document.getElementById('ia-adn-modal').style.display='flex'; }
+function _iaAdnRender(){
+  const a=_iaAdnGet(); const body=document.getElementById('ia-adn-body');
+  const radio=(n,v,cur)=>'<label style="display:inline-flex;align-items:center;gap:5px;margin-right:16px;font-size:13px;cursor:pointer;"><input type="radio" name="'+n+'" value="'+v+'"'+(cur===v?' checked':'')+' style="accent-color:#7c3aed;"> '+v+'</label>';
+  const prioActual=(a.prioridades&&a.prioridades.length)?a.prioridades:_IA_PRIORIDADES.slice();
+  const prioHTML='<div id="ia-adn-prio">'+prioActual.map((p,i)=>'<div class="ia-prio-row" data-v="'+_iaEsc(p)+'" style="display:flex;align-items:center;gap:8px;background:#f6f6fb;border:1px solid #e2e2ee;border-radius:8px;padding:7px 10px;margin-bottom:6px;"><span class="ia-prio-n" style="font-weight:900;color:#7c3aed;font-size:12px;width:16px;">'+(i+1)+'</span><span style="flex:1;font-size:13px;">'+_iaEsc(p)+'</span><button type="button" onclick="_iaPrioMove(this,-1)" style="border:none;background:#eee;border-radius:6px;width:24px;height:24px;cursor:pointer;">▲</button><button type="button" onclick="_iaPrioMove(this,1)" style="border:none;background:#eee;border-radius:6px;width:24px;height:24px;cursor:pointer;">▼</button></div>').join('')+'</div>';
+  body.innerHTML=
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+
+      '<div>'+_iaFieldWrap('MÉTODO PREFERIDO',_iaSelectHTML('ia-adn-metodo',_IA_METODOS,a.metodo||'Push Pull Legs'))+'</div>'+
+      '<div>'+_iaFieldWrap('MÁX. EJERCICIOS / SESIÓN',_iaSelectHTML('ia-adn-maxej',['5','6','7','8','9','10'],a.maxEj||'7'))+'</div>'+
+      '<div>'+_iaFieldWrap('DURACIÓN MÁXIMA',_iaSelectHTML('ia-adn-dur',['40 minutos','45 minutos','60 minutos','75 minutos'],a.duracion||'45 minutos'))+'</div>'+
+      '<div>'+_iaFieldWrap('RANGO DE REPS',_iaSelectHTML('ia-adn-reps',['6-8','8-10','10-15','Mixto'],a.reps||'Mixto'))+'</div>'+
+      '<div>'+_iaFieldWrap('DESCANSOS',_iaSelectHTML('ia-adn-desc',['Cortos','Medios','Largos'],a.descansos||'Medios'))+'</div>'+
+      '<div>'+_iaFieldWrap('INTENSIDAD',radio('ia-adn-int','RIR',a.intensidad||'RIR')+radio('ia-adn-int','RPE',a.intensidad||'RIR'))+'</div>'+
+    '</div>'+
+    _iaFieldWrap('PRIORIDADES (ordená de mayor a menor)',prioHTML)+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+
+      '<div>'+_iaFieldWrap('SUPERSERIES',_iaSelectHTML('ia-adn-super',['No','Sí','Solo accesorios'],a.superseries||'Solo accesorios'))+'</div>'+
+      '<div>'+_iaFieldWrap('BISERIES',_iaSelectHTML('ia-adn-bi',['No','Sí'],a.biseries||'No'))+'</div>'+
+      '<div>'+_iaFieldWrap('DROPSETS',_iaSelectHTML('ia-adn-drop',['No','Sí','Solo último ejercicio'],a.dropsets||'Solo último ejercicio'))+'</div>'+
+      '<div>'+_iaFieldWrap('MYO-REPS',_iaSelectHTML('ia-adn-myo',['No','Sí'],a.myoreps||'No'))+'</div>'+
+    '</div>'+
+    _iaFieldWrap('AUTORES DE REFERENCIA',_iaChecksHTML('ia-adn-autor',_IA_AUTORES,a.autores))+
+    _iaFieldWrap('FILOSOFÍA DE ENTRENAMIENTO (texto libre)','<textarea id="ia-adn-filo" rows="4" style="'+_iaInpCss+'resize:vertical;" placeholder="Ej: Priorizar la relación estímulo-fatiga. Reducir ejercicios redundantes. Favorecer movimientos estables. Sesiones dinámicas de menos de 45 minutos.">'+_iaEsc(a.filosofia||'')+'</textarea>');
+}
+function _iaPrioMove(btn,dir){
+  const row=btn.closest('.ia-prio-row'); const cont=document.getElementById('ia-adn-prio');
+  const rows=Array.from(cont.children); const i=rows.indexOf(row); const j=i+dir;
+  if(j<0||j>=rows.length) return;
+  if(dir<0) cont.insertBefore(row,rows[j]); else cont.insertBefore(rows[j],row);
+  Array.from(cont.children).forEach((r,k)=>{ const n=r.querySelector('.ia-prio-n'); if(n) n.textContent=(k+1); });
+}
+function _iaAdnSave(){
+  const radioVal=n=>(document.querySelector('input[name="'+n+'"]:checked')?.value)||'';
+  const prio=Array.from(document.querySelectorAll('#ia-adn-prio .ia-prio-row')).map(r=>r.getAttribute('data-v'));
+  const a={ metodo:document.getElementById('ia-adn-metodo')?.value, maxEj:document.getElementById('ia-adn-maxej')?.value, duracion:document.getElementById('ia-adn-dur')?.value, reps:document.getElementById('ia-adn-reps')?.value, descansos:document.getElementById('ia-adn-desc')?.value, intensidad:radioVal('ia-adn-int'), prioridades:prio, superseries:document.getElementById('ia-adn-super')?.value, biseries:document.getElementById('ia-adn-bi')?.value, dropsets:document.getElementById('ia-adn-drop')?.value, myoreps:document.getElementById('ia-adn-myo')?.value, autores:_iaGetChecks('ia-adn-autor'), filosofia:(document.getElementById('ia-adn-filo')?.value||'').trim() };
+  localStorage.setItem('SOCC_COACH_ADN',JSON.stringify(a));
+  document.getElementById('ia-adn-modal').style.display='none';
+  toast('✅ Metodología guardada — se aplica a todas las planificaciones');
+}
+function _iaAdnPromptTxt(){
+  const a=_iaAdnGet(); if(!a||!Object.keys(a).length) return '';
+  let t='\n\n## METODOLOGÍA DEL ENTRENADOR (ADN — respetá SIEMPRE estos criterios)\n';
+  if(a.metodo)     t+='- Método preferido: '+a.metodo+'\n';
+  if(a.maxEj)      t+='- Máximo de ejercicios por sesión: '+a.maxEj+'\n';
+  if(a.duracion)   t+='- Duración máxima por sesión: '+a.duracion+'\n';
+  if(a.reps)       t+='- Rango de repeticiones preferido: '+a.reps+'\n';
+  if(a.descansos)  t+='- Descansos: '+a.descansos+'\n';
+  if(a.intensidad) t+='- Expresar la intensidad en: '+a.intensidad+'\n';
+  if(a.prioridades&&a.prioridades.length) t+='- Prioridades (de mayor a menor): '+a.prioridades.map((p,i)=>(i+1)+') '+p).join('  ')+'\n';
+  const tec=[]; if(a.superseries)tec.push('Superseries: '+a.superseries); if(a.biseries)tec.push('Biseries: '+a.biseries); if(a.dropsets)tec.push('Dropsets: '+a.dropsets); if(a.myoreps)tec.push('Myo-reps: '+a.myoreps);
+  if(tec.length)   t+='- Técnicas de intensidad permitidas: '+tec.join(' · ')+'\n';
+  if(a.autores&&a.autores.length) t+='- Autores de referencia: '+a.autores.join(', ')+'\n';
+  if(a.filosofia)  t+='- Filosofía del entrenador: '+a.filosofia+'\n';
+  t+='Respetá estos criterios metodológicos en TODA la planificación, adaptándolos al perfil del alumno.\n';
+  return t;
+}
+
+// ── Ficha del alumno (guardada en el perfil: alumno.fichaPlan) ──
+function _iaFichaGet(al){ return (al&&al.fichaPlan)?al.fichaPlan:{}; }
+function _iaFichaOpen(){
+  _iaInitLeerEstado();
+  const al=_iaInitState.alumnoId?getAlumnos().find(a=>a.id===_iaInitState.alumnoId):(currentAlumnoId?getAlumnos().find(a=>a.id===currentAlumnoId):null);
+  if(!al){ toast('Elegí un atleta en la inicialización primero'); return; }
+  _iaFichaAlId=al.id;
+  document.getElementById('ia-ficha-title').textContent='📋 Ficha de planificación — '+(al.nombre||'');
+  _iaFichaRender(al);
+  document.getElementById('ia-ficha-modal').style.display='flex';
+}
+function _iaFichaRender(al){
+  const f=_iaFichaGet(al); const body=document.getElementById('ia-ficha-body');
+  const objSel=(f.objetivos&&f.objetivos.length)?f.objetivos:(al.objetivo?_IA_OBJETIVOS.filter(o=>al.objetivo.toLowerCase().includes(o.toLowerCase().split(' ')[0])):[]);
+  const lesSel=f.lesiones||(al.lesiones?['Otra']:[]);
+  body.innerHTML=
+    '<div style="font-size:10px;font-weight:900;color:#7c3aed;letter-spacing:.5px;margin-bottom:10px;">OBJETIVOS</div>'+
+    _iaFieldWrap('OBJETIVOS (uno o varios)',_iaChecksHTML('ia-fi-obj',_IA_OBJETIVOS,objSel))+
+    _iaFieldWrap('¿OBJETIVO ESPECÍFICO?','<input id="ia-fi-objesp" style="'+_iaInpCss+'" placeholder="Ej: mejorar glúteos, correr 10 km, mejorar postura..." value="'+_iaEsc(f.objetivoEsp||'')+'">')+
+    '<div style="font-size:10px;font-weight:900;color:#7c3aed;letter-spacing:.5px;margin:6px 0 10px;">RESTRICCIONES</div>'+
+    _iaFieldWrap('LESIONES',_iaChecksHTML('ia-fi-les',_IA_LESIONES,lesSel))+
+    _iaFieldWrap('DOLOR ACTUAL','<input id="ia-fi-dolor" style="'+_iaInpCss+'" placeholder="Zona, cuándo aparece..." value="'+_iaEsc(f.dolor||'')+'">')+
+    _iaFieldWrap('EJERCICIOS PROHIBIDOS','<input id="ia-fi-prohib" style="'+_iaInpCss+'" placeholder="Ej: Peso muerto, Press militar, Sentadilla profunda, Fondos" value="'+_iaEsc(f.prohibidos||'')+'">')+
+    _iaFieldWrap('EJERCICIOS PERMITIDOS / PREFERIDOS','<input id="ia-fi-permit" style="'+_iaInpCss+'" placeholder="Texto libre" value="'+_iaEsc(f.permitidos||'')+'">')+
+    _iaFieldWrap('CONSIDERACIONES MÉDICAS','<input id="ia-fi-medic" style="'+_iaInpCss+'" placeholder="Texto libre" value="'+_iaEsc(f.medicas||'')+'">')+
+    '<div style="font-size:10px;font-weight:900;color:#7c3aed;letter-spacing:.5px;margin:6px 0 10px;">RECURSOS</div>'+
+    _iaFieldWrap('LUGAR',_iaSelectHTML('ia-fi-lugar',_IA_LUGARES,f.lugar||'Gimnasio completo'))+
+    _iaFieldWrap('EQUIPAMIENTO DISPONIBLE',_iaChecksHTML('ia-fi-equipo',_IA_EQUIPO,f.equipo))+
+    _iaFieldWrap('DISTRIBUCIÓN SEMANAL DESEADA (texto libre)','<textarea id="ia-fi-distrib" rows="4" style="'+_iaInpCss+'resize:vertical;" placeholder="Ej:&#10;Lunes: Pecho, Hombros, Tríceps, Cuádriceps&#10;Martes: Espalda, Bíceps, Isquios&#10;Jueves: Full Body">'+_iaEsc(f.distribucion||'')+'</textarea>');
+}
+function _iaFichaSave(){
+  const alumnos=getAlumnos(); const al=alumnos.find(a=>a.id===_iaFichaAlId);
+  if(!al){ toast('No encontré al alumno'); return; }
+  al.fichaPlan={ objetivos:_iaGetChecks('ia-fi-obj'), objetivoEsp:(document.getElementById('ia-fi-objesp')?.value||'').trim(), lesiones:_iaGetChecks('ia-fi-les'), dolor:(document.getElementById('ia-fi-dolor')?.value||'').trim(), prohibidos:(document.getElementById('ia-fi-prohib')?.value||'').trim(), permitidos:(document.getElementById('ia-fi-permit')?.value||'').trim(), medicas:(document.getElementById('ia-fi-medic')?.value||'').trim(), lugar:document.getElementById('ia-fi-lugar')?.value, equipo:_iaGetChecks('ia-fi-equipo'), distribucion:(document.getElementById('ia-fi-distrib')?.value||'').trim() };
+  if(typeof saveAlumnos==='function') saveAlumnos(alumnos);
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+  document.getElementById('ia-ficha-modal').style.display='none';
+  toast('✅ Ficha guardada en el perfil del alumno');
+  _iaInitContexto();
+}
+function _iaFichaPromptTxt(al){
+  const f=_iaFichaGet(al); if(!f||!Object.keys(f).length) return '';
+  let t='\n\n## FICHA DE PLANIFICACIÓN DEL ALUMNO\n';
+  if(f.objetivos&&f.objetivos.length) t+='- Objetivos: '+f.objetivos.join(', ')+'\n';
+  if(f.objetivoEsp) t+='- Objetivo específico: '+f.objetivoEsp+'\n';
+  if(f.lesiones&&f.lesiones.length&&!(f.lesiones.length===1&&f.lesiones[0]==='Ninguna')) t+='- Lesiones: '+f.lesiones.join(', ')+'\n';
+  if(f.dolor) t+='- ⚠️ Dolor actual: '+f.dolor+'\n';
+  if(f.prohibidos) t+='- 🚫 EJERCICIOS PROHIBIDOS (NO incluir bajo ningún concepto): '+f.prohibidos+'\n';
+  if(f.permitidos) t+='- Ejercicios permitidos/preferidos: '+f.permitidos+'\n';
+  if(f.medicas) t+='- Consideraciones médicas: '+f.medicas+'\n';
+  if(f.lugar) t+='- Lugar de entrenamiento: '+f.lugar+'\n';
+  if(f.equipo&&f.equipo.length) t+='- Equipamiento disponible (usá SOLO esto): '+f.equipo.join(', ')+'\n';
+  if(f.distribucion) t+='- Distribución semanal deseada por el coach:\n'+f.distribucion.split('\n').map(l=>'   '+l).join('\n')+'\n';
+  return t;
+}
+
 function _iaBuildPrompt() {
   const nombre   = (document.getElementById('ia-f-nombre')?.value || '').trim() || 'Atleta';
   const sexo     = document.getElementById('ia-f-sexo')?.value   || 'Hombre';
@@ -24977,6 +25144,10 @@ function _iaBuildPrompt() {
   if (notas)    prompt += `- Información adicional del coach: ${notas}\n`;
   // Contexto cargado automáticamente desde el perfil (fecha, sesión, lesiones, historial, medidas)
   if (_iaAutoContextTxt) prompt += _iaAutoContextTxt;
+  // Ficha de planificación del alumno (objetivos, restricciones, equipamiento, distribución)
+  const _alFicha = _iaInitState.alumnoId ? getAlumnos().find(a=>a.id===_iaInitState.alumnoId) : null;
+  const _fichaTxt = _iaFichaPromptTxt(_alFicha);
+  if (_fichaTxt) prompt += _fichaTxt;
 
   let cargasInstr = '';
   if (marcas) {
@@ -25133,7 +25304,7 @@ async function iaGenerarPlan() {
                    : _iaCurrentTrainer === 'jd' ? _IA_SYSTEM_PROMPT_JD
                    : _iaCurrentTrainer === 'ms' ? _IA_SYSTEM_PROMPT_MS
                    : _IA_SYSTEM_PROMPT_JM;
-  const sysPrompt  = _IA_VPT_PROMPT + '\n\n' + sysBase + '\n\n' + _IA_CARGAS_PROMPT;
+  const sysPrompt  = _IA_VPT_PROMPT + _iaAdnPromptTxt() + '\n\n' + sysBase + '\n\n' + _IA_CARGAS_PROMPT;
   const accentColor = _IA_TRAINERS[_iaCurrentTrainer].color;
 
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Diseñando programa semanal...'; }
