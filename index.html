@@ -3414,6 +3414,40 @@ select.toolbox-input option:disabled { color: #888; }
         </div>
         <div class="module-content">
 
+          <!-- ① INICIALIZACIÓN OBLIGATORIA -->
+          <div id="ia-init" style="background:#faf9ff;border:1.5px solid #e0d8fb;border-radius:14px;padding:16px;margin-bottom:16px;">
+            <div style="font-size:10px;font-weight:900;color:#7c3aed;letter-spacing:.6px;margin-bottom:12px;">① INICIÁ LA PLANIFICACIÓN</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div style="grid-column:1/-1;">
+                <label style="font-size:10px;font-weight:800;color:#555;display:block;margin-bottom:4px;">ATLETA</label>
+                <select id="ia-init-alumno" onchange="_iaInitOnAlumno()" style="width:100%;border:1.5px solid #d8d8ea;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;background:#fff;">
+                  <option value="">— Elegí un atleta —</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:10px;font-weight:800;color:#555;display:block;margin-bottom:4px;">FECHA DE ENTRENAMIENTO</label>
+                <input id="ia-init-fecha" type="date" onchange="_iaInitOnCampo()" style="width:100%;border:1.5px solid #d8d8ea;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;background:#fff;">
+              </div>
+              <div>
+                <label style="font-size:10px;font-weight:800;color:#555;display:block;margin-bottom:4px;">SESIÓN</label>
+                <select id="ia-init-sesion" onchange="_iaInitOnCampo()" style="width:100%;border:1.5px solid #d8d8ea;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;background:#fff;">
+                  <option value="">— Elegí —</option>
+                  <option value="Semana completa">Semana completa</option>
+                  <option value="Día 1">Día 1</option>
+                  <option value="Día 2">Día 2</option>
+                  <option value="Día 3">Día 3</option>
+                  <option value="Día 4">Día 4</option>
+                  <option value="Día 5">Día 5</option>
+                  <option value="Día 6">Día 6</option>
+                  <option value="Día 7">Día 7</option>
+                  <option value="Sesión nueva">Sesión nueva (suelta)</option>
+                </select>
+              </div>
+            </div>
+            <div id="ia-init-context" style="display:none;margin-top:14px;"></div>
+            <div id="ia-init-lock" style="margin-top:12px;font-size:12px;color:#a06b00;background:#fff8e6;border:1px solid #f4e0a0;border-radius:9px;padding:9px 12px;">🔒 Elegí <b>atleta</b>, <b>fecha</b> y <b>sesión</b> para habilitar el planner. Los datos del atleta se cargan solos.</div>
+          </div>
+
           <!-- Selector de entrenador -->
           <div style="margin-bottom:20px;">
             <label style="font-size:10px;font-weight:900;color:#555;letter-spacing:.5px;display:block;margin-bottom:8px;">ENTRENADOR IA</label>
@@ -3657,8 +3691,8 @@ select.toolbox-input option:disabled { color: #888; }
           <div style="margin-bottom:14px;">
             <label style="font-size:10px;font-weight:800;color:#555;letter-spacing:.5px;display:block;margin-bottom:5px;">MODELO IA</label>
             <select id="ia-modelo" style="width:100%;border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff;">
-              <option value="claude-sonnet-4-6" selected>Claude Sonnet 4.6 (recomendado)</option>
-              <option value="claude-opus-4-8">Claude Opus 4.8 (máxima calidad)</option>
+              <option value="claude-sonnet-5" selected>Claude Sonnet 5 (recomendado)</option>
+              <option value="claude-opus-5">Claude Opus 5 (máxima calidad)</option>
               <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (más rápido)</option>
             </select>
           </div>
@@ -21072,7 +21106,7 @@ async function _antroInformeIA(alumnoId, wrapId) {
 
   try {
     const texto = await _iaGenerarConContinuacion(
-      document.getElementById('ia-modelo')?.value || 'claude-sonnet-4-6',
+      document.getElementById('ia-modelo')?.value || 'claude-sonnet-5',
       sys, prompt,
       txt => { if (out) out.innerHTML = _iaMarkdown(txt); }
     );
@@ -24732,46 +24766,119 @@ function _iaToggleDual() {
   }
 }
 
+// ── INICIALIZACIÓN OBLIGATORIA DEL PLANNER ────────────────────────────────────
+let _iaInitState = { alumnoId:'', fecha:'', sesion:'' };
+let _iaAutoContextTxt = '';
+function _iaEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 function renderIAPlanner() {
-  // Pre-llenar el formulario con datos del alumno seleccionado (si hay)
-  const al = currentAlumnoId ? getAlumnos().find(a => a.id === currentAlumnoId) : null;
-  if (al) {
-    const nombreEl = document.getElementById('ia-f-nombre');
-    if (nombreEl) nombreEl.value = al.nombre || '';
-    const sexoEl = document.getElementById('ia-f-sexo');
-    if (sexoEl && al.sexo) {
-      const sexoNorm = al.sexo.charAt(0).toUpperCase() + al.sexo.slice(1).toLowerCase();
-      sexoEl.value = sexoNorm === 'Hombre' || sexoNorm === 'Mujer' ? sexoNorm : 'Hombre';
-    }
-    const edadEl = document.getElementById('ia-f-edad');
-    if (edadEl && al.nacimiento && typeof calcularEdad === 'function') {
-      edadEl.value = calcularEdad(al.nacimiento);
-    }
-    const nivelEl = document.getElementById('ia-f-nivel');
-    if (nivelEl && al.nivel) {
-      const n = al.nivel.charAt(0).toUpperCase() + al.nivel.slice(1).toLowerCase();
-      if (['Principiante','Intermedio','Avanzado'].includes(n)) nivelEl.value = n;
-    }
-    const diasEl = document.getElementById('ia-f-dias');
-    if (diasEl && al.dias) diasEl.value = String(al.dias);
-    const objEl = document.getElementById('ia-f-objetivo');
-    if (objEl && al.objetivo) {
-      // Si el objetivo del alumno no está en la lista, agregarlo como opción dinámica
-      const existe = Array.from(objEl.options).some(o => o.value === al.objetivo);
-      if (!existe) {
-        const opt = document.createElement('option');
-        opt.value = al.objetivo;
-        opt.textContent = '⭐ ' + al.objetivo + ' (del perfil)';
-        objEl.insertBefore(opt, objEl.options[1] || null);
-      }
-      objEl.value = al.objetivo;
-    }
-  }
-  // Resetear output
+  _iaInitPoblar();
   const out = document.getElementById('ia-output');
   if (out) out.style.display = 'none';
-  // Mostrar modal de key si no tiene
   if (!_iaApiKey()) setTimeout(_iaShowKeyModal, 300);
+}
+
+// Rellena los campos del formulario del planner con los datos del alumno
+function _iaCargarAlumnoEnForm(al) {
+  if (!al) return;
+  const nombreEl = document.getElementById('ia-f-nombre');
+  if (nombreEl) nombreEl.value = al.nombre || '';
+  const sexoEl = document.getElementById('ia-f-sexo');
+  if (sexoEl && al.sexo) {
+    const sexoNorm = al.sexo.charAt(0).toUpperCase() + al.sexo.slice(1).toLowerCase();
+    sexoEl.value = sexoNorm === 'Hombre' || sexoNorm === 'Mujer' ? sexoNorm : 'Hombre';
+  }
+  const edadEl = document.getElementById('ia-f-edad');
+  if (edadEl && al.nacimiento && typeof calcularEdad === 'function') edadEl.value = calcularEdad(al.nacimiento);
+  const nivelEl = document.getElementById('ia-f-nivel');
+  if (nivelEl && al.nivel) {
+    const n = al.nivel.charAt(0).toUpperCase() + al.nivel.slice(1).toLowerCase();
+    if (['Principiante','Intermedio','Avanzado'].includes(n)) nivelEl.value = n;
+  }
+  const diasEl = document.getElementById('ia-f-dias');
+  if (diasEl && al.dias) diasEl.value = String(al.dias);
+  const objEl = document.getElementById('ia-f-objetivo');
+  if (objEl && al.objetivo) {
+    const existe = Array.from(objEl.options).some(o => o.value === al.objetivo);
+    if (!existe) {
+      const opt = document.createElement('option');
+      opt.value = al.objetivo;
+      opt.textContent = '⭐ ' + al.objetivo + ' (del perfil)';
+      objEl.insertBefore(opt, objEl.options[1] || null);
+    }
+    objEl.value = al.objetivo;
+  }
+}
+
+function _iaInitPoblar() {
+  const sel = document.getElementById('ia-init-alumno');
+  if (sel) {
+    const alumnos = (typeof getAlumnos === 'function' ? getAlumnos() : []).slice()
+      .sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+    sel.innerHTML = '<option value="">— Elegí un atleta —</option>' +
+      alumnos.map(a=>'<option value="'+a.id+'">'+_iaEsc(a.nombre||'Alumno')+'</option>').join('');
+    if (currentAlumnoId && alumnos.some(a=>a.id===currentAlumnoId)) sel.value = currentAlumnoId;
+  }
+  const fecha = document.getElementById('ia-init-fecha');
+  if (fecha && !fecha.value) fecha.value = new Date().toISOString().slice(0,10);
+  _iaInitLeerEstado();
+  if (_iaInitState.alumnoId) _iaInitOnAlumno(); else { _iaInitContexto(); _iaInitCheck(); }
+}
+
+function _iaInitLeerEstado(){
+  _iaInitState.alumnoId = document.getElementById('ia-init-alumno')?.value || '';
+  _iaInitState.fecha    = document.getElementById('ia-init-fecha')?.value || '';
+  _iaInitState.sesion   = document.getElementById('ia-init-sesion')?.value || '';
+}
+function _iaInitOnCampo(){ _iaInitLeerEstado(); _iaInitContexto(); _iaInitCheck(); }
+function _iaInitOnAlumno(){
+  _iaInitLeerEstado();
+  const al = _iaInitState.alumnoId ? getAlumnos().find(a=>a.id===_iaInitState.alumnoId) : null;
+  if (al) _iaCargarAlumnoEnForm(al);
+  _iaInitContexto();
+  _iaInitCheck();
+}
+
+function _iaInitContexto(){
+  const box = document.getElementById('ia-init-context');
+  const al = _iaInitState.alumnoId ? getAlumnos().find(a=>a.id===_iaInitState.alumnoId) : null;
+  if (!al) { if (box){ box.style.display='none'; box.innerHTML=''; } _iaAutoContextTxt=''; return; }
+  const edad = (al.nacimiento && typeof calcularEdad==='function') ? calcularEdad(al.nacimiento) : (al.edad||'');
+  const fechaTxt = _iaInitState.fecha ? new Date(_iaInitState.fecha+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '—';
+  const planes = (typeof getPlanificaciones==='function'?getPlanificaciones():[]).filter(p=>p.alumnoId===al.id);
+
+  const chip=(lb,v)=> v ? ('<div style="background:#fff;border:1px solid #e6e2f5;border-radius:9px;padding:8px 11px;"><div style="font-size:9px;font-weight:800;color:#999;letter-spacing:.4px;">'+lb+'</div><div style="font-size:13px;font-weight:800;color:#2a2140;margin-top:2px;">'+_iaEsc(String(v))+'</div></div>') : '';
+  let panel = '<div style="font-size:9px;font-weight:900;color:#7c3aed;letter-spacing:.6px;margin-bottom:8px;">CONTEXTO ACTIVO</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+    + chip('ATLETA', al.nombre) + chip('FECHA', fechaTxt) + chip('SESIÓN', _iaInitState.sesion||'—')
+    + chip('OBJETIVO', al.objetivo) + chip('NIVEL', al.nivel) + chip('DÍAS/SEMANA', al.dias?al.dias+' días':'')
+    + (edad?chip('EDAD', edad+' años'):'') + '</div>';
+  if (al.lesiones) panel += '<div style="margin-top:8px;background:#fff4f4;border:1px solid #f4c9c9;border-radius:9px;padding:8px 11px;font-size:12px;color:#b03535;">⚠️ Lesiones/restricciones: '+_iaEsc(al.lesiones)+'</div>';
+  box.style.display='block'; box.innerHTML = panel;
+
+  let t = '\n\n## PERFIL COMPLETO DEL ATLETA (cargado automáticamente — usar estos datos, NO volver a pedirlos)\n';
+  t += '- Fecha de entrenamiento: '+fechaTxt+'\n';
+  t += '- Sesión a planificar: '+(_iaInitState.sesion||'Semana completa')+'\n';
+  if (al.lesiones)      t += '- ⚠️ LESIONES/RESTRICCIONES: '+al.lesiones+'\n';
+  if (al.enfermedades)  t += '- 🏥 Condiciones médicas: '+al.enfermedades+'\n';
+  if (al.observaciones) t += '- Observaciones del coach: '+al.observaciones+'\n';
+  if (planes.length){
+    t += '- Historial de planes (últimos 3):\n';
+    planes.slice(-3).forEach(p=>{ t += '   · '+(p.titulo||'Sin título')+' ('+(p.fecha||'sin fecha')+') — '+((p.tipoPlan||'fuerza').toUpperCase())+'\n'; });
+  }
+  const antro = Array.isArray(al.antropometria) ? al.antropometria : [];
+  if (antro.length){ const u=antro[antro.length-1]; const m=[]; if(u.peso)m.push('peso '+u.peso+'kg'); if(u.grasaCorporal)m.push('grasa '+u.grasaCorporal+'%'); if(u.cintura)m.push('cintura '+u.cintura+'cm'); if(m.length) t+='- Últimas medidas registradas: '+m.join(', ')+'\n'; }
+  if (_iaInitState.sesion && _iaInitState.sesion.startsWith('Día')) t += '- FOCO: planificá en detalle la sesión de "'+_iaInitState.sesion+'" (podés resumir el resto de la semana).\n';
+  else if (_iaInitState.sesion==='Sesión nueva') t += '- FOCO: diseñá una sesión suelta (no una semana completa).\n';
+  _iaAutoContextTxt = t;
+}
+
+function _iaInitCheck(){
+  const ok = !!(_iaInitState.alumnoId && _iaInitState.fecha && _iaInitState.sesion);
+  const btn = document.getElementById('ia-btn-generar');
+  const lock = document.getElementById('ia-init-lock');
+  if (btn){ btn.disabled = !ok; btn.style.opacity = ok?'1':'.45'; btn.style.pointerEvents = ok?'':'none'; }
+  if (lock) lock.style.display = ok?'none':'block';
 }
 
 function _iaBuildPrompt() {
@@ -24851,6 +24958,8 @@ function _iaBuildPrompt() {
     marcasList.forEach(m => { prompt += `  · ${m}\n`; });
   }
   if (notas)    prompt += `- Información adicional del coach: ${notas}\n`;
+  // Contexto cargado automáticamente desde el perfil (fecha, sesión, lesiones, historial, medidas)
+  if (_iaAutoContextTxt) prompt += _iaAutoContextTxt;
 
   let cargasInstr = '';
   if (marcas) {
@@ -24971,15 +25080,34 @@ async function _iaGenerarConContinuacion(model, system, userPrompt, onProgress) 
   return full;
 }
 
+const _IA_VPT_PROMPT = `Sos un Entrenador Personal Virtual de élite, especializado en fuerza, hipertrofia, recomposición corporal, pérdida de grasa, salud general y rendimiento deportivo. Pensás y decidís como un entrenador de fuerza con años de experiencia, no como un generador aleatorio de rutinas.
+
+USO DEL PERFIL: trabajás con el perfil del atleta que se te entrega ya cargado (objetivo, nivel, edad, días, lesiones, condiciones, historial, medidas). Usá esos datos y NO vuelvas a pedir información que ya está en el perfil. Si falta un dato importante, indicá el supuesto razonable que tomás y seguí; no interrumpas el trabajo pidiendo más evaluaciones.
+
+FILOSOFÍA: individualización, especificidad, sobrecarga progresiva, gestión de la fatiga, recuperación, progresión a largo plazo, selección de ejercicios con propósito, sostenibilidad y adherencia. Cada ejercicio incluido debe tener una razón clara. Nada de rutinas al azar. Basado en evidencia (Schoenfeld, Contreras, Israetel, Helms, McGill, Nippard, Boyle).
+
+SEGURIDAD: nunca ignores lesiones, dolor o restricciones del perfil; nunca prescribas ejercicios inseguros; no recomiendes cargas exactas sin datos suficientes (en ese caso trabajá por RIR).
+
+ESTRUCTURA DE LA RESPUESTA (respetá este orden): 1) Resumen del perfil (objetivo, experiencia, disponibilidad, equipamiento, limitaciones). 2) Justificación de la programación (por qué esa frecuencia, división, volumen, intensidad y selección para ESTE atleta). 3) Estructura semanal. 4) Sesiones detalladas: calentamiento, principales y accesorios con series, reps, RIR, descansos y notas técnicas. 5) Plan de progresión (cómo avanzar en las próximas semanas). 6) Métricas a monitorear (carga, reps, RIR real, peso, medidas, dolor, energía, adherencia). 7) Criterios de ajuste (cuándo subir/bajar volumen, subir intensidad, deload, cambiar ejercicios).
+
+ESTILO: profesional, claro, estructurado, conciso, en español rioplatense, basado en evidencia, sin frases motivacionales de relleno ni promesas exageradas. Toda la planificación pertenece exclusivamente al atleta, la fecha y la sesión indicados en el contexto.`;
+
 async function iaGenerarPlan() {
   const apiKey = _iaApiKey();
   if (!apiKey) { _iaShowKeyModal(); return; }
+
+  // Inicialización obligatoria: atleta + fecha + sesión
+  _iaInitLeerEstado();
+  if (!(_iaInitState.alumnoId && _iaInitState.fecha && _iaInitState.sesion)) {
+    toast('Primero elegí atleta, fecha y sesión');
+    return;
+  }
 
   const btn      = document.getElementById('ia-btn-generar');
   const out      = document.getElementById('ia-output');
   const outText  = document.getElementById('ia-output-text');
   const outLabel = document.getElementById('ia-output-label');
-  const modelo   = document.getElementById('ia-modelo')?.value || 'claude-sonnet-4-6';
+  const modelo   = document.getElementById('ia-modelo')?.value || 'claude-sonnet-5';
 
   const entrenador = _IA_TRAINERS[_iaCurrentTrainer].corto;
   const sysBase    = _iaCurrentTrainer === 'bc' ? _IA_SYSTEM_PROMPT_BC
@@ -24988,7 +25116,7 @@ async function iaGenerarPlan() {
                    : _iaCurrentTrainer === 'jd' ? _IA_SYSTEM_PROMPT_JD
                    : _iaCurrentTrainer === 'ms' ? _IA_SYSTEM_PROMPT_MS
                    : _IA_SYSTEM_PROMPT_JM;
-  const sysPrompt  = sysBase + '\n\n' + _IA_CARGAS_PROMPT;
+  const sysPrompt  = _IA_VPT_PROMPT + '\n\n' + sysBase + '\n\n' + _IA_CARGAS_PROMPT;
   const accentColor = _IA_TRAINERS[_iaCurrentTrainer].color;
 
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Diseñando programa semanal...'; }
@@ -25291,7 +25419,7 @@ REGLAS:
   let accumulated = '';
   try {
     accumulated = await _iaGenerarConContinuacion(
-      document.getElementById('ia-modelo')?.value || 'claude-sonnet-4-6',
+      document.getElementById('ia-modelo')?.value || 'claude-sonnet-5',
       sysConv,
       'Convertí este plan semanal al JSON del esquema (si el plan está incompleto o cortado, convertí todo lo que haya):\n\n' + content,
       txt => { if (btn) btn.textContent = '⏳ Convirtiendo... (' + Math.round(txt.length / 1000) + 'k)'; }

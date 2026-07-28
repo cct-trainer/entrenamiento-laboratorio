@@ -113,7 +113,7 @@ function fuentesHTML(f){
       +   '<span class="cat '+catCls+'">'+esc(a.categoria||'General')+'</span>'
       +   '<h1>'+esc(a.titulo)+'</h1>'
       +   (a.subtitulo?'<div class="article-subtitle">'+esc(a.subtitulo)+'</div>':'')
-      +   '<div class="article-meta"><div class="author-mini"><div class="badge"><span class="c1">C</span><span class="c2">C</span></div><div><div class="name">Christian Cattaneo</div><div class="role">Entrenador personal</div></div></div><span class="dot">·</span><span class="meta-item">'+esc(a.fecha||'')+'</span><span class="dot">·</span><span class="meta-item">'+lectura+' min de lectura</span></div>'
+      +   '<div class="article-meta"><div class="author-mini"><div class="badge"><img src="img/cc-monogram.svg" alt="Christian Cattaneo" style="width:80%;height:80%;object-fit:contain;"></div><div><div class="name">Christian Cattaneo</div><div class="role">Entrenador personal</div></div></div><span class="dot">·</span><span class="meta-item">'+esc(a.fecha||'')+'</span><span class="dot">·</span><span class="meta-item">'+lectura+' min de lectura</span></div>'
       + '</header>'
       + cover
       + '<div class="prose">'+mdToHtml(texto)+'</div>'
