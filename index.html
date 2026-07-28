@@ -3511,7 +3511,6 @@ select.toolbox-input option:disabled { color: #888; }
                 <div id="ia-ficha-status" style="font-size:11px;color:#888;margin-top:3px;">Elegí un atleta</div>
               </button>
             </div>
-            <button type="button" onclick="nuevoUpdateLink()" style="margin-top:10px;width:100%;border:1.5px dashed #e0d8fb;background:#fff;border-radius:12px;padding:11px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:800;color:#7c3aed;">🔄 Copiar link de actualización (check-in del alumno)</button>
           </div>
 
           <!-- ④ Datos técnicos y ajustes (opcional) -->
@@ -13832,6 +13831,13 @@ function renderSidebarAlumno(id) {
              letter-spacing:0.5px;font-family:inherit;"
       onmouseover="this.style.background='#16a34a22'" onmouseout="this.style.background='linear-gradient(135deg,#0d2a14,#0a1f0e)'">
       Portal del alumno
+    </button>
+    <button onclick="copiarLinkActualizacion('${id}')"
+      style="width:100%;margin-top:8px;background:linear-gradient(135deg,#1e163a,#150f2a);border:1px solid #7c3aed88;border-radius:6px;
+             color:#a78bfa;font-size:11px;font-weight:700;padding:8px 12px;cursor:pointer;
+             letter-spacing:0.5px;font-family:inherit;"
+      onmouseover="this.style.background='#7c3aed22'" onmouseout="this.style.background='linear-gradient(135deg,#1e163a,#150f2a)'">
+      🔄 Link de actualización
     </button>
 
     <!-- Control de acceso -->
@@ -25221,10 +25227,9 @@ function _iaFichaPromptTxt(al){
 
 // ── ACTUALIZACIÓN DE PLAN (check-in del alumno, formulario actualizar.html) ────
 let _iaUpdActual=null;
-function nuevoUpdateLink(){
-  _iaInitLeerEstado();
-  if(!_iaInitState.alumnoId){ toast('Elegí primero el atleta'); return; }
-  const url='https://cct-trainer.github.io/entrenamiento-laboratorio/actualizar.html?a='+encodeURIComponent(_iaInitState.alumnoId);
+function copiarLinkActualizacion(id){
+  if(!id){ toast('No encontré al alumno'); return; }
+  const url='https://cct-trainer.github.io/entrenamiento-laboratorio/actualizar.html?a='+encodeURIComponent(id);
   navigator.clipboard.writeText(url).then(()=>toast('🔗 Link de actualización copiado — mandáselo al alumno')).catch(()=>prompt('Copiá este link:',url));
 }
 async function _iaCheckActualizacion(alumnoId){
