@@ -25372,8 +25372,9 @@ async function _iaEnviarPlanificador() {
   if (!content) { toast('No hay plan generado todavía'); return; }
   const apiKey = _iaApiKey();
   if (!apiKey) { _iaShowKeyModal(); return; }
-  const alumnoId = currentAlumnoId || document.getElementById('plan-alumno-select')?.value;
-  if (!alumnoId) { toast('Abrí el perfil de un alumno primero', 'error'); return; }
+  _iaInitLeerEstado();
+  const alumnoId = _iaInitState.alumnoId || currentAlumnoId || document.getElementById('plan-alumno-select')?.value;
+  if (!alumnoId) { toast('Elegí un atleta en la inicialización primero', 'error'); return; }
   if (document.getElementById('ia-f-dual')?.checked) {
     if (!confirm('Modo pareja activo: el plan (las dos mitades) se va a convertir dentro de la planificación del alumno abierto. ¿Continuar?')) return;
   }
@@ -25427,6 +25428,9 @@ REGLAS:
 
     const data = _iaParseJSON(accumulated);
     const plan = _iaJSONaPlanificacion(data, alumnoId);
+    // Arrastrar la fecha y la sesión elegidas en la inicialización
+    if (_iaInitState.fecha) plan.fecha = _iaInitState.fecha;
+    if (_iaInitState.sesion && !/semana/i.test(_iaInitState.sesion)) plan.titulo = (plan.titulo || 'Plan') + ' · ' + _iaInitState.sesion;
     const planes = getPlanificaciones();
     planes.push(plan);
     savePlanificaciones(planes);
