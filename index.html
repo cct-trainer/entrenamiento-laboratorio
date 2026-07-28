@@ -2985,6 +2985,7 @@ select.toolbox-input option:disabled { color: #888; }
     <button onclick="_generarReporteMensual()" class="pln-btn pln-btn-outline" title="Reporte mensual de actividad de alumnos">Reporte</button>
     <button onclick="document.getElementById('backup-import-input').click()" class="pln-btn pln-btn-outline" title="Restaurar base de datos desde backup JSON">Restaurar</button>
     <button onclick="abrirSolicitudes()" class="pln-btn pln-btn-outline" title="Solicitudes de prueba gratis pendientes" style="border-color:#C9A84C;color:#9A7A28;position:relative;">Solicitudes<span id="sol-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
+    <button onclick="abrirAltas()" class="pln-btn pln-btn-outline" title="Alta de nuevos alumnos por formulario de ingreso" style="border-color:#7c3aed;color:#7c3aed;position:relative;">➕ Nuevo alumno<span id="altas-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#7c3aed;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="abrirSuscripciones()" class="pln-btn pln-btn-outline" title="Planes, pagos y vencimientos" style="border-color:#C9A84C;color:#9A7A28;position:relative;">Suscripciones<span id="venc-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#f59e0b;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="abrirMetricas()" class="pln-btn pln-btn-outline" title="Métricas del piloto de adquisición" style="border-color:#1d4ed8;color:#1d4ed8;">📊 Métricas</button>
     <button onclick="recuperarDesdePortales()" class="pln-btn pln-btn-outline" title="Recuperar tus alumnos leyendo sus documentos en la nube" style="border-color:#22c55e;color:#166534;">↻ Recuperar</button>
@@ -3448,6 +3449,7 @@ select.toolbox-input option:disabled { color: #888; }
               </div>
             </div>
             <div id="ia-init-context" style="display:none;margin-top:14px;"></div>
+            <div id="ia-update-banner"></div>
             <div id="ia-init-lock" style="margin-top:12px;font-size:12px;color:#a06b00;background:#fff8e6;border:1px solid #f4e0a0;border-radius:9px;padding:9px 12px;">🔒 Elegí <b>atleta</b>, <b>fecha</b> y <b>sesión</b> para habilitar el planner. Los datos del atleta se cargan solos.</div>
           </div>
 
@@ -3509,6 +3511,7 @@ select.toolbox-input option:disabled { color: #888; }
                 <div id="ia-ficha-status" style="font-size:11px;color:#888;margin-top:3px;">Elegí un atleta</div>
               </button>
             </div>
+            <button type="button" onclick="nuevoUpdateLink()" style="margin-top:10px;width:100%;border:1.5px dashed #e0d8fb;background:#fff;border-radius:12px;padding:11px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:800;color:#7c3aed;">🔄 Copiar link de actualización (check-in del alumno)</button>
           </div>
 
           <!-- ④ Datos técnicos y ajustes (opcional) -->
@@ -21631,6 +21634,111 @@ async function descartarSolicitud(solId){
   abrirSolicitudes();
 }
 
+// ── ALTAS DE NUEVOS ALUMNOS (formulario de ingreso intake.html) ───────────────
+const INTAKE_BASE='https://cct-trainer.github.io/entrenamiento-laboratorio/intake.html';
+let _ALTAS=[];
+async function _fetchAltas(){
+  if(!window._db) return;
+  try{
+    const snap=await window._db.collection('alumnos').where('estado','==','alta_pendiente').get();
+    _ALTAS=[]; snap.forEach(d=>{ const x=d.data()||{}; x._id=d.id; _ALTAS.push(x); });
+    _ALTAS.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  }catch(e){ console.warn('altas:',e); _ALTAS=[]; }
+  const b=document.getElementById('altas-badge');
+  if(b){ if(_ALTAS.length){ b.textContent=_ALTAS.length; b.style.display='block'; } else b.style.display='none'; }
+}
+function nuevoAltaLink(){
+  const code=Math.random().toString(36).slice(2,8).toUpperCase();
+  const url=INTAKE_BASE+'?c='+code;
+  navigator.clipboard.writeText(url)
+    .then(()=>toast('🔗 Link de alta copiado — mandáselo al nuevo alumno'))
+    .catch(()=>{ prompt('Copiá este link y mandáselo al nuevo alumno:', url); });
+}
+async function abrirAltas(){
+  await _fetchAltas();
+  let ov=document.getElementById('altas-overlay'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='altas-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:6000;display:flex;align-items:flex-start;justify-content:center;padding:36px 16px;overflow-y:auto;';
+  ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+  const items=_ALTAS.length ? _ALTAS.map(a=>{
+    const d=a.datos||{};
+    const fecha=a.createdAt?new Date(a.createdAt).toLocaleDateString('es-AR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+    const edad=d.nacimiento?_edadDe(d.nacimiento):'';
+    return '<div style="border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">'+(d.nombre||'—')+(edad?' <span style="font-size:11px;color:#999;font-weight:600;">· '+edad+' años</span>':'')+'</div><div style="font-size:11px;color:#999;">'+fecha+'</div></div>'
+      + '<div style="font-size:12px;color:#555;margin:8px 0;line-height:1.7;">'
+      +   '<b>Objetivo:</b> '+(d.objetivo||'—')+' &nbsp;·&nbsp; <b>Nivel:</b> '+(d.nivel||'—')+' &nbsp;·&nbsp; <b>'+(d.frecuencia||'—')+'x/sem</b><br>'
+      +   '<b>Lugar:</b> '+(d.lugar||'—')+(Array.isArray(d.equipo)&&d.equipo.length?(' &nbsp;·&nbsp; <b>Equipo:</b> '+d.equipo.join(', ')):'')+'<br>'
+      +   (d.lesionesActuales||d.dolor?('<b>⚠️ Salud:</b> '+[d.lesionesActuales,d.dolor].filter(Boolean).join(' · ')+'<br>'):'')
+      +   (d.ejProhibidos?('<b>🚫 Prohibidos:</b> '+d.ejProhibidos+'<br>'):'')
+      +   '<b>WhatsApp:</b> '+(d.telefono||'—')+(d.email?' &nbsp;·&nbsp; '+d.email:'')
+      + '</div>'
+      + '<div style="display:flex;gap:8px;margin-top:6px;">'
+      +   '<button onclick="crearAlumnoDesdeAlta(\''+a._id+'\')" style="flex:1;background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:10px;font-size:12px;font-weight:800;cursor:pointer;">✓ Crear alumno</button>'
+      +   '<button onclick="verPromptMaestro(\''+a._id+'\')" style="background:#f5f3ff;color:#7c3aed;border:1px solid #7c3aed;border-radius:8px;padding:10px 12px;font-size:12px;font-weight:700;cursor:pointer;">Ver prompt</button>'
+      +   '<button onclick="descartarAlta(\''+a._id+'\')" style="background:#fee2e2;color:#c62828;border:none;border-radius:8px;padding:10px 12px;font-size:12px;font-weight:700;cursor:pointer;">Descartar</button>'
+      + '</div></div>';
+  }).join('') : '<div style="text-align:center;color:#999;padding:26px;font-size:13px;">No hay altas nuevas todavía.</div>';
+  ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:580px;width:100%;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.25);" onclick="event.stopPropagation()">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">Nuevo alumno · Altas ('+_ALTAS.length+')</div>'
+    + '<button onclick="document.getElementById(\'altas-overlay\').remove()" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;">×</button></div>'
+    + '<div style="background:#faf9ff;border:1px solid #e0d8fb;border-radius:12px;padding:12px 14px;margin-bottom:14px;">'
+    +   '<div style="font-size:12px;color:#555;margin-bottom:9px;line-height:1.5;">1) Copiá el link. &nbsp;2) Mandáselo al alumno. &nbsp;3) Cuando lo complete, aparece acá para crearlo con 1 clic.</div>'
+    +   '<button onclick="nuevoAltaLink()" style="background:#7c3aed;color:#fff;border:none;border-radius:9px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;">🔗 Copiar link de alta nueva</button>'
+    + '</div>'
+    + items + '</div>';
+  document.body.appendChild(ov);
+}
+function _edadDe(nac){ if(!nac) return ''; const b=new Date(nac); if(isNaN(b)) return ''; const t=new Date(); let e=t.getFullYear()-b.getFullYear(); const m=t.getMonth()-b.getMonth(); if(m<0||(m===0&&t.getDate()<b.getDate())) e--; return e; }
+function _altaLugarFicha(l){ return ({'Gimnasio':'Gimnasio completo','Casa':'Casa','Mixto':'Mixto','Aire libre':'Aire libre'})[l]||l||''; }
+function verPromptMaestro(id){
+  const a=_ALTAS.find(x=>x._id===id); if(!a) return;
+  const ta=document.getElementById('ia-prompt-text'); if(ta) ta.value=a.promptMaestro||'(sin prompt)';
+  const sub=document.getElementById('ia-prompt-sub'); if(sub) sub.textContent='Prompt Maestro de '+((a.datos||{}).nombre||'');
+  const m=document.getElementById('ia-prompt-modal'); if(m) m.style.display='flex';
+}
+async function descartarAlta(id){
+  if(!confirm('¿Descartar esta alta?')) return;
+  try{ if(window._db) await window._db.collection('alumnos').doc(id).update({ estado:'descartada' }); }catch(e){}
+  _ALTAS=_ALTAS.filter(x=>x._id!==id); abrirAltas();
+}
+async function crearAlumnoDesdeAlta(id){
+  const a=_ALTAS.find(x=>x._id===id); if(!a){ toast('No encontré el alta'); return; }
+  const d=a.datos||{};
+  const lesiones=[d.lesionesActuales,d.dolor?('Dolor: '+d.dolor):''].filter(Boolean).join(' · ');
+  const enfermedades=[(Array.isArray(d.condiciones)?d.condiciones.join(', '):''),d.medicacion?('Medicación: '+d.medicacion):''].filter(Boolean).join(' · ');
+  const obs=[d.deportes?('Deportes: '+d.deportes):'',d.queFunciono?('Funcionó: '+d.queFunciono):'',d.queNo?('No funcionó: '+d.queNo):''].filter(Boolean).join(' · ');
+  const nuevo={
+    id: genId(), createdAt:new Date().toISOString(),
+    nombre:d.nombre||'Alumno', nacimiento:d.nacimiento||'', sexo:d.sexo||'',
+    altura:d.altura||'', peso:d.peso||'', ciudad:d.ciudad||'', pais:d.pais||'',
+    telefono:d.telefono||'', email:d.email||'',
+    objetivo:d.objetivo||'', nivel:d.nivel||'', dias:String(d.frecuencia||''),
+    lesiones, enfermedades, observaciones:obs,
+    inicio:new Date().toISOString().slice(0,10), estado:'activo', altaFecha:new Date().toISOString().slice(0,10),
+    promptMaestro:a.promptMaestro||'',
+    fichaPlan:{
+      objetivos:[d.objetivo].filter(Boolean).concat(Array.isArray(d.objesp)?d.objesp:[]),
+      objetivoEsp:d.objetivoEsp||'',
+      lesiones:(d.lesionesActuales||d.dolor)?['Otra']:[],
+      dolor:d.dolor||'',
+      prohibidos:d.ejProhibidos||'',
+      permitidos:d.ejFavoritos||'',
+      medicas:[enfermedades,d.limitaciones].filter(Boolean).join(' · '),
+      lugar:_altaLugarFicha(d.lugar),
+      equipo:Array.isArray(d.equipo)?d.equipo:[],
+      distribucion:''
+    }
+  };
+  const alumnos=getAlumnos(); alumnos.push(nuevo); saveAlumnos(alumnos);
+  try{ if(window._db) await window._db.collection('alumnos').doc(id).update({ estado:'creado', alumnoId:nuevo.id }); }catch(e){}
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+  _ALTAS=_ALTAS.filter(x=>x._id!==id);
+  renderAlumnosGrid();
+  abrirAltas();
+  toast('✅ Alumno "'+nuevo.nombre+'" creado y listo para planificar');
+}
+
 // ── Plantillas de prueba: planes semanales etiquetados para auto-asignar ──────
 const DB_TRIAL_TPL='LAB_TRIAL_TEMPLATES';
 function getTrialTemplates(){ try{ return JSON.parse(localStorage.getItem(DB_TRIAL_TPL)||'[]'); }catch(e){ return []; } }
@@ -21878,6 +21986,7 @@ function initFirebase() {
     _syncStatusIcon('⏳', 'Cargando datos...');
     cargarDesdeFirestore();
     setTimeout(() => { try { _fetchSolicitudes(); } catch(e){} }, 1500);   // contador de solicitudes de prueba
+    setTimeout(() => { try { _fetchAltas(); } catch(e){} }, 1700);         // contador de altas nuevas (formulario de ingreso)
     setTimeout(() => { try { _refreshVencBadge(); } catch(e){} }, 2000);   // contador de vencimientos próximos
   } catch(err) {
     console.warn('Firebase init error:', err);
@@ -24929,6 +25038,7 @@ function _iaInitOnAlumno(){
   if (al) _iaCargarAlumnoEnForm(al);
   _iaInitContexto();
   _iaInitCheck();
+  _iaCheckActualizacion(_iaInitState.alumnoId);
 }
 
 function _iaInitContexto(){
@@ -25105,7 +25215,70 @@ function _iaFichaPromptTxt(al){
   if(f.lugar) t+='- Lugar de entrenamiento: '+f.lugar+'\n';
   if(f.equipo&&f.equipo.length) t+='- Equipamiento disponible (usá SOLO esto): '+f.equipo.join(', ')+'\n';
   if(f.distribucion) t+='- Distribución semanal deseada por el coach:\n'+f.distribucion.split('\n').map(l=>'   '+l).join('\n')+'\n';
+  if(f.checkin) t+='- 🔄 Actualización reciente del alumno (check-in): '+f.checkin+'\n';
   return t;
+}
+
+// ── ACTUALIZACIÓN DE PLAN (check-in del alumno, formulario actualizar.html) ────
+let _iaUpdActual=null;
+function nuevoUpdateLink(){
+  _iaInitLeerEstado();
+  if(!_iaInitState.alumnoId){ toast('Elegí primero el atleta'); return; }
+  const url='https://cct-trainer.github.io/entrenamiento-laboratorio/actualizar.html?a='+encodeURIComponent(_iaInitState.alumnoId);
+  navigator.clipboard.writeText(url).then(()=>toast('🔗 Link de actualización copiado — mandáselo al alumno')).catch(()=>prompt('Copiá este link:',url));
+}
+async function _iaCheckActualizacion(alumnoId){
+  const box=document.getElementById('ia-update-banner'); if(box) box.innerHTML='';
+  _iaUpdActual=null;
+  if(!window._db || !alumnoId) return;
+  try{
+    const snap=await window._db.collection('alumnos').where('alumnoId','==',alumnoId).get();
+    let best=null; snap.forEach(dd=>{ const x=dd.data()||{}; x._id=dd.id; if(x.estado==='actualizacion_pendiente'){ if(!best||(x.createdAt||'')>(best.createdAt||'')) best=x; } });
+    if(!best) return;
+    _iaUpdActual=best;
+    if(box){
+      const fecha=best.createdAt?new Date(best.createdAt).toLocaleDateString('es-AR',{day:'numeric',month:'short'}):'';
+      box.innerHTML='<div style="background:#faf9ff;border:1.5px solid #7c3aed;border-radius:12px;padding:12px 14px;margin-top:12px;">'
+        +'<div style="font-size:11px;font-weight:900;color:#7c3aed;letter-spacing:.5px;margin-bottom:6px;">🔄 CHECK-IN DEL ALUMNO ('+fecha+')</div>'
+        +'<div style="font-size:12px;color:#444;line-height:1.5;margin-bottom:10px;">'+_iaEsc(best.resumenEjecutivo||'Actualización recibida.')+'</div>'
+        +'<div style="display:flex;gap:8px;">'
+        +'<button type="button" onclick="aplicarActualizacion()" style="flex:1;background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:800;cursor:pointer;">✓ Aplicar al perfil</button>'
+        +'<button type="button" onclick="descartarActualizacion()" style="background:#fee2e2;color:#c62828;border:none;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer;">Descartar</button>'
+        +'</div></div>';
+    }
+  }catch(e){ console.warn('checkin:',e); }
+}
+async function aplicarActualizacion(){
+  const u=_iaUpdActual; if(!u){ toast('No hay actualización'); return; }
+  const d=u.datos||{};
+  const alumnos=getAlumnos(); const al=alumnos.find(a=>a.id===u.alumnoId);
+  if(!al){ toast('No encontré al alumno'); return; }
+  al.fichaPlan=al.fichaPlan||{}; const f=al.fichaPlan;
+  const _merge=(a,b)=>[a,b].filter(Boolean).join(', ');
+  if(d.objetivoNuevo){ al.objetivo=d.objetivoNuevo; f.objetivos=[d.objetivoNuevo].concat(d.cambiosFisicos||[]); }
+  if(d.diasCambio==='Sí' && d.diasNuevos){ al.dias=String(d.diasNuevos); }
+  if(d.ejEvitar) f.prohibidos=_merge(f.prohibidos,d.ejEvitar);
+  if(d.ejEncantan) f.permitidos=_merge(f.permitidos,d.ejEncantan);
+  if(d.molestias==='Sí' && d.molestiasDetalle) f.dolor=d.molestiasDetalle;
+  f.objetivoEsp=[f.objetivoEsp,d.priorizar,(d.importante||[]).join(', ')].filter(Boolean).join(' · ');
+  f.checkin=u.resumenEjecutivo||'';
+  al.promptMaestro=u.promptMaestro||al.promptMaestro||'';
+  al.resumenEjecutivo=u.resumenEjecutivo||'';
+  al.checkins=al.checkins||[]; al.checkins.push({ fecha:u.createdAt, datos:d, resumen:u.resumenEjecutivo });
+  al.ultimaActualizacion=new Date().toISOString().slice(0,10);
+  saveAlumnos(alumnos);
+  try{ if(window._db) await window._db.collection('alumnos').doc(u._id).update({ estado:'aplicada' }); }catch(e){}
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+  _iaUpdActual=null;
+  const box=document.getElementById('ia-update-banner'); if(box) box.innerHTML='<div style="background:#ecfdf5;border:1px solid #10b981;border-radius:10px;padding:10px 12px;margin-top:12px;font-size:12px;color:#059669;font-weight:700;">✓ Actualización aplicada. El nuevo contexto ya se usa al generar.</div>';
+  _iaCargarAlumnoEnForm(al); _iaInitContexto();
+  toast('✅ Actualización aplicada a '+(al.nombre||''));
+}
+async function descartarActualizacion(){
+  const u=_iaUpdActual; if(!u) return;
+  if(!confirm('¿Descartar esta actualización del alumno?')) return;
+  try{ if(window._db) await window._db.collection('alumnos').doc(u._id).update({ estado:'descartada' }); }catch(e){}
+  _iaUpdActual=null; const box=document.getElementById('ia-update-banner'); if(box) box.innerHTML='';
 }
 
 // Arma el system prompt completo (VPT + metodología ADN + entrenador elegido + cargas)

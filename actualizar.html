@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Actualizar mi plan — Christian Cattaneo</title>
+<meta name="theme-color" content="#0d0d1a">
+<style>
+  :root{--bg:#0d0d1a;--card:#13132a;--gold:#C9A84C;--gold-d:#9A7A28;--text:#e8e8f0;--muted:#8888aa;--border:rgba(255,255,255,.1);--input:rgba(255,255,255,.05);}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.5;}
+  .wrap{max-width:540px;margin:0 auto;padding:22px 20px 40px;}
+  .brand{text-align:center;margin-bottom:12px;}
+  .brand-name{font-size:15px;font-weight:900;letter-spacing:1px;}
+  .brand-sub{font-size:10px;color:var(--muted);letter-spacing:2px;}
+  .hi{font-size:13px;color:var(--gold);text-align:center;margin-bottom:6px;font-weight:700;}
+  .pbar{height:7px;background:var(--input);border-radius:6px;overflow:hidden;margin:14px 0 6px;}
+  .pbar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold-d));transition:width .3s;}
+  .pmeta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:16px;}
+  .step{display:none;} .step.on{display:block;animation:fade .25s;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .q{margin:18px 0 4px;font-size:15px;font-weight:800;}
+  .qs{font-size:11px;color:var(--muted);margin-bottom:8px;}
+  input,select,textarea{width:100%;background:var(--input);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:15px;color:var(--text);font-family:inherit;outline:none;}
+  input:focus,textarea:focus{border-color:var(--gold);}
+  textarea{resize:vertical;min-height:60px;}
+  .pills,.chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .pill,.chip{border:1px solid var(--border);border-radius:22px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;user-select:none;color:var(--muted);}
+  .pill.on,.chip.on{background:var(--gold);color:#0d0d1a;border-color:var(--gold);}
+  .cond{display:none;margin-top:8px;} .cond.on{display:block;}
+  .row{display:flex;gap:10px;} .row>div{flex:1;}
+  .nav{display:flex;gap:10px;margin-top:24px;}
+  .btn{flex:1;background:linear-gradient(135deg,var(--gold),var(--gold-d));color:#0d0d1a;border:none;border-radius:13px;padding:15px;font-size:15px;font-weight:900;cursor:pointer;}
+  .btn.ghost{background:var(--input);color:var(--text);border:1px solid var(--border);flex:0 0 42%;}
+  .btn:disabled{opacity:.6;}
+  .err{color:#f87171;font-size:12px;margin-top:10px;text-align:center;min-height:14px;}
+  .save-tag{font-size:10px;color:var(--muted);text-align:center;margin-top:12px;}
+  #ok{display:none;text-align:center;padding:36px 10px;}
+  #ok .big{font-size:52px;} #ok h2{font-size:21px;margin:14px 0 8px;} #ok p{font-size:14px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><div class="brand-name">CHRISTIAN CATTANEO</div><div class="brand-sub">ENTRENADOR</div></div>
+
+  <div id="formView">
+    <div class="hi" id="hi"></div>
+    <div class="pbar"><i id="pbar-fill"></i></div>
+    <div class="pmeta"><span id="pmeta-step">Paso 1 de 5</span><span id="pmeta-pct">0%</span></div>
+
+    <!-- STEP 1 -->
+    <div class="step on" data-step="0">
+      <div class="q">1 · ¿Cómo te sentís con tu entrenamiento actual?</div>
+      <div class="pills" data-single="sentir">
+        <div class="pill" data-v="Muy motivado, quiero seguir progresando">Muy motivado</div>
+        <div class="pill" data-v="Me gusta, pero necesito cambios">Me gusta, quiero cambios</div>
+        <div class="pill" data-v="Me aburrí del plan">Me aburrí</div>
+        <div class="pill" data-v="Perdí la motivación">Perdí motivación</div>
+        <div class="pill" data-v="Me cuesta ser constante">Me cuesta ser constante</div>
+      </div>
+      <div class="q">2 · ¿Cuál es tu objetivo principal para este nuevo plan?</div>
+      <div class="pills" data-single="objetivoNuevo">
+        <div class="pill" data-v="Ganar masa muscular">Ganar músculo</div>
+        <div class="pill" data-v="Bajar grasa corporal">Bajar grasa</div>
+        <div class="pill" data-v="Recomposición corporal">Recomposición</div>
+        <div class="pill" data-v="Ser más fuerte">Más fuerte</div>
+        <div class="pill" data-v="Mejorar rendimiento deportivo">Rendimiento</div>
+        <div class="pill" data-v="Mejorar mi salud">Salud</div>
+        <div class="pill" data-v="Volver a entrenar sin dolor">Sin dolor</div>
+        <div class="pill" data-v="Mantenerme activo">Mantenerme activo</div>
+      </div>
+      <div class="q">3 · ¿Qué cambios físicos te gustaría lograr?</div>
+      <div class="qs">Podés elegir varios.</div>
+      <div class="chips" data-multi="cambiosFisicos">
+        <div class="chip" data-v="Más pecho">Más pecho</div><div class="chip" data-v="Más espalda">Más espalda</div>
+        <div class="chip" data-v="Más hombros">Más hombros</div><div class="chip" data-v="Más brazos">Más brazos</div>
+        <div class="chip" data-v="Más glúteos">Más glúteos</div><div class="chip" data-v="Más piernas">Más piernas</div>
+        <div class="chip" data-v="Más abdominales">Más abdominales</div><div class="chip" data-v="Mejor postura">Mejor postura</div>
+        <div class="chip" data-v="Definir más">Definir más</div><div class="chip" data-v="Aumentar volumen general">Volumen general</div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step" data-step="1">
+      <div class="q">4 · ¿Qué es lo más importante para vos este plan?</div>
+      <div class="qs">Elegí hasta 3.</div>
+      <div class="chips" data-multi="importante" data-max="3">
+        <div class="chip" data-v="Disfrutar el entrenamiento">Disfrutar</div><div class="chip" data-v="Ver cambios físicos">Ver cambios</div>
+        <div class="chip" data-v="Tener más fuerza">Más fuerza</div><div class="chip" data-v="Sentirme con más energía">Más energía</div>
+        <div class="chip" data-v="No sentir dolor">No sentir dolor</div><div class="chip" data-v="Mejorar mi técnica">Mejorar técnica</div>
+        <div class="chip" data-v="Entrenar más cómodo">Más cómodo</div><div class="chip" data-v="Sostener el hábito">Sostener el hábito</div>
+        <div class="chip" data-v="Preparar una competencia">Competencia</div>
+      </div>
+      <div class="q">5 · ¿Cómo te gustaría que fueran los entrenamientos?</div>
+      <div class="chips" data-multi="estilo">
+        <div class="chip" data-v="Más intensos">Más intensos</div><div class="chip" data-v="Más tranquilos">Más tranquilos</div>
+        <div class="chip" data-v="Más variados">Más variados</div><div class="chip" data-v="Más técnicos">Más técnicos</div>
+        <div class="chip" data-v="Más tradicionales">Más tradicionales</div><div class="chip" data-v="Más dinámicos">Más dinámicos</div>
+        <div class="chip" data-v="Más desafiantes">Más desafiantes</div><div class="chip" data-v="Sin preferencias">Sin preferencias</div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step" data-step="2">
+      <div class="q">6 · ¿Hay ejercicios que te encantan hacer?</div>
+      <textarea id="ejEncantan" placeholder="Escribí todos los que quieras"></textarea>
+      <div class="q">7 · ¿Hay ejercicios que preferís evitar?</div>
+      <textarea id="ejEvitar" placeholder="Los que preferís que no aparezcan"></textarea>
+      <div class="q">8 · ¿Sentís molestias o dolores actualmente?</div>
+      <div class="pills" data-single="molestias" data-cond="cond-mol">
+        <div class="pill" data-v="No">No</div><div class="pill" data-v="Sí">Sí</div>
+      </div>
+      <div class="cond" id="cond-mol"><textarea id="molestiasDetalle" placeholder="Indicá cuáles y dónde"></textarea></div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step" data-step="3">
+      <div class="q">9 · ¿Cómo sentís tu recuperación?</div>
+      <div class="pills" data-single="recuperacion">
+        <div class="pill" data-v="Excelente">Excelente</div><div class="pill" data-v="Buena">Buena</div>
+        <div class="pill" data-v="Regular">Regular</div><div class="pill" data-v="Mala">Mala</div>
+      </div>
+      <div class="q">10 · ¿Cómo está hoy tu energía para entrenar?</div>
+      <div class="pills" data-single="energia">
+        <div class="pill" data-v="Muy alta">Muy alta</div><div class="pill" data-v="Alta">Alta</div>
+        <div class="pill" data-v="Normal">Normal</div><div class="pill" data-v="Baja">Baja</div><div class="pill" data-v="Muy baja">Muy baja</div>
+      </div>
+      <div class="q">11 · ¿Cuánto tiempo real podés dedicar a cada sesión?</div>
+      <div class="pills" data-single="tiempoReal">
+        <div class="pill" data-v="30 min">30</div><div class="pill" data-v="45 min">45</div>
+        <div class="pill" data-v="60 min">60</div><div class="pill" data-v="75 min">75</div><div class="pill" data-v="90 min">90</div>
+      </div>
+      <div class="q">12 · ¿Querés cambiar la cantidad de días que entrenás?</div>
+      <div class="pills" data-single="diasCambio" data-cond="cond-dias">
+        <div class="pill" data-v="No">No</div><div class="pill" data-v="Sí">Sí</div>
+      </div>
+      <div class="cond" id="cond-dias">
+        <label style="font-size:11px;color:var(--muted);">¿Cuántos días te gustaría entrenar?</label>
+        <select id="diasNuevos"><option value="">—</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="step" data-step="4">
+      <div class="q">13 · ¿Algún músculo o capacidad que quieras priorizar?</div>
+      <input id="priorizar" type="text" placeholder="Ej: glúteos, espalda, resistencia…">
+      <div class="q">14 · ¿Tenés algún desafío, evento o competencia por delante?</div>
+      <input id="desafio" type="text" placeholder="Ej: torneo, carrera, viaje, foto…">
+      <div class="q">15 · ¿Cómo evaluarías el plan anterior?</div>
+      <div class="pills" data-single="evalAnterior">
+        <div class="pill" data-v="Excelente">Excelente</div><div class="pill" data-v="Muy bueno">Muy bueno</div>
+        <div class="pill" data-v="Bueno">Bueno</div><div class="pill" data-v="Regular">Regular</div><div class="pill" data-v="Malo">Malo</div>
+      </div>
+      <label style="font-size:11px;color:var(--muted);margin-top:10px;display:block;">¿Qué cambiarías?</label>
+      <textarea id="queCambiaria" placeholder="Opcional"></textarea>
+      <div class="q">16 · Si pudieras pedirle una sola cosa a tu entrenador, ¿qué sería?</div>
+      <input id="pedidoUnico" type="text" placeholder="Tu pedido para este plan">
+    </div>
+
+    <div class="err" id="err"></div>
+    <div class="nav">
+      <button class="btn ghost" id="btn-back" onclick="prevStep()" style="display:none;">← Atrás</button>
+      <button class="btn" id="btn-next" onclick="nextStep()">Siguiente →</button>
+    </div>
+    <div class="save-tag">Tus respuestas se guardan solas en este dispositivo.</div>
+  </div>
+
+  <div id="ok">
+    <div class="big">✅</div>
+    <h2>¡Gracias!</h2>
+    <p>Recibí tu actualización. Con esto Christian arma tu próximo plan a tu medida.</p>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+const CFG = {
+  apiKey:'AIzaSyDkSgbqAJJRdlLwzcn-2vSMjVIUJbkVUGQ',
+  authDomain:'entrenamiento-laboratorio.firebaseapp.com',
+  projectId:'entrenamiento-laboratorio',
+  storageBucket:'entrenamiento-laboratorio.firebasestorage.app',
+  messagingSenderId:'399177627945',
+  appId:'1:399177627945:web:2b4fef0894480f70dc1f38'
+};
+let _db=null;
+try{ firebase.initializeApp(CFG); _db=firebase.firestore(); }catch(e){ console.warn('firebase',e); }
+
+const ALID = (new URLSearchParams(location.search).get('a')||'').trim();
+const SKEY = 'SOCC_UPDATE_' + (ALID||'default');
+const TOTAL = 5;
+let step=0, _alumno=null;
+
+// Cargar nombre/objetivo del alumno para personalizar y comparar
+(async function(){
+  if(_db && ALID){ try{ const doc=await _db.collection('alumnos').doc(ALID).get(); if(doc.exists) _alumno=doc.data()||{}; }catch(e){} }
+  const nombre=(_alumno&&(_alumno.nombre||(_alumno.perfil&&_alumno.perfil.nombre)))||'';
+  document.getElementById('hi').textContent = nombre ? ('Hola '+String(nombre).split(' ')[0]+' 👋 actualicemos tu plan') : 'Actualicemos tu plan';
+})();
+
+// Single-select (pills) + multi (chips) + condicionales
+document.querySelectorAll('.pills[data-single]').forEach(g=>{
+  g.querySelectorAll('.pill').forEach(p=> p.onclick=()=>{
+    g.querySelectorAll('.pill').forEach(x=>x.classList.remove('on')); p.classList.add('on');
+    const cond=g.getAttribute('data-cond');
+    if(cond){ const el=document.getElementById(cond); if(el) el.classList.toggle('on', p.getAttribute('data-v')==='Sí'); }
+    saveLocal();
+  });
+});
+document.querySelectorAll('.chips[data-multi]').forEach(g=>{
+  const max=parseInt(g.getAttribute('data-max')||'0',10);
+  g.querySelectorAll('.chip').forEach(c=> c.onclick=()=>{
+    if(!c.classList.contains('on') && max>0 && g.querySelectorAll('.chip.on').length>=max) return;
+    c.classList.toggle('on'); saveLocal();
+  });
+});
+
+const TEXT_IDS=['ejEncantan','ejEvitar','molestiasDetalle','diasNuevos','priorizar','desafio','queCambiaria','pedidoUnico'];
+function _single(g){ const el=document.querySelector('.pills[data-single="'+g+'"] .pill.on'); return el?el.getAttribute('data-v'):''; }
+function _multi(g){ return [...document.querySelectorAll('.chips[data-multi="'+g+'"] .chip.on')].map(e=>e.getAttribute('data-v')); }
+function collect(){
+  const d={};
+  ['sentir','objetivoNuevo','molestias','recuperacion','energia','tiempoReal','diasCambio','evalAnterior'].forEach(g=>d[g]=_single(g));
+  ['cambiosFisicos','importante','estilo'].forEach(g=>d[g]=_multi(g));
+  TEXT_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) d[id]=(el.value||'').trim(); });
+  return d;
+}
+function saveLocal(){ try{ localStorage.setItem(SKEY, JSON.stringify(collect())); }catch(e){} }
+function restoreLocal(){
+  let d; try{ d=JSON.parse(localStorage.getItem(SKEY)||'null'); }catch(e){ d=null; }
+  if(!d) return;
+  ['sentir','objetivoNuevo','molestias','recuperacion','energia','tiempoReal','diasCambio','evalAnterior'].forEach(g=>{
+    if(!d[g]) return; const el=document.querySelector('.pills[data-single="'+g+'"] .pill[data-v="'+d[g].replace(/"/g,'')+'"]'); if(el) el.click();
+  });
+  ['cambiosFisicos','importante','estilo'].forEach(g=>{ (d[g]||[]).forEach(v=>{ const el=document.querySelector('.chips[data-multi="'+g+'"] .chip[data-v="'+v.replace(/"/g,'')+'"]'); if(el && !el.classList.contains('on')) el.click(); }); });
+  TEXT_IDS.forEach(id=>{ const el=document.getElementById(id); if(el && d[id]!=null) el.value=d[id]; });
+}
+document.querySelectorAll('input,select,textarea').forEach(el=> el.addEventListener('change', saveLocal));
+
+function showStep(n){
+  step=Math.max(0,Math.min(TOTAL-1,n));
+  document.querySelectorAll('.step').forEach(s=> s.classList.toggle('on', +s.getAttribute('data-step')===step));
+  const pct=Math.round((step/(TOTAL-1))*100);
+  document.getElementById('pbar-fill').style.width=pct+'%';
+  document.getElementById('pmeta-step').textContent='Paso '+(step+1)+' de '+TOTAL;
+  document.getElementById('pmeta-pct').textContent=pct+'%';
+  document.getElementById('btn-back').style.display= step===0?'none':'block';
+  document.getElementById('btn-next').textContent= step===TOTAL-1?'Actualizar mi plan ✓':'Siguiente →';
+  document.getElementById('err').textContent=''; window.scrollTo(0,0);
+}
+function prevStep(){ showStep(step-1); }
+function nextStep(){
+  if(step===0 && !_single('objetivoNuevo')){ document.getElementById('err').textContent='Elegí tu objetivo principal.'; return; }
+  saveLocal();
+  if(step<TOTAL-1) showStep(step+1); else enviar();
+}
+
+function _buildMasterUpdate(d){
+  const base=(_alumno&&_alumno.promptMaestro)?(_alumno.promptMaestro+'\n\n'):'';
+  const L=[]; const add=(k,v)=>{ if(v && String(v).trim()) L.push('- '+k+': '+(Array.isArray(v)?v.join(', '):v)); };
+  L.push('## ACTUALIZACIÓN DE PLAN (check-in '+new Date().toISOString().slice(0,10)+')');
+  add('Cómo se siente con el plan actual', d.sentir);
+  add('Nuevo objetivo principal', d.objetivoNuevo);
+  add('Cambios físicos deseados', d.cambiosFisicos);
+  add('Lo más importante este ciclo', d.importante);
+  add('Estilo de entrenamiento preferido', d.estilo);
+  add('Ejercicios que le encantan', d.ejEncantan);
+  add('Ejercicios a evitar', d.ejEvitar);
+  add('Molestias/dolor actual', d.molestias==='Sí'?(d.molestiasDetalle||'Sí (sin detalle)'):'No');
+  add('Recuperación', d.recuperacion); add('Energía para entrenar', d.energia);
+  add('Tiempo real por sesión', d.tiempoReal);
+  add('Cambio de días', d.diasCambio==='Sí'?('Sí → '+(d.diasNuevos||'?')+' días'):'No');
+  add('Priorizar', d.priorizar); add('Desafío/evento', d.desafio);
+  add('Evaluación del plan anterior', d.evalAnterior); add('Qué cambiaría', d.queCambiaria);
+  add('Pedido principal al entrenador', d.pedidoUnico);
+  return base + L.join('\n');
+}
+function _resumen(d){
+  const p=[];
+  if(d.objetivoNuevo) p.push('Nuevo objetivo: '+d.objetivoNuevo);
+  if(d.molestias==='Sí') p.push('⚠️ Molestias: '+(d.molestiasDetalle||'sí'));
+  if(d.diasCambio==='Sí') p.push('Quiere entrenar '+(d.diasNuevos||'?')+' días');
+  if(d.tiempoReal) p.push('Tiempo/sesión: '+d.tiempoReal);
+  if(d.recuperacion) p.push('Recuperación: '+d.recuperacion);
+  if(d.energia) p.push('Energía: '+d.energia);
+  if((d.importante||[]).length) p.push('Prioriza: '+d.importante.join(', '));
+  if(d.priorizar) p.push('Enfatizar: '+d.priorizar);
+  if(d.pedidoUnico) p.push('Pedido: '+d.pedidoUnico);
+  return p.join(' · ');
+}
+
+async function enviar(){
+  const err=document.getElementById('err'); err.textContent='';
+  const d=collect();
+  const btn=document.getElementById('btn-next'); btn.disabled=true; btn.textContent='Enviando…';
+  const id='upd_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  const doc={
+    id, estado:'actualizacion_pendiente', tipoSolicitud:'update', alumnoId:ALID,
+    nombre:(_alumno&&(_alumno.nombre||(_alumno.perfil&&_alumno.perfil.nombre)))||'',
+    createdAt:new Date().toISOString(),
+    datos:d, resumenEjecutivo:_resumen(d), promptMaestro:_buildMasterUpdate(d)
+  };
+  try{
+    if(!_db) throw new Error('sin conexión');
+    await _db.collection('alumnos').doc(id).set(doc);
+    try{ localStorage.removeItem(SKEY); }catch(e){}
+    document.getElementById('formView').style.display='none';
+    document.getElementById('ok').style.display='block'; window.scrollTo(0,0);
+  }catch(e){
+    console.error(e); err.textContent='No se pudo enviar. Revisá tu conexión e intentá de nuevo.';
+    btn.disabled=false; btn.textContent='Actualizar mi plan ✓';
+  }
+}
+
+restoreLocal();
+showStep(0);
+</script>
+</body>
+</html>

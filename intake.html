@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Ficha de ingreso — Christian Cattaneo</title>
+<meta name="theme-color" content="#0d0d1a">
+<style>
+  :root{--bg:#0d0d1a;--card:#13132a;--gold:#C9A84C;--gold-d:#9A7A28;--text:#e8e8f0;--muted:#8888aa;--border:rgba(255,255,255,.1);--input:rgba(255,255,255,.05);}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.5;}
+  .wrap{max-width:540px;margin:0 auto;padding:22px 20px 40px;}
+  .brand{text-align:center;margin-bottom:14px;}
+  .brand-name{font-size:15px;font-weight:900;letter-spacing:1px;}
+  .brand-sub{font-size:10px;color:var(--muted);letter-spacing:2px;}
+  .pbar{height:7px;background:var(--input);border-radius:6px;overflow:hidden;margin:14px 0 6px;}
+  .pbar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold-d));transition:width .3s;}
+  .pmeta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:16px;}
+  .step{display:none;}
+  .step.on{display:block;animation:fade .25s;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .step h2{font-size:19px;margin:6px 0 2px;}
+  .step .sub{font-size:12px;color:var(--muted);margin:0 0 14px;}
+  label{display:block;font-size:11px;font-weight:800;letter-spacing:.4px;color:var(--muted);margin:15px 0 6px;text-transform:uppercase;}
+  label .req{color:var(--gold);}
+  input,select,textarea{width:100%;background:var(--input);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:15px;color:var(--text);font-family:inherit;outline:none;}
+  input:focus,select:focus,textarea:focus{border-color:var(--gold);}
+  select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238888aa' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px;}
+  textarea{resize:vertical;min-height:64px;}
+  .row{display:flex;gap:10px;}
+  .row>div{flex:1;}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;}
+  .chip{border:1px solid var(--border);border-radius:20px;padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;user-select:none;color:var(--muted);}
+  .chip.on{background:var(--gold);color:#0d0d1a;border-color:var(--gold);}
+  .days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:6px;}
+  .day{border:1px solid var(--border);border-radius:9px;padding:9px 0;text-align:center;font-size:11px;font-weight:800;cursor:pointer;user-select:none;color:var(--muted);}
+  .day.on{background:var(--gold);color:#0d0d1a;border-color:var(--gold);}
+  .nav{display:flex;gap:10px;margin-top:24px;}
+  .btn{flex:1;background:linear-gradient(135deg,var(--gold),var(--gold-d));color:#0d0d1a;border:none;border-radius:13px;padding:15px;font-size:15px;font-weight:900;cursor:pointer;}
+  .btn.ghost{background:var(--input);color:var(--text);border:1px solid var(--border);flex:0 0 42%;}
+  .btn:disabled{opacity:.6;cursor:default;}
+  .err{color:#f87171;font-size:12px;margin-top:10px;text-align:center;min-height:14px;}
+  .save-tag{font-size:10px;color:var(--muted);text-align:center;margin-top:12px;}
+  #ok{display:none;text-align:center;padding:36px 10px;}
+  #ok .big{font-size:52px;}
+  #ok h2{font-size:21px;margin:14px 0 8px;}
+  #ok p{font-size:14px;color:var(--muted);}
+  .optnote{font-size:11px;color:var(--muted);margin-top:-2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-name">CHRISTIAN CATTANEO</div>
+    <div class="brand-sub">ENTRENADOR</div>
+  </div>
+
+  <div id="formView">
+    <div class="pbar"><i id="pbar-fill"></i></div>
+    <div class="pmeta"><span id="pmeta-step">Paso 1 de 8</span><span id="pmeta-pct">0% completado</span></div>
+
+    <!-- 1 · DATOS PERSONALES -->
+    <div class="step on" data-step="0">
+      <h2>Empecemos por vos</h2>
+      <p class="sub">Datos básicos para tu ficha.</p>
+      <label>Nombre y apellido <span class="req">*</span></label>
+      <input id="nombre" type="text" placeholder="Tu nombre completo" autocomplete="name">
+      <div class="row">
+        <div><label>Fecha de nacimiento</label><input id="nacimiento" type="date"></div>
+        <div><label>Sexo</label><select id="sexo"><option value="">—</option><option>Masculino</option><option>Femenino</option><option>Otro</option></select></div>
+      </div>
+      <div class="row">
+        <div><label>Altura (cm)</label><input id="altura" type="number" inputmode="numeric" placeholder="175"></div>
+        <div><label>Peso (kg)</label><input id="peso" type="number" inputmode="decimal" placeholder="75"></div>
+      </div>
+      <div class="row">
+        <div><label>Ciudad</label><input id="ciudad" type="text" placeholder="Ciudad"></div>
+        <div><label>País</label><input id="pais" type="text" placeholder="País"></div>
+      </div>
+      <div class="row">
+        <div><label>Email</label><input id="email" type="email" inputmode="email" placeholder="tu@email.com"></div>
+        <div><label>WhatsApp <span class="req">*</span></label><input id="telefono" type="tel" inputmode="tel" placeholder="11 5555 5555"></div>
+      </div>
+    </div>
+
+    <!-- 2 · OBJETIVOS -->
+    <div class="step" data-step="1">
+      <h2>Tu objetivo</h2>
+      <p class="sub">¿Qué querés lograr?</p>
+      <label>Objetivo principal <span class="req">*</span></label>
+      <select id="objetivo">
+        <option value="">Elegí una opción…</option>
+        <option>Hipertrofia</option><option>Pérdida de grasa</option><option>Recomposición corporal</option>
+        <option>Fuerza</option><option>Running</option><option>Trail Running</option>
+        <option>Salud</option><option>Rehabilitación</option><option>Otro</option>
+      </select>
+      <label>Objetivos específicos <span style="text-transform:none;font-weight:600;">(los que quieras)</span></label>
+      <div class="chips" id="objesp">
+        <div class="chip" data-v="Aumentar pecho">Aumentar pecho</div>
+        <div class="chip" data-v="Aumentar espalda">Aumentar espalda</div>
+        <div class="chip" data-v="Aumentar hombros">Aumentar hombros</div>
+        <div class="chip" data-v="Aumentar brazos">Aumentar brazos</div>
+        <div class="chip" data-v="Aumentar glúteos">Aumentar glúteos</div>
+        <div class="chip" data-v="Aumentar piernas">Aumentar piernas</div>
+        <div class="chip" data-v="Mejorar postura">Mejorar postura</div>
+        <div class="chip" data-v="Reducir dolor">Reducir dolor</div>
+        <div class="chip" data-v="Preparar competencia">Preparar competencia</div>
+        <div class="chip" data-v="Bajar el abdomen">Bajar el abdomen</div>
+      </div>
+      <label>¿Algún objetivo específico más?</label>
+      <input id="objetivoEsp" type="text" placeholder="Contame en tus palabras…">
+    </div>
+
+    <!-- 3 · EXPERIENCIA -->
+    <div class="step" data-step="2">
+      <h2>Tu experiencia</h2>
+      <p class="sub">Para calibrar el punto de partida.</p>
+      <label>Nivel <span class="req">*</span></label>
+      <select id="nivel"><option value="">Elegí…</option><option>Principiante</option><option>Intermedio</option><option>Avanzado</option></select>
+      <div class="row">
+        <div><label>Años entrenando</label><input id="anios" type="number" inputmode="numeric" placeholder="Ej: 2"></div>
+        <div><label>Veces por semana <span class="req">*</span></label><select id="frecuencia"><option value="">—</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+      </div>
+      <label>Duración habitual por sesión</label>
+      <select id="duracion"><option value="">—</option><option>30 min</option><option>45 min</option><option>60 min</option><option>75 min o más</option></select>
+    </div>
+
+    <!-- 4 · DISPONIBILIDAD -->
+    <div class="step" data-step="3">
+      <h2>Disponibilidad</h2>
+      <p class="sub">Cuándo y dónde podés entrenar.</p>
+      <label>Días disponibles</label>
+      <div class="days" id="dias">
+        <div class="day" data-d="L">L</div><div class="day" data-d="M">M</div><div class="day" data-d="X">X</div>
+        <div class="day" data-d="J">J</div><div class="day" data-d="V">V</div><div class="day" data-d="S">S</div><div class="day" data-d="D">D</div>
+      </div>
+      <div class="row">
+        <div><label>Horario preferido</label><select id="horario"><option value="">—</option><option>Mañana</option><option>Mediodía</option><option>Tarde</option><option>Noche</option></select></div>
+        <div><label>Tiempo máx. por sesión</label><select id="tiempoMax"><option value="">—</option><option>30 min</option><option>45 min</option><option>60 min</option><option>75 min o más</option></select></div>
+      </div>
+      <label>Lugar de entrenamiento <span class="req">*</span></label>
+      <select id="lugar"><option value="">Elegí…</option><option>Casa</option><option>Gimnasio</option><option>Mixto</option><option>Aire libre</option></select>
+      <label>Equipamiento disponible</label>
+      <div class="chips" id="equipo">
+        <div class="chip" data-v="Mancuernas">Mancuernas</div>
+        <div class="chip" data-v="Barra olímpica">Barra</div>
+        <div class="chip" data-v="Rack">Rack</div>
+        <div class="chip" data-v="Banco">Banco</div>
+        <div class="chip" data-v="Poleas">Poleas</div>
+        <div class="chip" data-v="Máquinas">Máquinas</div>
+        <div class="chip" data-v="Smith">Smith</div>
+        <div class="chip" data-v="Kettlebells">Kettlebells</div>
+        <div class="chip" data-v="Bandas">Bandas</div>
+        <div class="chip" data-v="TRX">TRX</div>
+        <div class="chip" data-v="Ninguno">Ninguno</div>
+      </div>
+    </div>
+
+    <!-- 5 · HISTORIAL MÉDICO -->
+    <div class="step" data-step="4">
+      <h2>Historial médico</h2>
+      <p class="sub">Todo esto es clave para entrenar seguro. Si no aplica, dejalo vacío.</p>
+      <label>Lesiones actuales</label>
+      <textarea id="lesionesActuales" placeholder="Zona, desde cuándo, qué te molesta…"></textarea>
+      <label>Lesiones anteriores / operaciones</label>
+      <textarea id="lesionesPrevias" placeholder="Cirugías, fracturas, lesiones ya recuperadas…"></textarea>
+      <label>Dolor actual</label>
+      <input id="dolor" type="text" placeholder="Ej: molestia lumbar al agacharme">
+      <label>Condiciones de salud</label>
+      <div class="chips" id="condiciones">
+        <div class="chip" data-v="Cardiovascular">Cardiovascular</div>
+        <div class="chip" data-v="Respiratoria">Respiratoria</div>
+        <div class="chip" data-v="Articular">Articular</div>
+        <div class="chip" data-v="Presión alta">Presión alta</div>
+        <div class="chip" data-v="Diabetes">Diabetes</div>
+      </div>
+      <label>Medicación</label>
+      <input id="medicacion" type="text" placeholder="Si tomás alguna medicación relevante">
+      <label>Otras limitaciones a tener en cuenta</label>
+      <textarea id="limitaciones" placeholder="Cualquier cosa que deba saber"></textarea>
+    </div>
+
+    <!-- 6 · HÁBITOS -->
+    <div class="step" data-step="5">
+      <h2>Tus hábitos</h2>
+      <p class="sub">El descanso y el estilo de vida cambian la planificación.</p>
+      <div class="row">
+        <div><label>Horas de sueño</label><select id="sueno"><option value="">—</option><option>Menos de 5</option><option>5 a 6</option><option>6 a 7</option><option>7 a 8</option><option>Más de 8</option></select></div>
+        <div><label>Nivel de estrés</label><select id="estres"><option value="">—</option><option>Bajo</option><option>Medio</option><option>Alto</option></select></div>
+      </div>
+      <label>Trabajo / ocupación</label>
+      <input id="trabajo" type="text" placeholder="Ej: oficina, de pie todo el día, turnos…">
+      <div class="row">
+        <div><label>Actividad física diaria</label><select id="actividad"><option value="">—</option><option>Sedentaria</option><option>Ligera</option><option>Moderada</option><option>Alta</option></select></div>
+        <div><label>Pasos por día (aprox)</label><input id="pasos" type="number" inputmode="numeric" placeholder="Ej: 6000"></div>
+      </div>
+      <label>Alimentación</label>
+      <input id="alimentacion" type="text" placeholder="Cómo describirías tu alimentación">
+      <div class="row">
+        <div><label>Alcohol</label><select id="alcohol"><option value="">—</option><option>No</option><option>Ocasional</option><option>Frecuente</option></select></div>
+        <div><label>Tabaco</label><select id="tabaco"><option value="">—</option><option>No</option><option>Ocasional</option><option>Sí</option></select></div>
+      </div>
+    </div>
+
+    <!-- 7 · HISTORIAL DE ENTRENAMIENTO -->
+    <div class="step" data-step="6">
+      <h2>Tu historia entrenando</h2>
+      <p class="sub">Lo que ya probaste ayuda un montón.</p>
+      <label>Deportes que hiciste / hacés</label>
+      <input id="deportes" type="text" placeholder="Ej: fútbol, natación, crossfit…">
+      <label>¿Qué te funcionó antes?</label>
+      <textarea id="queFunciono" placeholder="Planes, ejercicios o rutinas con las que progresaste"></textarea>
+      <label>¿Qué NO te funcionó?</label>
+      <textarea id="queNo" placeholder="Cosas que probaste y no te sirvieron o no sostuviste"></textarea>
+      <label>Ejercicios favoritos</label>
+      <input id="ejFavoritos" type="text" placeholder="Los que más te gustan">
+      <label>Ejercicios que no te gustan</label>
+      <input id="ejNoGustan" type="text" placeholder="Los que preferís evitar">
+      <label>Ejercicios prohibidos <span style="text-transform:none;font-weight:600;">(por lesión o indicación médica)</span></label>
+      <input id="ejProhibidos" type="text" placeholder="Ej: peso muerto, sentadilla profunda, fondos">
+    </div>
+
+    <!-- 8 · EVALUACIÓN -->
+    <div class="step" data-step="7">
+      <h2>Mediciones <span style="font-size:13px;color:var(--muted);font-weight:600;">(opcional)</span></h2>
+      <p class="sub">Si las tenés a mano, sumalas. Si no, no pasa nada.</p>
+      <label>Perímetros (cm)</label>
+      <input id="perimetros" type="text" placeholder="Ej: cintura 82, cadera 100, brazo 34…">
+      <div class="row">
+        <div><label>% de grasa</label><input id="grasa" type="number" inputmode="decimal" placeholder="Ej: 18"></div>
+        <div><label>Peso hoy (kg)</label><input id="pesoHoy" type="number" inputmode="decimal" placeholder="Ej: 75"></div>
+      </div>
+      <label>Marcas de fuerza</label>
+      <input id="marcasFuerza" type="text" placeholder="Ej: banca 80x5, sentadilla 100x5, peso muerto 120x3">
+      <label>Marcas de carrera / tiempos</label>
+      <input id="tiempos" type="text" placeholder="Ej: 5K en 27:00, 10K en 55:00">
+    </div>
+
+    <div class="err" id="err"></div>
+    <div class="nav">
+      <button class="btn ghost" id="btn-back" onclick="prevStep()" style="display:none;">← Atrás</button>
+      <button class="btn" id="btn-next" onclick="nextStep()">Siguiente →</button>
+    </div>
+    <div class="save-tag" id="save-tag">Tus respuestas se guardan solas en este dispositivo.</div>
+  </div>
+
+  <div id="ok">
+    <div class="big">✅</div>
+    <h2>¡Listo, gracias!</h2>
+    <p>Recibí toda tu información. Christian ya la tiene para armar tu entrenamiento a medida.</p>
+    <p style="margin-top:14px;font-size:13px;">Cualquier duda, escribile por WhatsApp.</p>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+const CFG = {
+  apiKey:'AIzaSyDkSgbqAJJRdlLwzcn-2vSMjVIUJbkVUGQ',
+  authDomain:'entrenamiento-laboratorio.firebaseapp.com',
+  projectId:'entrenamiento-laboratorio',
+  storageBucket:'entrenamiento-laboratorio.firebasestorage.app',
+  messagingSenderId:'399177627945',
+  appId:'1:399177627945:web:2b4fef0894480f70dc1f38'
+};
+let _db=null;
+try{ firebase.initializeApp(CFG); _db=firebase.firestore(); }catch(e){ console.warn('firebase',e); }
+
+const CODE = (new URLSearchParams(location.search).get('c')||'').trim();
+const SKEY = 'SOCC_INTAKE_' + (CODE||'default');
+const TOTAL = 8;
+let step = 0;
+
+// Toggles (chips + días)
+document.querySelectorAll('.chips .chip, .days .day').forEach(el=>{
+  el.onclick = ()=>{ el.classList.toggle('on'); saveLocal(); };
+});
+
+function _getChips(id){ return [...document.querySelectorAll('#'+id+' .on')].map(e=>e.getAttribute('data-v')||e.getAttribute('data-d')); }
+function _setChips(id, arr){ if(!Array.isArray(arr)) return; document.querySelectorAll('#'+id+' .chip, #'+id+' .day').forEach(e=>{ const v=e.getAttribute('data-v')||e.getAttribute('data-d'); if(arr.includes(v)) e.classList.add('on'); }); }
+
+const FIELD_IDS = ['nombre','nacimiento','sexo','altura','peso','ciudad','pais','email','telefono','objetivo','objetivoEsp','nivel','anios','frecuencia','duracion','horario','tiempoMax','lugar','sueno','estres','trabajo','actividad','pasos','alimentacion','alcohol','tabaco','lesionesActuales','lesionesPrevias','dolor','medicacion','limitaciones','deportes','queFunciono','queNo','ejFavoritos','ejNoGustan','ejProhibidos','perimetros','grasa','pesoHoy','marcasFuerza','tiempos'];
+const CHIP_IDS = ['objesp','equipo','condiciones','dias'];
+
+function collect(){
+  const d={};
+  FIELD_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) d[id]=(el.value||'').trim(); });
+  CHIP_IDS.forEach(id=>{ d[id]=_getChips(id); });
+  return d;
+}
+function saveLocal(){ try{ localStorage.setItem(SKEY, JSON.stringify(collect())); }catch(e){} }
+function restoreLocal(){
+  let d; try{ d=JSON.parse(localStorage.getItem(SKEY)||'null'); }catch(e){ d=null; }
+  if(!d) return;
+  FIELD_IDS.forEach(id=>{ const el=document.getElementById(id); if(el && d[id]!=null) el.value=d[id]; });
+  CHIP_IDS.forEach(id=>_setChips(id, d[id]));
+}
+document.querySelectorAll('input,select,textarea').forEach(el=> el.addEventListener('change', saveLocal));
+
+function showStep(n){
+  step = Math.max(0, Math.min(TOTAL-1, n));
+  document.querySelectorAll('.step').forEach(s=> s.classList.toggle('on', +s.getAttribute('data-step')===step));
+  const pct = Math.round((step/(TOTAL-1))*100);
+  document.getElementById('pbar-fill').style.width = pct+'%';
+  document.getElementById('pmeta-step').textContent = 'Paso '+(step+1)+' de '+TOTAL;
+  document.getElementById('pmeta-pct').textContent = pct+'% completado';
+  document.getElementById('btn-back').style.display = step===0 ? 'none' : 'block';
+  document.getElementById('btn-next').textContent = step===TOTAL-1 ? 'Enviar mi ficha ✓' : 'Siguiente →';
+  document.getElementById('err').textContent='';
+  window.scrollTo(0,0);
+}
+function prevStep(){ showStep(step-1); }
+function _req(id,msg){ const v=(document.getElementById(id).value||'').trim(); if(!v){ document.getElementById('err').textContent=msg; return false; } return true; }
+function validateStep(){
+  if(step===0){ if(!_req('nombre','Poné tu nombre y apellido.')) return false; if(!_req('telefono','Dejá tu WhatsApp.')) return false; }
+  if(step===1){ if(!_req('objetivo','Elegí tu objetivo principal.')) return false; }
+  if(step===2){ if(!_req('nivel','Elegí tu nivel.')) return false; if(!_req('frecuencia','Elegí cuántas veces por semana.')) return false; }
+  if(step===3){ if(!_req('lugar','Indicá dónde vas a entrenar.')) return false; }
+  return true;
+}
+function nextStep(){
+  if(!validateStep()) return;
+  saveLocal();
+  if(step<TOTAL-1){ showStep(step+1); } else { enviar(); }
+}
+
+function _buildMaster(d){
+  const L=[]; const add=(k,v)=>{ if(v && String(v).trim()) L.push('- '+k+': '+v); };
+  L.push('# PROMPT MAESTRO DEL ATLETA');
+  L.push('\n## Datos personales');
+  add('Nombre', d.nombre); add('Nacimiento', d.nacimiento); add('Sexo', d.sexo);
+  add('Altura', d.altura&&d.altura+' cm'); add('Peso', d.peso&&d.peso+' kg');
+  add('Ciudad/País', [d.ciudad,d.pais].filter(Boolean).join(', ')); add('Contacto', [d.telefono,d.email].filter(Boolean).join(' · '));
+  L.push('\n## Objetivos');
+  add('Objetivo principal', d.objetivo); add('Objetivos específicos', (d.objesp||[]).join(', ')); add('Otro objetivo', d.objetivoEsp);
+  L.push('\n## Experiencia y disponibilidad');
+  add('Nivel', d.nivel); add('Años entrenando', d.anios); add('Frecuencia', d.frecuencia&&d.frecuencia+' días/sem');
+  add('Duración habitual', d.duracion); add('Días disponibles', (d.dias||[]).join(', ')); add('Horario', d.horario);
+  add('Tiempo máx./sesión', d.tiempoMax); add('Lugar', d.lugar); add('Equipamiento', (d.equipo||[]).join(', '));
+  L.push('\n## Historial médico');
+  add('Lesiones actuales', d.lesionesActuales); add('Lesiones/operaciones previas', d.lesionesPrevias);
+  add('Dolor actual', d.dolor); add('Condiciones', (d.condiciones||[]).join(', ')); add('Medicación', d.medicacion); add('Limitaciones', d.limitaciones);
+  L.push('\n## Hábitos');
+  add('Sueño', d.sueno); add('Estrés', d.estres); add('Trabajo', d.trabajo); add('Actividad diaria', d.actividad);
+  add('Pasos/día', d.pasos); add('Alimentación', d.alimentacion); add('Alcohol', d.alcohol); add('Tabaco', d.tabaco);
+  L.push('\n## Historial de entrenamiento');
+  add('Deportes', d.deportes); add('Qué le funcionó', d.queFunciono); add('Qué no le funcionó', d.queNo);
+  add('Ejercicios favoritos', d.ejFavoritos); add('Ejercicios que no le gustan', d.ejNoGustan); add('Ejercicios PROHIBIDOS', d.ejProhibidos);
+  L.push('\n## Mediciones');
+  add('Perímetros', d.perimetros); add('% grasa', d.grasa); add('Peso hoy', d.pesoHoy);
+  add('Marcas de fuerza', d.marcasFuerza); add('Marcas de carrera/tiempos', d.tiempos);
+  return L.join('\n');
+}
+
+async function enviar(){
+  const err=document.getElementById('err'); err.textContent='';
+  const d=collect();
+  const btn=document.getElementById('btn-next'); btn.disabled=true; btn.textContent='Enviando…';
+  const id='intake_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  const doc={
+    id, estado:'alta_pendiente', tipoSolicitud:'intake', codigo:CODE||'',
+    createdAt:new Date().toISOString(),
+    datos:d,
+    promptMaestro:_buildMaster(d)
+  };
+  try{
+    if(!_db) throw new Error('sin conexión');
+    await _db.collection('alumnos').doc(id).set(doc);
+    try{ localStorage.removeItem(SKEY); }catch(e){}
+    document.getElementById('formView').style.display='none';
+    document.getElementById('ok').style.display='block';
+    window.scrollTo(0,0);
+  }catch(e){
+    console.error(e);
+    err.textContent='No se pudo enviar. Revisá tu conexión e intentá de nuevo.';
+    btn.disabled=false; btn.textContent='Enviar mi ficha ✓';
+  }
+}
+
+restoreLocal();
+showStep(0);
+</script>
+</body>
+</html>
