@@ -3078,6 +3078,9 @@ select.toolbox-input option:disabled { color: #888; }
         <button class="perfil-megamenu-item" id="nav-btn-antropometria" onclick="showView('antropometria')">
           <span class="mm-text"><span class="mm-label">Mi Cuerpo</span><span class="mm-sub">Protocolo ISAK · composición corporal</span></span>
         </button>
+        <button class="perfil-megamenu-item" id="mm-seg-fuerza" onclick="perfilSegGo('fuerza1rm')">
+          <span class="mm-text"><span class="mm-label">Fuerza &amp; 1RM</span><span class="mm-sub">Evaluaciones, 1RM, cargas y analíticas</span></span>
+        </button>
         <button class="perfil-megamenu-item" id="mm-seg-nutr" onclick="perfilSegGo('nutricion')">
           <span class="mm-text"><span class="mm-label">Nutrición</span><span class="mm-sub">Macros y suplementación</span></span>
         </button>
@@ -10628,13 +10631,9 @@ function renderPlanSidebar(tipo) {
     <div class="plan-sidebar-sub">${[edad ? edad+' años' : '', a?.nivel].filter(Boolean).join(' · ')}</div>
     ${a?.diasSemana ? `<div style="font-size:10px;color:#aaa;text-align:center;margin-top:2px;">${a.diasSemana} días/semana</div>` : ''}
 
-    <div class="plan-sidebar-divider"></div>
-    <div class="plan-sidebar-label">🔧 Herramientas</div>
-    ${tipo === 'running' ? toolboxRunning : toolboxFuerza}
+    ${tipo === 'running' ? `<div class="plan-sidebar-divider"></div><div class="plan-sidebar-label">🔧 Herramientas</div>${toolboxRunning}` : ''}
 
   `;
-  // Poblar datalist de ejercicios en calculadora SOCC
-  if (tipo === 'fuerza') setTimeout(poblarEjerciciosSOCC, 50);
 }
 
 function refreshPlanAlumnoSelect() {
@@ -13781,6 +13780,37 @@ function _f1rmRelacionadosHTML(ej, rm){
     +'<div style="font-size:10px;color:#999;margin-top:5px;">Valores estimados a partir de este 1RM · ajustá según el atleta.</div></details>';
 }
 function _r25(v){ return Math.round((v||0)/2.5)*2.5; }
+function _f1rmSpark(vals){ const n=vals.filter(v=>!isNaN(v)); if(n.length<2) return ''; const mn=Math.min.apply(null,n),mx=Math.max.apply(null,n),rg=(mx-mn)||1,W=90,H=30; const pts=n.map((v,i)=>((i/(n.length-1))*W).toFixed(1)+','+((H-3)-((v-mn)/rg)*(H-6)+2).toFixed(1)).join(' '); return '<svg width="'+W+'" height="'+H+'" style="flex-shrink:0;"><polyline points="'+pts+'" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
+function _f1rmBalCard(titulo,valor,ratio,nota){ return '<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:10px 12px;margin-bottom:8px;"><div style="font-size:12px;font-weight:800;color:#1a1a2e;">'+titulo+' · ratio '+ratio.toFixed(2)+'</div><div style="font-size:11px;color:#555;">'+valor+'</div><div style="font-size:11px;color:#7c3aed;margin-top:3px;">'+nota+'</div></div>'; }
+function _f1rmAnalitica(tests){
+  if(!tests.length) return '';
+  const byEj={}; tests.forEach(t=>{ (byEj[t.ejercicio]=byEj[t.ejercicio]||[]).push(t); });
+  let prog='';
+  Object.keys(byEj).sort().forEach(ej=>{
+    const arr=byEj[ej].slice().sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+    const primero=arr[0].rm||0, best=Math.max.apply(null,arr.map(t=>t.rm||0));
+    const dif=best-primero, pct=primero?Math.round(dif/primero*100):0;
+    prog+='<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">'
+      +'<div style="flex:1;"><div style="font-size:12px;font-weight:800;color:#1a1a2e;">'+_iaEsc(ej)+'</div>'
+      +'<div style="font-size:11px;color:#555;">1RM '+_r25(best)+' kg'+(arr.length>1?(' · '+(dif>=0?'+':'')+_r25(dif)+' kg ('+(pct>=0?'+':'')+pct+'%) desde la 1ª evaluación'):'')+'</div></div>'
+      +_f1rmSpark(arr.map(t=>t.rm||0))+'</div>';
+  });
+  const bestOf=n=>{ const a=byEj[n]; return a?Math.max.apply(null,a.map(t=>t.rm||0)):0; };
+  const bench=bestOf('Press de banca plano con barra');
+  const row=bestOf('Remo con barra')||bestOf('Jalón al pecho');
+  const squat=bestOf('Sentadilla con barra');
+  const dead=bestOf('Peso muerto');
+  let bal='';
+  if(bench&&row){ const r=bench/row; bal+=_f1rmBalCard('Empuje / Tracción (tren superior)', _r25(bench)+' vs '+_r25(row)+' kg', r, r>1.25?'Empuje dominante: sumá volumen de tracción para equilibrar.':r<0.85?'Tracción dominante: reforzá el empuje.':'Balanceado — buen equilibrio.'); }
+  const inf=squat||dead;
+  if(bench&&inf){ const r=bench/inf; bal+=_f1rmBalCard('Tren superior / inferior', _r25(bench)+' vs '+_r25(inf)+' kg', r, 'El tren inferior suele ser bastante más fuerte que el superior; tomalo como referencia general.'); }
+  if(!bench||!row) bal+='<div style="font-size:11px;color:#999;margin-top:2px;">Cargá <b>Press de banca</b> y <b>Remo con barra</b> (o Jalón) para ver el balance empuje/tracción.</div>';
+
+  return '<details open style="margin:0 0 18px;background:#f7f7fb;border:1px solid #e8e8f0;border-radius:12px;padding:14px;"><summary style="cursor:pointer;font-size:12px;font-weight:900;color:#7c3aed;letter-spacing:.5px;">📊 ANALÍTICAS DE FUERZA</summary>'
+    +'<div style="margin-top:10px;"><div style="font-size:10px;font-weight:800;color:#888;margin-bottom:6px;">PROGRESO POR EJERCICIO</div>'+prog+'</div>'
+    +(bal?('<div style="margin-top:6px;"><div style="font-size:10px;font-weight:800;color:#888;margin-bottom:6px;">BALANCE ENTRE PATRONES</div>'+bal+'</div>'):'')
+    +'</details>';
+}
 function _calcRM(peso, reps, key){
   if(!peso||!reps) return 0;
   if(reps<=1) return peso;
@@ -13818,6 +13848,8 @@ function renderFuerza1RM(id){
     +'<div><label style="'+lbl+'">PESO CORPORAL</label><input id="f1rm-bw" type="number" step="0.1" min="0" placeholder="kg (opc.)" style="'+inp+'"></div></div>'
     +'<label style="'+lbl+'margin-top:10px;">NOTAS (opc.)</label><input id="f1rm-notas" placeholder="Ej: tope real, buena técnica" style="'+inp+'">'
     +'<button onclick="_f1rmGuardar(\''+id+'\')" style="margin-top:12px;width:100%;padding:12px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;">Guardar evaluación</button></div>';
+
+  h+=_f1rmAnalitica(tests);
 
   if(!tests.length){
     h+='<div style="text-align:center;color:#999;padding:24px;font-size:13px;border:1px dashed #ddd;border-radius:12px;">Todavía no hay evaluaciones. Cargá la primera arriba.</div>';
