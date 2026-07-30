@@ -10543,24 +10543,29 @@ function renderPlanSidebar(tipo) {
       <div class="toolbox-title">⚡ Calculadora Inteligente SOCC</div>
       <div style="font-size:8px;color:#C9A84C;text-align:center;margin:-4px 0 9px;letter-spacing:0.8px;font-weight:700;opacity:0.85;">SISTEMA OPERATIVO CHRISTIAN CATTANEO</div>
 
+      <div style="font-size:10px;color:#9aa4bb;text-align:center;margin:-3px 0 10px;line-height:1.45;">Cargá una <b style="color:#C9A84C;">marca del alumno</b> (peso × reps que hizo) y te calcula el <b style="color:#C9A84C;">peso de trabajo</b> para la sesión.</div>
+
+      <div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:.6px;margin:0 0 5px;">① MARCA DE REFERENCIA</div>
       <input class="toolbox-input" id="socc-ejercicio" list="socc-ej-list" placeholder="Ejercicio (opcional)" autocomplete="off" style="margin-bottom:6px;">
       <datalist id="socc-ej-list"></datalist>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-        <input class="toolbox-input" id="socc-peso" type="number" placeholder="Peso (kg)" min="0" step="0.5">
-        <input class="toolbox-input" id="socc-reps" type="number" placeholder="Reps realizadas" min="1" max="30" step="1">
+        <input class="toolbox-input" id="socc-peso" type="number" placeholder="Peso levantado (kg)" min="0" step="0.5">
+        <input class="toolbox-input" id="socc-reps" type="number" placeholder="Reps que hizo" min="1" max="30" step="1">
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">
-        <input class="toolbox-input" id="socc-rir" type="number" placeholder="RIR (opc.)" min="0" max="10" step="1">
+        <input class="toolbox-input" id="socc-rir" type="number" placeholder="RIR (opcional)" min="0" max="10" step="1">
         <select class="toolbox-input" id="socc-objetivo">
           <option value="">Objetivo...</option>
           <option value="hipertrofia">Hipertrofia</option>
           <option value="fuerza">Fuerza</option>
         </select>
       </div>
+      <div style="font-size:9px;color:#7f8aa0;margin:4px 2px 0;line-height:1.45;"><b style="color:#9aa4bb;">RIR</b> = reps que le <b>quedaban sin llegar al fallo</b>. Si llegó justo al fallo, poné 0. Si no sabés, dejalo vacío.</div>
 
-      <div style="display:grid;grid-template-columns:auto 1fr;gap:6px;align-items:center;margin-top:6px;">
+      <div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:.6px;margin:11px 0 5px;">② PARA CUÁNTAS REPS QUERÉS EL PESO</div>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:6px;align-items:center;">
         <span style="font-size:10px;color:#888;white-space:nowrap;">Reps objetivo:</span>
         <select class="toolbox-input" id="socc-reps-obj" style="margin-bottom:0;">
           <option value="">— elegir —</option>
@@ -10578,9 +10583,9 @@ function renderPlanSidebar(tipo) {
       </div>
       <div style="display:grid;grid-template-columns:auto 1fr;gap:6px;align-items:center;margin-top:6px;">
         <span style="font-size:10px;color:#C9A84C;white-space:nowrap;font-weight:700;">% de trabajo:</span>
-        <input class="toolbox-input" id="socc-pct" type="number" placeholder="Ej: 75 (opc.)" min="1" max="110" step="0.5" style="margin-bottom:0;">
+        <input class="toolbox-input" id="socc-pct" type="number" placeholder="Ej: 75 (opcional)" min="1" max="110" step="0.5" style="margin-bottom:0;">
       </div>
-      <div style="font-size:9px;color:#666;margin-top:3px;text-align:right;">Si ingresás el %, reemplaza la selección por reps</div>
+      <div style="font-size:9px;color:#7f8aa0;margin-top:4px;line-height:1.4;">Avanzado: si ponés un % de tu 1RM, se usa ese en vez de las "reps objetivo".</div>
 
       <div id="socc-error" style="display:none;font-size:10px;color:#f87171;text-align:center;margin:6px 0 2px;">⚠ Completá todos los campos requeridos</div>
 
