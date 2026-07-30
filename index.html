@@ -13817,6 +13817,67 @@ function _calcRM(peso, reps, key){
   const f=_RM_FORMULAS[key]||_RM_FORMULAS.epley;
   return Math.round(f.fn(peso,reps)*10)/10;
 }
+// ── GESTOR DE CARGAS ──
+const _F1RM_R2P = {1:100,2:95,3:93,4:90,5:87,6:85,7:83,8:80,9:77,10:75,11:72,12:70,15:65,20:60};
+function _pctDeReps(r){
+  if(_F1RM_R2P[r]!=null) return _F1RM_R2P[r];
+  const k=Object.keys(_F1RM_R2P).map(Number).sort((a,b)=>a-b);
+  if(r<=k[0]) return _F1RM_R2P[k[0]];
+  if(r>=k[k.length-1]) return _F1RM_R2P[k[k.length-1]];
+  let lo=k[0],hi=k[k.length-1];
+  for(let i=0;i<k.length-1;i++){ if(r>=k[i]&&r<=k[i+1]){ lo=k[i]; hi=k[i+1]; break; } }
+  const t=(r-lo)/(hi-lo);
+  return Math.round(_F1RM_R2P[lo]+t*(_F1RM_R2P[hi]-_F1RM_R2P[lo]));
+}
+function _f1rmGestor(id, tests){
+  const ejs=[...new Set(tests.map(t=>t.ejercicio))].sort();
+  if(!ejs.length) return '';
+  const inp='border:1.5px solid #dde1ea;border-radius:9px;padding:8px 10px;font-size:13px;font-family:inherit;box-sizing:border-box;width:100%;';
+  const lbl='font-size:10px;font-weight:800;color:#666;display:block;margin-bottom:4px;';
+  return '<div style="background:#fff;border:1.5px solid #e0d8fb;border-radius:14px;padding:16px;margin:0 0 18px;">'
+    +'<div style="font-size:10px;font-weight:900;color:#7c3aed;letter-spacing:.6px;margin-bottom:12px;">🏋️ GESTOR DE CARGAS · desglose de la sesión</div>'
+    +'<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;">'
+    +'<div><label style="'+lbl+'">EJERCICIO (con 1RM)</label><select id="f1rm-g-ej" style="'+inp+'">'+ejs.map(e=>'<option>'+_iaEsc(e)+'</option>').join('')+'</select></div>'
+    +'<div><label style="'+lbl+'">OBJETIVO</label><select id="f1rm-g-obj" style="'+inp+'"><option value="fuerza">Fuerza</option><option value="hipertrofia" selected>Hipertrofia</option><option value="resistencia">Resistencia</option></select></div>'
+    +'<div><label style="'+lbl+'">REPS</label><select id="f1rm-g-reps" style="'+inp+'">'+[1,2,3,4,5,6,8,10,12,15,20].map(r=>'<option'+(r===8?' selected':'')+'>'+r+'</option>').join('')+'</select></div>'
+    +'<div><label style="'+lbl+'">REDONDEO</label><select id="f1rm-g-round" style="'+inp+'"><option value="2.5" selected>2.5 kg</option><option value="1.25">1.25 kg</option></select></div></div>'
+    +'<div style="display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap;">'
+    +'<label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#555;cursor:pointer;"><input type="checkbox" id="f1rm-g-lastre" onchange="document.getElementById(\'f1rm-g-bwwrap\').style.display=this.checked?\'block\':\'none\'"> Ejercicio con lastre (dominadas, fondos)</label>'
+    +'<div id="f1rm-g-bwwrap" style="display:none;"><input id="f1rm-g-bw" type="number" step="0.5" placeholder="Peso corporal (kg)" style="'+inp+'width:auto;"></div></div>'
+    +'<button onclick="_f1rmDesglose(\''+id+'\')" style="margin-top:12px;width:100%;padding:11px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;">⚡ Generar desglose de cargas</button>'
+    +'<div id="f1rm-desglose"></div></div>';
+}
+function _f1rmDesglose(id){
+  const al=getAlumnos().find(a=>a.id===id); if(!al) return;
+  const tests=al.fuerzaTests||[];
+  const ej=document.getElementById('f1rm-g-ej').value;
+  const obj=document.getElementById('f1rm-g-obj').value;
+  const reps=parseInt(document.getElementById('f1rm-g-reps').value)||8;
+  const inc=parseFloat(document.getElementById('f1rm-g-round').value)||2.5;
+  const esLastre=document.getElementById('f1rm-g-lastre').checked;
+  const bw=parseFloat(document.getElementById('f1rm-g-bw').value)||0;
+  const rmArr=tests.filter(t=>t.ejercicio===ej).map(t=>t.rm||0);
+  const rm=rmArr.length?Math.max.apply(null,rmArr):0;
+  const out=document.getElementById('f1rm-desglose'); if(!out) return;
+  if(!rm){ out.innerHTML='<div style="color:#c62828;font-size:12px;margin-top:10px;">Ese ejercicio no tiene 1RM cargado.</div>'; return; }
+  const rnd=v=>Math.round(v/inc)*inc;
+  const pct=_pctDeReps(reps);
+  const cfg={fuerza:{series:5,rir:2},hipertrofia:{series:4,rir:2},resistencia:{series:3,rir:3}}[obj]||{series:4,rir:2};
+  const work=rnd(rm*pct/100);
+  const lastreObj = esLastre ? rnd(work-bw) : null;
+  const wu=[{f:0.5,r:8},{f:0.7,r:5},{f:0.85,r:3}].map((s,i)=>({s:'A'+(i+1),peso:rnd(work*s.f),reps:s.r}));
+  let rows='';
+  wu.forEach(w=> rows+='<tr><td style="padding:5px 4px;">'+w.s+'</td><td style="padding:5px 4px;">'+(esLastre?(rnd(w.peso-bw)+' kg lastre'):(w.peso+' kg'))+'</td><td style="padding:5px 4px;">'+w.reps+'</td><td style="padding:5px 4px;color:#888;">calent.</td></tr>');
+  for(let i=1;i<=cfg.series;i++){ rows+='<tr style="background:#faf9ff;"><td style="padding:6px 4px;"><b>S'+i+'</b></td><td style="padding:6px 4px;"><b style="color:#7c3aed;">'+(esLastre?(lastreObj+' kg lastre'):(work+' kg'))+'</b></td><td style="padding:6px 4px;">'+reps+'</td><td style="padding:6px 4px;color:#7c3aed;">RIR '+cfg.rir+'</td></tr>'; }
+  let html='<div style="margin-top:12px;font-size:12px;color:#555;">1RM '+_r25(rm)+' kg'+(esLastre?(' (total, incluye peso corporal '+bw+' kg)'):'')+' · '+pct+'% para '+reps+' reps → <b style="color:#7c3aed;">'+(esLastre?(lastreObj+' kg de lastre'):(work+' kg'))+'</b></div>';
+  if(esLastre && lastreObj<=0) html+='<div style="font-size:11px;color:#a06b00;background:#fff8e6;border-radius:8px;padding:8px;margin-top:6px;">A esa intensidad tu peso corporal ya supera el objetivo: entrená a peso corporal (sin lastre) o usá una regresión/asistencia.</div>';
+  html+='<table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:12px;"><tr style="color:#999;font-size:10px;"><th style="text-align:left;padding:4px;">SERIE</th><th style="text-align:left;padding:4px;">CARGA</th><th style="text-align:left;padding:4px;">REPS</th><th style="text-align:left;padding:4px;">ESFUERZO</th></tr>'+rows+'</table>';
+  html+='<div style="font-size:11px;color:#555;margin-top:10px;line-height:1.6;background:#f7f7fb;border-radius:8px;padding:10px;">'
+    +'<b style="color:#7c3aed;">Progresión (regla de 2 reps):</b> si completa ≥2 reps extra en la última serie durante 2 sesiones seguidas → subí 2,5–5% la próxima.<br>'
+    +'<b style="color:#7c3aed;">Autorregulación (RPE):</b> RPE 10 = RIR 0 · RPE 9 = RIR 1 · RPE 8 = RIR 2. Si el RPE reportado supera al objetivo, bajá 2,5–5% la sesión siguiente.'
+    +'</div>';
+  out.innerHTML=html;
+}
 function renderFuerza1RM(id){
   const cont=document.getElementById('fuerza1rm-content'); if(!cont) return;
   const al=getAlumnos().find(a=>a.id===id);
@@ -13849,6 +13910,7 @@ function renderFuerza1RM(id){
     +'<label style="'+lbl+'margin-top:10px;">NOTAS (opc.)</label><input id="f1rm-notas" placeholder="Ej: tope real, buena técnica" style="'+inp+'">'
     +'<button onclick="_f1rmGuardar(\''+id+'\')" style="margin-top:12px;width:100%;padding:12px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;">Guardar evaluación</button></div>';
 
+  h+=_f1rmGestor(id, tests);
   h+=_f1rmAnalitica(tests);
 
   if(!tests.length){
@@ -13862,7 +13924,8 @@ function renderFuerza1RM(id){
       h+='<div style="border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-bottom:14px;">'
         +'<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;">'
         +'<div style="font-size:15px;font-weight:800;color:#1a1a2e;">'+_iaEsc(ej)+'</div>'
-        +'<div style="font-size:13px;color:#7c3aed;font-weight:800;">1RM estimado: '+_r25(prRM)+' kg <span title="Récord">🏆</span></div></div>';
+        +'<div style="display:flex;align-items:center;gap:10px;"><div style="font-size:13px;color:#7c3aed;font-weight:800;">1RM estimado: '+_r25(prRM)+' kg <span title="Récord">🏆</span></div>'
+        +'<button onclick="_f1rmBorrarEjercicio(\''+id+'\',\''+_f1rmJs(ej)+'\')" title="Eliminar todas las evaluaciones de este ejercicio" style="background:#fee2e2;color:#c62828;border:none;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Eliminar</button></div></div>';
       h+='<details style="margin-top:10px;"><summary style="cursor:pointer;color:#7c3aed;font-size:12px;font-weight:700;">Ver cargas de trabajo (según 1RM)</summary>'
         +'<table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:12px;">'
         +'<tr style="color:#999;font-size:10px;"><th style="text-align:left;padding:4px;">%1RM</th><th style="text-align:left;padding:4px;">Peso</th><th style="text-align:left;padding:4px;">Reps aprox</th><th style="text-align:left;padding:4px;">RIR</th></tr>'
@@ -13913,6 +13976,16 @@ function _f1rmBorrar(id, testId){
   if(!confirm('¿Borrar esta evaluación del historial?')) return;
   const alumnos=getAlumnos(); const al=alumnos.find(a=>a.id===id); if(!al) return;
   al.fuerzaTests=(al.fuerzaTests||[]).filter(t=>t.id!==testId);
+  saveAlumnos(alumnos);
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+  renderFuerza1RM(id);
+}
+function _f1rmJs(s){ return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function _f1rmBorrarEjercicio(id, ej){
+  const alumnos=getAlumnos(); const al=alumnos.find(a=>a.id===id); if(!al) return;
+  const n=(al.fuerzaTests||[]).filter(t=>t.ejercicio===ej).length;
+  if(!confirm('¿Eliminar las '+n+' evaluación(es) de "'+ej+'"? No se puede deshacer.')) return;
+  al.fuerzaTests=(al.fuerzaTests||[]).filter(t=>t.ejercicio!==ej);
   saveAlumnos(alumnos);
   if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
   renderFuerza1RM(id);
