@@ -3862,8 +3862,12 @@ select.toolbox-input option:disabled { color: #888; }
           <div class="perfil-subtabs">
             <button class="perfil-subtab active" onclick="switchPerfilSubtab('seg','antropometria')">Antropometría</button>
             <button class="perfil-subtab" onclick="switchPerfilSubtab('seg','rendimiento')">Rendimiento</button>
+            <button class="perfil-subtab" onclick="switchPerfilSubtab('seg','fuerza1rm')">Fuerza &amp; 1RM</button>
             <button class="perfil-subtab" onclick="switchPerfilSubtab('seg','evaluaciones')">Evaluaciones</button>
             <button class="perfil-subtab" onclick="switchPerfilSubtab('seg','nutricion')">Nutrición</button>
+          </div>
+          <div id="seg-sub-fuerza1rm" class="perfil-subcontent">
+            <div id="fuerza1rm-content"></div>
           </div>
           <div id="seg-sub-antropometria" class="perfil-subcontent active">
             <div style="max-width:820px;margin:0 auto;">
@@ -13739,6 +13743,149 @@ function switchPerfilSection(sec) {
   });
 }
 
+// ═══════════ PERFIL DE FUERZA & 1RM (Fase 1) ═══════════
+const _RM_FORMULAS = {
+  epley:   { lb:'Epley',    fn:(w,r)=> w*(1+r/30) },
+  brzycki: { lb:'Brzycki',  fn:(w,r)=> r<37 ? w*36/(37-r) : w },
+  lombardi:{ lb:'Lombardi', fn:(w,r)=> w*Math.pow(r,0.10) },
+  mayhew:  { lb:'Mayhew',   fn:(w,r)=> 100*w/(52.2+41.9*Math.exp(-0.055*r)) },
+  oconnor: { lb:"O'Conner", fn:(w,r)=> w*(1+0.025*r) },
+  wathan:  { lb:'Wathan',   fn:(w,r)=> 100*w/(48.8+53.8*Math.exp(-0.075*r)) }
+};
+const _F1RM_EJ = ['Press de banca plano con barra','Press inclinado con barra','Press plano con mancuernas','Press militar de pie','Sentadilla con barra','Sentadilla frontal','Peso muerto','Peso muerto rumano','Hip thrust con barra','Jalón al pecho','Dominadas','Remo con barra','Remo con mancuerna','Prensa de piernas','Curl femoral','Extensión de cuádriceps','Curl de bíceps','Press francés'];
+const _F1RM_PCT = [
+  {p:100,reps:'1',rir:'0'},{p:95,reps:'2',rir:'0-1'},{p:90,reps:'4',rir:'1'},
+  {p:85,reps:'6',rir:'1-2'},{p:80,reps:'8',rir:'2'},{p:75,reps:'10',rir:'2-3'},
+  {p:70,reps:'12',rir:'2-3'},{p:65,reps:'15',rir:'3'},{p:60,reps:'18-20',rir:'3-4'}
+];
+// Coeficientes de transferencia por familia (ancla = 1.0). Estimaciones, ajustables.
+const _F1RM_FAM = {
+  'Empuje horizontal': { 'Press de banca plano con barra':1.0, 'Press banca Smith':1.0, 'Press pecho en máquina':0.95, 'Press inclinado con barra':0.85, 'Press plano con mancuernas':0.75, 'Press inclinado con mancuernas':0.65, 'Flexiones lastradas':0.6, 'Aperturas / fly':0.45 },
+  'Empuje vertical':   { 'Press militar de pie':1.0, 'Press militar sentado':1.05, 'Press de hombro con mancuernas':0.7, 'Press Arnold':0.65 },
+  'Tracción horizontal':{ 'Remo con barra':1.0, 'Remo T':0.95, 'Remo en polea':0.9, 'Remo en máquina':0.9, 'Remo con mancuerna':0.55 },
+  'Tracción vertical': { 'Jalón al pecho':1.0, 'Dominadas':0.9, 'Jalón unilateral':0.5 },
+  'Rodilla dominante': { 'Sentadilla con barra':1.0, 'Sentadilla frontal':0.85, 'Hack':1.3, 'Prensa de piernas':2.0, 'Sentadilla búlgara':0.4, 'Extensión de cuádriceps':0.5 },
+  'Cadera / bisagra':  { 'Peso muerto':1.0, 'Peso muerto rumano':0.85, 'Hip thrust con barra':1.1, 'Buenos días':0.5, 'Curl femoral':0.35 }
+};
+function _f1rmFamDe(ej){ for(const fam in _F1RM_FAM){ if(_F1RM_FAM[fam][ej]!=null) return { fam, coef:_F1RM_FAM[fam][ej] }; } return null; }
+function _f1rmRelacionadosHTML(ej, rm){
+  const info=_f1rmFamDe(ej); if(!info || !rm) return '';
+  const miembros=_F1RM_FAM[info.fam];
+  const rows=Object.keys(miembros).filter(e=>e!==ej).map(e=>{
+    const est=_r25(rm * miembros[e] / info.coef);
+    return '<tr style="border-top:1px solid #eee;"><td style="padding:5px 4px;">'+_iaEsc(e)+'</td><td style="padding:5px 4px;text-align:right;color:#7c3aed;font-weight:800;">'+est+' kg</td></tr>';
+  }).join('');
+  if(!rows) return '';
+  return '<details style="margin-top:8px;"><summary style="cursor:pointer;color:#7c3aed;font-size:12px;font-weight:700;">Estimar 1RM en ejercicios relacionados · '+info.fam+'</summary>'
+    +'<table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:12px;"><tr style="color:#999;font-size:10px;"><th style="text-align:left;padding:4px;">EJERCICIO</th><th style="text-align:right;padding:4px;">1RM ESTIMADO</th></tr>'+rows+'</table>'
+    +'<div style="font-size:10px;color:#999;margin-top:5px;">Valores estimados a partir de este 1RM · ajustá según el atleta.</div></details>';
+}
+function _r25(v){ return Math.round((v||0)/2.5)*2.5; }
+function _calcRM(peso, reps, key){
+  if(!peso||!reps) return 0;
+  if(reps<=1) return peso;
+  const f=_RM_FORMULAS[key]||_RM_FORMULAS.epley;
+  return Math.round(f.fn(peso,reps)*10)/10;
+}
+function renderFuerza1RM(id){
+  const cont=document.getElementById('fuerza1rm-content'); if(!cont) return;
+  const al=getAlumnos().find(a=>a.id===id);
+  if(!al){ cont.innerHTML='<div style="padding:20px;color:#888;">Seleccioná un alumno.</div>'; return; }
+  const tests=Array.isArray(al.fuerzaTests)?al.fuerzaTests.slice():[];
+  const defF=al.rmFormula||'epley';
+  const hoy=new Date().toISOString().slice(0,10);
+  const inp='width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit;box-sizing:border-box;';
+  const lbl='font-size:10px;font-weight:800;color:#666;letter-spacing:.4px;display:block;margin-bottom:4px;';
+  const formOpts=Object.keys(_RM_FORMULAS).map(k=>'<option value="'+k+'"'+(k===defF?' selected':'')+'>'+_RM_FORMULAS[k].lb+'</option>').join('');
+
+  let h='<div style="max-width:880px;margin:0 auto;">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px;">'
+    +'<div><div style="font-size:16px;font-weight:900;color:#1a1a2e;">💪 Perfil de Fuerza &amp; 1RM</div>'
+    +'<div style="font-size:12px;color:#888;">Cargá evaluaciones, estimá el 1RM y obtené las cargas de trabajo. El historial se guarda para siempre.</div></div>'
+    +'<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:#888;">Fórmula por defecto:</span>'
+    +'<select id="f1rm-defform" onchange="_f1rmSetDefault(\''+id+'\')" style="'+inp+'width:auto;padding:6px 10px;">'+formOpts+'</select></div></div>';
+
+  h+='<div style="background:#faf9ff;border:1.5px solid #e0d8fb;border-radius:14px;padding:16px;margin:12px 0 18px;">'
+    +'<div style="font-size:10px;font-weight:900;color:#7c3aed;letter-spacing:.6px;margin-bottom:12px;">➕ NUEVA EVALUACIÓN</div>'
+    +'<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;">'
+    +'<div><label style="'+lbl+'">EJERCICIO</label><input id="f1rm-ej" list="f1rm-ejlist" placeholder="Elegí o escribí" style="'+inp+'"><datalist id="f1rm-ejlist">'+_F1RM_EJ.map(e=>'<option>'+_iaEsc(e)+'</option>').join('')+'</datalist></div>'
+    +'<div><label style="'+lbl+'">PESO (kg)</label><input id="f1rm-peso" type="number" step="0.5" min="0" placeholder="Ej: 80" style="'+inp+'"></div>'
+    +'<div><label style="'+lbl+'">REPS</label><input id="f1rm-reps" type="number" min="1" max="30" placeholder="Ej: 5" style="'+inp+'"></div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-top:10px;">'
+    +'<div><label style="'+lbl+'">RIR (opc.)</label><input id="f1rm-rir" type="number" min="0" max="10" placeholder="—" style="'+inp+'"></div>'
+    +'<div><label style="'+lbl+'">FÓRMULA</label><select id="f1rm-form" style="'+inp+'">'+formOpts+'</select></div>'
+    +'<div><label style="'+lbl+'">FECHA</label><input id="f1rm-fecha" type="date" value="'+hoy+'" style="'+inp+'"></div>'
+    +'<div><label style="'+lbl+'">PESO CORPORAL</label><input id="f1rm-bw" type="number" step="0.1" min="0" placeholder="kg (opc.)" style="'+inp+'"></div></div>'
+    +'<label style="'+lbl+'margin-top:10px;">NOTAS (opc.)</label><input id="f1rm-notas" placeholder="Ej: tope real, buena técnica" style="'+inp+'">'
+    +'<button onclick="_f1rmGuardar(\''+id+'\')" style="margin-top:12px;width:100%;padding:12px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;">Guardar evaluación</button></div>';
+
+  if(!tests.length){
+    h+='<div style="text-align:center;color:#999;padding:24px;font-size:13px;border:1px dashed #ddd;border-radius:12px;">Todavía no hay evaluaciones. Cargá la primera arriba.</div>';
+  } else {
+    const byEj={};
+    tests.forEach(t=>{ (byEj[t.ejercicio]=byEj[t.ejercicio]||[]).push(t); });
+    Object.keys(byEj).sort().forEach(ej=>{
+      const arr=byEj[ej].slice().sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+      const prRM=Math.max.apply(null, arr.map(t=>t.rm||0));
+      h+='<div style="border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-bottom:14px;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;">'
+        +'<div style="font-size:15px;font-weight:800;color:#1a1a2e;">'+_iaEsc(ej)+'</div>'
+        +'<div style="font-size:13px;color:#7c3aed;font-weight:800;">1RM estimado: '+_r25(prRM)+' kg <span title="Récord">🏆</span></div></div>';
+      h+='<details style="margin-top:10px;"><summary style="cursor:pointer;color:#7c3aed;font-size:12px;font-weight:700;">Ver cargas de trabajo (según 1RM)</summary>'
+        +'<table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:12px;">'
+        +'<tr style="color:#999;font-size:10px;"><th style="text-align:left;padding:4px;">%1RM</th><th style="text-align:left;padding:4px;">Peso</th><th style="text-align:left;padding:4px;">Reps aprox</th><th style="text-align:left;padding:4px;">RIR</th></tr>'
+        + _F1RM_PCT.map(x=>'<tr style="border-top:1px solid #eee;"><td style="padding:5px 4px;font-weight:700;">'+x.p+'%</td><td style="padding:5px 4px;color:#7c3aed;font-weight:800;">'+_r25(prRM*x.p/100)+' kg</td><td style="padding:5px 4px;">'+x.reps+'</td><td style="padding:5px 4px;color:#888;">'+x.rir+'</td></tr>').join('')
+        +'</table></details>';
+      h+=_f1rmRelacionadosHTML(ej, prRM);
+      h+='<details style="margin-top:8px;"><summary style="cursor:pointer;color:#7c3aed;font-size:12px;font-weight:700;">Historial ('+arr.length+')</summary><div style="margin-top:8px;">';
+      arr.forEach(t=>{
+        const f=t.fecha?new Date(t.fecha+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}):'';
+        const isPR=(t.rm||0)===prRM;
+        h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid #f0f0f0;padding:7px 0;font-size:12px;">'
+          +'<div><b>'+t.peso+' kg × '+t.reps+'</b>'+(t.rir!=null&&t.rir!==''?' · RIR '+t.rir:'')+' → <b style="color:#7c3aed;">'+_r25(t.rm||0)+' kg</b>'+(isPR?' 🏆':'')
+          +'<div style="color:#999;font-size:10px;">'+f+' · '+(_RM_FORMULAS[t.formula]?_RM_FORMULAS[t.formula].lb:t.formula)+(t.pesoCorporal?' · PC '+t.pesoCorporal+'kg':'')+(t.notas?' · '+_iaEsc(t.notas):'')+'</div></div>'
+          +'<button onclick="_f1rmBorrar(\''+id+'\',\''+t.id+'\')" style="background:#fee2e2;color:#c62828;border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">🗑</button></div>';
+      });
+      h+='</div></details></div>';
+    });
+  }
+  h+='</div>';
+  cont.innerHTML=h;
+}
+function _f1rmSetDefault(id){
+  const alumnos=getAlumnos(); const al=alumnos.find(a=>a.id===id); if(!al) return;
+  al.rmFormula=document.getElementById('f1rm-defform').value;
+  saveAlumnos(alumnos);
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+}
+function _f1rmGuardar(id){
+  const alumnos=getAlumnos(); const al=alumnos.find(a=>a.id===id); if(!al) return;
+  const ej=(document.getElementById('f1rm-ej').value||'').trim();
+  const peso=parseFloat(document.getElementById('f1rm-peso').value);
+  const reps=parseInt(document.getElementById('f1rm-reps').value);
+  if(!ej){ toast('Elegí un ejercicio','error'); return; }
+  if(!peso||!reps||reps<1){ toast('Cargá peso y reps','error'); return; }
+  const rirV=document.getElementById('f1rm-rir').value;
+  const formula=document.getElementById('f1rm-form').value||'epley';
+  const t={ id:genId(), ejercicio:ej, peso, reps, rir: rirV!==''?parseInt(rirV):null, formula,
+    rm:_calcRM(peso,reps,formula), fecha:document.getElementById('f1rm-fecha').value||new Date().toISOString().slice(0,10),
+    pesoCorporal:parseFloat(document.getElementById('f1rm-bw').value)||null, notas:(document.getElementById('f1rm-notas').value||'').trim(), creado:new Date().toISOString() };
+  al.fuerzaTests=Array.isArray(al.fuerzaTests)?al.fuerzaTests:[];
+  al.fuerzaTests.push(t);
+  saveAlumnos(alumnos);
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+  toast('✅ Evaluación guardada · 1RM '+_r25(t.rm)+' kg');
+  renderFuerza1RM(id);
+}
+function _f1rmBorrar(id, testId){
+  if(!confirm('¿Borrar esta evaluación del historial?')) return;
+  const alumnos=getAlumnos(); const al=alumnos.find(a=>a.id===id); if(!al) return;
+  al.fuerzaTests=(al.fuerzaTests||[]).filter(t=>t.id!==testId);
+  saveAlumnos(alumnos);
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+  renderFuerza1RM(id);
+}
+
 function switchPerfilSubtab(group, sub) {
   const prefix = group === 'plan' ? 'plan-sub-' : group === 'seg' ? 'seg-sub-' : 'coach-sub-';
   // Deactivate all subtabs in this group
@@ -13773,6 +13920,7 @@ function switchPerfilSubtab(group, sub) {
   if (sub === 'fuerza')        renderPerfilPlanificaciones(currentAlumnoId,'fuerza');
   if (sub === 'running')       renderPerfilPlanificaciones(currentAlumnoId,'running');
   if (sub === 'calendario')    initCalendario(currentAlumnoId);
+  if (sub === 'fuerza1rm')     renderFuerza1RM(currentAlumnoId);
   if (sub === 'antropometria') renderMediciones(currentAlumnoId);
   if (sub === 'evaluaciones')  renderLabFisico(currentAlumnoId);
   if (sub === 'rendimiento')   renderRendimientoAlumno(currentAlumnoId);
@@ -25107,6 +25255,9 @@ function _iaInitContexto(){
   }
   const antro = Array.isArray(al.antropometria) ? al.antropometria : [];
   if (antro.length){ const u=antro[antro.length-1]; const m=[]; if(u.peso)m.push('peso '+u.peso+'kg'); if(u.grasaCorporal)m.push('grasa '+u.grasaCorporal+'%'); if(u.cintura)m.push('cintura '+u.cintura+'cm'); if(m.length) t+='- Últimas medidas registradas: '+m.join(', ')+'\n'; }
+  // Marcas de fuerza (mejor 1RM estimado por ejercicio) → para que la IA calcule cargas concretas
+  const _ft = Array.isArray(al.fuerzaTests) ? al.fuerzaTests : [];
+  if (_ft.length){ const best={}; _ft.forEach(x=>{ if(!best[x.ejercicio] || (x.rm||0)>best[x.ejercicio]) best[x.ejercicio]=x.rm||0; }); const l=Object.keys(best).map(e=>e+' 1RM '+(Math.round((best[e]||0)/2.5)*2.5)+'kg').join(', '); if(l) t+='- MARCAS DE FUERZA (1RM estimado — usalas para prescribir cargas concretas en kg): '+l+'\n'; }
   if (_iaInitState.sesion && _iaInitState.sesion.startsWith('Día')) t += '- FOCO: planificá en detalle la sesión de "'+_iaInitState.sesion+'" (podés resumir el resto de la semana).\n';
   else if (_iaInitState.sesion==='Sesión nueva') t += '- FOCO: diseñá una sesión suelta (no una semana completa).\n';
   _iaAutoContextTxt = t;
