@@ -3844,27 +3844,25 @@ select.toolbox-input option:disabled { color: #888; }
           </div>
           <div style="padding:16px 26px;overflow-y:auto;">
             <div style="font-size:10px;font-weight:900;color:#7c3aed;letter-spacing:.6px;margin-bottom:10px;">1 · ¿DÓNDE VA LA SESIÓN?</div>
-            <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
-              <div><label style="font-size:10px;font-weight:800;color:#666;display:block;margin-bottom:4px;">ALUMNO</label>
-                <select id="trasp-alumno" onchange="_traspCheck()" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;"></select></div>
-              <div><label style="font-size:10px;font-weight:800;color:#666;display:block;margin-bottom:4px;">SEMANA Nº</label>
-                <input id="trasp-semana" type="number" min="1" max="52" placeholder="Ej: 1" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;"></div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+            <label style="font-size:10px;font-weight:800;color:#666;display:block;margin-bottom:4px;">ALUMNO</label>
+            <select id="trasp-alumno" onchange="_traspCargarSemanas()" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;margin-bottom:10px;"></select>
+            <label style="font-size:10px;font-weight:800;color:#666;display:block;margin-bottom:4px;">SEMANA / PLAN DESTINO</label>
+            <select id="trasp-destino" onchange="_traspDestinoCambio()" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;margin-bottom:10px;"></select>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
               <div><label style="font-size:10px;font-weight:800;color:#666;display:block;margin-bottom:4px;">FECHA</label>
                 <input id="trasp-fecha" type="date" onchange="_traspCheck()" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;"></div>
               <div><label style="font-size:10px;font-weight:800;color:#666;display:block;margin-bottom:4px;">LUGAR</label>
                 <select id="trasp-lugar" onchange="_traspCheck()" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;"><option value="">— Elegí —</option><option value="Gym">Gym</option><option value="Casa">Casa</option></select></div>
             </div>
-            <div id="trasp-gate" style="font-size:12px;color:#a06b00;background:#fff8e6;border:1px solid #f4e0a0;border-radius:9px;padding:9px 12px;margin-top:12px;">🔒 Elegí alumno, fecha y lugar para escribir la sesión.</div>
+            <div id="trasp-gate" style="font-size:12px;color:#a06b00;background:#fff8e6;border:1px solid #f4e0a0;border-radius:9px;padding:9px 12px;margin-top:12px;">🔒 Elegí alumno, semana, fecha y lugar para escribir la sesión.</div>
             <div id="trasp-textwrap" style="display:none;margin-top:14px;">
               <div style="font-size:10px;font-weight:900;color:#7c3aed;letter-spacing:.6px;margin-bottom:8px;">2 · ESCRIBÍ / PEGÁ LA SESIÓN</div>
               <textarea id="trasp-texto" rows="12" placeholder="Ej:&#10;CALENTAMIENTO&#10;Bici 5 min&#10;&#10;FUERZA PRINCIPAL&#10;Sentadilla 4x6 @ 100kg · RIR 2 · pausa 3min&#10;Peso muerto rumano 3x10 @ 70kg&#10;&#10;ACCESORIOS&#10;Prensa 3x12 · Curl femoral 3x12" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:12px;font-size:13px;font-family:inherit;line-height:1.5;box-sizing:border-box;resize:vertical;"></textarea>
-              <div style="font-size:11px;color:#888;margin-top:6px;">Escribila con tus bloques y ejercicios como quieras. CATTA_VR respeta todo tal cual (usa tu API key para leer el texto).</div>
+              <div style="font-size:11px;color:#888;margin-top:6px;">Un ejercicio por línea. Poné los bloques en MAYÚSCULAS o con dos puntos (ej. "FUERZA PRINCIPAL:"). Se carga al instante, <b>sin internet ni API</b>.</div>
             </div>
           </div>
           <div style="padding:14px 26px;border-top:1px solid #eee;display:flex;gap:10px;">
-            <button id="trasp-btn" onclick="_iaTraspasoConvertir()" style="flex:1;padding:11px;background:#7c3aed;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">⚡ Enviar a la planilla</button>
+            <button id="trasp-btn" onclick="_traspEnviar()" style="flex:1;padding:11px;background:#7c3aed;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">⚡ Enviar a la planilla</button>
             <button onclick="document.getElementById('trasp-modal').style.display='none'" style="padding:11px 16px;background:#f0f0f0;color:#555;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">Cerrar</button>
           </div>
         </div>
@@ -26433,9 +26431,35 @@ function _iaImportarJSON() {
 }
 
 function _traspCheck(){
-  const ok = document.getElementById('trasp-alumno').value && document.getElementById('trasp-fecha').value && document.getElementById('trasp-lugar').value;
+  const ok = document.getElementById('trasp-alumno').value && document.getElementById('trasp-destino').value && document.getElementById('trasp-fecha').value && document.getElementById('trasp-lugar').value;
   const w=document.getElementById('trasp-textwrap'); if(w) w.style.display= ok?'block':'none';
   const g=document.getElementById('trasp-gate'); if(g) g.style.display= ok?'none':'block';
+}
+function _traspCargarSemanas(){
+  const id=document.getElementById('trasp-alumno').value;
+  const sel=document.getElementById('trasp-destino'); if(!sel) return;
+  let opts='<option value="new">➕ Nueva planificación (crear semana)</option>';
+  if(id){
+    const planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]).filter(p=>p.alumnoId===id && p.tipoPlan!=='running');
+    planes.forEach(p=>{
+      const sems=(Array.isArray(p.semanasArray)&&p.semanasArray.length)?p.semanasArray:[{semana:1,fechaInicio:p.fecha||''}];
+      sems.forEach((w,wi)=>{
+        const fi=w.fechaInicio?new Date(w.fechaInicio+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}):'';
+        opts+='<option value="'+p.id+'|'+wi+'">'+_iaEsc((p.titulo||'Plan'))+' · Semana '+(w.semana||wi+1)+(fi?(' ('+fi+')'):'')+'</option>';
+      });
+    });
+  }
+  sel.innerHTML=opts;
+  _traspCheck();
+}
+function _traspDestinoCambio(){
+  const v=document.getElementById('trasp-destino').value;
+  if(v && v!=='new'){
+    const parts=v.split('|'); const p=(getPlanificaciones()||[]).find(x=>x.id===parts[0]);
+    const w=p&&Array.isArray(p.semanasArray)?p.semanasArray[+parts[1]]:null;
+    if(w&&w.fechaInicio){ const f=document.getElementById('trasp-fecha'); if(f) f.value=w.fechaInicio; }
+  }
+  _traspCheck();
 }
 function _iaTraspasoAbrir(){
   const sel=document.getElementById('trasp-alumno');
@@ -26447,26 +26471,107 @@ function _iaTraspasoAbrir(){
     if(pre && arr.some(a=>a.id===pre)) sel.value=pre;
   }
   const f=document.getElementById('trasp-fecha'); if(f && !f.value) f.value=new Date().toISOString().slice(0,10);
-  _traspCheck();
+  _traspCargarSemanas();
   document.getElementById('trasp-modal').style.display='flex';
 }
-async function _iaTraspasoConvertir(){
+// ── Parser LOCAL (sin API): lee tu texto y arma la sesión ──
+function _traspTipoBloque(n){
+  const s=(n||'').toLowerCase();
+  if(/movilidad|calentamiento|entrada en calor|warm/.test(s)) return 'Movilidad y Calentamiento';
+  if(/activaci|core|zona media|abdomen/.test(s)) return 'Activación y Core';
+  if(/espec[ií]fic/.test(s)) return 'Calentamiento Específico';
+  if(/fuerza|potencia|principal|pesad/.test(s)) return 'Fuerza Principal / Potencia';
+  if(/pliometr|salto/.test(s)) return 'Pliometría';
+  if(/pre[- ]?agota/.test(s)) return 'Pre-Agotamiento';
+  if(/cardio|conditioning|acondicion|metcon|hiit/.test(s)) return 'Cardio';
+  if(/enfriamiento|estiramiento|vuelta a la calma|cool|stretch|elongaci/.test(s)) return 'Enfriamiento Final';
+  if(/hipertrofia|desarrollo|accesori|volumen|bombeo|pump/.test(s)) return 'Desarrollo / Hipertrofia';
+  return 'Desarrollo / Hipertrofia';
+}
+function _traspEsHeader(t){
+  if(/:$/.test(t)) return true;
+  const letras=t.replace(/[^a-záéíóúñ]/gi,'');
+  return letras.length>=3 && letras===letras.toUpperCase() && !/\d+\s*[x×]\s*\d+/.test(t);
+}
+function _traspParseEj(line){
+  let t=line.replace(/^[\s\-•*]+/,'').trim(); if(!t) return null;
+  const idxs=[]; const iP=t.indexOf('·'), iB=t.indexOf('|'); if(iP>=0)idxs.push(iP); if(iB>=0)idxs.push(iB);
+  const mSR=t.match(/\d+\s*[x×]\s*\d/); if(mSR) idxs.push(t.indexOf(mSR[0]));
+  const cut=idxs.length?Math.min.apply(null,idxs):-1;
+  let nombre=(cut>=0?t.slice(0,cut):t).replace(/[·|:]/g,' ').replace(/\s+/g,' ').trim();
+  let series='',reps='',peso='',rir='',pausa='',nota='';
+  const m=t.match(/(\d+)\s*[x×]\s*([0-9]{1,2}(?:\s*[-–\/]\s*[0-9]{1,2})?)/i); if(m){ series=m[1]; reps=m[2].replace(/\s/g,''); }
+  const mp=t.match(/@?\s*(\d+(?:[.,]\d+)?)\s*kg/i);
+  if(mp) peso=mp[1].replace(',','.')+' kg';
+  else { const rpe=t.match(/rpe\s*(\d+)/i); if(rpe) peso='RPE '+rpe[1]; else { const pc=t.match(/\b(\d{1,3})\s*%/); if(pc) peso=pc[1]+'%'; } }
+  const mr=t.match(/rir\s*(\d+)/i); if(mr) rir=mr[1];
+  const mpa=t.match(/(?:pausa|descanso|rest)\s*[:=]?\s*(\d+\s*(?:min|m|seg|s|'|")?)/i); if(mpa) pausa=mpa[1].trim();
+  else { const mq=t.match(/\b(\d+\s*(?:min|seg))\b/i); if(mq) pausa=mq[1].trim(); }
+  const mt=t.match(/tempo\s*[:=]?\s*([0-9xX\-]{3,7})/i); if(mt) nota='Tempo '+mt[1];
+  if(!nombre) nombre=t;
+  return { nombre, series, reps, peso, rir, pausa, nota };
+}
+function _traspBuildSesion(texto, lugar){
+  const lines=String(texto||'').replace(/\r/g,'').split('\n');
+  const bloques=[]; let cur=null;
+  const nuevo=n=>({ nombre:n, tipo:_traspTipoBloque(n), serieTipo:'Serie Simple', ejercicios:[], cardioData:null });
+  lines.forEach(raw=>{
+    const t=raw.trim(); if(!t) return;
+    if(_traspEsHeader(t)){ cur=nuevo(t.replace(/:$/,'').trim()); bloques.push(cur); return; }
+    if(!cur){ cur=nuevo('Trabajo principal'); bloques.push(cur); }
+    const ej=_traspParseEj(t); if(!ej||!ej.nombre) return;
+    const nSer=Math.min(parseInt(ej.series)||1,10);
+    const fila=()=>({reps:String(ej.reps||''),peso:String(ej.peso||''),rir:String(ej.rir||''),pausa:String(ej.pausa||''),comentarios:''});
+    cur.ejercicios.push({
+      nombre:(typeof _iaMatchBiblioteca==='function'?_iaMatchBiblioteca(ej.nombre):ej.nombre),
+      nota:String(ej.nota||''),
+      ctrl:{series:String(ej.series||''),reps:String(ej.reps||''),peso:String(ej.peso||''),pausa:String(ej.pausa||''),rir:String(ej.rir||'')},
+      video:'', ficha:null,
+      series:Array.from({length:nSer},()=>fila()),
+      seriesApro:[], dropset:[]
+    });
+  });
+  return { bloques:bloques.filter(b=>b.ejercicios.length), lugar:lugar||'' };
+}
+function _traspEnviar(){
   const id=document.getElementById('trasp-alumno').value;
+  const dest=document.getElementById('trasp-destino').value;
   const fecha=document.getElementById('trasp-fecha').value;
   const lugar=document.getElementById('trasp-lugar').value;
-  const semana=document.getElementById('trasp-semana').value;
   const txt=(document.getElementById('trasp-texto').value||'').trim();
-  if(!id||!fecha||!lugar){ toast('Elegí alumno, fecha y lugar','error'); return; }
+  if(!id||!dest||!fecha||!lugar){ toast('Completá alumno, semana, fecha y lugar','error'); return; }
   if(!txt){ toast('Escribí o pegá la sesión','error'); return; }
-  if(!_iaApiKey()){ _iaShowKeyModal(); return; }
-  const al=getAlumnos().find(a=>a.id===id);
   const fTxt=new Date(fecha+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'});
-  const opts={ fecha, lugar, semana, titulo:(lugar+' · '+fTxt+(semana?(' · Sem '+semana):'')) };
-  const btn=document.getElementById('trasp-btn');
-  if(btn){ btn.disabled=true; btn.textContent='⏳ Enviando a la planilla...'; }
+  const ses=_traspBuildSesion(txt, lugar);
+  ses.nombre=lugar+' — '+fTxt;
+  if(!ses.bloques.length){ toast('No pude leer ejercicios. Poné un ejercicio por línea (ej: Sentadilla 4x6 @ 100kg).','error'); return; }
+  const dayIdx=(new Date(fecha+'T12:00:00').getDay()+6)%7; // Lun=0
+  const planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]);
+  let planId;
+  if(dest==='new'){
+    const lunes=_getLunesDe(fecha);
+    const dias={}; dias[String(dayIdx)]=[ses];
+    const nuevo={ id:genId(), alumnoId:id, tipoPlan:'fuerza', tipoPlanEstructura:'semanal',
+      titulo:(lugar+' · '+fTxt), lugar, semanaNum:1, fecha:lunes,
+      diasData:dias, semanasArray:[{semana:1,fechaInicio:lunes,dias}], createdAt:new Date().toISOString() };
+    planes.push(nuevo); planId=nuevo.id;
+  } else {
+    const parts=dest.split('|'); const wi=+parts[1]; const p=planes.find(x=>x.id===parts[0]);
+    if(!p){ toast('No encontré el plan destino','error'); return; }
+    if(!(Array.isArray(p.semanasArray)&&p.semanasArray.length)) p.semanasArray=[{semana:1,fechaInicio:p.fecha||_getLunesDe(fecha),dias:p.diasData||{}}];
+    const w=p.semanasArray[wi]||p.semanasArray[0];
+    w.dias=w.dias||{};
+    if(w.dias[String(dayIdx)] && w.dias[String(dayIdx)].length){ if(!confirm('Ya hay una sesión ese día en esa semana. ¿Reemplazarla?')) return; }
+    w.dias[String(dayIdx)]=[ses];
+    if(p.semanasArray.indexOf(w)===0) p.diasData=p.semanasArray[0].dias;
+    planId=p.id;
+  }
+  savePlanificaciones(planes);
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
   document.getElementById('trasp-modal').style.display='none';
-  try{ await _iaEnviarPlanificador(txt, id, opts); }
-  finally{ if(btn){ btn.disabled=false; btn.textContent='⚡ Enviar a la planilla'; } const t=document.getElementById('trasp-texto'); if(t) t.value=''; }
+  const t=document.getElementById('trasp-texto'); if(t) t.value='';
+  toast('✅ Sesión cargada en la planilla');
+  if(typeof abrirPlanFuerzaExistente==='function') abrirPlanFuerzaExistente(planId);
 }
 async function _iaEnviarPlanificador(contentOverride, alumnoOverride, opts) {
   const content = (contentOverride!=null && String(contentOverride).trim()!=='') ? String(contentOverride) : (localStorage.getItem('SOCC_IA_LAST_PLAN') || '');
