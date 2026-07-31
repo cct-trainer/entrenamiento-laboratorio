@@ -3416,6 +3416,7 @@ select.toolbox-input option:disabled { color: #888; }
             <p class="mh-sub">Planificación con entrenadores IA especializados</p>
           </div>
           <div class="mh-actions">
+            <button onclick="_iaTraspasoAbrir()" style="font-size:11px;padding:7px 14px;border:1px solid #7c3aed;background:#7c3aed;color:#fff;border-radius:8px;cursor:pointer;font-weight:700;">📋 Pasar sesión a planilla</button>
             <button onclick="_iaShowImportModal()" style="font-size:11px;padding:7px 14px;border:1px solid #10b981;background:#ecfdf5;color:#059669;border-radius:8px;cursor:pointer;font-weight:700;">📥 Importar JSON</button>
             <button onclick="_iaShowKeyModal()" style="font-size:11px;padding:7px 14px;border:1px solid #7c3aed;background:#f5f3ff;color:#7c3aed;border-radius:8px;cursor:pointer;font-weight:700;">🔑 API Key</button>
           </div>
@@ -3829,6 +3830,42 @@ select.toolbox-input option:disabled { color: #888; }
             <button onclick="_iaCopiarPrompt()" style="flex:1;min-width:150px;padding:11px;background:#7c3aed;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">📋 Copiar prompt</button>
             <button onclick="document.getElementById('ia-prompt-modal').style.display='none'; iaGenerarPlan();" style="flex:1;min-width:150px;padding:11px;background:#ecfdf5;color:#059669;border:1.5px solid #10b981;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">⚡ Generar con API</button>
             <button onclick="document.getElementById('ia-prompt-modal').style.display='none'" style="padding:11px 16px;background:#f0f0f0;color:#555;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">Cerrar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal CATTA_VR: pasar sesión escrita → planilla -->
+      <div id="trasp-modal" onclick="if(event.target===this)this.style.display='none'"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:#fff;border-radius:16px;width:100%;max-width:620px;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);" onclick="event.stopPropagation()">
+          <div style="padding:22px 26px 12px;border-bottom:1px solid #eee;">
+            <div style="font-size:16px;font-weight:900;color:#1a1a2e;">📋 CATTA_VR · Pasar sesión a planilla</div>
+            <div style="font-size:12px;color:#888;margin-top:4px;">Transfiere tu sesión tal cual a la planilla del alumno. No la modifica ni la optimiza.</div>
+          </div>
+          <div style="padding:16px 26px;overflow-y:auto;">
+            <div style="font-size:10px;font-weight:900;color:#7c3aed;letter-spacing:.6px;margin-bottom:10px;">1 · ¿DÓNDE VA LA SESIÓN?</div>
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
+              <div><label style="font-size:10px;font-weight:800;color:#666;display:block;margin-bottom:4px;">ALUMNO</label>
+                <select id="trasp-alumno" onchange="_traspCheck()" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;"></select></div>
+              <div><label style="font-size:10px;font-weight:800;color:#666;display:block;margin-bottom:4px;">SEMANA Nº</label>
+                <input id="trasp-semana" type="number" min="1" max="52" placeholder="Ej: 1" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+              <div><label style="font-size:10px;font-weight:800;color:#666;display:block;margin-bottom:4px;">FECHA</label>
+                <input id="trasp-fecha" type="date" onchange="_traspCheck()" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;"></div>
+              <div><label style="font-size:10px;font-weight:800;color:#666;display:block;margin-bottom:4px;">LUGAR</label>
+                <select id="trasp-lugar" onchange="_traspCheck()" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;"><option value="">— Elegí —</option><option value="Gym">Gym</option><option value="Casa">Casa</option></select></div>
+            </div>
+            <div id="trasp-gate" style="font-size:12px;color:#a06b00;background:#fff8e6;border:1px solid #f4e0a0;border-radius:9px;padding:9px 12px;margin-top:12px;">🔒 Elegí alumno, fecha y lugar para escribir la sesión.</div>
+            <div id="trasp-textwrap" style="display:none;margin-top:14px;">
+              <div style="font-size:10px;font-weight:900;color:#7c3aed;letter-spacing:.6px;margin-bottom:8px;">2 · ESCRIBÍ / PEGÁ LA SESIÓN</div>
+              <textarea id="trasp-texto" rows="12" placeholder="Ej:&#10;CALENTAMIENTO&#10;Bici 5 min&#10;&#10;FUERZA PRINCIPAL&#10;Sentadilla 4x6 @ 100kg · RIR 2 · pausa 3min&#10;Peso muerto rumano 3x10 @ 70kg&#10;&#10;ACCESORIOS&#10;Prensa 3x12 · Curl femoral 3x12" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:12px;font-size:13px;font-family:inherit;line-height:1.5;box-sizing:border-box;resize:vertical;"></textarea>
+              <div style="font-size:11px;color:#888;margin-top:6px;">Escribila con tus bloques y ejercicios como quieras. CATTA_VR respeta todo tal cual (usa tu API key para leer el texto).</div>
+            </div>
+          </div>
+          <div style="padding:14px 26px;border-top:1px solid #eee;display:flex;gap:10px;">
+            <button id="trasp-btn" onclick="_iaTraspasoConvertir()" style="flex:1;padding:11px;background:#7c3aed;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">⚡ Enviar a la planilla</button>
+            <button onclick="document.getElementById('trasp-modal').style.display='none'" style="padding:11px 16px;background:#f0f0f0;color:#555;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">Cerrar</button>
           </div>
         </div>
       </div>
@@ -26283,8 +26320,11 @@ function _iaMatchBiblioteca(nombre) {
   } catch(e) { return nombre; }
 }
 
-function _iaJSONaPlanificacion(data, alumnoId) {
-  const lunes = _getLunesDe(new Date().toISOString().split('T')[0]);
+function _iaJSONaPlanificacion(data, alumnoId, opts) {
+  opts = opts || {};
+  const baseFecha = opts.fecha || new Date().toISOString().split('T')[0];
+  const lunes = _getLunesDe(baseFecha);
+  const forceIdx = opts.fecha ? ((new Date(opts.fecha+'T12:00:00').getDay()+6)%7) : null; // Lun=0 … Dom=6
   const cfgT  = _IA_TRAINERS[_iaCurrentTrainer];
   const dias  = {};
   const patrones = { 1:[0], 2:[0,3], 3:[0,2,4], 4:[0,1,3,4], 5:[0,1,2,3,4], 6:[0,1,2,3,4,5], 7:[0,1,2,3,4,5,6] };
@@ -26300,6 +26340,7 @@ function _iaJSONaPlanificacion(data, alumnoId) {
   lista.forEach((d, i) => {
     const dSem = (d.diaSemana !== undefined) ? parseInt(d.diaSemana) : NaN;
     let idx = (Number.isInteger(dSem) && dSem >= 0 && dSem <= 6) ? dSem : patron[i % 7];
+    if (forceIdx != null && lista.length === 1) idx = forceIdx; // 1 sesión → cae en la fecha elegida
     while (dias[String(idx)] && idx < 6) idx++; // no pisar días ya ocupados
 
     const bloques = (d.bloques || []).map(b => {
@@ -26338,7 +26379,7 @@ function _iaJSONaPlanificacion(data, alumnoId) {
       return { nombre: String(b.nombre || tipo), tipo, serieTipo, ejercicios, cardioData };
     });
 
-    dias[String(idx)] = [{ bloques, nombre: String(d.nombre || '') }];
+    dias[String(idx)] = [{ bloques, nombre: String(d.nombre || ''), lugar: opts.lugar || '' }];
   });
 
   if (!Object.keys(dias).length) {
@@ -26351,8 +26392,9 @@ function _iaJSONaPlanificacion(data, alumnoId) {
   return {
     id: genId(), alumnoId,
     tipoPlan: 'fuerza', tipoPlanEstructura: 'semanal',
-    titulo: String(data.titulo || ('Plan IA — ' + cfgT.corto)),
-    semanaNum: 1, fecha: lunes,
+    titulo: opts.titulo || String(data.titulo || ('Plan IA — ' + cfgT.corto)),
+    lugar: opts.lugar || '',
+    semanaNum: opts.semana ? parseInt(opts.semana) || 1 : 1, fecha: lunes,
     objetivo: document.getElementById('ia-f-objetivo')?.value || '',
     nivel: document.getElementById('ia-f-nivel')?.value || '',
     diasData: semanasArray[0].dias,
@@ -26390,14 +26432,50 @@ function _iaImportarJSON() {
   }
 }
 
-async function _iaEnviarPlanificador() {
-  const content = localStorage.getItem('SOCC_IA_LAST_PLAN') || '';
+function _traspCheck(){
+  const ok = document.getElementById('trasp-alumno').value && document.getElementById('trasp-fecha').value && document.getElementById('trasp-lugar').value;
+  const w=document.getElementById('trasp-textwrap'); if(w) w.style.display= ok?'block':'none';
+  const g=document.getElementById('trasp-gate'); if(g) g.style.display= ok?'none':'block';
+}
+function _iaTraspasoAbrir(){
+  const sel=document.getElementById('trasp-alumno');
+  if(sel){
+    const arr=(typeof getAlumnos==='function'?getAlumnos():[]).slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+    sel.innerHTML='<option value="">— Elegí un alumno —</option>'+arr.map(a=>'<option value="'+a.id+'">'+_iaEsc(a.nombre||'Alumno')+'</option>').join('');
+    _iaInitLeerEstado();
+    const pre=_iaInitState.alumnoId||currentAlumnoId||'';
+    if(pre && arr.some(a=>a.id===pre)) sel.value=pre;
+  }
+  const f=document.getElementById('trasp-fecha'); if(f && !f.value) f.value=new Date().toISOString().slice(0,10);
+  _traspCheck();
+  document.getElementById('trasp-modal').style.display='flex';
+}
+async function _iaTraspasoConvertir(){
+  const id=document.getElementById('trasp-alumno').value;
+  const fecha=document.getElementById('trasp-fecha').value;
+  const lugar=document.getElementById('trasp-lugar').value;
+  const semana=document.getElementById('trasp-semana').value;
+  const txt=(document.getElementById('trasp-texto').value||'').trim();
+  if(!id||!fecha||!lugar){ toast('Elegí alumno, fecha y lugar','error'); return; }
+  if(!txt){ toast('Escribí o pegá la sesión','error'); return; }
+  if(!_iaApiKey()){ _iaShowKeyModal(); return; }
+  const al=getAlumnos().find(a=>a.id===id);
+  const fTxt=new Date(fecha+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+  const opts={ fecha, lugar, semana, titulo:(lugar+' · '+fTxt+(semana?(' · Sem '+semana):'')) };
+  const btn=document.getElementById('trasp-btn');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Enviando a la planilla...'; }
+  document.getElementById('trasp-modal').style.display='none';
+  try{ await _iaEnviarPlanificador(txt, id, opts); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='⚡ Enviar a la planilla'; } const t=document.getElementById('trasp-texto'); if(t) t.value=''; }
+}
+async function _iaEnviarPlanificador(contentOverride, alumnoOverride, opts) {
+  const content = (contentOverride!=null && String(contentOverride).trim()!=='') ? String(contentOverride) : (localStorage.getItem('SOCC_IA_LAST_PLAN') || '');
   if (!content) { toast('No hay plan generado todavía'); return; }
   const apiKey = _iaApiKey();
   if (!apiKey) { _iaShowKeyModal(); return; }
-  _iaInitLeerEstado();
-  const alumnoId = _iaInitState.alumnoId || currentAlumnoId || document.getElementById('plan-alumno-select')?.value;
-  if (!alumnoId) { toast('Elegí un atleta en la inicialización primero', 'error'); return; }
+  let alumnoId = alumnoOverride;
+  if (!alumnoId) { _iaInitLeerEstado(); alumnoId = _iaInitState.alumnoId || currentAlumnoId || document.getElementById('plan-alumno-select')?.value; }
+  if (!alumnoId) { toast('Elegí un atleta primero', 'error'); return; }
   if (document.getElementById('ia-f-dual')?.checked) {
     if (!confirm('Modo pareja activo: el plan (las dos mitades) se va a convertir dentro de la planificación del alumno abierto. ¿Continuar?')) return;
   }
@@ -26405,7 +26483,7 @@ async function _iaEnviarPlanificador() {
   const btn = document.getElementById('ia-btn-enviar');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Convirtiendo al formato SOCC...'; }
 
-  const sysConv = `Sos un conversor de planes de entrenamiento al formato JSON del sistema SOCC. Convertís el texto de un plan semanal en un JSON VÁLIDO. Respondé ÚNICAMENTE con el objeto JSON, sin explicaciones ni markdown.
+  const sysConv = `Sos CATTA_VR, un CONVERSOR FIEL de sesiones de entrenamiento al formato JSON del sistema SOCC. NO sos un coach: nunca crees, sugieras, optimices, reordenes, agregues ni elimines ejercicios, series, reps, RIR, tempo, pausas ni bloques. Transferís EXACTAMENTE lo que el coach escribió. Preservá cada bloque tal cual (sin renombrar, fusionar, dividir ni reordenar) y cada ejercicio dentro del bloque donde está. No inventes ni omitas información. Convertís el texto en un JSON VÁLIDO. Respondé ÚNICAMENTE con el objeto JSON, sin explicaciones ni markdown.
 
 ESQUEMA:
 {
@@ -26450,10 +26528,12 @@ REGLAS:
     );
 
     const data = _iaParseJSON(accumulated);
-    const plan = _iaJSONaPlanificacion(data, alumnoId);
-    // Arrastrar la fecha y la sesión elegidas en la inicialización
-    if (_iaInitState.fecha) plan.fecha = _iaInitState.fecha;
-    if (_iaInitState.sesion && !/semana/i.test(_iaInitState.sesion)) plan.titulo = (plan.titulo || 'Plan') + ' · ' + _iaInitState.sesion;
+    const plan = _iaJSONaPlanificacion(data, alumnoId, opts);
+    if (!opts) {
+      // Arrastrar la fecha y la sesión elegidas en la inicialización (flujo del generador)
+      if (_iaInitState.fecha) plan.fecha = _iaInitState.fecha;
+      if (_iaInitState.sesion && !/semana/i.test(_iaInitState.sesion)) plan.titulo = (plan.titulo || 'Plan') + ' · ' + _iaInitState.sesion;
+    }
     const planes = getPlanificaciones();
     planes.push(plan);
     savePlanificaciones(planes);
