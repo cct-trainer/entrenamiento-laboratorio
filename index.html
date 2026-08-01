@@ -4103,6 +4103,9 @@ select.toolbox-input option:disabled { color: #888; }
       </div>
     </div>
 
+    <!-- Portada premium de la sesión (WorkoutSessionCard) -->
+    <div id="wsc-cover" style="margin:14px 0 6px;"></div>
+
     <!-- META BAR (Planificador de Fuerza) -->
     <input type="hidden" id="plan-alumno-select" value="">
     <input type="hidden" id="plan-semana-num" value="1">
@@ -4110,12 +4113,12 @@ select.toolbox-input option:disabled { color: #888; }
       <!-- INICIO DEL MES -->
       <div class="run-meta-field">
         <div class="run-meta-label" style="color:#9A7A28;">INICIO DEL MES</div>
-        <input type="date" id="plan-fecha" class="run-meta-input" onchange="onPlanFechaChange(this.value)">
+        <input type="date" id="plan-fecha" class="run-meta-input" onchange="onPlanFechaChange(this.value);try{_wscRender()}catch(e){}">
       </div>
       <!-- OBJETIVO -->
       <div class="run-meta-field">
         <div class="run-meta-label" style="color:#9A7A28;">OBJETIVO</div>
-        <input type="text" id="plan-objetivo" class="run-meta-input" placeholder="Ej: Fortalecer tren inferior...">
+        <input type="text" id="plan-objetivo" class="run-meta-input" placeholder="Ej: Fortalecer tren inferior..." oninput="try{_wscRender()}catch(e){}">
       </div>
       <!-- CICLO -->
       <div class="run-meta-field">
@@ -18771,11 +18774,89 @@ function guardarBorrador() {
   guardarPlanificacion();
   toast('Borrador guardado ✓');
 }
+// ═══════════ WorkoutSessionCard — portada premium de la sesión ═══════════
+function _wscMusc(focus){
+  const s=(focus||'').toLowerCase();
+  if(/gl[uú]te/.test(s)) return 'glutes';
+  if(/pierna|cu[aá]driceps|isqui|femoral|gemelo|pantorr|sentadilla/.test(s)) return 'legs';
+  if(/espalda|dorsal|remo|jal[oó]n|dominad/.test(s)) return 'back';
+  if(/pecho|pectoral|banca/.test(s)) return 'chest';
+  if(/hombro|deltoid|militar/.test(s)) return 'shoulders';
+  if(/brazo|b[ií]ceps|tr[ií]ceps|curl/.test(s)) return 'arms';
+  if(/core|abdom|zona media|plancha/.test(s)) return 'core';
+  return 'fullbody';
+}
+function _wscBodySVG(group, acc){
+  const hi='stroke="'+acc+'" stroke-width="2.6"';
+  const parts={
+    chest:'<ellipse cx="50" cy="52" rx="9" ry="7" '+hi+'/><ellipse cx="70" cy="52" rx="9" ry="7" '+hi+'/>',
+    shoulders:'<circle cx="40" cy="46" r="8" '+hi+'/><circle cx="80" cy="46" r="8" '+hi+'/>',
+    arms:'<path d="M40 46 L36 82" '+hi+'/><path d="M80 46 L84 82" '+hi+'/>',
+    core:'<path d="M52 60 h16 M52 69 h16 M52 78 h16" '+hi+'/>',
+    back:'<path d="M44 44 L60 68 L76 44" '+hi+'/>',
+    glutes:'<ellipse cx="52" cy="94" rx="9" ry="10" '+hi+'/><ellipse cx="68" cy="94" rx="9" ry="10" '+hi+'/>',
+    legs:'<path d="M52 102 L50 134 M68 102 L70 134" '+hi+'/>',
+    fullbody:'<path d="M46 44 Q60 40 74 44" '+hi+'/>'
+  }[group]||'';
+  return '<svg viewBox="0 0 120 150" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:auto;">'
+    +'<circle cx="60" cy="60" r="56" stroke-opacity=".16" stroke-width="1"/>'
+    +'<circle cx="60" cy="26" r="9"/>'
+    +'<path d="M42 44 Q60 36 78 44"/>'
+    +'<path d="M44 44 L40 82 M76 44 L80 82"/>'
+    +'<path d="M46 44 Q44 70 50 90 L52 102 M74 44 Q76 70 70 90 L68 102"/>'
+    +'<path d="M50 100 H70"/>'
+    +'<path d="M52 102 L50 138 M68 102 L70 138"/>'
+    +parts+'</svg>';
+}
+function _wscFoot(ic,lb,v,acc){ return '<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:7px;"><span style="color:'+acc+';font-size:13px;">'+ic+'</span><span style="font-size:11px;font-weight:800;letter-spacing:1px;color:#eee;">'+lb+'</span></div><div style="font-size:12px;color:#9a9a9a;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_iaEsc(v)+'</div></div>'; }
+function renderWorkoutSessionCard(d){
+  const acc=d.accent||'#4F8EF7';
+  return '<div style="background:#0B0B0B;border-radius:22px;padding:24px 26px;display:flex;gap:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);color:#fff;overflow:hidden;">'
+   +'<div style="flex:1 1 68%;min-width:0;">'
+     +'<div style="display:inline-block;font-size:11px;font-weight:800;letter-spacing:2px;color:#cfcfcf;background:#1a1a1a;border-radius:8px;padding:5px 12px;">'+_iaEsc(d.dayAbbr||'SESIÓN')+'</div>'
+     +(d.date?'<div style="display:flex;align-items:center;gap:8px;margin-top:14px;color:#bdbdbd;font-size:12px;font-weight:700;letter-spacing:1.5px;"><span style="color:'+acc+';">▦</span>'+_iaEsc(d.date)+'</div>':'')
+     +'<div style="font-size:44px;font-weight:900;font-style:italic;letter-spacing:.5px;line-height:1.02;margin:8px 0 8px;word-break:break-word;">'+_iaEsc(d.big||'SESIÓN')+'</div>'
+     +'<div style="font-size:11px;letter-spacing:4px;color:#7a7a7a;font-weight:700;">'+_iaEsc(d.subtitle||'SESIÓN DE ENTRENAMIENTO')+'</div>'
+     +'<div style="display:flex;align-items:center;gap:14px;background:#141414;border-radius:14px;padding:13px 16px;margin-top:18px;">'
+       +'<div style="flex:0 0 40px;height:40px;border-radius:50%;border:1.5px solid '+acc+';display:flex;align-items:center;justify-content:center;font-size:17px;">🏋</div>'
+       +'<div style="min-width:0;"><div style="font-size:15px;font-weight:900;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_iaEsc(d.focus||'—')+'</div><div style="font-size:11px;color:#8a8a8a;font-weight:700;letter-spacing:1px;margin-top:2px;">'+(d.blocks||0)+' BLOQUES</div></div>'
+       +'<div style="margin-left:auto;color:#666;font-size:20px;">›</div>'
+     +'</div>'
+     +'<div style="display:flex;margin-top:18px;">'
+       +_wscFoot('⊙','ENFOQUE',d.enfoque||'—',acc)
+       +'<div style="width:1px;background:#2a2a2a;margin:0 14px;"></div>'
+       +_wscFoot('◷','DURACIÓN',d.duracion||'—',acc)
+       +'<div style="width:1px;background:#2a2a2a;margin:0 14px;"></div>'
+       +_wscFoot('▮','NIVEL',d.nivel||'—',acc)
+     +'</div>'
+   +'</div>'
+   +'<div style="flex:0 0 30%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);">'+_wscBodySVG(d.muscleGroup||'fullbody',acc)+'</div>'
+  +'</div>';
+}
+function _wscRender(){
+  const cont=document.getElementById('wsc-cover'); if(!cont) return;
+  const titulo=(document.getElementById('plan-titulo')?.value||'').trim();
+  const objetivo=(document.getElementById('plan-objetivo')?.value||'').trim();
+  const fechaV=document.getElementById('plan-fecha')?.value||'';
+  const blocks=document.querySelectorAll('#bloques-container .bloque-wrap').length;
+  if(!titulo && !blocks){ cont.innerHTML=''; return; }
+  const al=(typeof currentAlumnoId!=='undefined'&&currentAlumnoId)?getAlumnos().find(a=>a.id===currentAlumnoId):null;
+  const nivel=(al&&al.nivel)?al.nivel:'—';
+  const focus=titulo||'Sesión';
+  const dateTxt=fechaV?new Date(fechaV+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}).toUpperCase():'';
+  const durTxt=blocks?(Math.max(30,blocks*11)+'-'+(blocks*13)+' MIN'):'';
+  const acc=(al&&al.accentColor)||'#4F8EF7';
+  cont.innerHTML=renderWorkoutSessionCard({
+    dayAbbr:'SESIÓN', date:dateTxt, big:(titulo||'SESIÓN').toUpperCase(),
+    subtitle:'SESIÓN DE ENTRENAMIENTO', focus:(focus||'—').toUpperCase(), blocks:blocks,
+    enfoque:objetivo||'Fuerza + Hipertrofia', duracion:durTxt||'—', nivel:(nivel||'—').toUpperCase(),
+    muscleGroup:_wscMusc(focus), accent:acc
+  });
+}
 function actualizarTituloDisplay(val) {
   const el = document.getElementById('pln-titulo-display');
-  if (!el) return;
-  const base = val.trim().toUpperCase();
-  el.textContent = base || 'CREACIÓN DE SESIÓN';
+  if (el) { const base=val.trim().toUpperCase(); el.textContent = base || 'CREACIÓN DE SESIÓN'; }
+  try{ _wscRender(); }catch(e){}
 }
 function mostrarBiblioteca() {
   toast('Biblioteca: escribí en el buscador de cualquier ejercicio');
