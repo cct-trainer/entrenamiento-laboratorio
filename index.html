@@ -114,6 +114,25 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .alumno-name { margin-top: 8px; font-size: 13px; font-weight: 600; color: #fff; text-align: center; }
 .alumno-objetivo { font-size: 11px; color: #C9A84C; text-align: center; margin-top: 2px; max-width: 100px; }
 
+/* ═══ Escritorio de alumnos — lista densa (CRM) ═══ */
+.alumnos-grid.crm { display: block; }
+.alu-toolbar { display: flex; gap: 10px; margin-bottom: 16px; }
+.alu-search { flex: 1; background: #1e2e4f; border: 0.5px solid #2b3d63; border-radius: 9px; padding: 10px 14px; color: #fff; font-size: 13px; font-family: inherit; outline: none; }
+.alu-search::placeholder { color: #8f9bb3; }
+.alu-search:focus { border-color: #C9A84C; }
+.alu-nuevo { background: #C9A84C; color: #2a2008; border: none; border-radius: 9px; padding: 10px 18px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: background .15s; }
+.alu-nuevo:hover { background: #d8ba63; }
+.alu-count { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #8f9bb3; text-transform: uppercase; margin-bottom: 10px; }
+.alu-list { display: flex; flex-direction: column; }
+.alu-row { display: flex; align-items: center; gap: 13px; padding: 10px; border-bottom: 0.5px solid #24365a; cursor: pointer; transition: background .12s; }
+.alu-row:hover { background: #1c2c4a; }
+.alu-av { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; background: #33456e; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 17px; color: #b9c3d6; }
+.alu-av img { width: 100%; height: 100%; object-fit: cover; }
+.alu-nom { flex: 1; font-size: 13px; color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alu-chip { font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 6px; white-space: nowrap; }
+.alu-chev { color: #5f6f8c; font-size: 20px; font-style: normal; line-height: 1; flex-shrink: 0; }
+.alu-empty { text-align: center; color: #8f9bb3; font-size: 13px; padding: 30px 0; }
+
 .btn-add-alumno { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; }
 .btn-add-alumno:hover { transform: translateY(-3px); }
 .btn-add-circle {
@@ -385,9 +404,9 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 #perfil-sec-placeholder.active {
   display: block;
 }
-.perfil-subtabs { display:flex; gap:4px; margin-bottom:20px; background:#fff; border:1px solid #e8e8e8; border-radius:10px; padding:4px; }
-.perfil-subtab { flex:1; background:none; border:none; padding:8px 12px; font-size:11px; font-weight:700; color:#888; cursor:pointer; border-radius:7px; transition:all 0.15s; letter-spacing:0.5px; }
-.perfil-subtab.active { background:#1a2a4a; color:#E8C96A; }
+.perfil-subtabs { display:flex; gap:4px; margin-bottom:20px; background:#fff; border:0.5px solid #e6e6e6; border-radius:12px; padding:4px; }
+.perfil-subtab { flex:1; background:none; border:none; padding:9px 12px; font-size:11px; font-weight:700; color:#888; cursor:pointer; border-radius:9px; transition:all 0.15s; letter-spacing:0.5px; }
+.perfil-subtab.active { background:#C9A84C; color:#2a2008; }
 .perfil-subcontent { display:none; }
 .perfil-subcontent.active { display:block; }
 /* Sidebar */
@@ -500,27 +519,39 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
   display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-bottom: 16px;
 }
 .plan-item {
-  background: #fff; border-radius: 16px;
-  box-shadow: 0 4px 0 #c5cdd8, 0 6px 16px rgba(0,0,0,0.10);
-  overflow: hidden; transition: all 0.12s; display: flex; flex-direction: column;
+  background: #fff; border: 0.5px solid #e5e5e5; border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  overflow: hidden; transition: box-shadow 0.15s, transform 0.12s; display: flex; flex-direction: column;
 }
-.plan-item:hover { box-shadow: 0 6px 0 #aab4c2, 0 10px 20px rgba(0,0,0,0.14); transform: translateY(-2px); }
+.plan-item:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.10); transform: translateY(-2px); }
 .plan-item-head {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 6px; padding: 28px 20px 20px;
-  background: #1a1a1a; border-radius: 14px 14px 0 0;
-  position: relative; text-align: center; min-height: 100px;
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start;
+  gap: 3px; padding: 32px 16px 15px;
+  background: #141414; border-radius: 0;
+  position: relative; text-align: left;
 }
 .plan-item-icon { display: none; }
 .plan-item-name {
-  font-weight: 900; font-size: 30px; color: #fff;
-  text-transform: uppercase; letter-spacing: 2px; line-height: 1.1;
+  font-weight: 800; font-size: 26px; color: #fff;
+  text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.05;
   word-break: break-word;
 }
 .plan-item-meta {
-  font-size: 11px; color: rgba(255,255,255,0.50); font-weight: 500;
-  letter-spacing: 0.3px; margin-top: 2px;
+  font-size: 11px; color: #9a9a9a; font-weight: 500;
+  letter-spacing: 0.3px; margin-top: 4px;
 }
+.plan-item-badge {
+  position: absolute; top: 12px; left: 14px;
+  background: #C9A84C; color: #3d2f0a; font-size: 9px; font-weight: 800;
+  letter-spacing: 0.5px; padding: 3px 9px; border-radius: 20px;
+}
+.plan-item-actions-row { display: flex; gap: 6px; padding: 12px 14px; align-items: center; }
+.pi-abrir { flex: 1; background: #141414; color: #fff; border: none; border-radius: 9px; padding: 10px; font-size: 12px; font-weight: 800; letter-spacing: 0.5px; cursor: pointer; transition: background 0.15s; }
+.pi-abrir:hover { background: #000; }
+.pi-ico { width: 36px; height: 36px; border: 0.5px solid #e0e0e0; border-radius: 9px; background: #fff; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+.pi-ico:hover { background: #f5f7fa; }
+.pi-ico-del { border-color: #f0d5d5; color: #c62828; }
+.pi-ico-del:hover { background: #fdeaea; }
 .plan-item-del-btn {
   position: absolute; top: 10px; right: 12px;
   background: none; border: none; color: rgba(255,255,255,0.45); cursor: pointer;
@@ -1089,6 +1120,13 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
   align-items:center; justify-content:center;
 }
 .ej-btn-del:hover { color: #dc2626; border-color: #fecaca; background: #fff5f5; }
+.ej-btn-sep {
+  background: #fff; border: 1px solid #e0e0e0; color: #666;
+  height: 32px; padding: 0 12px; border-radius: 6px;
+  font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit;
+  display: flex; align-items: center; gap: 5px; white-space: nowrap;
+}
+.ej-btn-sep:hover { color: #9A7A28; border-color: #C9A84C; background: #FDF9EF; }
 
 /* CONTROLES SERIES RÁPIDAS */
 .ej-series-controls {
@@ -1716,8 +1754,8 @@ select.toolbox-input option:disabled { color: #888; }
 }
 .run-topbar-left { flex:1; }
 .run-titulo-sesion {
-  font-size:20px; font-weight:800; color:#111; letter-spacing:1.5px;
-  text-transform:uppercase; margin-bottom:6px; line-height:1.2;
+  font-size:22px; font-weight:700; color:#1a1a1a; letter-spacing:0.5px;
+  text-transform:uppercase; margin-bottom:6px; line-height:1.15;
 }
 .run-titulo-input {
   border:none; border-bottom:2px solid transparent;
@@ -1725,7 +1763,7 @@ select.toolbox-input option:disabled { color: #888; }
   font-family:inherit; width:100%; max-width:480px;
   padding:2px 0; transition:border-color 0.2s;
 }
-.run-titulo-input:focus { outline:none; border-bottom-color:#e65100; }
+.run-titulo-input:focus { outline:none; border-bottom-color:#C9A84C; }
 .run-titulo-input::placeholder { color:#bbb; }
 .run-topbar-right { display:flex; gap:10px; flex-shrink:0; margin-top:4px; }
 .btn-run {
@@ -1733,24 +1771,24 @@ select.toolbox-input option:disabled { color: #888; }
   font-weight:600; cursor:pointer; border:none;
   font-family:inherit; white-space:nowrap; transition:all 0.18s;
 }
-.btn-run-outline { background:#fff; border:1px solid #d0d0d0; color:#444; }
-.btn-run-outline:hover { border-color:#e65100; color:#e65100; }
-.btn-run-naranja { background:#e65100; color:#fff; }
-.btn-run-naranja:hover { background:#bf360c; }
-.btn-run-guardar { background:#e65100; color:#fff; padding:10px 24px; }
-.btn-run-guardar:hover { background:#bf360c; }
+.btn-run-outline { background:#fff; border:0.5px solid #d0d5dd; color:#444; }
+.btn-run-outline:hover { border-color:#C9A84C; color:#9A7A28; }
+.btn-run-naranja { background:#141414; color:#fff; }
+.btn-run-naranja:hover { background:#000; }
+.btn-run-guardar { background:#141414; color:#fff; padding:10px 24px; }
+.btn-run-guardar:hover { background:#000; }
 
 /* META BAR RUNNING */
 .run-meta-bar {
   display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr 0.8fr;
-  gap:0; background:#fff; border:1px solid #e0e0e0;
-  border-radius:10px; margin:16px 0 20px; overflow:hidden;
+  gap:0; background:#fff; border:0.5px solid #e6e6e6;
+  border-radius:12px; margin:16px 0 20px; overflow:hidden;
 }
-.run-meta-field { padding:12px 16px; border-right:1px solid #e8e8e8; }
+.run-meta-field { padding:11px 15px; border-right:0.5px solid #eee; }
 .run-meta-field:last-child { border-right:none; }
 .run-meta-label {
-  font-size:9px; font-weight:700; color:#aaa;
-  letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px;
+  font-size:9px; font-weight:600; color:#9aa0a8;
+  letter-spacing:1px; text-transform:uppercase; margin-bottom:5px;
 }
 .run-meta-select, .run-meta-input {
   width:100%; border:none; background:transparent;
@@ -1770,14 +1808,14 @@ select.toolbox-input option:disabled { color: #888; }
 }
 .run-semana-nav { display:flex; gap:8px; align-items:center; }
 .run-semana-label {
-  font-size:13px; font-weight:700; color:#e65100;
+  font-size:12px; font-weight:600; color:#9A7A28;
   padding:0 12px; min-width:100px; text-align:center;
 }
 .run-semana-btn {
-  background:#fff; border:1px solid #e0e0e0; border-radius:6px;
+  background:#fff; border:0.5px solid #e0e0e0; border-radius:7px;
   padding:6px 12px; cursor:pointer; font-size:14px; color:#555;
 }
-.run-semana-btn:hover { border-color:#e65100; color:#e65100; }
+.run-semana-btn:hover { border-color:#C9A84C; color:#9A7A28; }
 
 /* DÍAS */
 .run-dias-grid {
@@ -1786,35 +1824,18 @@ select.toolbox-input option:disabled { color: #888; }
 }
 @media(max-width:900px){ .run-dias-grid { grid-template-columns:repeat(3,1fr); } }
 @media(max-width:500px){ .run-dias-grid { grid-template-columns:1fr; } }
-
+#run-dias-grid { background:#eef0f3; padding:14px; border-radius:12px; }
 .run-dia-card {
-  background:#fff; border:1.5px solid #e0e0e0;
-  border-radius:10px; overflow:hidden;
-  box-shadow:0 1px 4px rgba(0,0,0,0.05);
-  transition:box-shadow 0.2s;
+  background:#ffffff; border:1px solid #d5d9e0;
+  border-radius:12px; overflow:hidden; color:#1a1a1a;
+  padding:12px 13px; box-shadow:0 1px 2px rgba(0,0,0,0.04);
+  transition:border-color 0.15s, transform 0.12s, box-shadow 0.15s; cursor:pointer;
 }
-.run-dia-card.tiene-contenido { border-color:#e65100; }
-.run-dia-card:hover { box-shadow:0 3px 12px rgba(230,81,0,0.12); }
-
-.run-dia-head {
-  background:#f8f8f8; border-bottom:1px solid #f0f0f0;
-  padding:10px 12px; display:flex; align-items:center; gap:8px;
-}
-.run-dia-badge {
-  width:26px; height:26px; border-radius:6px;
-  background:#e0e0e0; color:#555;
-  display:flex; align-items:center; justify-content:center;
-  font-size:11px; font-weight:800; flex-shrink:0;
-}
-.run-dia-card.tiene-contenido .run-dia-badge { background:#e65100; color:#fff; }
-.run-dia-nombre { font-size:12px; font-weight:700; color:#333; text-transform:uppercase; flex:1; }
-.run-dia-tipo { font-size:9px; color:#e65100; font-weight:600; }
-.run-dia-body { padding:10px 12px; min-height:60px; }
-.run-dia-empty {
-  text-align:center; color:#ddd; font-size:11px;
-  padding:12px 0; cursor:pointer;
-}
-.run-dia-empty:hover { color:#e65100; }
+.run-dia-card.tiene-contenido { border-color:#d5d9e0; }
+.run-dia-card:hover { border-color:#C9A84C; transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+.run-dia-card:not(.tiene-contenido) { background:#fff; border-style:dashed; border-color:#d5d9e0; box-shadow:none; }
+.run-dia-card:not(.tiene-contenido):hover { border-color:#C9A84C; transform:none; }
+.run-dia-card:not(.tiene-contenido) .pdc-dia { color:#8a8f98; }
 
 /* SESIÓN EXPANDIDA (editor de día) */
 .run-sesion-editor {
@@ -1822,7 +1843,7 @@ select.toolbox-input option:disabled { color: #888; }
   margin-bottom:20px; overflow:hidden;
 }
 .run-sesion-editor-head {
-  background:#e65100; color:#fff; padding:12px 16px;
+  background:#1a2a4a; color:#fff; padding:12px 16px;
   display:flex; align-items:center; gap:10px;
 }
 .run-sesion-editor-titulo { font-size:14px; font-weight:700; flex:1; }
@@ -1842,7 +1863,7 @@ select.toolbox-input option:disabled { color: #888; }
   background:#fff; color:#555; transition:all 0.15s;
 }
 .run-tipo-btn:hover { border-color:#e65100; color:#e65100; }
-.run-tipo-btn.selected { background:#e65100; color:#fff; border-color:#e65100; }
+.run-tipo-btn.selected { background:#C9A84C; color:#2a2008; border-color:#C9A84C; }
 
 /* BLOQUE RUNNING */
 .run-bloque {
@@ -2078,25 +2099,41 @@ select.toolbox-input option:disabled { color: #888; }
 .cal-sesion-btn.running:hover { background:#e65100; color:#fff; }
 
 
-/* ═══ DÍAS FUERZA (azul, igual que running pero azul) ═══ */
-.plan-dia-card { border:1.5px solid #e0e0e0; border-radius:12px; background:#fff; overflow:hidden;
-  box-shadow:0 4px 0 #c5cdd8, 0 6px 14px rgba(0,0,0,0.09); transition:all 0.12s; cursor:pointer; transform:translateY(0); }
-.plan-dia-card:hover { box-shadow:0 6px 0 #555, 0 10px 18px rgba(0,0,0,0.12); border-color:#111; transform:translateY(-2px); }
-.plan-dia-card.tiene-sesion { border-color:#111; box-shadow:0 4px 0 #333, 0 6px 14px rgba(0,0,0,0.15); }
-.plan-dia-card.tiene-sesion:hover { box-shadow:0 6px 0 #111, 0 10px 18px rgba(0,0,0,0.22); transform:translateY(-2px); }
-.plan-dia-head { background:#f4f6fa; border-bottom:1px solid #edf0f5; padding:9px 11px; display:flex; align-items:center; gap:8px; }
-.plan-dia-badge { width:28px; height:28px; border-radius:7px; background:#e0e0e0; color:#555; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; flex-shrink:0; box-shadow:inset 0 -2px 0 rgba(0,0,0,0.12); }
-.plan-dia-card.tiene-sesion .plan-dia-badge { background:#1a2a4a; color:#fff; box-shadow:inset 0 -2px 0 rgba(0,0,0,0.2); }
-.plan-dia-nombre { font-size:11px; font-weight:700; color:#333; text-transform:uppercase; }
-.plan-dia-fecha-num { font-size:11px; color:#aaa; font-weight:600; margin-top:1px; }
-.plan-dia-card.tiene-sesion .plan-dia-fecha-num { color:#64b5f6; }
-.plan-dia-cant { font-size:9px; color:#C9A84C; font-weight:700; }
-.plan-dia-body { padding:10px 11px; min-height:58px; }
-.plan-dia-empty { text-align:center; color:#ddd; font-size:11px; padding:12px 0; cursor:pointer; }
-.plan-dia-empty:hover { color:#C9A84C; }
+/* ═══ DÍAS FUERZA — tile blanco sobre fondo gris claro ═══ */
+.plan-dia-card { border:1px solid #d5d9e0; border-radius:12px; background:#ffffff; color:#1a1a1a; overflow:hidden;
+  padding:12px 13px; box-shadow:0 1px 2px rgba(0,0,0,0.04); transition:border-color 0.15s, transform 0.12s, box-shadow 0.15s; cursor:pointer; transform:translateY(0); }
+.plan-dia-card:hover { border-color:#C9A84C; transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+.plan-dia-card.tiene-sesion { border-color:#d5d9e0; }
+.plan-dia-card.tiene-sesion:hover { border-color:#C9A84C; }
+.pdc-head { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.pdc-dia { font-size:12px; font-weight:700; color:#333; }
+.pdc-fecha { font-size:11px; color:#9aa0a8; font-weight:600; margin-top:1px; }
+.pdc-head-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.pdc-drag { color:#b0b4bc; cursor:grab; font-size:13px; line-height:1; }
+.pdc-drag:active { cursor:grabbing; }
+.pdc-check { width:20px; height:20px; border-radius:50%; border:1.5px solid #C9A84C; color:#9A7A28; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; line-height:1; }
+.pdc-daydate { font-size:10px; font-weight:700; letter-spacing:1px; color:#8a8f98; text-transform:uppercase; }
+.pdc-divider { height:0.5px; background:#eee; margin:10px 0; }
+.pdc-head + .pdc-ses { margin-top:11px; }
+.pdc-ses { display:flex; align-items:flex-start; gap:8px; }
+.pdc-ses + .pdc-ses { margin-top:9px; padding-top:9px; border-top:0.5px solid #eee; }
+.pdc-ses-main { flex:1; min-width:0; }
+.pdc-ses-nom { font-size:14px; font-weight:600; color:#1a1a1a; line-height:1.25; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.pdc-ses-bloques { display:inline-block; background:#C9A84C; color:#2a2008; font-size:10px; font-weight:600; padding:2px 9px; border-radius:6px; margin-top:8px; }
+.pdc-ses-resumen { font-size:11px; color:#666; margin-top:5px; line-height:1.35; }
+.pdc-ses-acc { display:flex; gap:4px; align-items:center; flex-shrink:0; }
+.pdc-ses-acc button { background:transparent; border:none; cursor:pointer; padding:2px 3px; line-height:1; border-radius:5px; transition:color 0.15s, background 0.15s; }
+.pdc-dup { color:#9aa0a8; font-size:9px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; }
+.pdc-dup:hover { color:#2f7fd0; }
+.pdc-del { color:#b0b4bc; font-size:13px; font-weight:900; }
+.pdc-del:hover { color:#dc2626; }
+.pdc-empty { color:#9aa0a8; font-size:12px; font-weight:600; text-align:center; padding:14px 0 6px; }
+.plan-dia-card.plan-dia-empty-card { background:#fff; border-style:dashed; border-color:#d5d9e0; box-shadow:none; }
+.plan-dia-card.plan-dia-empty-card:hover { border-color:#C9A84C; }
+.plan-dia-card.plan-dia-empty-card .pdc-dia { color:#8a8f98; }
 /* ── Month view ── */
-.mes-semana-bloque { background:#f4f7fb; border-radius:16px; padding:14px 14px 10px; margin-bottom:18px; border:2px solid transparent; transition:border-color 0.2s,background 0.2s; }
-.mes-semana-editando { border-color:#C9A84C; background:#edf4ff; }
+.mes-semana-bloque { background:#eef0f3; border-radius:12px; padding:12px 12px 14px; margin-bottom:16px; border:none; transition:none; }
+.mes-semana-editando { background:#eef0f3; border:none; }
 .mes-semana-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px; }
 .mes-semana-titulo-txt { font-size:11px; font-weight:800; color:#9A7A28; text-transform:uppercase; letter-spacing:1px; }
 .mes-semana-acciones { display:flex; gap:6px; }
@@ -2104,16 +2141,14 @@ select.toolbox-input option:disabled { color: #888; }
 .mes-btn-accion:hover { background:#bbdefb; }
 .mes-btn-danger { background:#ffebee; color:#c62828; border-color:#ef9a9a; }
 .mes-btn-danger:hover { background:#ffcdd2; }
-.mes-dias-grid { column-gap:8px; row-gap:8px; margin-bottom:0; }
+.mes-dias-grid { column-gap:0; row-gap:8px; margin-bottom:0; }
+.pdc-col { padding:0 10px; min-width:0; position:relative; }
+.pdc-col + .pdc-col::before { content:''; position:absolute; left:0; top:26px; bottom:10px; width:0.5px; background:#dfe3e8; }
+.pdc-col-label { font-size:10px; font-weight:700; letter-spacing:1px; color:#6b7280; text-align:center; text-transform:uppercase; margin-bottom:8px; }
+@media(max-width:500px){ .pdc-col + .pdc-col::before { display:none; } }
 .mes-agregar-zona { text-align:center; padding:4px 0 16px; }
 .mes-btn-agregar { background:#fff; border:2px dashed #90caf9; color:#C9A84C; border-radius:12px; padding:11px 0; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.15s; width:100%; }
 .mes-btn-agregar:hover { background:#FDF6E3; border-color:#C9A84C; border-style:solid; }
-.plan-dia-mini { background:#1a2a4a; border:none; border-radius:5px; padding:5px 8px 5px 8px; margin-bottom:4px; font-size:11px; font-weight:700; color:#fff; cursor:pointer; transition:background 0.15s; position:relative; }
-.plan-dia-mini:hover { background:#253a5e; }
-.plan-dia-mini-del { position:absolute; top:4px; right:5px; background:transparent; border:none; color:#ef4444; font-size:13px; font-weight:900; cursor:pointer; line-height:1; padding:0 2px; opacity:0.6; transition:opacity 0.15s; }
-.plan-dia-mini-del:hover { opacity:1; }
-.plan-dia-mini-tipo { font-size:9px; font-weight:800; color:#C9A84C; text-transform:uppercase; margin-bottom:1px; }
-
 /* Editor día fuerza */
 .plan-sesion-editor { background:#fff; border:none; border-radius:10px; margin-bottom:20px; overflow:visible; }
 .plan-sesion-editor-head { background:#1a2a4a; color:#fff; padding:12px 16px; display:flex; align-items:center; gap:10px; }
@@ -2984,12 +3019,12 @@ select.toolbox-input option:disabled { color: #888; }
     <span id="sync-status" title="Estado de sincronización con la nube" style="font-size:18px;cursor:default;" onclick="forzarSyncFirebase()">☁️</span>
     <button onclick="_generarReporteMensual()" class="pln-btn pln-btn-outline" title="Reporte mensual de actividad de alumnos">Reporte</button>
     <button onclick="document.getElementById('backup-import-input').click()" class="pln-btn pln-btn-outline" title="Restaurar base de datos desde backup JSON">Restaurar</button>
-    <button onclick="abrirSolicitudes()" class="pln-btn pln-btn-outline" title="Solicitudes de prueba gratis pendientes" style="border-color:#C9A84C;color:#9A7A28;position:relative;">Solicitudes<span id="sol-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
-    <button onclick="abrirAltas()" class="pln-btn pln-btn-outline" title="Alta de nuevos alumnos por formulario de ingreso" style="border-color:#7c3aed;color:#7c3aed;position:relative;">➕ Nuevo alumno<span id="altas-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#7c3aed;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
-    <button onclick="abrirActualizaciones()" class="pln-btn pln-btn-outline" title="Actualizaciones de plan que enviaron tus alumnos" style="border-color:#7c3aed;color:#7c3aed;position:relative;">🔄 Actualizaciones<span id="actual-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
-    <button onclick="abrirSuscripciones()" class="pln-btn pln-btn-outline" title="Planes, pagos y vencimientos" style="border-color:#C9A84C;color:#9A7A28;position:relative;">Suscripciones<span id="venc-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#f59e0b;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
-    <button onclick="abrirMetricas()" class="pln-btn pln-btn-outline" title="Métricas del piloto de adquisición" style="border-color:#1d4ed8;color:#1d4ed8;">📊 Métricas</button>
-    <button onclick="recuperarDesdePortales()" class="pln-btn pln-btn-outline" title="Recuperar tus alumnos leyendo sus documentos en la nube" style="border-color:#22c55e;color:#166534;">↻ Recuperar</button>
+    <button onclick="abrirSolicitudes()" class="pln-btn pln-btn-outline" title="Solicitudes de prueba gratis pendientes" style="position:relative;">Solicitudes<span id="sol-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
+    <button onclick="abrirAltas()" class="pln-btn pln-btn-outline" title="Alta de nuevos alumnos por formulario de ingreso" style="position:relative;">➕ Nuevo alumno<span id="altas-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
+    <button onclick="abrirActualizaciones()" class="pln-btn pln-btn-outline" title="Actualizaciones de plan que enviaron tus alumnos" style="position:relative;">🔄 Actualizaciones<span id="actual-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
+    <button onclick="abrirSuscripciones()" class="pln-btn pln-btn-outline" title="Planes, pagos y vencimientos" style="position:relative;">Suscripciones<span id="venc-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
+    <button onclick="abrirMetricas()" class="pln-btn pln-btn-outline" title="Métricas del piloto de adquisición">📊 Métricas</button>
+    <button onclick="recuperarDesdePortales()" class="pln-btn pln-btn-outline" title="Recuperar tus alumnos leyendo sus documentos en la nube">↻ Recuperar</button>
     <button onclick="exportarBackupCompleto()" class="pln-btn pln-btn-guardar" title="Descargar backup completo de toda la base de datos">Backup</button>
     <button onclick="limpiarStorageEmergencia()" style="background:none;border:1px solid #ddd;color:#bbb;padding:7px 12px;border-radius:5px;font-size:11px;cursor:pointer;" title="Liberar espacio si hay errores de almacenamiento">🗑</button>
   </div>
@@ -4103,26 +4138,23 @@ select.toolbox-input option:disabled { color: #888; }
       </div>
     </div>
 
-    <!-- Portada premium de la sesión (WorkoutSessionCard) -->
-    <div id="wsc-cover" style="margin:14px 0 6px;"></div>
-
     <!-- META BAR (Planificador de Fuerza) -->
     <input type="hidden" id="plan-alumno-select" value="">
     <input type="hidden" id="plan-semana-num" value="1">
-    <div class="run-meta-bar" style="border-top:3px solid #C9A84C;grid-template-columns:170px 1fr 210px 210px;">
+    <div class="run-meta-bar" style="grid-template-columns:170px 1fr 210px 210px;">
       <!-- INICIO DEL MES -->
       <div class="run-meta-field">
-        <div class="run-meta-label" style="color:#9A7A28;">INICIO DEL MES</div>
-        <input type="date" id="plan-fecha" class="run-meta-input" onchange="onPlanFechaChange(this.value);try{_wscRender()}catch(e){}">
+        <div class="run-meta-label">INICIO DEL MES</div>
+        <input type="date" id="plan-fecha" class="run-meta-input" onchange="onPlanFechaChange(this.value)">
       </div>
       <!-- OBJETIVO -->
       <div class="run-meta-field">
-        <div class="run-meta-label" style="color:#9A7A28;">OBJETIVO</div>
-        <input type="text" id="plan-objetivo" class="run-meta-input" placeholder="Ej: Fortalecer tren inferior..." oninput="try{_wscRender()}catch(e){}">
+        <div class="run-meta-label">OBJETIVO</div>
+        <input type="text" id="plan-objetivo" class="run-meta-input" placeholder="Ej: Fortalecer tren inferior...">
       </div>
       <!-- CICLO -->
       <div class="run-meta-field">
-        <div class="run-meta-label" style="color:#9A7A28;">CICLO</div>
+        <div class="run-meta-label">CICLO</div>
         <select id="plan-nivel" class="run-meta-select">
           <option value="">—</option>
           <option value="Volumen">Volumen</option>
@@ -4137,7 +4169,7 @@ select.toolbox-input option:disabled { color: #888; }
       </div>
       <!-- IR A SEMANA -->
       <div class="run-meta-field">
-        <div class="run-meta-label" style="color:#9A7A28;">IR A SEMANA</div>
+        <div class="run-meta-label">IR A SEMANA</div>
         <select id="plan-semana-finder" class="run-meta-select" onchange="jumpToSemana(parseInt(this.value))">
           <option value="">Seleccioná...</option>
         </select>
@@ -9424,26 +9456,22 @@ function renderRunDias() {
   grid.innerHTML = DIAS_SEMANA.map((dia, i) => {
     const bloques = runDiasData[i] || [];
     const tieneContenido = bloques.length > 0;
-    const miniCards = bloques.map(b => {
+    const rows = bloques.map(b => {
       const tipo = TIPOS_SESION_RUNNING.find(t=>t.id===b.tipo) || {icon:'📋',label:b.label||b.tipo};
       const resumen = runResumenBloque(b);
-      return `<div class="run-dia-mini" onclick="abrirDiaEditor(${i})">
-        <div class="run-dia-mini-tipo">${tipo.icon} ${tipo.label}</div>
-        <div style="font-size:10px;color:#555;margin-top:2px;">${resumen}</div>
+      return `<div class="pdc-ses">
+        <div class="pdc-ses-main">
+          <div class="pdc-ses-nom">${tipo.icon} ${tipo.label}</div>
+          <div class="pdc-ses-resumen">${resumen}</div>
+        </div>
       </div>`;
     }).join('');
-    return `<div class="run-dia-card${tieneContenido?' tiene-contenido':''}" id="run-dia-card-${i}">
-      <div class="run-dia-head">
-        <div class="run-dia-badge">${DIAS_SIGLAS[i]}</div>
-        <div>
-          <div class="run-dia-nombre">${dia}</div>
-          ${tieneContenido?`<div class="run-dia-tipo">${bloques.length} bloque${bloques.length>1?'s':''}</div>`:''}
-        </div>
-        ${tieneContenido?`<button onclick="event.stopPropagation();limpiarDia(${i})" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:14px;margin-left:auto;" title="Limpiar día">×</button>`:''}
+    return `<div class="run-dia-card${tieneContenido?' tiene-contenido':''}" id="run-dia-card-${i}" onclick="abrirDiaEditor(${i})">
+      <div class="pdc-head">
+        <div><div class="pdc-dia">${dia}</div>${tieneContenido?`<div class="pdc-fecha">${bloques.length} bloque${bloques.length>1?'s':''}</div>`:''}</div>
+        ${tieneContenido?`<div class="pdc-head-right" onclick="event.stopPropagation()"><button class="pdc-del" onclick="event.stopPropagation();limpiarDia(${i})" title="Limpiar día">✕</button></div>`:''}
       </div>
-      <div class="run-dia-body">
-        ${tieneContenido ? miniCards : `<div class="run-dia-empty" onclick="abrirDiaEditor(${i})">＋ Agregar sesión</div>`}
-      </div>
+      ${tieneContenido ? '<div class="pdc-divider"></div>'+rows : `<div class="pdc-empty">＋ Agregar sesión</div>`}
     </div>`;
   }).join('');
 }
@@ -10917,45 +10945,55 @@ function renderPlanMes() {
       const sesiones = sem.dias[i] || [];
       const tiene = sesiones.length > 0;
       const fechaStr = _diaFecha(semIdx, i);
-      const minis = sesiones.map((s, sIdx) => {
+      // Día vacío
+      if(!tiene){
+        return '<div class="plan-dia-card plan-dia-empty-card" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
+          + '<div class="pdc-head"><div><div class="pdc-dia">'+diaNom.nombre+'</div><div class="pdc-fecha">'+fechaStr+'</div></div></div>'
+          + '<div class="pdc-empty">+ Agregar sesión</div>'
+        + '</div>';
+      }
+      // Sesiones (filas)
+      const doneAny = sesiones.some((s, ix) => !!_completadaDe(semIdx, i, ix));
+      const rows = sesiones.map((s, sIdx) => {
         const bc = (s.bloques||[]).length;
-        const primera = s.bloques&&s.bloques[0] ? (s.bloques[0].nombre||s.bloques[0].tipo||'Bloque') : 'Sesion';
-        const nomSes = s.nombre ? '<div style="font-size:11px;color:#fde68a;font-weight:800;margin-bottom:2px;padding-right:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+s.nombre+'</div>' : '';
+        const primera = s.bloques&&s.bloques[0] ? (s.bloques[0].nombre||s.bloques[0].tipo||'Bloque') : 'Sesión';
+        const titulo = s.nombre || primera;
         const nd = _nDiffs(semIdx, i, sIdx);
         const revBadge = nd>0
-          ? '<div onclick="event.stopPropagation();_abrirRevision('+semIdx+','+i+','+sIdx+')" title="Revisar lo que hizo el alumno" style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:#FDF6E3;border:1px solid #C9A84C;color:#9A7A28;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;cursor:pointer;">'+nd+' cambio'+(nd!==1?'s':'')+' para revisar</div>'
+          ? '<div onclick="event.stopPropagation();_abrirRevision('+semIdx+','+i+','+sIdx+')" title="Revisar lo que hizo el alumno" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;background:#FDF6E3;border:1px solid #C9A84C;color:#9A7A28;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;cursor:pointer;">'+nd+' cambio'+(nd!==1?'s':'')+' para revisar</div>'
           : '';
-        return '<div class="plan-dia-mini">'
-             + '<button class="plan-dia-mini-del" onclick="event.stopPropagation();eliminarSesionDia('+i+','+semIdx+','+sIdx+')" title="Eliminar sesión">✕</button>'
-             + nomSes
-             + '<div class="plan-dia-mini-tipo">'+bc+' bloque'+(bc!==1?'s':'')+'</div>'
-             + (s.nombre ? '' : '<div style="font-size:10px;color:#fff;font-weight:600;padding-right:14px;">'+primera+(bc>1?' + mas':'')+'</div>')
-             + revBadge
-             + '</div>';
+        return '<div class="pdc-ses">'
+          + '<div class="pdc-ses-main">'
+            + '<div class="pdc-ses-nom">'+titulo+'</div>'
+            + '<div class="pdc-ses-bloques">'+bc+' bloque'+(bc!==1?'s':'')+'</div>'
+            + revBadge
+          + '</div>'
+          + '<div class="pdc-ses-acc" onclick="event.stopPropagation()">'
+            + '<button class="pdc-dup" onclick="event.stopPropagation();abrirModalDuplicarMover('+i+',\'duplicar\','+semIdx+')" title="Duplicar sesión">dup</button>'
+            + '<button class="pdc-del" onclick="event.stopPropagation();eliminarSesionDia('+i+','+semIdx+','+sIdx+')" title="Eliminar sesión">✕</button>'
+          + '</div>'
+        + '</div>';
       }).join('');
-      return '<div class="plan-dia-card'+(tiene?' tiene-sesion':'')+'" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'"'+(tiene?' draggable="true"':'')+' onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
-        + '<div class="plan-dia-head">'
-          + '<div class="plan-dia-badge" style="'+(tiene?'background:#22c55e;color:#fff;font-size:14px;':'')+'">'+(tiene?'✓':diaNom.sig)+'</div>'
-          + '<div><div class="plan-dia-nombre">'+diaNom.nombre+'</div><div class="plan-dia-fecha-num">'+fechaStr+'</div></div>'
-          + (tiene ? '<div style="display:flex;gap:4px;margin-left:auto;align-items:center;" onclick="event.stopPropagation()">'
-        + '<span class="plan-dia-drag-handle" title="Arrastrar sesión a otro día" onclick="event.stopPropagation()">⠿</span>'
-        + '<button onclick="event.stopPropagation();abrirModalDuplicarMover('+i+',\'duplicar\','+semIdx+')" style="background:#e0f2fe;border:none;color:#0369a1;cursor:pointer;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;" title="Duplicar sesión">dup</button>'
-        + '<button onclick="event.stopPropagation();limpiarPlanDia('+i+','+semIdx+')" style="background:#fee2e2;border:none;color:#dc2626;cursor:pointer;font-size:13px;font-weight:700;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;line-height:1;" title="Eliminar sesión">×</button>'
-        + '</div>' : '')
+      return '<div class="plan-dia-card tiene-sesion" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" draggable="true" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
+        + '<div class="pdc-head">'
+          + '<div><div class="pdc-dia">'+diaNom.nombre+'</div><div class="pdc-fecha">'+fechaStr+'</div></div>'
+          + '<div class="pdc-head-right" onclick="event.stopPropagation()">'
+            + '<span class="pdc-drag" title="Arrastrar a otro día">⠿</span>'
+            + (doneAny ? '<span class="pdc-check" title="Sesión completada">✓</span>' : '')
+          + '</div>'
         + '</div>'
-        + '<div class="plan-dia-body">'+(tiene ? minis : '<div class="plan-dia-empty">+ Agregar sesion</div>')+'</div>'
+        + '<div class="pdc-divider"></div>'
+        + rows
         + '</div>';
     };
 
 
-    // Header fijo LUN→DOM (la migración garantiza que todas las semanas empiezan en lunes)
-    const headerRow = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:4px;">'
-      + ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'].map(d=>'<div style="text-align:center;font-size:9px;font-weight:800;letter-spacing:1px;color:#aaa;padding:2px 0;">'+d+'</div>').join('')
-      + '</div>';
-
-    // 7 días siempre en una fila — los headers muestran el día real de cada columna
+    // 7 columnas fijas LUN→DOM con etiqueta arriba + tile (divisores verticales entre columnas)
+    const DIAS_H = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
     const gridHTML = '<div class="run-dias-grid mes-dias-grid">'
-      + Array.from({length:7}, (_,i) => renderCard(i)).join('')
+      + Array.from({length:7}, (_,i) =>
+          '<div class="pdc-col"><div class="pdc-col-label">'+DIAS_H[i]+'</div>'+renderCard(i)+'</div>'
+        ).join('')
       + '</div>';
 
     return '<div class="mes-semana-bloque'+(isEd?' mes-semana-editando':'')+'" id="mes-sem-bloque-'+semIdx+'">'
@@ -10966,7 +11004,6 @@ function renderPlanMes() {
           + (planSemanasArray.length > 1 ? '<button class="mes-btn-accion mes-btn-danger" onclick="eliminarSemana('+semIdx+')">Eliminar</button>' : '')
         + '</div>'
       + '</div>'
-      + headerRow
       + gridHTML
     + '</div>';
   }).join('')
@@ -11140,7 +11177,7 @@ function renderProgresionMesociclo(diaIdx) {
       ${DIAS_N[diaIdx].toUpperCase()}${nombreSesion ? ' · '+nombreSesion : ''}
     </div>
     ${legendaHTML}
-    <div style="overflow-x:auto;border-radius:8px;border:1.5px solid #d8d0c4;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.06);">
+    <div style="overflow-x:auto;border-radius:10px;background:#fff;">
       <table style="width:100%;border-collapse:collapse;font-family:inherit;">
         <thead>
           <tr style="border-bottom:1px solid #e0d8c8;">
@@ -13236,26 +13273,47 @@ function eliminarAlumno() {
   showView('inicio');
 }
 
+function _aluChip(obj){
+  const o = (obj||'').toLowerCase();
+  let bg = '#2b3d63', c = '#b9c3d6';
+  if (/hipertrofia/.test(o)) { bg='#3a2f4d'; c='#cbb3f0'; }
+  else if (/salud/.test(o)) { bg='#213d2e'; c='#8fe0b0'; }
+  else if (/bajar|p[eé]rdida|grasa|adelgaz/.test(o)) { bg='#4d3a20'; c='#f0cd8f'; }
+  else if (/masa|ganar|fuerza/.test(o)) { bg='#1e3a52'; c='#8fc7f0'; }
+  else if (/recomposici/.test(o)) { bg='#4a2436'; c='#f0a3c4'; }
+  else if (/rendimiento|deportivo/.test(o)) { bg='#123a38'; c='#7fdcd0'; }
+  return obj ? `<span class="alu-chip" style="background:${bg};color:${c};">${obj}</span>` : '';
+}
 function renderAlumnosGrid() {
   const grid = document.getElementById('alumnos-grid');
   if (!grid) return;
   const alumnos = getAlumnos();
-  grid.innerHTML = '';
-  alumnos.forEach(a => {
-    const div = document.createElement('div');
-    div.className = 'alumno-card';
-    div.onclick = () => openPerfilAlumno(a.id);
-    div.innerHTML = `
-      <div class="alumno-avatar">${a.foto ? `<img src="${a.foto}">` : '👤'}</div>
-      <div class="alumno-name">${a.nombre}</div>
-      <div class="alumno-objetivo">${a.objetivo || ''}</div>`;
-    grid.appendChild(div);
+  grid.className = 'alumnos-grid crm';
+  const rows = alumnos.map(a => `
+    <div class="alu-row" data-nom="${(a.nombre||'').toLowerCase()}" onclick="openPerfilAlumno('${a.id}')">
+      <div class="alu-av">${a.foto ? `<img src="${a.foto}">` : '👤'}</div>
+      <div class="alu-nom">${a.nombre||''}</div>
+      ${_aluChip(a.objetivo)}
+      <i class="alu-chev">›</i>
+    </div>`).join('');
+  grid.innerHTML = `
+    <div class="alu-toolbar">
+      <input class="alu-search" type="text" placeholder="Buscar alumno…" oninput="_filtrarAlumnos(this.value)">
+      <button class="alu-nuevo" onclick="openModalNuevoAlumno()">+ Nuevo alumno</button>
+    </div>
+    <div class="alu-count">${alumnos.length} alumno${alumnos.length!==1?'s':''}</div>
+    <div class="alu-list" id="alu-list">${rows || '<div class="alu-empty">Todavía no hay alumnos cargados.</div>'}</div>`;
+}
+function _filtrarAlumnos(q){
+  const lq = (q||'').toLowerCase().trim();
+  let vis = 0;
+  document.querySelectorAll('#alu-list .alu-row').forEach(r => {
+    const ok = r.dataset.nom.includes(lq);
+    r.style.display = ok ? '' : 'none';
+    if (ok) vis++;
   });
-  const add = document.createElement('div');
-  add.className = 'btn-add-alumno';
-  add.onclick = openModalNuevoAlumno;
-  add.innerHTML = `<div class="btn-add-circle">+</div><div class="btn-add-label">Nuevo alumno</div>`;
-  grid.appendChild(add);
+  const cnt = document.querySelector('.alu-count');
+  if (cnt) cnt.textContent = vis + ' alumno' + (vis!==1?'s':'');
 }
 
 // ================================================
@@ -14047,7 +14105,7 @@ function switchPerfilSubtab(group, sub) {
     const btn = document.getElementById('mh-actions-plan');
     if (btn) {
       if (sub === 'fuerza')     btn.innerHTML = `<button class="btn btn-primary" onclick="crearPlanFuerza()" style="font-size:12px;">+ Nueva sesión</button><button class="btn btn-primary" onclick="crearMesFuerza()" style="font-size:12px;background:#1a3a6a;margin-left:6px;">📅 Agregar mes</button>`;
-      else if (sub === 'running') btn.innerHTML = `<button class="btn btn-primary" style="background:#e65100;" onclick="crearPlanRunning()">+ Nueva sesión running</button>`;
+      else if (sub === 'running') btn.innerHTML = `<button class="btn btn-primary" style="background:#141414;" onclick="crearPlanRunning()">+ Nueva sesión running</button>`;
       else btn.innerHTML = '';
     }
   }
@@ -14121,31 +14179,31 @@ function renderSidebarAlumno(id) {
       ${edad ? `<div style="font-size:11px;color:#aaa;margin-top:3px;">${edad} años · ${a.nivel||'Sin nivel'}</div>` : ''}
       ${a.dias ? `<div style="font-size:10px;color:#888;margin-top:2px;">${a.dias} días/semana</div>` : ''}
     </div>
-    <button onclick="openModalEditarAlumno('${id}')"
-      style="width:100%;background:none;border:1px solid #C9A84C44;border-radius:6px;
-             color:#C9A84C;font-size:11px;font-weight:700;padding:8px 12px;cursor:pointer;
-             letter-spacing:0.5px;font-family:inherit;margin-bottom:8px;"
-      onmouseover="this.style.background='#C9A84C22'" onmouseout="this.style.background='none'">
-      ✏️ Editar perfil
-    </button>
     <button onclick="_copiarLinkPortal('${id}')"
-      style="width:100%;background:linear-gradient(135deg,#0d2a14,#0a1f0e);border:1px solid #22c55e88;border-radius:6px;
-             color:#22c55e;font-size:11px;font-weight:700;padding:8px 12px;cursor:pointer;
-             letter-spacing:0.5px;font-family:inherit;"
-      onmouseover="this.style.background='#16a34a22'" onmouseout="this.style.background='linear-gradient(135deg,#0d2a14,#0a1f0e)'">
+      style="width:100%;background:#C9A84C;border:none;border-radius:9px;
+             color:#2a2008;font-size:12px;font-weight:700;padding:10px 12px;cursor:pointer;
+             letter-spacing:0.3px;font-family:inherit;margin-bottom:8px;transition:background .15s;"
+      onmouseover="this.style.background='#d8ba63'" onmouseout="this.style.background='#C9A84C'">
       Portal del alumno
     </button>
+    <button onclick="openModalEditarAlumno('${id}')"
+      style="width:100%;background:transparent;border:0.5px solid #3a4d73;border-radius:9px;
+             color:#dbe1ec;font-size:11px;font-weight:600;padding:9px 12px;cursor:pointer;
+             letter-spacing:0.3px;font-family:inherit;margin-bottom:8px;transition:background .15s;"
+      onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+      ✏️ Editar perfil
+    </button>
     <button onclick="copiarLinkActualizacion('${id}')"
-      style="width:100%;margin-top:8px;background:linear-gradient(135deg,#1e163a,#150f2a);border:1px solid #7c3aed88;border-radius:6px;
-             color:#a78bfa;font-size:11px;font-weight:700;padding:8px 12px;cursor:pointer;
-             letter-spacing:0.5px;font-family:inherit;"
-      onmouseover="this.style.background='#7c3aed22'" onmouseout="this.style.background='linear-gradient(135deg,#1e163a,#150f2a)'">
+      style="width:100%;background:transparent;border:0.5px solid #3a4d73;border-radius:9px;
+             color:#dbe1ec;font-size:11px;font-weight:600;padding:9px 12px;cursor:pointer;
+             letter-spacing:0.3px;font-family:inherit;transition:background .15s;"
+      onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
       🔄 Link de actualización
     </button>
     ${(a.checkins&&a.checkins.length)?`<button onclick="verHistorialCheckins('${id}')"
-      style="width:100%;margin-top:8px;background:none;border:1px solid #7c3aed44;border-radius:6px;
-             color:#a78bfa;font-size:11px;font-weight:700;padding:7px 12px;cursor:pointer;font-family:inherit;"
-      onmouseover="this.style.background='#7c3aed18'" onmouseout="this.style.background='none'">
+      style="width:100%;margin-top:8px;background:transparent;border:0.5px solid #3a4d73;border-radius:9px;
+             color:#dbe1ec;font-size:11px;font-weight:600;padding:9px 12px;cursor:pointer;font-family:inherit;transition:background .15s;"
+      onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
       📋 Ver actualizaciones (${a.checkins.length})
     </button>`:''}
 
@@ -14162,9 +14220,9 @@ function renderSidebarAlumno(id) {
       <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;">
         <div style="font-size:10px;color:${color};font-weight:800;letter-spacing:.5px;margin-bottom:8px;">${label}</div>
         <div style="display:flex;gap:6px;">
-          <button onclick="_renovarAcceso('${id}',30)" style="flex:1;background:#1a3a6a;border:none;border-radius:5px;color:#fff;font-size:10px;font-weight:700;padding:6px 4px;cursor:pointer;">+30 días</button>
-          <button onclick="_renovarAcceso('${id}',90)" style="flex:1;background:#1a3a6a;border:none;border-radius:5px;color:#fff;font-size:10px;font-weight:700;padding:6px 4px;cursor:pointer;">+90 días</button>
-          ${vencido ? `<button onclick="_renovarAcceso('${id}',0)" style="flex:1;background:#7f1d1d;border:none;border-radius:5px;color:#fca5a5;font-size:10px;font-weight:700;padding:6px 4px;cursor:pointer;">Revocar</button>` : ''}
+          <button onclick="_renovarAcceso('${id}',30)" style="flex:1;background:transparent;border:0.5px solid #3a4d73;border-radius:7px;color:#b9c3d6;font-size:10px;font-weight:700;padding:7px 4px;cursor:pointer;">+30 días</button>
+          <button onclick="_renovarAcceso('${id}',90)" style="flex:1;background:transparent;border:0.5px solid #3a4d73;border-radius:7px;color:#b9c3d6;font-size:10px;font-weight:700;padding:7px 4px;cursor:pointer;">+90 días</button>
+          ${vencido ? `<button onclick="_renovarAcceso('${id}',0)" style="flex:1;background:transparent;border:0.5px solid #6a2020;border-radius:7px;color:#e88;font-size:10px;font-weight:700;padding:7px 4px;cursor:pointer;">Revocar</button>` : ''}
         </div>
       </div>`;
     })()}
@@ -17749,16 +17807,17 @@ function _renderRunningGroups(planes){
   planes.forEach(p=>{
     const semanas = (Array.isArray(p.semanasArray)&&p.semanasArray.length) ? p.semanasArray.length : 1;
     const mesTit=((p.titulo||'Plan running').split('·')[0]).trim();
-    html+='<div class="plan-item"><div style="height:5px;background:linear-gradient(90deg,#3b82f6,#60a5fa);"></div>'+
-      '<div class="plan-item-head" style="background:linear-gradient(160deg,#1e293b,#0b1220);border-radius:0;padding-top:32px;">'+
-        '<button class="plan-item-del-btn" onclick="eliminarPlanificacion(\''+p.id+'\')" title="Eliminar" style="position:absolute;top:10px;right:10px;">×</button>'+
-        '<span style="position:absolute;top:11px;left:13px;background:#3b82f6;color:#fff;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 9px;border-radius:20px;">🏃 RUNNING · '+semanas+' SEM</span>'+
-        '<div class="plan-item-name">'+mesTit+'</div>'+(p.objetivo?'<div class="plan-item-meta">'+p.objetivo+'</div>':(p.fechaInicio?'<div class="plan-item-meta">'+p.fechaInicio+'</div>':''))+
+    const meta = p.objetivo || p.fechaInicio || '';
+    html+='<div class="plan-item">'+
+      '<div class="plan-item-head">'+
+        '<button class="plan-item-del-btn" onclick="eliminarPlanificacion(\''+p.id+'\')" title="Eliminar">×</button>'+
+        '<span class="plan-item-badge">🏃 RUNNING · '+semanas+' SEM</span>'+
+        '<div class="plan-item-name">'+mesTit+'</div>'+(meta?'<div class="plan-item-meta">'+meta+'</div>':'')+
       '</div>'+
-      '<div style="display:flex;gap:6px;padding:12px 14px;">'+
-        '<button onclick="abrirPlanRunningExistente(\''+p.id+'\')" style="flex:1;background:#1a1a1a;color:#fff;border:none;border-radius:9px;padding:10px;font-size:12px;font-weight:800;cursor:pointer;">▶ ABRIR</button>'+
-        '<button onclick="renombrarPlanificacion(\''+p.id+'\')" style="background:#f1f3f7;border:none;border-radius:9px;padding:9px 12px;font-size:14px;cursor:pointer;">✏️</button>'+
-        '<button onclick="eliminarPlanificacion(\''+p.id+'\')" style="background:#fdeaea;border:none;border-radius:9px;padding:9px 12px;font-size:14px;cursor:pointer;color:#c62828;">🗑</button>'+
+      '<div class="plan-item-actions-row">'+
+        '<button class="pi-abrir" onclick="abrirPlanRunningExistente(\''+p.id+'\')">▶ Abrir</button>'+
+        '<button class="pi-ico" onclick="renombrarPlanificacion(\''+p.id+'\')" title="Renombrar">✏️</button>'+
+        '<button class="pi-ico pi-ico-del" onclick="eliminarPlanificacion(\''+p.id+'\')" title="Borrar">🗑</button>'+
       '</div></div>';
   });
   return html+'</div>';
@@ -17816,10 +17875,10 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
       }
     }
     const abrirFn = isRun ? `abrirPlanRunningExistente('${p.id}')` : `abrirPlanFuerzaExistente('${p.id}')`;
-    const acciones = `<div style="display:flex;gap:6px;padding:12px 14px 6px;">
-        <button onclick="${abrirFn}" style="flex:1;background:#1a1a1a;color:#fff;border:none;border-radius:9px;padding:10px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;">▶ ABRIR</button>
-        <button onclick="renombrarPlanificacion('${p.id}')" title="Renombrar" style="background:#f1f3f7;border:none;border-radius:9px;padding:9px 12px;font-size:14px;cursor:pointer;">✏️</button>
-        <button onclick="eliminarPlanificacion('${p.id}')" title="Borrar" style="background:#fdeaea;border:none;border-radius:9px;padding:9px 12px;font-size:14px;cursor:pointer;color:#c62828;">🗑</button>
+    const acciones = `<div class="plan-item-actions-row">
+        <button class="pi-abrir" onclick="${abrirFn}">▶ Abrir</button>
+        <button class="pi-ico" onclick="renombrarPlanificacion('${p.id}')" title="Renombrar">✏️</button>
+        <button class="pi-ico pi-ico-del" onclick="eliminarPlanificacion('${p.id}')" title="Borrar">🗑</button>
       </div>`;
     const copyRow = `<div class="plan-item-copy-row">
         <div class="plan-item-copy-lbl">📋 Copiar y enviar a:</div>
@@ -17855,22 +17914,21 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
       .concat(FASES_MACRO.map((ff,ii)=>'<option value="'+ii+'"'+(!auto&&faseIdx===ii?' selected':'')+'>'+ff.n+'</option>')).join('');
     const activo = !!p.activo;
 
-    return `<div class="plan-item" style="position:relative;${activo?'box-shadow:0 0 0 2px #22c55e, 0 8px 20px rgba(34,197,94,.25);':''}">
-      <div style="height:5px;background:linear-gradient(90deg,${f.color},${f.color}88);"></div>
-      <div class="plan-item-head" style="background:linear-gradient(160deg,#242424,#111);border-radius:0;padding-top:34px;">
-        <button class="plan-item-del-btn" onclick="eliminarPlanificacion('${p.id}')" title="Eliminar" style="position:absolute;top:10px;right:10px;">×</button>
-        <span style="position:absolute;top:11px;left:13px;background:${f.color};color:#fff;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 9px;border-radius:20px;">FASE ${faseIdx+1}/4</span>
-        ${activo?'<span style="position:absolute;top:11px;right:34px;background:#22c55e;color:#fff;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 9px;border-radius:20px;">● ACTIVO</span>':''}
+    return `<div class="plan-item" style="${activo?'box-shadow:0 0 0 2px #22c55e, 0 6px 18px rgba(34,197,94,.20);':''}">
+      <div class="plan-item-head">
+        <button class="plan-item-del-btn" onclick="eliminarPlanificacion('${p.id}')" title="Eliminar">×</button>
+        <span class="plan-item-badge">FASE ${faseIdx+1}/4</span>
+        ${activo?'<span style="position:absolute;top:12px;right:34px;background:#22c55e;color:#fff;font-size:9px;font-weight:800;letter-spacing:.5px;padding:3px 9px;border-radius:20px;">● ACTIVO</span>':''}
         <div class="plan-item-name">${mesDisplay}</div>
         <div class="plan-item-meta">${[p.fecha, semanas>1?semanas+' sem.':'', 'Mes '+mesN].filter(Boolean).join(' · ')}</div>
-        <div style="display:flex;gap:4px;width:82%;margin:11px auto 0;">${dots}</div>
+        <div style="display:flex;gap:4px;width:100%;margin-top:12px;">${dots}</div>
       </div>
       <div style="padding:13px 14px 2px;">
-        <div style="font-size:13px;font-weight:900;color:${f.color};line-height:1.2;">${f.n}${auto?' <span style="font-size:9px;color:#bbb;font-weight:700;">· auto</span>':''}</div>
+        <div style="font-size:13px;font-weight:800;color:${f.color};line-height:1.2;">${f.n}${auto?' <span style="font-size:9px;color:#bbb;font-weight:700;">· auto</span>':''}</div>
         <div style="font-size:11px;color:#666;margin-top:4px;line-height:1.4;">${f.obj}</div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;">${chips}</div>
-        <select onchange="_setFaseMacro('${p.id}',this.value)" style="margin-top:11px;font-size:10px;padding:5px 7px;border:1px solid #e2e2e2;border-radius:6px;width:100%;background:#fafafa;color:#555;cursor:pointer;">${opts}</select>
-        <button onclick="_toggleActivoMes('${p.id}')" style="width:100%;margin-top:9px;padding:9px;border-radius:9px;border:1.5px solid ${activo?'#22c55e':'#d5d9e0'};background:${activo?'#22c55e':'#fff'};color:${activo?'#fff':'#666'};font-size:11px;font-weight:800;letter-spacing:.3px;cursor:pointer;">${activo?'● MES ACTIVO — quitar':'○ Marcar como mes activo'}</button>
+        <select onchange="_setFaseMacro('${p.id}',this.value)" style="margin-top:11px;font-size:10px;padding:6px 8px;border:0.5px solid #e2e2e2;border-radius:8px;width:100%;background:#fafafa;color:#555;cursor:pointer;">${opts}</select>
+        <button onclick="_toggleActivoMes('${p.id}')" style="width:100%;margin-top:9px;padding:9px;border-radius:8px;border:0.5px solid ${activo?'#22c55e':'#d5d9e0'};background:${activo?'#22c55e':'#fff'};color:${activo?'#fff':'#666'};font-size:11px;font-weight:800;letter-spacing:.3px;cursor:pointer;">${activo?'● Mes activo — quitar':'○ Marcar como mes activo'}</button>
       </div>
       ${acciones}
       ${copyRow}
@@ -18212,6 +18270,7 @@ function addEjercicio(bloqueId) {
         <div class="autocomplete-dropdown" id="${ejId}-dropdown"></div>
       </div>
       <a id="${ejId}-video-link" class="ej-video-link" href="#" target="_blank" title="Ver video del ejercicio" style="display:none;text-decoration:none;"><span style="display:inline-flex;align-items:center;gap:4px;background:#FF0000;color:#fff;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:0.5px;"><svg width="13" height="9" viewBox="0 0 14 10" fill="white"><path d="M13.7 1.6S13.5.6 13 .2C12.4-.4 11.7-.4 11.4-.3 9.5 0 7 0 7 0S4.5 0 2.6-.3C2.3-.4 1.6-.4 1 .2.5.6.3 1.6.3 1.6S0 2.7 0 3.9v1.1C0 6.2.3 7.3.3 7.3s.2 1 .7 1.4c.6.6 1.4.6 1.8.7C4.2 9.5 7 9.5 7 9.5s2.5 0 4.4-.2c.3-.1 1-.1 1.6-.7.5-.4.7-1.4.7-1.4S14 6.2 14 5V3.9c0-1.2-.3-2.3-.3-2.3zM5.5 6.7V2.8L9.5 4.8 5.5 6.7z"/></svg>VIDEO</span></a>
+      <button class="ej-btn-sep" onclick="separarEjercicio('${ejId}','${bloqueId}')" title="Separar este ejercicio en un bloque nuevo">⇱ Separar</button>
       <button class="ej-btn-del" onclick="eliminarEjercicio('${ejId}','${bloqueId}')">🗑</button>
     </div>
     <input type="hidden" class="ej-video-input">
@@ -18240,7 +18299,7 @@ function addEjercicio(bloqueId) {
         <div class="series-sec-body" id="${ejId}-efec-body">
           <table class="series-table">
             <thead><tr>
-              <th>Serie</th><th>Reps</th><th>Peso</th><th>RIR</th><th>Pausa</th><th></th>
+              <th>Serie</th><th>Reps</th><th onclick="event.stopPropagation();_togglePesoUnit()" style="cursor:pointer;" title="Cambiar entre kg y lb">Peso (<span class="peso-unit">${_pesoUnit()}</span>)</th><th>RIR</th><th>Pausa</th><th></th>
             </tr></thead>
             <tbody id="${ejId}-efec-tbody"></tbody>
           </table>
@@ -18259,7 +18318,7 @@ function addEjercicio(bloqueId) {
         <div class="series-sec-body" id="${ejId}-drop-body">
           <table class="series-table">
             <thead><tr>
-              <th>DS</th><th>Reps</th><th>Peso</th><th>RIR</th><th>Pausa</th><th></th>
+              <th>DS</th><th>Reps</th><th onclick="event.stopPropagation();_togglePesoUnit()" style="cursor:pointer;" title="Cambiar entre kg y lb">Peso (<span class="peso-unit">${_pesoUnit()}</span>)</th><th>RIR</th><th>Pausa</th><th></th>
             </tr></thead>
             <tbody id="${ejId}-drop-tbody"></tbody>
           </table>
@@ -18321,6 +18380,72 @@ function eliminarEjercicio(ejId, bloqueId) {
   if (el) el.remove();
   refreshLetras(bloqueId);
   actualizarLayoutBloque(bloqueId);
+}
+
+// Unidad de peso (kg / lb) — solo cambia la etiqueta, no convierte valores
+function _pesoUnit() {
+  try { return localStorage.getItem('SOCC_PESO_UNIT') === 'lb' ? 'lb' : 'kg'; } catch(e) { return 'kg'; }
+}
+function _togglePesoUnit() {
+  const nu = _pesoUnit() === 'kg' ? 'lb' : 'kg';
+  try { localStorage.setItem('SOCC_PESO_UNIT', nu); } catch(e) {}
+  document.querySelectorAll('.peso-unit').forEach(el => { el.textContent = nu; });
+  if (typeof toast === 'function') toast('Unidad de peso: ' + nu.toUpperCase());
+}
+
+// Separa un ejercicio de su bloque y lo deja como un bloque nuevo (debajo del actual)
+function separarEjercicio(ejId, bloqueId) {
+  const ejEl = document.getElementById(ejId);
+  const bloqueEl = document.getElementById(bloqueId);
+  if (!ejEl || !bloqueEl) return;
+  const body = document.getElementById(bloqueId + '-body');
+  const ejercicios = body ? body.querySelectorAll('.ej-card') : [];
+  if (ejercicios.length <= 1) { toast('Este ejercicio ya es el único de su bloque'); return; }
+
+  const tipoActual = (document.getElementById(bloqueId + '-tipo') || {}).value || (TIPOS_BLOQUE[0] || '');
+  const nombreActual = (document.getElementById(bloqueId + '-nombre-input') || {}).value || '';
+
+  bloqueCounter++;
+  const nid = 'bloque-' + bloqueCounter;
+  const div = document.createElement('div');
+  div.className = 'bloque-wrap'; div.id = nid;
+  div.innerHTML = `
+    <div class="bloque-head">
+      <div class="bloque-letra-badge" id="${nid}-letra"></div>
+      <input class="bloque-nombre-input" type="text" id="${nid}-nombre-input"
+        placeholder="Nombre del bloque..." oninput="actualizarTituloBloque('${nid}')">
+      <select class="bloque-tipo-sel" id="${nid}-tipo" onchange="onBloqueTipoChange('${nid}');toggleCardioBloque('${nid}')">
+        ${TIPOS_BLOQUE.map(t=>`<option>${t}</option>`).join('')}
+      </select>
+      <span class="bloque-serie-tipo-label">|</span>
+      <select class="bloque-tipo-sel" id="${nid}-serie-tipo" onchange="onSerieTipoChange('${nid}')">
+        ${TIPOS_SERIE.map(t=>`<option>${t}</option>`).join('')}
+      </select>
+      <div style="flex:1"></div>
+      <button class="bloque-btn-editar" onclick="editarBloque('${nid}')">✏️ Editar bloque</button>
+      <button class="bloque-btn-eliminar" onclick="eliminarBloque('${nid}')">🗑 Eliminar</button>
+    </div>
+    <div class="bloque-body" id="${nid}-body"></div>
+    <div class="bloque-footer">
+      <button class="bloque-add-ej-btn" onclick="addEjercicio('${nid}'); actualizarLayoutBloque('${nid}')">＋ AGREGAR EJERCICIO</button>
+    </div>`;
+  // Insertar el bloque nuevo justo debajo del actual
+  bloqueEl.parentNode.insertBefore(div, bloqueEl.nextSibling);
+
+  // Copiar tipo del bloque original; el nuevo arranca como Serie Simple (1 ejercicio)
+  const tipoSel = document.getElementById(nid + '-tipo'); if (tipoSel) tipoSel.value = tipoActual;
+  const serieSel = document.getElementById(nid + '-serie-tipo'); if (serieSel) serieSel.value = 'Serie Simple';
+  const nomInp = document.getElementById(nid + '-nombre-input'); if (nomInp) nomInp.value = nombreActual;
+
+  // Mover el ejercicio (nodo real, no se pierden datos) al bloque nuevo
+  document.getElementById(nid + '-body').appendChild(ejEl);
+
+  actualizarLetrasBloque();
+  refreshLetras(bloqueId);
+  refreshLetras(nid);
+  actualizarLayoutBloque(bloqueId);
+  actualizarLayoutBloque(nid);
+  toast('Ejercicio separado en un bloque nuevo ✓');
 }
 
 // AUTOCOMPLETE
@@ -18774,89 +18899,11 @@ function guardarBorrador() {
   guardarPlanificacion();
   toast('Borrador guardado ✓');
 }
-// ═══════════ WorkoutSessionCard — portada premium de la sesión ═══════════
-function _wscMusc(focus){
-  const s=(focus||'').toLowerCase();
-  if(/gl[uú]te/.test(s)) return 'glutes';
-  if(/pierna|cu[aá]driceps|isqui|femoral|gemelo|pantorr|sentadilla/.test(s)) return 'legs';
-  if(/espalda|dorsal|remo|jal[oó]n|dominad/.test(s)) return 'back';
-  if(/pecho|pectoral|banca/.test(s)) return 'chest';
-  if(/hombro|deltoid|militar/.test(s)) return 'shoulders';
-  if(/brazo|b[ií]ceps|tr[ií]ceps|curl/.test(s)) return 'arms';
-  if(/core|abdom|zona media|plancha/.test(s)) return 'core';
-  return 'fullbody';
-}
-function _wscBodySVG(group, acc){
-  const hi='stroke="'+acc+'" stroke-width="2.6"';
-  const parts={
-    chest:'<ellipse cx="50" cy="52" rx="9" ry="7" '+hi+'/><ellipse cx="70" cy="52" rx="9" ry="7" '+hi+'/>',
-    shoulders:'<circle cx="40" cy="46" r="8" '+hi+'/><circle cx="80" cy="46" r="8" '+hi+'/>',
-    arms:'<path d="M40 46 L36 82" '+hi+'/><path d="M80 46 L84 82" '+hi+'/>',
-    core:'<path d="M52 60 h16 M52 69 h16 M52 78 h16" '+hi+'/>',
-    back:'<path d="M44 44 L60 68 L76 44" '+hi+'/>',
-    glutes:'<ellipse cx="52" cy="94" rx="9" ry="10" '+hi+'/><ellipse cx="68" cy="94" rx="9" ry="10" '+hi+'/>',
-    legs:'<path d="M52 102 L50 134 M68 102 L70 134" '+hi+'/>',
-    fullbody:'<path d="M46 44 Q60 40 74 44" '+hi+'/>'
-  }[group]||'';
-  return '<svg viewBox="0 0 120 150" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:auto;">'
-    +'<circle cx="60" cy="60" r="56" stroke-opacity=".16" stroke-width="1"/>'
-    +'<circle cx="60" cy="26" r="9"/>'
-    +'<path d="M42 44 Q60 36 78 44"/>'
-    +'<path d="M44 44 L40 82 M76 44 L80 82"/>'
-    +'<path d="M46 44 Q44 70 50 90 L52 102 M74 44 Q76 70 70 90 L68 102"/>'
-    +'<path d="M50 100 H70"/>'
-    +'<path d="M52 102 L50 138 M68 102 L70 138"/>'
-    +parts+'</svg>';
-}
-function _wscFoot(ic,lb,v,acc){ return '<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:7px;"><span style="color:'+acc+';font-size:13px;">'+ic+'</span><span style="font-size:11px;font-weight:800;letter-spacing:1px;color:#eee;">'+lb+'</span></div><div style="font-size:12px;color:#9a9a9a;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_iaEsc(v)+'</div></div>'; }
-function renderWorkoutSessionCard(d){
-  const acc=d.accent||'#4F8EF7';
-  return '<div style="background:#0B0B0B;border-radius:22px;padding:24px 26px;display:flex;gap:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);color:#fff;overflow:hidden;">'
-   +'<div style="flex:1 1 68%;min-width:0;">'
-     +'<div style="display:inline-block;font-size:11px;font-weight:800;letter-spacing:2px;color:#cfcfcf;background:#1a1a1a;border-radius:8px;padding:5px 12px;">'+_iaEsc(d.dayAbbr||'SESIÓN')+'</div>'
-     +(d.date?'<div style="display:flex;align-items:center;gap:8px;margin-top:14px;color:#bdbdbd;font-size:12px;font-weight:700;letter-spacing:1.5px;"><span style="color:'+acc+';">▦</span>'+_iaEsc(d.date)+'</div>':'')
-     +'<div style="font-size:44px;font-weight:900;font-style:italic;letter-spacing:.5px;line-height:1.02;margin:8px 0 8px;word-break:break-word;">'+_iaEsc(d.big||'SESIÓN')+'</div>'
-     +'<div style="font-size:11px;letter-spacing:4px;color:#7a7a7a;font-weight:700;">'+_iaEsc(d.subtitle||'SESIÓN DE ENTRENAMIENTO')+'</div>'
-     +'<div style="display:flex;align-items:center;gap:14px;background:#141414;border-radius:14px;padding:13px 16px;margin-top:18px;">'
-       +'<div style="flex:0 0 40px;height:40px;border-radius:50%;border:1.5px solid '+acc+';display:flex;align-items:center;justify-content:center;font-size:17px;">🏋</div>'
-       +'<div style="min-width:0;"><div style="font-size:15px;font-weight:900;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_iaEsc(d.focus||'—')+'</div><div style="font-size:11px;color:#8a8a8a;font-weight:700;letter-spacing:1px;margin-top:2px;">'+(d.blocks||0)+' BLOQUES</div></div>'
-       +'<div style="margin-left:auto;color:#666;font-size:20px;">›</div>'
-     +'</div>'
-     +'<div style="display:flex;margin-top:18px;">'
-       +_wscFoot('⊙','ENFOQUE',d.enfoque||'—',acc)
-       +'<div style="width:1px;background:#2a2a2a;margin:0 14px;"></div>'
-       +_wscFoot('◷','DURACIÓN',d.duracion||'—',acc)
-       +'<div style="width:1px;background:#2a2a2a;margin:0 14px;"></div>'
-       +_wscFoot('▮','NIVEL',d.nivel||'—',acc)
-     +'</div>'
-   +'</div>'
-   +'<div style="flex:0 0 30%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);">'+_wscBodySVG(d.muscleGroup||'fullbody',acc)+'</div>'
-  +'</div>';
-}
-function _wscRender(){
-  const cont=document.getElementById('wsc-cover'); if(!cont) return;
-  const titulo=(document.getElementById('plan-titulo')?.value||'').trim();
-  const objetivo=(document.getElementById('plan-objetivo')?.value||'').trim();
-  const fechaV=document.getElementById('plan-fecha')?.value||'';
-  const blocks=document.querySelectorAll('#bloques-container .bloque-wrap').length;
-  if(!titulo && !blocks){ cont.innerHTML=''; return; }
-  const al=(typeof currentAlumnoId!=='undefined'&&currentAlumnoId)?getAlumnos().find(a=>a.id===currentAlumnoId):null;
-  const nivel=(al&&al.nivel)?al.nivel:'—';
-  const focus=titulo||'Sesión';
-  const dateTxt=fechaV?new Date(fechaV+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}).toUpperCase():'';
-  const durTxt=blocks?(Math.max(30,blocks*11)+'-'+(blocks*13)+' MIN'):'';
-  const acc=(al&&al.accentColor)||'#4F8EF7';
-  cont.innerHTML=renderWorkoutSessionCard({
-    dayAbbr:'SESIÓN', date:dateTxt, big:(titulo||'SESIÓN').toUpperCase(),
-    subtitle:'SESIÓN DE ENTRENAMIENTO', focus:(focus||'—').toUpperCase(), blocks:blocks,
-    enfoque:objetivo||'Fuerza + Hipertrofia', duracion:durTxt||'—', nivel:(nivel||'—').toUpperCase(),
-    muscleGroup:_wscMusc(focus), accent:acc
-  });
-}
 function actualizarTituloDisplay(val) {
   const el = document.getElementById('pln-titulo-display');
-  if (el) { const base=val.trim().toUpperCase(); el.textContent = base || 'CREACIÓN DE SESIÓN'; }
-  try{ _wscRender(); }catch(e){}
+  if (!el) return;
+  const base = val.trim().toUpperCase();
+  el.textContent = base || 'CREACIÓN DE SESIÓN';
 }
 function mostrarBiblioteca() {
   toast('Biblioteca: escribí en el buscador de cualquier ejercicio');
