@@ -11655,6 +11655,19 @@ function renderPlanDiaEditor(diaIdx) {
               <button type="button" onclick="document.getElementById('plan-ses-imgfile').click()" style="white-space:nowrap;font-size:12px;padding:8px 12px;border:1px solid #dde1ea;border-radius:8px;background:#f4f6fb;cursor:pointer;">📁 Subir foto</button>
               <input type="file" id="plan-ses-imgfile" accept="image/*" style="display:none;" onchange="_sesSubirImagen(this)">
             </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+              <div style="font-size:9px;color:#888;font-weight:800;white-space:nowrap;">PORTADA POR MÚSCULO</div>
+              <select id="plan-ses-imgcat" onchange="_sesCatChange()" style="flex:1;padding:7px 8px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;">
+                <option value="">Automático (según ejercicios)</option>
+                <option value="pecho">Pecho</option>
+                <option value="espalda">Espalda</option>
+                <option value="hombros">Hombros</option>
+                <option value="gluteos">Glúteos</option>
+                <option value="piernas">Piernas</option>
+                <option value="brazos">Brazos (bíceps y tríceps)</option>
+                <option value="fullbody">Cuerpo completo</option>
+              </select>
+            </div>
             <div id="plan-ses-imgprev" style="margin-top:6px;"></div>
             <div style="display:flex;gap:8px;margin-top:8px;">
               <div style="flex:1;"><div style="font-size:9px;color:#888;font-weight:800;margin-bottom:3px;">LUGAR</div>
@@ -11689,6 +11702,8 @@ function renderPlanDiaEditor(diaIdx) {
   }
   // Restaurar portada e info de la sesión
   const _si=document.getElementById('plan-ses-imagen'); if(_si) _si.value=sesion.imagen||'';
+  const _scz=document.getElementById('plan-ses-imgcat'); if(_scz) _scz.value=sesion.imagenCat||'';
+  try{ _sesImgPrev(); }catch(e){}
   const _sl=document.getElementById('plan-ses-lugar');  if(_sl) _sl.value=sesion.lugar||'';
   const _sd=document.getElementById('plan-ses-dif');    if(_sd) _sd.value=sesion.dificultad||'';
   const _su=document.getElementById('plan-ses-dur');    if(_su) _su.value=sesion.duracion||'';
@@ -11709,9 +11724,14 @@ function _sesDefaultCover(){
     return (s.startsWith('f')||s.startsWith('muj')) ? 'ses-mujer.jpg' : 'ses-hombre.jpg';
   }catch(e){ return 'ses-hombre.jpg'; }
 }
+const _SES_CATIMG = { pecho:'pecho.jpg', espalda:'espalda.jpg', hombros:'tren_superior.png', gluteos:'gluteos.png', piernas:'PIERNAS.png', brazos:'tren_superior.png', fullbody:'tren_superior.png' };
+const _SES_CATLBL = { pecho:'PECHO', espalda:'ESPALDA', hombros:'HOMBROS', gluteos:'GLÚTEOS', piernas:'PIERNAS', brazos:'BRAZOS', fullbody:'CUERPO COMPLETO' };
+function _sesCatChange(){ _sesImgPrev(); }
 function _sesImgPrev(){
+  const cat=(document.getElementById('plan-ses-imgcat')?.value||'').trim();
   const url=(document.getElementById('plan-ses-imagen')?.value||'').trim();
   const el=document.getElementById('plan-ses-imgprev'); if(!el) return;
+  if(cat && _SES_CATIMG[cat]){ el.innerHTML='<div style="position:relative;"><img src="'+_SES_CATIMG[cat]+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;" onerror="this.style.display=\'none\'"><span style="position:absolute;top:6px;left:6px;background:#C9A84C;color:#2a2008;font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;">'+(_SES_CATLBL[cat]||cat.toUpperCase())+'</span></div>'; return; }
   if(url){ el.innerHTML='<img src="'+url.replace(/"/g,'&quot;')+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;" onerror="this.style.display=\'none\'">'; }
   else { el.innerHTML='<div style="position:relative;"><img src="'+_sesDefaultCover()+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;opacity:.85;" onerror="this.style.display=\'none\'"><span style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,.6);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;">POR DEFECTO</span></div>'; }
 }
@@ -11796,6 +11816,8 @@ function _switchEditorTab(tabIdx, diaIdx) {
   if (nomInput) nomInput.value = sesion.nombre || '';
   // Portada e info del nuevo tab
   const _si=document.getElementById('plan-ses-imagen'); if(_si) _si.value=sesion.imagen||'';
+  const _scz=document.getElementById('plan-ses-imgcat'); if(_scz) _scz.value=sesion.imagenCat||'';
+  try{ _sesImgPrev(); }catch(e){}
   const _sl=document.getElementById('plan-ses-lugar');  if(_sl) _sl.value=sesion.lugar||'';
   const _sd=document.getElementById('plan-ses-dif');    if(_sd) _sd.value=sesion.dificultad||'';
   const _su=document.getElementById('plan-ses-dur');    if(_su) _su.value=sesion.duracion||'';
@@ -12216,6 +12238,7 @@ function guardarEstadoDiaActual() {
   planSemanasArray[planSemEditando].dias[diaIdx][_editorModTab] = {
     bloques, nombre: _nombreSesion,
     imagen: _g('plan-ses-imagen','imagen'),
+    imagenCat: _g('plan-ses-imgcat','imagenCat'),
     lugar: _g('plan-ses-lugar','lugar'),
     dificultad: _g('plan-ses-dif','dificultad'),
     duracion: _g('plan-ses-dur','duracion'),

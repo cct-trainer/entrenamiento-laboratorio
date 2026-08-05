@@ -799,8 +799,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260805131903 por un timestamp en cada deploy
-const _APP_VERSION = '20260805131903';
+// deploy.bat reemplaza 20260805133305 por un timestamp en cada deploy
+const _APP_VERSION = '20260805133305';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2120,18 +2120,29 @@ const _MUS_IMG = {
   core:'tren_superior.png', fullbody:'tren_superior.png'
 };
 function _imgMusculoSes(ses){
-  const txt = ((ses&&ses.nombre||'')+' '+(ses&&ses.objetivo||'')+' '+
-    ((ses&&ses.bloques)||[]).map(b=>(b.nombre||'')+' '+(b.tipo||'')+' '+
-      ((b.ejercicios||[]).map(e=>e.nombre||'').join(' '))).join(' ')).toLowerCase();
-  if(/gl[uú]te|hip thrust|puente|patada|abducci|monster/.test(txt)) return _MUS_IMG.gluteos;
-  if(/cu[aá]driceps|sentadilla|prensa|zancada|isqui|femoral|peso muerto|\bpierna|gemelo|hack|estoc/.test(txt)) return _MUS_IMG.piernas;
-  if(/espalda|dorsal|remo|jal[oó]n|dominad|pull|\blat\b/.test(txt)) return _MUS_IMG.espalda;
-  if(/pecho|pectoral|press de banca|press banca|apertura|fondos/.test(txt)) return _MUS_IMG.pecho;
-  if(/hombro|deltoid|press militar|elevaci[oó]n lateral|face pull|press de hombro/.test(txt)) return _MUS_IMG.hombros;
-  if(/b[ií]ceps|tr[ií]ceps|curl|extensi[oó]n de tr|\bbrazo/.test(txt)) return _MUS_IMG.brazos;
-  if(/core|abdom|plancha|pallof|zona media/.test(txt)) return _MUS_IMG.core;
-  if(/cuerpo|full ?body|total|general/.test(txt)) return _MUS_IMG.fullbody;
-  return '';
+  const nom = ((ses&&ses.nombre||'')+' '+(ses&&ses.objetivo||'')).toLowerCase();
+  const ejTxt = ((ses&&ses.bloques)||[]).map(b=>
+    ((b.ejercicios||[]).map(e=>e.nombre||'').join(' '))).join(' ').toLowerCase();
+  // Definiciones por grupo (evito "pull"/"lat" sueltos para no confundir "face pull")
+  const defs = [
+    ['gluteos', /gl[uú]te|hip thrust|puente de gl|patada de gl|abducci/g],
+    ['pecho',   /pecho|pectoral|press de banca|press banca|press inclinado|apertura|aperturas|pec ?deck|contractora|crossover/g],
+    ['espalda', /espalda|dorsal|jal[oó]n|dominad|remo|pull ?over|pull ?up|remo con/g],
+    ['hombros', /hombro|deltoid|press militar|press de hombro|elevaci[oó]n lateral|p[aá]jaro/g],
+    ['brazos',  /b[ií]ceps|tr[ií]ceps|\bcurl|extensi[oó]n de tr|press franc[eé]s|patada de tr/g],
+    ['piernas', /cu[aá]driceps|sentadilla|prensa|zancada|isqui|femoral|peso muerto rumano|\bpierna|gemelo|hack|estoc|split squat/g],
+    ['core',    /core|abdom|plancha|pallof|dead bug|bicho muerto|rueda abdominal|crunch|zona media/g],
+    ['fullbody',/cuerpo completo|full ?body|total body/g]
+  ];
+  const score = {};
+  defs.forEach(function(d){
+    score[d[0]] = 0;
+    const mn = nom.match(d[1]);   if(mn) score[d[0]] += mn.length*10; // el nombre/objetivo manda
+    const me = ejTxt.match(d[1]); if(me) score[d[0]] += me.length;    // los ejercicios suman poco
+  });
+  let best='', bestN=0;
+  Object.keys(score).forEach(function(k){ if(score[k]>bestN){ bestN=score[k]; best=k; } });
+  return bestN>0 ? _MUS_IMG[best] : '';
 }
 // Nivel: usa el de la sesión; si no hay, el del perfil del alumno
 function _nivelSes(ses){
@@ -2277,7 +2288,7 @@ function renderSesion() {
     return;
   }
 
-  const _sesImg = String(ses.imagen || _imgMusculoSes(ses) || _sesImgDefault()).replace(/'/g,'%27');
+  const _sesImg = String((ses.imagenCat && _MUS_IMG[ses.imagenCat]) || ses.imagen || _imgMusculoSes(ses) || _sesImgDefault()).replace(/'/g,'%27');
   const _bloquesHTML =
     '<div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--text);margin-bottom:12px;">'+_t('tu_entrenamiento')+'</div>'+
     ses.bloques.map((b,bi) => {
