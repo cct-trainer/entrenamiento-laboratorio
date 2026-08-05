@@ -799,8 +799,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260805134630 por un timestamp en cada deploy
-const _APP_VERSION = '20260805134630';
+// deploy.bat reemplaza 20260805135659 por un timestamp en cada deploy
+const _APP_VERSION = '20260805135659';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2116,7 +2116,7 @@ function _sesImgDefault(){
 // Imagen automática según el grupo muscular principal de la sesión
 const _MUS_IMG = {
   gluteos:'gluteos.png', piernas:'PIERNAS.png', espalda:'espalda.jpg',
-  pecho:'pecho.jpg', hombros:'tren_superior.png', brazos:'tren_superior.png',
+  pecho:'pecho.jpg', hombros:'hombros.jpg', brazos:'tren_superior.png',
   core:'tren_superior.png', fullbody:'tren_superior.png'
 };
 function _imgMusculoSes(ses){
