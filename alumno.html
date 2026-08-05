@@ -793,15 +793,15 @@ function _mesNombreDe(plan, i){
 function _selSemana(i){ _semIdx=i; _diaIdx=null; renderRutina(); }
 
 let _data=null, _plan=null, _planRun=null, _planesFuerza=[], _planIdx=0, _semIdx=0, _diaIdx=null, _runDiaIdx=null, _diaModTab=0;
-let _WA_COACH='5491162779993'; // número del coach para "Iniciar clase por WhatsApp"
+let _WA_COACH='5491133379873'; // número del coach para "Iniciar clase por WhatsApp"
 let _runSemanas=[], _runSemIdx=0;
 let _ejStore = {};   // { uid: ej }  — para re-render de cards
 let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificadas
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260805172126 por un timestamp en cada deploy
-const _APP_VERSION = '20260805172126';
+// deploy.bat reemplaza 20260805174224 por un timestamp en cada deploy
+const _APP_VERSION = '20260805174224';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -893,8 +893,6 @@ const TIPOS_RUN = {
     const doc = await db.collection('alumnos').doc(id).get();
     if (!doc.exists) return showErr('Todavía no hay datos para este alumno. Pedile a tu coach que sincronice el portal desde su aplicación.');
     _data = doc.data();
-    // Número de WhatsApp del coach (para iniciar la clase online)
-    try{ const _cf=await db.collection('alumnos').doc('zz_config_global').get(); if(_cf.exists){ const _c=_cf.data()||{}; if(_c.whatsapp) _WA_COACH=String(_c.whatsapp); } }catch(e){}
 
     // ── Control de acceso ────────────────────────────────────────────────────
     if (_data.accessUntil) {
@@ -944,7 +942,7 @@ async function _showAccesoBloqueado(hasta) {
   // Config de suscripción (planes / pago / whatsapp) que edita el coach
   let cfg={};
   try{ const d=await _db.collection('alumnos').doc('zz_config_global').get(); if(d.exists) cfg=d.data()||{}; }catch(e){}
-  const wa = (cfg.whatsapp||'5491162779993').replace(/\D/g,'');
+  const wa = _WA_COACH.replace(/\D/g,'');
   const planes = Array.isArray(cfg.planes) ? cfg.planes.filter(p=>p&&p.nombre) : [];
   const nombre = (_data && _data.perfil && _data.perfil.nombre) ? _data.perfil.nombre.split(' ')[0] : '';
 
