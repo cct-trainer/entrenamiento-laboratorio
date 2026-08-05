@@ -793,14 +793,15 @@ function _mesNombreDe(plan, i){
 function _selSemana(i){ _semIdx=i; _diaIdx=null; renderRutina(); }
 
 let _data=null, _plan=null, _planRun=null, _planesFuerza=[], _planIdx=0, _semIdx=0, _diaIdx=null, _runDiaIdx=null, _diaModTab=0;
+let _WA_COACH='5491162779993'; // número del coach para "Iniciar clase por WhatsApp"
 let _runSemanas=[], _runSemIdx=0;
 let _ejStore = {};   // { uid: ej }  — para re-render de cards
 let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificadas
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260805135659 por un timestamp en cada deploy
-const _APP_VERSION = '20260805135659';
+// deploy.bat reemplaza 20260805170239 por un timestamp en cada deploy
+const _APP_VERSION = '20260805170239';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -892,6 +893,8 @@ const TIPOS_RUN = {
     const doc = await db.collection('alumnos').doc(id).get();
     if (!doc.exists) return showErr('Todavía no hay datos para este alumno. Pedile a tu coach que sincronice el portal desde su aplicación.');
     _data = doc.data();
+    // Número de WhatsApp del coach (para iniciar la clase online)
+    try{ const _cf=await db.collection('alumnos').doc('zz_config_global').get(); if(_cf.exists){ const _c=_cf.data()||{}; if(_c.whatsapp) _WA_COACH=String(_c.whatsapp); } }catch(e){}
 
     // ── Control de acceso ────────────────────────────────────────────────────
     if (_data.accessUntil) {
@@ -2117,7 +2120,7 @@ function _sesImgDefault(){
 const _MUS_IMG = {
   gluteos:'gluteos.png', piernas:'PIERNAS.png', espalda:'espalda.jpg',
   pecho:'pecho.jpg', hombros:'hombros.jpg', brazos:'tren_superior.png',
-  core:'tren_superior.png', fullbody:'tren_superior.png'
+  core:'fullbody.jpg', fullbody:'fullbody.jpg'
 };
 function _imgMusculoSes(ses){
   const nom = ((ses&&ses.nombre||'')+' '+(ses&&ses.objetivo||'')).toLowerCase();
@@ -2317,7 +2320,9 @@ function renderSesion() {
     '</div>'+
     // Rectángulo de fondo (gris topo / tiza) con todo el contenido de la sesión
     '<div style="margin:0 -16px;padding:16px 16px 4px;background:var(--ses-panel);">'+
-      _sesDetalleHTML(ses) + _bloquesHTML + _finBtn +
+      _sesDetalleHTML(ses) +
+      (_WA_COACH ? '<a href="https://wa.me/'+_WA_COACH.replace(/\D/g,'')+'?text='+encodeURIComponent('Hola Christian, listo para la clase de hoy 💪')+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;text-decoration:none;border-radius:14px;padding:14px;font-size:15px;font-weight:800;margin:2px 0 16px;letter-spacing:.3px;box-shadow:0 4px 14px rgba(37,211,102,.28);">🎥 Iniciar clase por WhatsApp</a>' : '') +
+      _bloquesHTML + _finBtn +
     '</div>'+
     '<div style="height:80px;background:var(--ses-panel);margin:0 -16px;"></div>'+
     '<div style="position:fixed;bottom:calc(70px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:448px;z-index:200;">'+
