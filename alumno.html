@@ -799,8 +799,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260803130701 por un timestamp en cada deploy
-const _APP_VERSION = '20260803130701';
+// deploy.bat reemplaza 20260805131903 por un timestamp en cada deploy
+const _APP_VERSION = '20260805131903';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2113,6 +2113,26 @@ function _sesImgDefault(){
   const s = String(_data?.perfil?.sexo || _data?.sexo || '').trim().toLowerCase();
   return (s.startsWith('f') || s.startsWith('muj')) ? _SES_IMG_MUJER : _SES_IMG_HOMBRE;
 }
+// Imagen automática según el grupo muscular principal de la sesión
+const _MUS_IMG = {
+  gluteos:'gluteos.png', piernas:'PIERNAS.png', espalda:'espalda.jpg',
+  pecho:'pecho.jpg', hombros:'tren_superior.png', brazos:'tren_superior.png',
+  core:'tren_superior.png', fullbody:'tren_superior.png'
+};
+function _imgMusculoSes(ses){
+  const txt = ((ses&&ses.nombre||'')+' '+(ses&&ses.objetivo||'')+' '+
+    ((ses&&ses.bloques)||[]).map(b=>(b.nombre||'')+' '+(b.tipo||'')+' '+
+      ((b.ejercicios||[]).map(e=>e.nombre||'').join(' '))).join(' ')).toLowerCase();
+  if(/gl[uú]te|hip thrust|puente|patada|abducci|monster/.test(txt)) return _MUS_IMG.gluteos;
+  if(/cu[aá]driceps|sentadilla|prensa|zancada|isqui|femoral|peso muerto|\bpierna|gemelo|hack|estoc/.test(txt)) return _MUS_IMG.piernas;
+  if(/espalda|dorsal|remo|jal[oó]n|dominad|pull|\blat\b/.test(txt)) return _MUS_IMG.espalda;
+  if(/pecho|pectoral|press de banca|press banca|apertura|fondos/.test(txt)) return _MUS_IMG.pecho;
+  if(/hombro|deltoid|press militar|elevaci[oó]n lateral|face pull|press de hombro/.test(txt)) return _MUS_IMG.hombros;
+  if(/b[ií]ceps|tr[ií]ceps|curl|extensi[oó]n de tr|\bbrazo/.test(txt)) return _MUS_IMG.brazos;
+  if(/core|abdom|plancha|pallof|zona media/.test(txt)) return _MUS_IMG.core;
+  if(/cuerpo|full ?body|total|general/.test(txt)) return _MUS_IMG.fullbody;
+  return '';
+}
 // Nivel: usa el de la sesión; si no hay, el del perfil del alumno
 function _nivelSes(ses){
   let dif = parseInt(ses.dificultad||'')||0;
@@ -2257,7 +2277,7 @@ function renderSesion() {
     return;
   }
 
-  const _sesImg = String(ses.imagen || _sesImgDefault()).replace(/'/g,'%27');
+  const _sesImg = String(ses.imagen || _imgMusculoSes(ses) || _sesImgDefault()).replace(/'/g,'%27');
   const _bloquesHTML =
     '<div style="font-size:11px;font-weight:900;letter-spacing:1px;color:var(--text);margin-bottom:12px;">'+_t('tu_entrenamiento')+'</div>'+
     ses.bloques.map((b,bi) => {

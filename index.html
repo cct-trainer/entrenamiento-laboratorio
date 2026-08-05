@@ -132,6 +132,13 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .alu-chip { font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 6px; white-space: nowrap; }
 .alu-chev { color: #5f6f8c; font-size: 20px; font-style: normal; line-height: 1; flex-shrink: 0; }
 .alu-empty { text-align: center; color: #8f9bb3; font-size: 13px; padding: 30px 0; }
+.alu-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.alu-card { background: #1e2e4f; border: 1px solid #2b3d63; border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: border-color .15s, transform .12s, box-shadow .15s; }
+.alu-card:hover { border-color: #C9A84C; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.25); }
+.alu-card-av { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; background: #33456e; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #b9c3d6; }
+.alu-card-av img { width: 100%; height: 100%; object-fit: cover; }
+.alu-card-main { min-width: 0; flex: 1; }
+.alu-card-nom { font-size: 13px; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .btn-add-alumno { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; }
 .btn-add-alumno:hover { transform: translateY(-3px); }
@@ -1824,7 +1831,7 @@ select.toolbox-input option:disabled { color: #888; }
 }
 @media(max-width:900px){ .run-dias-grid { grid-template-columns:repeat(3,1fr); } }
 @media(max-width:500px){ .run-dias-grid { grid-template-columns:1fr; } }
-#run-dias-grid { background:#eef0f3; padding:14px; border-radius:12px; }
+#run-dias-grid { display:block; background:#eef0f3; padding:14px; border-radius:12px; }
 .run-dia-card {
   background:#ffffff; border:1px solid #d5d9e0;
   border-radius:12px; overflow:hidden; color:#1a1a1a;
@@ -2134,6 +2141,31 @@ select.toolbox-input option:disabled { color: #888; }
 /* ── Month view ── */
 .mes-semana-bloque { background:#eef0f3; border-radius:12px; padding:12px 12px 14px; margin-bottom:16px; border:none; transition:none; }
 .mes-semana-editando { background:#eef0f3; border:none; }
+/* ── Etiquetas en fila ancha (1 por línea) ── */
+.plan-fila-list { display:flex; flex-direction:column; gap:8px; }
+.plan-fila { display:flex; align-items:center; gap:14px; background:#fff; border:1px solid #d5d9e0; border-radius:10px; padding:10px 14px; cursor:pointer; transition:border-color .15s, box-shadow .15s; }
+.plan-fila:hover { border-color:#C9A84C; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.plan-fila--empty { border-style:dashed; }
+.plan-fila--empty:hover { box-shadow:none; }
+.pf-daycol { min-width:66px; flex-shrink:0; }
+.pf-dia { font-size:11px; font-weight:700; color:#333; letter-spacing:.5px; text-transform:uppercase; }
+.pf-fecha { font-size:10px; color:#9aa0a8; margin-top:1px; }
+.plan-fila--empty .pf-dia { color:#8a8f98; }
+.pf-main { flex:1; min-width:0; }
+.pf-obj { font-size:14px; font-weight:600; color:#1a1a1a; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pf-musc { font-size:10px; color:#7a7f88; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pf-empty-txt { flex:1; font-size:12px; color:#9aa0a8; font-weight:600; }
+.pf-bloques { background:#C9A84C; color:#2a2008; font-size:10px; font-weight:600; padding:3px 10px; border-radius:6px; white-space:nowrap; flex-shrink:0; }
+.pf-acc { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.pf-acc button { background:transparent; border:none; cursor:pointer; padding:2px 4px; border-radius:5px; line-height:1; }
+.pf-drag { color:#b0b4bc; cursor:grab; font-size:14px; line-height:1; }
+.pf-dup { color:#9aa0a8; font-size:9px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; }
+.pf-dup:hover { color:#2f7fd0; }
+.pf-del { color:#b0b4bc; font-size:14px; font-weight:900; }
+.pf-del:hover { color:#dc2626; }
+.pf-check { width:20px; height:20px; border-radius:50%; border:1.5px solid #C9A84C; color:#9A7A28; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; flex-shrink:0; }
+.pf-rev { background:#FDF6E3; border:1px solid #C9A84C; color:#9A7A28; font-size:9px; font-weight:800; padding:2px 8px; border-radius:10px; cursor:pointer; white-space:nowrap; }
+@media(max-width:600px){ .pf-obj,.pf-musc{white-space:normal;} .pf-daycol{min-width:52px;} }
 .mes-semana-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px; }
 .mes-semana-titulo-txt { font-size:11px; font-weight:800; color:#9A7A28; text-transform:uppercase; letter-spacing:1px; }
 .mes-semana-acciones { display:flex; gap:6px; }
@@ -3892,8 +3924,8 @@ select.toolbox-input option:disabled { color: #888; }
             <div id="trasp-gate" style="font-size:12px;color:#a06b00;background:#fff8e6;border:1px solid #f4e0a0;border-radius:9px;padding:9px 12px;margin-top:12px;">🔒 Elegí alumno, semana, fecha y lugar para escribir la sesión.</div>
             <div id="trasp-textwrap" style="display:none;margin-top:14px;">
               <div style="font-size:10px;font-weight:900;color:#7c3aed;letter-spacing:.6px;margin-bottom:8px;">2 · ESCRIBÍ / PEGÁ LA SESIÓN</div>
-              <textarea id="trasp-texto" rows="12" placeholder="Ej:&#10;CALENTAMIENTO&#10;Bici 5 min&#10;&#10;FUERZA PRINCIPAL&#10;Sentadilla 4x6 @ 100kg · RIR 2 · pausa 3min&#10;Peso muerto rumano 3x10 @ 70kg&#10;&#10;ACCESORIOS&#10;Prensa 3x12 · Curl femoral 3x12" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:12px;font-size:13px;font-family:inherit;line-height:1.5;box-sizing:border-box;resize:vertical;"></textarea>
-              <div style="font-size:11px;color:#888;margin-top:6px;">Un ejercicio por línea. Poné los bloques en MAYÚSCULAS o con dos puntos (ej. "FUERZA PRINCIPAL:"). Se carga al instante, <b>sin internet ni API</b>.</div>
+              <textarea id="trasp-texto" rows="14" placeholder="UNA SESIÓN:&#10;FUERZA PRINCIPAL&#10;Sentadilla 4x6 @ 100kg · RIR 2 · pausa 3min&#10;ACCESORIOS&#10;Prensa 3x12 · Curl femoral 3x12&#10;&#10;— O TODA LA SEMANA (separá con DÍA:) —&#10;DÍA: Lunes&#10;FUERZA PRINCIPAL&#10;Sentadilla 4x6 @ 100kg&#10;DÍA: Miércoles&#10;EMPUJE&#10;Press banca 4x8 @ 60kg&#10;DÍA: Viernes&#10;PIERNAS&#10;Peso muerto 4x5 @ 120kg" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:12px;font-size:13px;font-family:inherit;line-height:1.5;box-sizing:border-box;resize:vertical;"></textarea>
+              <div style="font-size:11px;color:#888;margin-top:6px;">Un ejercicio por línea; bloques en MAYÚSCULAS. Para cargar <b>varios días de una</b>, separá cada sesión con una línea <b>DÍA: Lunes</b> (o Martes, Miércoles… o una fecha). Se cargan todas en la semana elegida. <b>Sin internet ni API</b>.</div>
             </div>
           </div>
           <div style="padding:14px 26px;border-top:1px solid #eee;display:flex;gap:10px;">
@@ -9453,27 +9485,26 @@ function runSemanaSiguiente() { if(runSemActual<runSemanasArray.length-1) _runCa
 function renderRunDias() {
   const grid = document.getElementById('run-dias-grid');
   if(!grid) return;
-  grid.innerHTML = DIAS_SEMANA.map((dia, i) => {
+  const DS = (typeof DIAS_SIGLAS!=='undefined') ? DIAS_SIGLAS : ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+  grid.innerHTML = '<div class="plan-fila-list">' + DIAS_SEMANA.map((dia, i) => {
     const bloques = runDiasData[i] || [];
     const tieneContenido = bloques.length > 0;
-    const rows = bloques.map(b => {
-      const tipo = TIPOS_SESION_RUNNING.find(t=>t.id===b.tipo) || {icon:'📋',label:b.label||b.tipo};
-      const resumen = runResumenBloque(b);
-      return `<div class="pdc-ses">
-        <div class="pdc-ses-main">
-          <div class="pdc-ses-nom">${tipo.icon} ${tipo.label}</div>
-          <div class="pdc-ses-resumen">${resumen}</div>
-        </div>
-      </div>`;
-    }).join('');
-    return `<div class="run-dia-card${tieneContenido?' tiene-contenido':''}" id="run-dia-card-${i}" onclick="abrirDiaEditor(${i})">
-      <div class="pdc-head">
-        <div><div class="pdc-dia">${dia}</div>${tieneContenido?`<div class="pdc-fecha">${bloques.length} bloque${bloques.length>1?'s':''}</div>`:''}</div>
-        ${tieneContenido?`<div class="pdc-head-right" onclick="event.stopPropagation()"><button class="pdc-del" onclick="event.stopPropagation();limpiarDia(${i})" title="Limpiar día">✕</button></div>`:''}
-      </div>
-      ${tieneContenido ? '<div class="pdc-divider"></div>'+rows : `<div class="pdc-empty">＋ Agregar sesión</div>`}
-    </div>`;
-  }).join('');
+    if(!tieneContenido){
+      return '<div class="plan-fila plan-fila--empty" id="run-dia-card-'+i+'" onclick="abrirDiaEditor('+i+')">'
+        + '<div class="pf-daycol"><div class="pf-dia">'+(DS[i]||dia)+'</div></div>'
+        + '<div class="pf-empty-txt">+ Agregar sesión</div>'
+      + '</div>';
+    }
+    const obj = bloques.map(b => (TIPOS_SESION_RUNNING.find(t=>t.id===b.tipo)||{label:b.label||b.tipo}).label).join(' + ');
+    const resumenStr = bloques.map(b => runResumenBloque(b)).filter(Boolean).join(' · ');
+    const n = bloques.length;
+    return '<div class="plan-fila" id="run-dia-card-'+i+'" onclick="abrirDiaEditor('+i+')">'
+      + '<div class="pf-daycol"><div class="pf-dia">'+(DS[i]||dia)+'</div></div>'
+      + '<div class="pf-main"><div class="pf-obj">'+obj+'</div>'+(resumenStr?'<div class="pf-musc">'+resumenStr+'</div>':'')+'</div>'
+      + '<span class="pf-bloques">'+n+' bloque'+(n!==1?'s':'')+'</span>'
+      + '<div class="pf-acc" onclick="event.stopPropagation()"><button class="pf-del" onclick="event.stopPropagation();limpiarDia('+i+')" title="Limpiar día">✕</button></div>'
+    + '</div>';
+  }).join('') + '</div>';
 }
 
 function runResumenBloque(b) {
@@ -10931,6 +10962,27 @@ function _revAccion(tipo, sem, dia, mod){
   renderPlanMes();
 }
 
+// Detecta los músculos/grupos de una sesión a partir de nombre, bloques y ejercicios
+function _muscsSesion(s){
+  const txt = ((s&&s.nombre||'')+' '+(s&&s.objetivo||'')+' '+
+    ((s&&s.bloques)||[]).map(b=>(b.nombre||'')+' '+(b.tipo||'')+' '+
+      ((b.ejercicios||[]).map(e=>e.nombre||'').join(' '))).join(' ')).toLowerCase();
+  const map=[
+    [/gl[uú]te|hip thrust|puente|patada|abducci|monster/, 'Glúteo'],
+    [/isqui|femoral|peso muerto rumano|curl femoral|nordic/, 'Isquios'],
+    [/cu[aá]driceps|sentadilla|prensa|zancada|estoc|split squat|extensi[oó]n de rodilla|hack/, 'Cuádriceps'],
+    [/gemelo|pantorr|sóleo|soleo|elevaci[oó]n de tal/, 'Gemelos'],
+    [/pecho|pectoral|press banca|press de banca|apertura|aperturas|fondos|contractor/, 'Pecho'],
+    [/espalda|dorsal|remo|jal[oó]n|dominad|pull|\blat\b/, 'Espalda'],
+    [/hombro|deltoid|press militar|elevaci[oó]n lateral|face pull|press de hombro|pájaro|pajaro/, 'Hombro'],
+    [/b[ií]ceps|curl de b[ií]|curl martillo|curl alterno|curl alternado/, 'Bíceps'],
+    [/tr[ií]ceps|extensi[oó]n de tr|press franc|patada de tr/, 'Tríceps'],
+    [/core|abdom|plancha|pallof|dead bug|bicho muerto|zona media|rueda abdominal|crunch/, 'Core']
+  ];
+  const out=[];
+  map.forEach(function(p){ if(p[0].test(txt) && out.indexOf(p[1])<0) out.push(p[1]); });
+  return out.slice(0,4);
+}
 // ── Render vista mensual (semanas apiladas) ───────────────────────────────────
 function renderPlanMes() {
   _fetchCompletadas(planSemOriginalAlumnoId || currentAlumnoId);
@@ -10945,55 +10997,44 @@ function renderPlanMes() {
       const sesiones = sem.dias[i] || [];
       const tiene = sesiones.length > 0;
       const fechaStr = _diaFecha(semIdx, i);
-      // Día vacío
+      // Día vacío → fila fina "+ Agregar"
       if(!tiene){
-        return '<div class="plan-dia-card plan-dia-empty-card" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
-          + '<div class="pdc-head"><div><div class="pdc-dia">'+diaNom.nombre+'</div><div class="pdc-fecha">'+fechaStr+'</div></div></div>'
-          + '<div class="pdc-empty">+ Agregar sesión</div>'
+        return '<div class="plan-fila plan-fila--empty" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
+          + '<div class="pf-daycol"><div class="pf-dia">'+diaNom.sig+'</div><div class="pf-fecha">'+fechaStr+'</div></div>'
+          + '<div class="pf-empty-txt">+ Agregar sesión</div>'
         + '</div>';
       }
-      // Sesiones (filas)
-      const doneAny = sesiones.some((s, ix) => !!_completadaDe(semIdx, i, ix));
-      const rows = sesiones.map((s, sIdx) => {
+      // Una fila por sesión
+      return sesiones.map((s, sIdx) => {
         const bc = (s.bloques||[]).length;
         const primera = s.bloques&&s.bloques[0] ? (s.bloques[0].nombre||s.bloques[0].tipo||'Bloque') : 'Sesión';
-        const titulo = s.nombre || primera;
+        const musc = _muscsSesion(s);
+        let obj = s.objetivo || s.nombre || primera || 'Sesión';
+        if(/^(gym|casa)\b/i.test(obj) && musc.length) obj = musc.join(', ');
+        const muscStr = musc.join(' · ');
+        const done = !!_completadaDe(semIdx, i, sIdx);
         const nd = _nDiffs(semIdx, i, sIdx);
         const revBadge = nd>0
-          ? '<div onclick="event.stopPropagation();_abrirRevision('+semIdx+','+i+','+sIdx+')" title="Revisar lo que hizo el alumno" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;background:#FDF6E3;border:1px solid #C9A84C;color:#9A7A28;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;cursor:pointer;">'+nd+' cambio'+(nd!==1?'s':'')+' para revisar</div>'
+          ? '<span class="pf-rev" onclick="event.stopPropagation();_abrirRevision('+semIdx+','+i+','+sIdx+')" title="Revisar lo que hizo el alumno">↺ '+nd+'</span>'
           : '';
-        return '<div class="pdc-ses">'
-          + '<div class="pdc-ses-main">'
-            + '<div class="pdc-ses-nom">'+titulo+'</div>'
-            + '<div class="pdc-ses-bloques">'+bc+' bloque'+(bc!==1?'s':'')+'</div>'
-            + revBadge
-          + '</div>'
-          + '<div class="pdc-ses-acc" onclick="event.stopPropagation()">'
-            + '<button class="pdc-dup" onclick="event.stopPropagation();abrirModalDuplicarMover('+i+',\'duplicar\','+semIdx+')" title="Duplicar sesión">dup</button>'
-            + '<button class="pdc-del" onclick="event.stopPropagation();eliminarSesionDia('+i+','+semIdx+','+sIdx+')" title="Eliminar sesión">✕</button>'
+        return '<div class="plan-fila plan-dia-card tiene-sesion" id="plan-dia-card-'+semIdx+'-'+i+(sIdx?('-'+sIdx):'')+'" data-dia="'+i+'" data-sem="'+semIdx+'" draggable="true" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
+          + '<div class="pf-daycol"><div class="pf-dia">'+diaNom.sig+'</div><div class="pf-fecha">'+fechaStr+'</div></div>'
+          + '<div class="pf-main"><div class="pf-obj">'+obj+'</div>'+(muscStr?'<div class="pf-musc">'+muscStr+'</div>':'')+'</div>'
+          + '<span class="pf-bloques">'+bc+' bloque'+(bc!==1?'s':'')+'</span>'
+          + revBadge
+          + (done ? '<span class="pf-check" title="Completada">✓</span>' : '')
+          + '<div class="pf-acc" onclick="event.stopPropagation()">'
+            + '<span class="pf-drag" title="Arrastrar a otro día">⠿</span>'
+            + '<button class="pf-dup" onclick="event.stopPropagation();abrirModalDuplicarMover('+i+',\'duplicar\','+semIdx+')" title="Duplicar sesión">dup</button>'
+            + '<button class="pf-del" onclick="event.stopPropagation();eliminarSesionDia('+i+','+semIdx+','+sIdx+')" title="Eliminar sesión">✕</button>'
           + '</div>'
         + '</div>';
       }).join('');
-      return '<div class="plan-dia-card tiene-sesion" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" draggable="true" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
-        + '<div class="pdc-head">'
-          + '<div><div class="pdc-dia">'+diaNom.nombre+'</div><div class="pdc-fecha">'+fechaStr+'</div></div>'
-          + '<div class="pdc-head-right" onclick="event.stopPropagation()">'
-            + '<span class="pdc-drag" title="Arrastrar a otro día">⠿</span>'
-            + (doneAny ? '<span class="pdc-check" title="Sesión completada">✓</span>' : '')
-          + '</div>'
-        + '</div>'
-        + '<div class="pdc-divider"></div>'
-        + rows
-        + '</div>';
     };
 
-
-    // 7 columnas fijas LUN→DOM con etiqueta arriba + tile (divisores verticales entre columnas)
-    const DIAS_H = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
-    const gridHTML = '<div class="run-dias-grid mes-dias-grid">'
-      + Array.from({length:7}, (_,i) =>
-          '<div class="pdc-col"><div class="pdc-col-label">'+DIAS_H[i]+'</div>'+renderCard(i)+'</div>'
-        ).join('')
+    // Filas anchas: una por día (todas las semanas iguales)
+    const gridHTML = '<div class="plan-fila-list">'
+      + Array.from({length:7}, (_,i) => renderCard(i)).join('')
       + '</div>';
 
     return '<div class="mes-semana-bloque'+(isEd?' mes-semana-editando':'')+'" id="mes-sem-bloque-'+semIdx+'">'
@@ -13289,25 +13330,28 @@ function renderAlumnosGrid() {
   if (!grid) return;
   const alumnos = getAlumnos();
   grid.className = 'alumnos-grid crm';
-  const rows = alumnos.map(a => `
-    <div class="alu-row" data-nom="${(a.nombre||'').toLowerCase()}" onclick="openPerfilAlumno('${a.id}')">
-      <div class="alu-av">${a.foto ? `<img src="${a.foto}">` : '👤'}</div>
-      <div class="alu-nom">${a.nombre||''}</div>
-      ${_aluChip(a.objetivo)}
-      <i class="alu-chev">›</i>
-    </div>`).join('');
+  const cards = alumnos.map(a => {
+    const chip = _aluChip(a.objetivo);
+    return `
+    <div class="alu-card" data-nom="${(a.nombre||'').toLowerCase()}" onclick="openPerfilAlumno('${a.id}')">
+      <div class="alu-card-av">${a.foto ? `<img src="${a.foto}">` : '👤'}</div>
+      <div class="alu-card-main">
+        <div class="alu-card-nom">${a.nombre||''}</div>
+        ${chip ? '<div style="margin-top:5px;">'+chip+'</div>' : ''}
+      </div>
+    </div>`; }).join('');
   grid.innerHTML = `
     <div class="alu-toolbar">
       <input class="alu-search" type="text" placeholder="Buscar alumno…" oninput="_filtrarAlumnos(this.value)">
       <button class="alu-nuevo" onclick="openModalNuevoAlumno()">+ Nuevo alumno</button>
     </div>
     <div class="alu-count">${alumnos.length} alumno${alumnos.length!==1?'s':''}</div>
-    <div class="alu-list" id="alu-list">${rows || '<div class="alu-empty">Todavía no hay alumnos cargados.</div>'}</div>`;
+    <div class="alu-cards" id="alu-list">${cards || '<div class="alu-empty">Todavía no hay alumnos cargados.</div>'}</div>`;
 }
 function _filtrarAlumnos(q){
   const lq = (q||'').toLowerCase().trim();
   let vis = 0;
-  document.querySelectorAll('#alu-list .alu-row').forEach(r => {
+  document.querySelectorAll('#alu-list .alu-card').forEach(r => {
     const ok = r.dataset.nom.includes(lq);
     r.style.display = ok ? '' : 'none';
     if (ok) vis++;
@@ -26661,6 +26705,34 @@ function _traspBuildSesion(texto, lugar){
   });
   return { bloques:bloques.filter(b=>b.ejercicios.length), lugar:lugar||'' };
 }
+// Mapea "Lunes"/"mié"/fecha → índice de día (Lun=0 … Dom=6)
+function _traspDiaIdx(s){
+  s=(s||'').trim().toLowerCase();
+  let m=s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m){ const d=new Date(+m[1],+m[2]-1,+m[3],12); if(!isNaN(d)) return (d.getDay()+6)%7; }
+  m=s.match(/(\d{1,2})[\/\-](\d{1,2})/);
+  if(m){ const d=new Date(new Date().getFullYear(),+m[2]-1,+m[1],12); if(!isNaN(d)) return (d.getDay()+6)%7; }
+  if(/lun/.test(s)) return 0;
+  if(/mar/.test(s)) return 1;
+  if(/mi[eé]|mier/.test(s)) return 2;
+  if(/jue/.test(s)) return 3;
+  if(/vie/.test(s)) return 4;
+  if(/s[aá]b/.test(s)) return 5;
+  if(/dom/.test(s)) return 6;
+  return -1;
+}
+// Divide el texto pegado en sesiones por líneas "DÍA: Lunes" / "DIA: 04/08"
+function _traspSplitSemana(texto){
+  const lines=String(texto||'').replace(/\r/g,'').split('\n');
+  const re=/^\s*d[ií]a\s*[:\-]\s*(.+)$/i;
+  const out=[]; let cur=null;
+  lines.forEach(raw=>{
+    const m=raw.match(re);
+    if(m){ cur={ dia:m[1].trim(), lineas:[] }; out.push(cur); return; }
+    if(cur) cur.lineas.push(raw);
+  });
+  return out.filter(s=>s.lineas.some(l=>l.trim()));
+}
 function _traspEnviar(){
   const id=document.getElementById('trasp-alumno').value;
   const dest=document.getElementById('trasp-destino').value;
@@ -26669,13 +26741,60 @@ function _traspEnviar(){
   const txt=(document.getElementById('trasp-texto').value||'').trim();
   if(!id||!dest||!fecha||!lugar){ toast('Completá alumno, semana, fecha y lugar','error'); return; }
   if(!txt){ toast('Escribí o pegá la sesión','error'); return; }
+  const planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]);
+  const _MC=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const _nom=(lunesStr,dIdx)=>{ const d=new Date(lunesStr+'T12:00:00'); d.setDate(d.getDate()+dIdx); return lugar+' — '+d.getDate()+' '+_MC[d.getMonth()]; };
+
+  // ── ¿Semana completa? (varias sesiones con "DÍA: ...") ──
+  const partes=_traspSplitSemana(txt);
+  const esSemana = partes.length>1 || (partes.length===1 && /^\s*d[ií]a\s*[:\-]/im.test(txt));
+
+  let planId;
+  if(esSemana){
+    // Construir mapa dayIdx → sesión
+    const nuevasDias={}; let cargadas=0;
+    partes.forEach(pt=>{
+      const dIdx=_traspDiaIdx(pt.dia); if(dIdx<0) return;
+      const ses=_traspBuildSesion(pt.lineas.join('\n'), lugar);
+      if(!ses.bloques.length) return;
+      nuevasDias[String(dIdx)]=ses; cargadas++;
+    });
+    if(!cargadas){ toast('No pude leer las sesiones. Separá cada día con una línea "DÍA: Lunes".','error'); return; }
+    if(dest==='new'){
+      const lunes=_getLunesDe(fecha);
+      const dias={}; Object.keys(nuevasDias).forEach(k=>{ const s=nuevasDias[k]; s.nombre=_nom(lunes,+k); dias[k]=[s]; });
+      const nuevo={ id:genId(), alumnoId:id, tipoPlan:'fuerza', tipoPlanEstructura:'semanal',
+        titulo:(lugar+' · semana'), lugar, semanaNum:1, fecha:lunes,
+        diasData:dias, semanasArray:[{semana:1,fechaInicio:lunes,dias}], createdAt:new Date().toISOString() };
+      planes.push(nuevo); planId=nuevo.id;
+    } else {
+      const parts=dest.split('|'); const wi=+parts[1]; const p=planes.find(x=>x.id===parts[0]);
+      if(!p){ toast('No encontré el plan destino','error'); return; }
+      if(!(Array.isArray(p.semanasArray)&&p.semanasArray.length)) p.semanasArray=[{semana:1,fechaInicio:p.fecha||_getLunesDe(fecha),dias:p.diasData||{}}];
+      const w=p.semanasArray[wi]||p.semanasArray[0];
+      const lunes=w.fechaInicio||_getLunesDe(fecha);
+      w.dias=w.dias||{};
+      const ocupados=Object.keys(nuevasDias).filter(k=>w.dias[k]&&w.dias[k].length);
+      if(ocupados.length && !confirm('Esa semana ya tiene '+ocupados.length+' día(s) con sesión. ¿Reemplazar esos días?')) return;
+      Object.keys(nuevasDias).forEach(k=>{ const s=nuevasDias[k]; s.nombre=_nom(lunes,+k); w.dias[k]=[s]; });
+      if(p.semanasArray.indexOf(w)===0) p.diasData=p.semanasArray[0].dias;
+      planId=p.id;
+    }
+    savePlanificaciones(planes);
+    if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+    document.getElementById('trasp-modal').style.display='none';
+    const t=document.getElementById('trasp-texto'); if(t) t.value='';
+    toast('✅ '+cargadas+' sesión'+(cargadas!==1?'es':'')+' cargadas en la semana');
+    if(typeof abrirPlanFuerzaExistente==='function') abrirPlanFuerzaExistente(planId);
+    return;
+  }
+
+  // ── Sesión única (comportamiento clásico) ──
   const fTxt=new Date(fecha+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'});
   const ses=_traspBuildSesion(txt, lugar);
   ses.nombre=lugar+' — '+fTxt;
   if(!ses.bloques.length){ toast('No pude leer ejercicios. Poné un ejercicio por línea (ej: Sentadilla 4x6 @ 100kg).','error'); return; }
   const dayIdx=(new Date(fecha+'T12:00:00').getDay()+6)%7; // Lun=0
-  const planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]);
-  let planId;
   if(dest==='new'){
     const lunes=_getLunesDe(fecha);
     const dias={}; dias[String(dayIdx)]=[ses];
