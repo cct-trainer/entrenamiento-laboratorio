@@ -800,8 +800,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260805171140 por un timestamp en cada deploy
-const _APP_VERSION = '20260805171140';
+// deploy.bat reemplaza 20260805171555 por un timestamp en cada deploy
+const _APP_VERSION = '20260805171555';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2118,7 +2118,7 @@ function _sesImgDefault(){
 }
 // Imagen automática según el grupo muscular principal de la sesión
 const _MUS_IMG = {
-  gluteos:'gluteos.jpg', piernas:'PIERNAS.png', espalda:'espalda.jpg',
+  gluteos:'gluteos.png', femorales:'femorales.jpg', piernas:'PIERNAS.png', espalda:'espalda.jpg',
   pecho:'pecho.jpg', hombros:'hombros.jpg', brazos:'tren_superior.png',
   core:'fullbody.jpg', fullbody:'fullbody.jpg'
 };
@@ -2128,7 +2128,8 @@ function _imgMusculoSes(ses){
     ((b.ejercicios||[]).map(e=>e.nombre||'').join(' '))).join(' ').toLowerCase();
   // Definiciones por grupo (evito "pull"/"lat" sueltos para no confundir "face pull")
   const defs = [
-    ['gluteos', /gl[uú]te|hip thrust|puente de gl|patada de gl|abducci|isqui|femoral|peso muerto/g],
+    ['femorales', /isqui|femoral|peso muerto|nordic|curl femoral|good ?morning/g],
+    ['gluteos', /gl[uú]te|hip thrust|puente de gl|patada de gl|abducci/g],
     ['pecho',   /pecho|pectoral|press de banca|press banca|press inclinado|apertura|aperturas|pec ?deck|contractora|crossover/g],
     ['espalda', /espalda|dorsal|jal[oó]n|dominad|remo|pull ?over|pull ?up|remo con/g],
     ['hombros', /hombro|deltoid|press militar|press de hombro|elevaci[oó]n lateral|p[aá]jaro/g],
