@@ -800,8 +800,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260805170239 por un timestamp en cada deploy
-const _APP_VERSION = '20260805170239';
+// deploy.bat reemplaza 20260805171140 por un timestamp en cada deploy
+const _APP_VERSION = '20260805171140';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2118,7 +2118,7 @@ function _sesImgDefault(){
 }
 // Imagen automática según el grupo muscular principal de la sesión
 const _MUS_IMG = {
-  gluteos:'gluteos.png', piernas:'PIERNAS.png', espalda:'espalda.jpg',
+  gluteos:'gluteos.jpg', piernas:'PIERNAS.png', espalda:'espalda.jpg',
   pecho:'pecho.jpg', hombros:'hombros.jpg', brazos:'tren_superior.png',
   core:'fullbody.jpg', fullbody:'fullbody.jpg'
 };
@@ -2128,12 +2128,12 @@ function _imgMusculoSes(ses){
     ((b.ejercicios||[]).map(e=>e.nombre||'').join(' '))).join(' ').toLowerCase();
   // Definiciones por grupo (evito "pull"/"lat" sueltos para no confundir "face pull")
   const defs = [
-    ['gluteos', /gl[uú]te|hip thrust|puente de gl|patada de gl|abducci/g],
+    ['gluteos', /gl[uú]te|hip thrust|puente de gl|patada de gl|abducci|isqui|femoral|peso muerto/g],
     ['pecho',   /pecho|pectoral|press de banca|press banca|press inclinado|apertura|aperturas|pec ?deck|contractora|crossover/g],
     ['espalda', /espalda|dorsal|jal[oó]n|dominad|remo|pull ?over|pull ?up|remo con/g],
     ['hombros', /hombro|deltoid|press militar|press de hombro|elevaci[oó]n lateral|p[aá]jaro/g],
     ['brazos',  /b[ií]ceps|tr[ií]ceps|\bcurl|extensi[oó]n de tr|press franc[eé]s|patada de tr/g],
-    ['piernas', /cu[aá]driceps|sentadilla|prensa|zancada|isqui|femoral|peso muerto rumano|\bpierna|gemelo|hack|estoc|split squat/g],
+    ['piernas', /cu[aá]driceps|sentadilla|prensa|zancada|\bpierna|gemelo|hack|estoc|split squat/g],
     ['core',    /core|abdom|plancha|pallof|dead bug|bicho muerto|rueda abdominal|crunch|zona media/g],
     ['fullbody',/cuerpo completo|full ?body|total body/g]
   ];
