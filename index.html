@@ -14268,6 +14268,13 @@ function renderSidebarAlumno(id) {
       onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
       🔄 Link de actualización
     </button>
+    <button onclick="copiarLinkFormulario('${id}')"
+      style="width:100%;margin-top:8px;background:transparent;border:0.5px solid #3a4d73;border-radius:9px;
+             color:#dbe1ec;font-size:11px;font-weight:600;padding:9px 12px;cursor:pointer;
+             letter-spacing:0.3px;font-family:inherit;transition:background .15s;"
+      onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+      🏋️ Formulario de pesos y preferencias
+    </button>
     ${(a.checkins&&a.checkins.length)?`<button onclick="verHistorialCheckins('${id}')"
       style="width:100%;margin-top:8px;background:transparent;border:0.5px solid #3a4d73;border-radius:9px;
              color:#dbe1ec;font-size:11px;font-weight:600;padding:9px 12px;cursor:pointer;font-family:inherit;transition:background .15s;"
@@ -25751,6 +25758,10 @@ function copiarLinkActualizacion(id){
   if(!id){ toast('No encontré al alumno'); return; }
   const url='https://cct-trainer.github.io/entrenamiento-laboratorio/actualizar.html?a='+encodeURIComponent(id);
   navigator.clipboard.writeText(url).then(()=>toast('🔗 Link de actualización copiado — mandáselo al alumno')).catch(()=>prompt('Copiá este link:',url));
+}
+function copiarLinkFormulario(id){
+  const url='https://cct-trainer.github.io/entrenamiento-laboratorio/formulario-entrenamiento.html'+(id?('?a='+encodeURIComponent(id)):'');
+  navigator.clipboard.writeText(url).then(()=>toast('🏋️ Link del formulario copiado — mandáselo al alumno')).catch(()=>prompt('Copiá este link:',url));
 }
 async function _iaCheckActualizacion(alumnoId){
   const box=document.getElementById('ia-update-banner'); if(box) box.innerHTML='';
