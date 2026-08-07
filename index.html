@@ -17934,13 +17934,15 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
     const iconEmoji = isRun ? '🏃' : '💪';
 
     // Nombre del mes (por fecha)
-    let mesDisplay = p.titulo || p.nombre || '—';
-    if(p.fecha) {
-      const fd = new Date(p.fecha + 'T12:00:00');
-      if(!isNaN(fd)) {
-        const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-        mesDisplay = meses[fd.getMonth()].toUpperCase();
-      }
+    // El nombre puesto por el coach (titulo) tiene prioridad; si no hay, se usa el mes de la fecha
+    let mesDisplay;
+    if (p.titulo && p.titulo.trim()) {
+      mesDisplay = p.titulo;
+    } else if (p.fecha && !isNaN(new Date(p.fecha + 'T12:00:00'))) {
+      const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+      mesDisplay = meses[new Date(p.fecha + 'T12:00:00').getMonth()].toUpperCase();
+    } else {
+      mesDisplay = p.nombre || '—';
     }
     const abrirFn = isRun ? `abrirPlanRunningExistente('${p.id}')` : `abrirPlanFuerzaExistente('${p.id}')`;
     const acciones = `<div class="plan-item-actions-row">
@@ -26798,9 +26800,15 @@ function _traspEnviar(){
       const w=p.semanasArray[wi]||p.semanasArray[0];
       const lunes=w.fechaInicio||_getLunesDe(fecha);
       w.dias=w.dias||{};
-      const ocupados=Object.keys(nuevasDias).filter(k=>w.dias[k]&&w.dias[k].length);
-      if(ocupados.length && !confirm('Esa semana ya tiene '+ocupados.length+' día(s) con sesión. ¿Reemplazar esos días?')) return;
-      Object.keys(nuevasDias).forEach(k=>{ const s=nuevasDias[k]; s.nombre=_nom(lunes,+k); w.dias[k]=[s]; });
+      const _lg=String(lugar||'').toLowerCase();
+      const ocupados=Object.keys(nuevasDias).filter(k=>Array.isArray(w.dias[k])&&w.dias[k].some(s=>s&&String(s.lugar||'').toLowerCase()===_lg));
+      if(ocupados.length && !confirm('Esa semana ya tiene '+ocupados.length+' día(s) con sesión de "'+lugar+'". ¿Reemplazar esa modalidad?')) return;
+      Object.keys(nuevasDias).forEach(k=>{
+        const s=nuevasDias[k]; s.nombre=_nom(lunes,+k);
+        if(!Array.isArray(w.dias[k])) w.dias[k]=[];
+        const li=w.dias[k].findIndex(x=>x&&String(x.lugar||'').toLowerCase()===_lg);
+        if(li>=0) w.dias[k][li]=s; else w.dias[k].push(s); // conserva la otra modalidad
+      });
       if(p.semanasArray.indexOf(w)===0) p.diasData=p.semanasArray[0].dias;
       planId=p.id;
     }
@@ -26832,8 +26840,11 @@ function _traspEnviar(){
     if(!(Array.isArray(p.semanasArray)&&p.semanasArray.length)) p.semanasArray=[{semana:1,fechaInicio:p.fecha||_getLunesDe(fecha),dias:p.diasData||{}}];
     const w=p.semanasArray[wi]||p.semanasArray[0];
     w.dias=w.dias||{};
-    if(w.dias[String(dayIdx)] && w.dias[String(dayIdx)].length){ if(!confirm('Ya hay una sesión ese día en esa semana. ¿Reemplazarla?')) return; }
-    w.dias[String(dayIdx)]=[ses];
+    const _k=String(dayIdx); if(!Array.isArray(w.dias[_k])) w.dias[_k]=[];
+    const _lg=String(lugar||'').toLowerCase();
+    const _li=w.dias[_k].findIndex(s=>s&&String(s.lugar||'').toLowerCase()===_lg);
+    if(_li>=0){ if(!confirm('Ya hay una sesión de "'+lugar+'" ese día. ¿Reemplazarla?')) return; w.dias[_k][_li]=ses; }
+    else { w.dias[_k].push(ses); } // otra modalidad (Gym/Casa) → se agrega, no reemplaza
     if(p.semanasArray.indexOf(w)===0) p.diasData=p.semanasArray[0].dias;
     planId=p.id;
   }
