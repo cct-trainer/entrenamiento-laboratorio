@@ -268,6 +268,15 @@ html.light .hdr{box-shadow:0 6px 18px -12px rgba(0,0,0,.18);}
 .serie-row.lp-active{background:rgba(201,168,76,.12)!important;}
 .s-omitida{opacity:.3;}
 .s-omitida td{text-decoration:line-through;}
+/* Serie completada (tap) */
+.s-chk{display:inline-block;width:16px;height:16px;border-radius:50%;border:1.5px solid #444a57;vertical-align:middle;margin-right:4px;position:relative;top:-1px;}
+.s-chk.on{background:#25D366;border-color:#25D366;}
+.s-chk.on::after{content:'✓';color:#08260f;font-size:11px;font-weight:900;position:absolute;left:2px;top:-3px;}
+.serie-row.s-done td{background:rgba(37,211,102,.14)!important;}
+.s-del{background:transparent;border:none;color:#6a707c;font-size:14px;font-weight:900;cursor:pointer;line-height:1;padding:2px 4px;}
+.s-del:hover,.s-del:active{color:#e05656;}
+.s-add{width:100%;margin-top:6px;background:transparent;border:1px dashed color-mix(in srgb,var(--gold) 45%,transparent);color:var(--gold);border-radius:9px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.s-add:active{background:color-mix(in srgb,var(--gold) 8%,transparent);}
 
 /* ── PROGRESIÓN BADGE ─────────────────────────────────────────────── */
 .prog-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.22);border-radius:8px;padding:5px 10px;font-size:10px;font-weight:700;color:#86efac;margin:8px 0 0;}
@@ -800,8 +809,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260807172216 por un timestamp en cada deploy
-const _APP_VERSION = '20260807172216';
+// deploy.bat reemplaza 20260808113817 por un timestamp en cada deploy
+const _APP_VERSION = '20260808113817';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1834,26 +1843,27 @@ function _ejCard(ej, uid) {
       (hasPeso  ? '<th style="'+thStyle+'">PESO (KG)</th>' : '')+
       (hasRir   ? '<th style="'+thStyle+'">RIR</th>'  : '')+
       (hasPausa ? '<th style="'+thStyle+'">PAUSA</th>': '')+
+      '<th style="'+thStyle+'width:26px;"></th>'+
     '</tr>';
     // Ejecución unilateral → cada serie se divide en Derecha e Izquierda
     const _uni = _esUnilateralEj(ej);
-    // Construye UNA fila. sfx: '' (bilateral) | '_d' (der) | '_i' (izq); lado: etiqueta gris
-    function _mkRow(s, i, sfx, lado){
-      const spBase = savePrefix ? savePrefix+'_'+i : '';
-      const sp     = spBase ? spBase+sfx : '';        // clave de edición (por lado si unilateral)
+    // keyIdx = índice estable para guardar; labelNum = número visible (S#)
+    function _mkRow(s, keyIdx, labelNum, sfx, lado){
+      const spBase = savePrefix ? savePrefix+'_'+keyIdx : '';
+      const sp     = spBase ? spBase+sfx : '';
       let repsVal = (spBase ? _getEdit(spBase,'reps') : '') || s.reps || '';
-      if(sfx) repsVal = _repsSinLado(repsVal);        // fila unilateral → solo el número
+      if(sfx) repsVal = _repsSinLado(repsVal);
       const pesoRaw = (sp ? _getEdit(sp,'peso') : '') || (s.peso ? String(s.peso).replace(/kg$/i,'').trim() : '');
       const omitida = sp ? _getEdit(sp,'omitida')==='1' : false;
+      const done    = sp ? _getEdit(sp,'done')==='1' : false;
       const tipoKey = sp ? _getEdit(sp,'tipo') : '';
       const tipoInfo = tipoKey && SERIE_TIPOS[tipoKey] ? SERIE_TIPOS[tipoKey] : null;
       const tipoBadge = tipoInfo
         ? '<span class="s-tipo" style="color:'+tipoInfo.color+';background:'+tipoInfo.color+'22;" onclick="event.stopPropagation();_showCtxMenu(event,\''+sp+'\',\''+uid+'\')">'+tipoInfo.icon+' '+tipoInfo.label+'</span>'
         : '';
-      // Serie por tiempo → chip temporizador (uno por lado); si no, reps
       const _segR = _segDe(repsVal);
-      const _tid  = sp || (uid+'_'+offset+'_'+i);
-      const editableReps = (!!spBase && !sfx); // reps editables solo en bilateral
+      const _tid  = sp || (uid+'_'+offset+'_'+keyIdx);
+      const editableReps = (!!spBase && !sfx);
       const repsCel = _segR
         ? '<span class="tmr" id="tmr_'+_tid+'" data-total="'+_segR+'" '+
             'onclick="event.stopPropagation();_tmrTap(\''+_tid+'\')" ontouchstart="event.stopPropagation()" '+
@@ -1878,28 +1888,39 @@ function _ejCard(ej, uid) {
       const touch = sp
         ? 'ontouchstart="_lpStart(event,\''+sp+'\',\''+uid_safe+'\')" ontouchend="_lpEnd()" ontouchmove="_lpEnd()" oncontextmenu="_showCtxMenu(event,\''+sp+'\',\''+uid_safe+'\');return false"'
         : '';
-      // Pausa → chip temporizador opcional (si no se toca, queda como info)
       const _segP  = _segDe(s.pausa);
-      const _ptid  = (sp || (uid+'_'+offset+'_'+i)) + '_p';
+      const _ptid  = (sp || (uid+'_'+offset+'_'+keyIdx)) + '_p';
       const pausaCel = _segP
         ? '<span class="tmr" id="tmr_'+_ptid+'" data-total="'+_segP+'" '+
             'onclick="event.stopPropagation();_tmrTap(\''+_ptid+'\')" ontouchstart="event.stopPropagation()" '+
             'style="color:var(--gold);font-size:11px;font-weight:700;cursor:pointer;user-select:none;-webkit-user-select:none;">'+_compEsc(s.pausa)+'</span>'
         : (s.pausa||'—');
-      const serieLbl = 'S'+(offset+i+1) + (lado ? ' <span style="color:var(--muted);font-weight:600;">'+lado+'</span>' : '') + tipoBadge;
-      return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+'" '+touch+'>'+
-        '<td style="'+tdBase+'font-size:11px;font-weight:800;">'+serieLbl+'</td>'+
+      const chk = '<span class="s-chk'+(done?' on':'')+'"></span>';
+      const serieLbl = chk+'S'+labelNum + (lado ? ' <span style="color:var(--muted);font-weight:600;">'+lado+'</span>' : '') + tipoBadge;
+      const delBtn = spBase ? '<button class="s-del" onclick="event.stopPropagation();_serieDel(\''+savePrefix+'\','+keyIdx+')" title="Eliminar serie">✕</button>' : '';
+      return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+(done?' s-done':'')+'" '+touch+'>'+
+        '<td style="'+tdBase+'font-size:11px;font-weight:800;cursor:pointer;" onclick="event.stopPropagation();_serieTap(\''+sp+'\')">'+serieLbl+'</td>'+
         '<td style="'+tdBase+'">'+repsCel+'</td>'+
         (hasPeso  ? '<td style="'+tdBase+'">'+pesoCel+'</td>' : '')+
         (hasRir   ? '<td style="'+tdBase+'">'+rirCel+'</td>' : '')+
         (hasPausa ? '<td style="'+tdBase+'font-size:11px;">'+pausaCel+'</td>' : '')+
+        '<td style="'+tdBase+'padding:2px 4px;">'+delBtn+'</td>'+
       '</tr>';
     }
-    const rows = arr.map((s,i) =>
-      _uni ? (_mkRow(s,i,'_d','Der') + _mkRow(s,i,'_i','Izq'))
-           : _mkRow(s,i,'','')
-    ).join('');
-    return '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div>';
+    // Series extra agregadas y borradas por el alumno (persistentes)
+    const _extra = parseInt(savePrefix ? _getEdit(savePrefix,'_extra') : '')||0;
+    const _delSet = new Set(String(savePrefix ? (_getEdit(savePrefix,'_del')||'') : '').split(',').filter(x=>x!=='').map(Number));
+    const _items=[];
+    arr.forEach((s,idx)=>{ if(!_delSet.has(idx)) _items.push({s:s,idx:idx}); });
+    const _lastP = arr.length ? (arr[arr.length-1].pausa||'') : '';
+    for(let j=0;j<_extra;j++){ const idx=arr.length+j; if(!_delSet.has(idx)) _items.push({s:{reps:'',peso:'',rir:'',pausa:_lastP}, idx:idx}); }
+    let _ln=0;
+    const rows = _items.map(it=>{ _ln++; const labelNum=offset+_ln;
+      return _uni ? (_mkRow(it.s,it.idx,labelNum,'_d','Der') + _mkRow(it.s,it.idx,labelNum,'_i','Izq'))
+                  : _mkRow(it.s,it.idx,labelNum,'','');
+    }).join('');
+    const addBtn = savePrefix ? '<button class="s-add" onclick="_serieAdd(\''+savePrefix+'\')">＋ Agregar serie</button>' : '';
+    return '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div>'+addBtn;
   }
 
   // Grid SERIES / REPS / PAUSA / RIR  (resumen de series efectivas)
@@ -2241,6 +2262,27 @@ async function _terminarEntrenamiento(){
   try { if (typeof toast === 'function') toast(_t('terminar_ok')); else alert(_t('terminar_ok')); } catch(e){ alert(_t('terminar_ok')); }
 }
 
+// ── Series: marcar hecha / agregar / eliminar (lado alumno) ──
+function _serieTap(sp){
+  if(!sp) return;
+  const done = _getEdit(sp,'done')==='1';
+  _guardarEdit(sp,'done', done?'':'1');
+  const tr=document.getElementById('sr_'+sp);
+  if(tr){ tr.classList.toggle('s-done', !done); const c=tr.querySelector('.s-chk'); if(c) c.classList.toggle('on', !done); }
+}
+function _serieAdd(prefix){
+  if(!prefix) return;
+  const n=(parseInt(_getEdit(prefix,'_extra'))||0)+1;
+  _guardarEdit(prefix,'_extra',String(n));
+  renderSesion();
+}
+function _serieDel(prefix, idx){
+  if(!prefix) return;
+  const cur=String(_getEdit(prefix,'_del')||'').split(',').filter(x=>x!=='');
+  if(cur.indexOf(String(idx))<0) cur.push(String(idx));
+  _guardarEdit(prefix,'_del',cur.join(','));
+  renderSesion();
+}
 function renderSesion() {
   const ctn=document.getElementById('sesion-ctn');
   if (_diaIdx===null||!_plan) { ctn.innerHTML=''; return; }
