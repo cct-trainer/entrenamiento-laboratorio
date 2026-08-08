@@ -268,11 +268,10 @@ html.light .hdr{box-shadow:0 6px 18px -12px rgba(0,0,0,.18);}
 .serie-row.lp-active{background:rgba(201,168,76,.12)!important;}
 .s-omitida{opacity:.3;}
 .s-omitida td{text-decoration:line-through;}
-/* Serie completada (tap) */
-.s-chk{display:inline-block;width:16px;height:16px;border-radius:50%;border:1.5px solid #444a57;vertical-align:middle;margin-right:4px;position:relative;top:-1px;}
-.s-chk.on{background:#25D366;border-color:#25D366;}
-.s-chk.on::after{content:'✓';color:#08260f;font-size:11px;font-weight:900;position:absolute;left:2px;top:-3px;}
-.serie-row.s-done td{background:rgba(37,211,102,.14)!important;}
+/* Serie completada: el propio número S# es el botón */
+.s-num{display:inline-block;min-width:26px;padding:4px 9px;border-radius:8px;border:1.5px solid #444a57;color:#c8cdd6;font-weight:800;font-size:12px;line-height:1;transition:all .12s;}
+.s-num.on{background:#25D366;border-color:#25D366;color:#08260f;}
+.serie-row.s-done td{background:rgba(37,211,102,.12)!important;}
 .s-del{background:transparent;border:none;color:#6a707c;font-size:14px;font-weight:900;cursor:pointer;line-height:1;padding:2px 4px;}
 .s-del:hover,.s-del:active{color:#e05656;}
 .s-add{width:100%;margin-top:6px;background:transparent;border:1px dashed color-mix(in srgb,var(--gold) 45%,transparent);color:var(--gold);border-radius:9px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
@@ -809,8 +808,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260808114945 por un timestamp en cada deploy
-const _APP_VERSION = '20260808114945';
+// deploy.bat reemplaza 20260808120741 por un timestamp en cada deploy
+const _APP_VERSION = '20260808120741';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1895,8 +1894,7 @@ function _ejCard(ej, uid) {
             'onclick="event.stopPropagation();_tmrTap(\''+_ptid+'\')" ontouchstart="event.stopPropagation()" '+
             'style="color:var(--gold);font-size:11px;font-weight:700;cursor:pointer;user-select:none;-webkit-user-select:none;">'+_compEsc(s.pausa)+'</span>'
         : (s.pausa||'—');
-      const chk = '<span class="s-chk'+(done?' on':'')+'"></span>';
-      const serieLbl = chk+'S'+labelNum + (lado ? ' <span style="color:var(--muted);font-weight:600;">'+lado+'</span>' : '') + tipoBadge;
+      const serieLbl = '<span class="s-num'+(done?' on':'')+'">S'+labelNum+'</span>' + (lado ? ' <span style="color:var(--muted);font-weight:600;">'+lado+'</span>' : '') + tipoBadge;
       const delBtn = spBase ? '<button class="s-del" onclick="event.stopPropagation();_serieDel(\''+savePrefix+'\','+keyIdx+')" title="Eliminar serie">✕</button>' : '';
       return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+(done?' s-done':'')+'" '+touch+'>'+
         '<td style="'+tdBase+'font-size:11px;font-weight:800;cursor:pointer;" onclick="event.stopPropagation();_serieTap(\''+sp+'\')">'+serieLbl+'</td>'+
@@ -2257,7 +2255,7 @@ function _serieTap(sp){
   const done = _getEdit(sp,'done')==='1';
   _guardarEdit(sp,'done', done?'':'1');
   const tr=document.getElementById('sr_'+sp);
-  if(tr){ tr.classList.toggle('s-done', !done); const c=tr.querySelector('.s-chk'); if(c) c.classList.toggle('on', !done); }
+  if(tr){ tr.classList.toggle('s-done', !done); const c=tr.querySelector('.s-num'); if(c) c.classList.toggle('on', !done); }
 }
 function _serieAdd(prefix){
   if(!prefix) return;
