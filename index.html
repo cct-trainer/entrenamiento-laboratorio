@@ -3086,7 +3086,7 @@ select.toolbox-input option:disabled { color: #888; }
         <span><span class="nav-dd-label">Nueva sesión</span><span class="nav-dd-sub">Crear nueva planificación</span></span>
       </button>
       <button class="nav-dropdown-item" onclick="navIrIAPlanner()">
-        <span><span class="nav-dd-label" style="color:#7c3aed;">🤖 IA Planner</span><span class="nav-dd-sub">Entrenador virtual — plan con IA</span></span>
+        <span><span class="nav-dd-label" style="color:#7c3aed;">📋 Asistente de planilla</span><span class="nav-dd-sub">Pasar sesión a la planilla del alumno</span></span>
       </button>
     </div>
   </div>
@@ -3125,7 +3125,7 @@ select.toolbox-input option:disabled { color: #888; }
           </button>
           <div class="pmm-left-divider"></div>
           <button class="pmm-left-item" id="pmm-cat-ia" onclick="perfilPlanGo('ia')" style="color:#7c3aed;font-weight:900;">
-            🤖 IA Planner
+            📋 Asistente de planilla
           </button>
         </div>
         <div class="pmm-right" id="pmm-right-panel">
@@ -13206,16 +13206,8 @@ function navNuevaSesion() {
 function navIrIAPlanner() {
   document.getElementById('nav-planif-dropdown')?.classList.remove('open');
   document.getElementById('nav-btn-planificador')?.classList.remove('open');
-  if (currentAlumnoId) {
-    openPerfilAlumno(currentAlumnoId);
-    setTimeout(() => perfilPlanGo('ia'), 100);
-  } else {
-    showView('perfil');
-    setTimeout(() => {
-      _activarTrigger('perfil-plan-trigger');
-      _limpiarAreaPrincipal(() => { _activarSection('ia'); renderIAPlanner(); });
-    }, 60);
-  }
+  // Asistente de planilla → abre directo el modal "Pasar sesión a planilla"
+  _iaTraspasoAbrir();
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
@@ -13832,10 +13824,7 @@ function perfilPlanGo(sub) {
   }
   if (sub === 'ia') {
     _cerrarTodosPerfilMM();
-    _limpiarAreaPrincipal(() => {
-      _activarSection('ia');
-      renderIAPlanner();
-    });
+    _iaTraspasoAbrir();   // Asistente de planilla → abre directo "Pasar sesión a planilla"
     return;
   }
   _limpiarAreaPrincipal(() => {
