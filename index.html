@@ -35,7 +35,7 @@ nav > .nav-btn,
 .nav-dropdown-trigger,
 .perfil-nav-btn,
 .perfil-nav-plan-trigger {
-  background: transparent; border: none; color: #aaa;
+  background: transparent; border: none; color: #c3c9d4;
   padding: 6px 13px; margin: 0 1px;
   font-size: 13px; font-weight: 500; cursor: pointer;
   letter-spacing: 0.3px; white-space: nowrap;
@@ -48,16 +48,17 @@ nav > .nav-btn:hover,
 .nav-dropdown-trigger:hover,
 .perfil-nav-btn:hover,
 .perfil-nav-plan-trigger:hover {
-  background: #2a2a2a; color: #fff;
+  background: #242a37; color: #fff;
 }
-/* Activo — mismo aspecto que hover pero persistente */
+/* Activo — texto blanco con subrayado dorado (más limpio que el recuadro) */
 nav > .nav-btn.active,
 .nav-dropdown-trigger.active,
 .nav-dropdown-trigger.open,
 .perfil-nav-btn.active,
 .perfil-nav-plan-trigger.active,
 .perfil-nav-plan-trigger.open {
-  background: #2a2a2a; color: #fff; font-weight: 600;
+  background: transparent; color: #fff; font-weight: 700;
+  box-shadow: inset 0 -2px 0 #C9A84C; border-radius: 7px 7px 0 0;
 }
 .nav-sep { width: 1px; height: 18px; background: #2e2e2e; margin: 0 6px; align-self: center; }
 
@@ -117,7 +118,7 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 /* ═══ Escritorio de alumnos — lista densa (CRM) ═══ */
 .alumnos-grid.crm { display: block; }
 .alu-toolbar { display: flex; gap: 10px; margin-bottom: 16px; }
-.alu-search { flex: 1; background: #1e2e4f; border: 0.5px solid #2b3d63; border-radius: 9px; padding: 10px 14px; color: #fff; font-size: 13px; font-family: inherit; outline: none; }
+.alu-search { width: 100%; background: #16233f; border: 1px solid #2b3d63; border-radius: 10px; padding: 11px 14px 11px 38px; color: #fff; font-size: 13px; font-family: inherit; outline: none; }
 .alu-search::placeholder { color: #8f9bb3; }
 .alu-search:focus { border-color: #C9A84C; }
 .alu-nuevo { background: #C9A84C; color: #2a2008; border: none; border-radius: 9px; padding: 10px 18px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: background .15s; }
@@ -132,13 +133,27 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .alu-chip { font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 6px; white-space: nowrap; }
 .alu-chev { color: #5f6f8c; font-size: 20px; font-style: normal; line-height: 1; flex-shrink: 0; }
 .alu-empty { text-align: center; color: #8f9bb3; font-size: 13px; padding: 30px 0; }
-.alu-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
-.alu-card { background: #1e2e4f; border: 1px solid #2b3d63; border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: border-color .15s, transform .12s, box-shadow .15s; }
-.alu-card:hover { border-color: #C9A84C; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.25); }
-.alu-card-av { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; background: #33456e; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #b9c3d6; }
+.alu-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(255px, 1fr)); gap: 14px; }
+.alu-card { position: relative; overflow: hidden; background: linear-gradient(180deg,#22345c,#1e2e4f); border: 1px solid #2b3d63; border-radius: 14px; padding: 16px; cursor: pointer; transition: border-color .16s, transform .12s, box-shadow .16s; }
+.alu-card:hover { border-color: #C9A84C; transform: translateY(-3px); box-shadow: 0 10px 26px rgba(0,0,0,.35); }
+.alu-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:#C9A84C; opacity:0; transition:.16s; }
+.alu-card:hover::before { opacity:1; }
+.ac-top { display: flex; align-items: center; gap: 13px; }
+.alu-card-av { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: #33456e; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #b9c3d6; box-shadow: 0 0 0 2px #334670; }
 .alu-card-av img { width: 100%; height: 100%; object-fit: cover; }
 .alu-card-main { min-width: 0; flex: 1; }
-.alu-card-nom { font-size: 13px; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alu-card-nom { font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ac-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 13px; padding-top: 12px; border-top: 1px solid #2b3d63; }
+.ac-goal { font-size: 11px; font-weight: 700; color: #9fb0cf; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ac-goal i { width: 8px; height: 8px; border-radius: 2px; background: #C9A84C; display: inline-block; flex-shrink: 0; font-style: normal; }
+.ac-goal span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ac-chev { color: #6f82a6; font-size: 18px; flex-shrink: 0; }
+.alu-search-wrap { position: relative; flex: 1; }
+.alu-search-ico { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #6f82a6; font-size: 14px; pointer-events: none; }
+.alu-filters { display: flex; gap: 7px; margin: 0 0 16px; flex-wrap: wrap; }
+.fchip { font-size: 11.5px; font-weight: 700; padding: 6px 12px; border-radius: 20px; border: 1px solid #2b3d63; color: #9fb0cf; background: transparent; cursor: pointer; transition: .15s; font-family: inherit; }
+.fchip:hover { border-color: #334670; color: #fff; }
+.fchip.on { background: #C9A84C; border-color: #C9A84C; color: #241d07; }
 
 .btn-add-alumno { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; }
 .btn-add-alumno:hover { transform: translateY(-3px); }
@@ -378,13 +393,13 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 }
 .mh-left { flex: 1; min-width: 0; }
 .mh-title {
-  font-size: 15px; font-weight: 900; color: #111;
+  font-size: 15px; font-weight: 900; color: #1e2330;
   text-transform: uppercase; letter-spacing: 1.2px; margin: 0;
   line-height: 1.2;
 }
 .mh-sub {
-  font-size: 11px; color: #999; margin-top: 4px;
-  letter-spacing: 0.2px; font-weight: 400;
+  font-size: 11px; color: #8b94a3; margin-top: 4px;
+  letter-spacing: 0.2px; font-weight: 500;
 }
 .mh-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
 .module-content { padding: 20px 24px; }
@@ -411,9 +426,10 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 #perfil-sec-placeholder.active {
   display: block;
 }
-.perfil-subtabs { display:flex; gap:4px; margin-bottom:20px; background:#fff; border:0.5px solid #e6e6e6; border-radius:12px; padding:4px; }
-.perfil-subtab { flex:1; background:none; border:none; padding:9px 12px; font-size:11px; font-weight:700; color:#888; cursor:pointer; border-radius:9px; transition:all 0.15s; letter-spacing:0.5px; }
-.perfil-subtab.active { background:#C9A84C; color:#2a2008; }
+.perfil-subtabs { display:flex; gap:4px; margin-bottom:20px; background:#eef0f3; border:none; border-radius:12px; padding:4px; }
+.perfil-subtab { flex:1; background:none; border:none; padding:10px 12px; font-size:11px; font-weight:700; color:#5a6472; cursor:pointer; border-radius:9px; transition:all 0.15s; letter-spacing:0.5px; }
+.perfil-subtab:hover { color:#1e2330; }
+.perfil-subtab.active { background:#fff; color:#1e2330; box-shadow:0 1px 3px rgba(20,25,40,.12); }
 .perfil-subcontent { display:none; }
 .perfil-subcontent.active { display:block; }
 /* Sidebar */
@@ -828,19 +844,19 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 
 /* BOTONES planificador */
 .pln-btn {
-  height: 36px; padding: 0 16px; border-radius: 6px; font-size: 12px;
+  height: 36px; padding: 0 15px; border-radius: 9px; font-size: 12px;
   font-weight: 600; cursor: pointer; border: 1px solid transparent;
   font-family: inherit; white-space: nowrap; transition: all 0.15s;
-  display: inline-flex; align-items: center; letter-spacing: 0.2px;
+  display: inline-flex; align-items: center; gap: 6px; letter-spacing: 0.2px;
 }
 .pln-btn-outline {
-  background: #fff; border-color: #d8d8d8; color: #333;
+  background: #fff; border-color: #e4e7ec; color: #5a6472;
 }
-.pln-btn-outline:hover { border-color: #999; color: #111; background: #fafafa; }
-.pln-btn-celeste { background: #111; color: #fff; border-color: #111; }
-.pln-btn-celeste:hover { background: #333; border-color: #333; }
-.pln-btn-guardar { background: #111; color: #fff; border-color: #111; }
-.pln-btn-guardar:hover { background: #333; border-color: #333; }
+.pln-btn-outline:hover { border-color: #C9A84C; color: #1e2330; background: #fffdf6; }
+.pln-btn-celeste { background: #161b26; color: #fff; border-color: #161b26; }
+.pln-btn-celeste:hover { background: #000; border-color: #000; }
+.pln-btn-guardar { background: #161b26; color: #fff; border-color: #161b26; }
+.pln-btn-guardar:hover { background: #000; border-color: #000; }
 
 /* META BAR */
 .pln-meta-bar {
@@ -1087,13 +1103,13 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 /* EJERCICIO */
 .ej-card {
   border-bottom: 1px solid #f0f0f0;
-  padding: 16px 0;
+  padding: 11px 0;
   background: #fff; overflow: visible;
 }
 .ej-card:last-child { border-bottom: none; }
 .ej-head {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px;
 }
 .ej-letra {
   background: #2d2d2d; color: #fff; border-radius: 4px;
@@ -1134,6 +1150,42 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
   display: flex; align-items: center; gap: 5px; white-space: nowrap;
 }
 .ej-btn-sep:hover { color: #9A7A28; border-color: #C9A84C; background: #FDF9EF; }
+.ej-btn-stat {
+  background: #fff; border: 1px solid #e0e0e0; color: #9A7A28;
+  height: 32px; padding: 0 10px; border-radius: 6px;
+  font-size: 13px; cursor: pointer; font-family: inherit;
+  display: flex; align-items: center; flex-shrink: 0;
+}
+.ej-btn-stat:hover { border-color: #C9A84C; background: #FDF9EF; }
+
+/* MODAL ESTADÍSTICAS DEL EJERCICIO (coach) */
+.stc-overlay { display:none; position:fixed; inset:0; background:rgba(10,15,26,.6); z-index:4000; align-items:center; justify-content:center; padding:20px; }
+.stc-modal { background:#141c30; border:1px solid #243150; border-radius:16px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; box-shadow:0 24px 70px rgba(0,0,0,.5); }
+.stc-head { display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid #243150; position:sticky; top:0; background:#141c30; }
+.stc-title { font-size:14px; font-weight:800; color:#fff; }
+.stc-title small { display:block; font-size:11px; font-weight:600; color:#9fb0cf; margin-top:2px; }
+.stc-x { background:none; border:none; color:#9fb0cf; font-size:22px; cursor:pointer; line-height:1; }
+.stc-body { padding:16px 18px; }
+.stc-load { display:flex; gap:8px; align-items:flex-end; background:#0f1626; border:1px solid #243150; border-radius:10px; padding:12px; margin-bottom:14px; }
+.stc-fld { flex:1; } .stc-fld label { display:block; font-size:9px; font-weight:800; letter-spacing:.5px; color:#6b7c9e; text-transform:uppercase; margin-bottom:4px; }
+.stc-fld input { width:100%; background:#0b1120; border:1px solid #243150; border-radius:8px; padding:9px 10px; color:#fff; font-size:13px; font-family:inherit; outline:none; }
+.stc-fld input:focus { border-color:#C9A84C; }
+.stc-ok { background:#25D366; color:#08260f; border:none; border-radius:8px; padding:10px 15px; font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap; font-family:inherit; }
+.stc-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; }
+.stc-box { background:#0f1626; border:1px solid #243150; border-radius:10px; padding:11px; text-align:center; }
+.stc-box .k { font-size:9px; font-weight:800; letter-spacing:.4px; color:#6b7c9e; text-transform:uppercase; }
+.stc-box .v { font-size:18px; font-weight:900; color:#fff; margin-top:4px; }
+.stc-box .v small { font-size:11px; color:#9fb0cf; }
+.stc-box .v.up { color:#7fe0a0; }
+.stc-sub { font-size:10px; font-weight:800; letter-spacing:.6px; color:#6b7c9e; margin:16px 0 7px; text-transform:uppercase; }
+.stc-hist { background:#0f1626; border:1px solid #243150; border-radius:10px; overflow:hidden; }
+.stc-hrow { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; border-bottom:1px solid rgba(36,49,80,.5); font-size:12px; }
+.stc-hrow:last-child { border-bottom:none; }
+.stc-hrow .d { color:#9fb0cf; } .stc-hrow .w { font-weight:800; color:#fff; }
+.stc-hrow .del { color:#6b7c9e; cursor:pointer; font-size:14px; background:none; border:none; }
+.stc-hrow .del:hover { color:#f87171; }
+.stc-empty { padding:14px; text-align:center; color:#6b7c9e; font-size:12px; }
+.stc-note { font-size:10.5px; color:#6b7c9e; margin-top:11px; line-height:1.5; }
 
 /* CONTROLES SERIES RÁPIDAS */
 .ej-series-controls {
@@ -3086,7 +3138,7 @@ select.toolbox-input option:disabled { color: #888; }
         <span><span class="nav-dd-label">Nueva sesión</span><span class="nav-dd-sub">Crear nueva planificación</span></span>
       </button>
       <button class="nav-dropdown-item" onclick="navIrIAPlanner()">
-        <span><span class="nav-dd-label" style="color:#7c3aed;">📋 Asistente de planilla</span><span class="nav-dd-sub">Pasar sesión a la planilla del alumno</span></span>
+        <span><span class="nav-dd-label">📋 Asistente de planilla</span><span class="nav-dd-sub">Pasar sesión a la planilla del alumno</span></span>
       </button>
     </div>
   </div>
@@ -3124,7 +3176,7 @@ select.toolbox-input option:disabled { color: #888; }
             🗓️ Macrociclo
           </button>
           <div class="pmm-left-divider"></div>
-          <button class="pmm-left-item" id="pmm-cat-ia" onclick="perfilPlanGo('ia')" style="color:#7c3aed;font-weight:900;">
+          <button class="pmm-left-item" id="pmm-cat-ia" onclick="perfilPlanGo('ia')">
             📋 Asistente de planilla
           </button>
         </div>
@@ -3316,7 +3368,7 @@ select.toolbox-input option:disabled { color: #888; }
 
       <!-- IMAGEN DE PORTADA (todos los tipos) -->
       <div style="margin-bottom:12px;">
-        <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">IMAGEN DE PORTADA <span style="font-weight:400;color:#aaa;">(subí una foto o pegá un link, opcional)</span></label>
+        <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">IMAGEN DE PORTADA <span style="font-weight:400;color:#aaa;">(horizontal 16:9, ideal 1280×720 · se optimiza sola)</span></label>
         <div style="display:flex;gap:8px;align-items:center;">
           <input id="blog-art-portada" type="text" placeholder="Pegá un link o subí una foto →" style="flex:1;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;box-sizing:border-box;" oninput="blogPreviewPortada()">
           <label style="background:#eef;border:1px solid #ccd;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;color:#334;white-space:nowrap;">📁 Subir<input type="file" accept="image/*" style="display:none;" onchange="_blogSubirPortada(this)"></label>
@@ -3429,7 +3481,7 @@ select.toolbox-input option:disabled { color: #888; }
             <p class="mh-sub" id="mh-sub-plan">Meses de entrenamiento · Fuerza y Running</p>
           </div>
           <div class="mh-actions" id="mh-actions-plan">
-            <button class="btn btn-primary" onclick="abrirModalCrearMes()" style="font-size:12px;background:#1a3a6a;padding:8px 18px;font-weight:700;">📅 Crear nuevo mes</button>
+            <button class="btn btn-primary" onclick="abrirModalCrearMes()" style="font-size:12px;background:linear-gradient(135deg,#C9A84C,#a8862f);color:#2a2109;border:none;border-radius:10px;padding:9px 18px;font-weight:800;box-shadow:0 2px 6px rgba(201,168,76,.28);">📅 Crear nuevo mes</button>
           </div>
         </div>
         <div class="module-content">
@@ -12403,11 +12455,11 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
       mostrarFicha(ejId, exLib);
       setVideoEj(ejId, exLib.video || datosPrevios.video || '');
       const fichaEl = document.getElementById(ejId+'-ficha');
-      if(fichaEl) { fichaEl.style.display='block'; fichaEl.className='ej-ficha visible'; }
+      if(fichaEl) { fichaEl.style.display='none'; fichaEl.className='ej-ficha'; }
       const toggleWrap = document.getElementById(ejId+'-ficha-toggle-wrap');
       if(toggleWrap) toggleWrap.style.display='block';
       const toggleTxt = document.getElementById(ejId+'-ficha-toggle-text');
-      if(toggleTxt) toggleTxt.textContent='OCULTAR INFORMACIÓN TÉCNICA';
+      if(toggleTxt) toggleTxt.textContent='MOSTRAR INFORMACIÓN TÉCNICA';
     } else if(datosPrevios.video) {
       setVideoEj(ejId, datosPrevios.video);
     }
@@ -13121,6 +13173,7 @@ function showView(v) {
   document.getElementById('nav-btn-inicio')?.classList.remove('active');
   document.getElementById('nav-btn-planificador')?.classList.remove('active');
   document.getElementById('nav-btn-antropometria')?.classList.remove('active');
+  document.getElementById('nav-btn-blog')?.classList.remove('active');
   document.getElementById('view-' + v).classList.add('active');
   if (v === 'inicio') {
     document.getElementById('nav-btn-inicio')?.classList.add('active');
@@ -13330,45 +13383,69 @@ function eliminarAlumno() {
   showView('inicio');
 }
 
-function _aluChip(obj){
+const _CAT_LBL = { hipertrofia:'Hipertrofia', salud:'Salud general', perdida:'Pérdida de peso', masa:'Ganar masa', recomp:'Recomposición', rendimiento:'Rendimiento', otros:'Otros' };
+function _objCat(obj){
   const o = (obj||'').toLowerCase();
-  let bg = '#2b3d63', c = '#b9c3d6';
-  if (/hipertrofia/.test(o)) { bg='#3a2f4d'; c='#cbb3f0'; }
-  else if (/salud/.test(o)) { bg='#213d2e'; c='#8fe0b0'; }
-  else if (/bajar|p[eé]rdida|grasa|adelgaz/.test(o)) { bg='#4d3a20'; c='#f0cd8f'; }
-  else if (/masa|ganar|fuerza/.test(o)) { bg='#1e3a52'; c='#8fc7f0'; }
-  else if (/recomposici/.test(o)) { bg='#4a2436'; c='#f0a3c4'; }
-  else if (/rendimiento|deportivo/.test(o)) { bg='#123a38'; c='#7fdcd0'; }
-  return obj ? `<span class="alu-chip" style="background:${bg};color:${c};">${obj}</span>` : '';
+  if (/hipertrofia/.test(o)) return 'hipertrofia';
+  if (/salud/.test(o)) return 'salud';
+  if (/bajar|p[eé]rdida|grasa|adelgaz/.test(o)) return 'perdida';
+  if (/masa|ganar|fuerza/.test(o)) return 'masa';
+  if (/recomposici/.test(o)) return 'recomp';
+  if (/rendimiento|deportivo/.test(o)) return 'rendimiento';
+  return 'otros';
 }
+let _aluCat = 'todos', _aluQ = '';
 function renderAlumnosGrid() {
   const grid = document.getElementById('alumnos-grid');
   if (!grid) return;
   const alumnos = getAlumnos();
   grid.className = 'alumnos-grid crm';
+  _aluCat = 'todos'; _aluQ = '';
+  // Contar categorías presentes
+  const counts = {};
+  alumnos.forEach(a => { const c = _objCat(a.objetivo); counts[c] = (counts[c]||0)+1; });
+  const orden = ['hipertrofia','salud','perdida','masa','recomp','rendimiento','otros'];
+  const chips = ['<button class="fchip on" data-cat="todos" onclick="_setAluCat(\'todos\',this)">Todos · '+alumnos.length+'</button>']
+    .concat(orden.filter(c => counts[c]).map(c =>
+      '<button class="fchip" data-cat="'+c+'" onclick="_setAluCat(\''+c+'\',this)">'+_CAT_LBL[c]+'</button>'
+    )).join('');
   const cards = alumnos.map(a => {
-    const chip = _aluChip(a.objetivo);
+    const cat = _objCat(a.objetivo);
+    const goal = a.objetivo
+      ? '<span class="ac-goal"><i></i><span>'+a.objetivo+'</span></span>'
+      : '<span class="ac-goal" style="color:#6f82a6;">Sin objetivo definido</span>';
     return `
-    <div class="alu-card" data-nom="${(a.nombre||'').toLowerCase()}" onclick="openPerfilAlumno('${a.id}')">
-      <div class="alu-card-av">${a.foto ? `<img src="${a.foto}">` : '👤'}</div>
-      <div class="alu-card-main">
-        <div class="alu-card-nom">${a.nombre||''}</div>
-        ${chip ? '<div style="margin-top:5px;">'+chip+'</div>' : ''}
+    <div class="alu-card" data-nom="${(a.nombre||'').toLowerCase()}" data-obj="${cat}" onclick="openPerfilAlumno('${a.id}')">
+      <div class="ac-top">
+        <div class="alu-card-av">${a.foto ? `<img src="${a.foto}">` : '👤'}</div>
+        <div class="alu-card-main">
+          <div class="alu-card-nom">${a.nombre||''}</div>
+        </div>
       </div>
+      <div class="ac-foot">${goal}<span class="ac-chev">›</span></div>
     </div>`; }).join('');
   grid.innerHTML = `
     <div class="alu-toolbar">
-      <input class="alu-search" type="text" placeholder="Buscar alumno…" oninput="_filtrarAlumnos(this.value)">
+      <div class="alu-search-wrap"><span class="alu-search-ico">🔍</span><input class="alu-search" type="text" placeholder="Buscar alumno…" oninput="_filtrarAlumnos(this.value)"></div>
       <button class="alu-nuevo" onclick="openModalNuevoAlumno()">+ Nuevo alumno</button>
     </div>
+    <div class="alu-filters">${chips}</div>
     <div class="alu-count">${alumnos.length} alumno${alumnos.length!==1?'s':''}</div>
     <div class="alu-cards" id="alu-list">${cards || '<div class="alu-empty">Todavía no hay alumnos cargados.</div>'}</div>`;
 }
-function _filtrarAlumnos(q){
-  const lq = (q||'').toLowerCase().trim();
+function _setAluCat(cat, btn){
+  _aluCat = cat;
+  document.querySelectorAll('.alu-filters .fchip').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  _aplicarFiltroAlumnos();
+}
+function _filtrarAlumnos(q){ _aluQ = (q||'').toLowerCase().trim(); _aplicarFiltroAlumnos(); }
+function _aplicarFiltroAlumnos(){
   let vis = 0;
   document.querySelectorAll('#alu-list .alu-card').forEach(r => {
-    const ok = r.dataset.nom.includes(lq);
+    const okNom = r.dataset.nom.includes(_aluQ);
+    const okCat = (_aluCat === 'todos') || (r.dataset.obj === _aluCat);
+    const ok = okNom && okCat;
     r.style.display = ok ? '' : 'none';
     if (ok) vis++;
   });
@@ -18336,22 +18413,20 @@ function addEjercicio(bloqueId) {
         <div class="autocomplete-dropdown" id="${ejId}-dropdown"></div>
       </div>
       <a id="${ejId}-video-link" class="ej-video-link" href="#" target="_blank" title="Ver video del ejercicio" style="display:none;text-decoration:none;"><span style="display:inline-flex;align-items:center;gap:4px;background:#FF0000;color:#fff;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:0.5px;"><svg width="13" height="9" viewBox="0 0 14 10" fill="white"><path d="M13.7 1.6S13.5.6 13 .2C12.4-.4 11.7-.4 11.4-.3 9.5 0 7 0 7 0S4.5 0 2.6-.3C2.3-.4 1.6-.4 1 .2.5.6.3 1.6.3 1.6S0 2.7 0 3.9v1.1C0 6.2.3 7.3.3 7.3s.2 1 .7 1.4c.6.6 1.4.6 1.8.7C4.2 9.5 7 9.5 7 9.5s2.5 0 4.4-.2c.3-.1 1-.1 1.6-.7.5-.4.7-1.4.7-1.4S14 6.2 14 5V3.9c0-1.2-.3-2.3-.3-2.3zM5.5 6.7V2.8L9.5 4.8 5.5 6.7z"/></svg>VIDEO</span></a>
-      <button class="ej-btn-sep" onclick="separarEjercicio('${ejId}','${bloqueId}')" title="Separar este ejercicio en un bloque nuevo">⇱ Separar</button>
+      <div style="display:inline-flex;background:#f1f3f7;border:1px solid #e0e0e0;border-radius:7px;padding:2px;flex-shrink:0;">
+        <button type="button" id="${ejId}-exec-bi"  onclick="_setEjExec('${ejId}',0)" title="Bilateral" style="border:none;background:#fff;color:#1a1a2e;font-size:11px;font-weight:600;padding:5px 10px;border-radius:5px;cursor:pointer;">Bilat</button>
+        <button type="button" id="${ejId}-exec-uni" onclick="_setEjExec('${ejId}',1)" title="Unilateral" style="border:none;background:transparent;color:#888;font-size:11px;padding:5px 10px;border-radius:5px;cursor:pointer;">Uni</button>
+      </div>
+      <input type="hidden" class="ej-uni" id="${ejId}-uni" value="0">
+      <button class="ej-btn-stat" onclick="_abrirStatsCoach('${ejId}')" title="Estadísticas del ejercicio (peso máximo)">📊</button>
+      <button class="ej-btn-sep" onclick="separarEjercicio('${ejId}','${bloqueId}')" title="Separar este ejercicio en un bloque nuevo">⇱</button>
       <button class="ej-btn-del" onclick="eliminarEjercicio('${ejId}','${bloqueId}')">🗑</button>
     </div>
     <input type="hidden" class="ej-video-input">
     <div id="${ejId}-equipo-note" style="display:none;font-size:11px;color:#8a8f9c;line-height:1.5;margin:2px 0 6px;padding-left:2px;"></div>
     <input class="ej-nota-input" type="text"
       placeholder="✏️ Aclaración de ejecución (ej: 8 reps con pausa de 2 seg arriba, excéntrica lenta...)"
-      style="width:100%;box-sizing:border-box;border:1px dashed #d0d0d8;border-radius:7px;padding:7px 12px;font-size:12px;font-style:italic;color:#555;background:#fafafa;margin:2px 0 8px;">
-    <div style="display:flex;align-items:center;gap:9px;margin:0 0 8px;">
-      <span style="font-size:11px;font-weight:700;color:#555;">Ejecución</span>
-      <div style="display:inline-flex;background:#f1f3f7;border:1px solid #e0e0e0;border-radius:7px;padding:2px;">
-        <button type="button" id="${ejId}-exec-bi"  onclick="_setEjExec('${ejId}',0)" style="border:none;background:#fff;color:#1a1a2e;font-size:12px;font-weight:600;padding:6px 13px;border-radius:5px;cursor:pointer;">Bilateral</button>
-        <button type="button" id="${ejId}-exec-uni" onclick="_setEjExec('${ejId}',1)" style="border:none;background:transparent;color:#888;font-size:12px;padding:6px 13px;border-radius:5px;cursor:pointer;">Unilateral</button>
-      </div>
-      <input type="hidden" class="ej-uni" id="${ejId}-uni" value="0">
-    </div>
+      style="width:100%;box-sizing:border-box;border:1px dashed #d0d0d8;border-radius:7px;padding:6px 12px;font-size:12px;font-style:italic;color:#555;background:#fafafa;margin:2px 0 6px;">
 
 
     <div style="padding: 0 0 4px;">
@@ -18654,6 +18729,115 @@ function _setEjExec(ejId, val){
   }
 }
 
+// ══════════ ESTADÍSTICAS DEL EJERCICIO (coach) ══════════
+function _ejKey(n){ return String(n||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim(); }
+function _fmtFechaStc(f){ if(!f) return ''; const m=String(f).match(/^(\d{4})-(\d{2})-(\d{2})/); return m?(m[3]+'/'+m[2]+'/'+m[1]):String(f); }
+let _statCoach = { key:'', nombre:'', alumnoId:'' };
+function _statAlumnoActual(){
+  const id = (typeof currentAlumnoId!=='undefined' && currentAlumnoId) || document.getElementById('plan-alumno-select')?.value || '';
+  if(!id) return null;
+  const al = getAlumnos().find(a=>a.id===id);
+  return al ? { al, id } : null;
+}
+function _abrirStatsCoach(ejId){
+  const nombre = document.querySelector('#'+ejId+' .ej-nombre-input')?.value.trim() || '';
+  if(!nombre){ toast('Escribí primero el nombre del ejercicio'); return; }
+  const ctx = _statAlumnoActual();
+  if(!ctx){ toast('Seleccioná un alumno primero'); return; }
+  _statCoach = { key:_ejKey(nombre), nombre, alumnoId:ctx.id };
+  let ov = document.getElementById('stc-overlay');
+  if(!ov){ ov=document.createElement('div'); ov.id='stc-overlay'; ov.className='stc-overlay'; ov.onclick=function(e){ if(e.target===ov) _cerrarStatsCoach(); }; document.body.appendChild(ov); }
+  ov.style.display='flex';
+  _renderStatsCoach();
+}
+function _cerrarStatsCoach(){ const ov=document.getElementById('stc-overlay'); if(ov) ov.style.display='none'; }
+function _statEntry(){
+  const ctx = _statAlumnoActual(); if(!ctx) return null;
+  const m = ctx.al.statsEjercicios || {};
+  return m[_statCoach.key] || null;
+}
+function _renderStatsCoach(){
+  const ov = document.getElementById('stc-overlay'); if(!ov) return;
+  const ctx = _statAlumnoActual();
+  const nom = ctx && ctx.al ? (ctx.al.nombre||'Alumno') : '';
+  const e = _statEntry();
+  const hist = e && Array.isArray(e.hist) ? e.hist.slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))) : [];
+  const pesos = hist.map(h=>parseFloat(h.peso)).filter(n=>!isNaN(n));
+  const max = pesos.length?Math.max(...pesos):null;
+  const min = pesos.length?Math.min(...pesos):null;
+  const prog = (max!=null&&min!=null)?(Math.round((max-min)*10)/10):0;
+  const ult = hist.length?hist[0].peso:null;
+  const boxes =
+    '<div class="stc-box"><div class="k">Máximo</div><div class="v">'+(max!=null?max:'—')+'<small> kg</small></div></div>'+
+    '<div class="stc-box"><div class="k">Progreso</div><div class="v'+(prog>0?' up':'')+'">'+(prog>0?'+':'')+prog+'<small> kg</small></div></div>'+
+    '<div class="stc-box"><div class="k">Registros</div><div class="v">'+hist.length+'</div></div>'+
+    '<div class="stc-box"><div class="k">Última carga</div><div class="v">'+(ult!=null?ult:'—')+'<small> kg</small></div></div>';
+  const histHTML = hist.length
+    ? hist.map((h)=> '<div class="stc-hrow"><span class="d">'+_fmtFechaStc(h.fecha)+'</span><span><span class="w">'+h.peso+' kg</span> &nbsp;<button class="del" onclick="_delStatsCoach(\''+String(h.fecha).replace(/[^0-9-]/g,'')+'\','+h.peso+')" title="Eliminar">✕</button></span></div>').join('')
+    : '<div class="stc-empty">Todavía no cargaste ningún máximo.</div>';
+  const hoy = new Date().toISOString().slice(0,10);
+  ov.innerHTML =
+    '<div class="stc-modal" onclick="event.stopPropagation()">'+
+      '<div class="stc-head"><div class="stc-title">📊 '+_statCoach.nombre+'<small>Estadísticas · '+nom+'</small></div><button class="stc-x" onclick="_cerrarStatsCoach()">×</button></div>'+
+      '<div class="stc-body">'+
+        '<div class="stc-load">'+
+          '<div class="stc-fld"><label>Peso máximo (kg)</label><input id="stc-in-peso" type="number" inputmode="decimal" placeholder="0" step="0.5"></div>'+
+          '<div class="stc-fld"><label>Fecha</label><input id="stc-in-fecha" type="date" value="'+hoy+'"></div>'+
+          '<button class="stc-ok" onclick="_guardarStatsCoach()">✓ Guardar</button>'+
+        '</div>'+
+        '<div class="stc-grid">'+boxes+'</div>'+
+        '<div class="stc-sub">Historial de máximos</div>'+
+        '<div class="stc-hist">'+histHTML+'</div>'+
+        '<div class="stc-note">Solo lo ves vos. El alumno ve únicamente el peso máximo, la fecha y su historial. Se sincroniza a la app al guardar.</div>'+
+      '</div>'+
+    '</div>';
+}
+function _guardarStatsCoach(){
+  const pesoRaw = document.getElementById('stc-in-peso')?.value.trim();
+  const fecha = document.getElementById('stc-in-fecha')?.value;
+  const peso = parseFloat(String(pesoRaw||'').replace(',','.'));
+  if(isNaN(peso) || peso<=0){ toast('Ingresá un peso válido'); return; }
+  if(!fecha){ toast('Elegí una fecha'); return; }
+  const alumnos = getAlumnos();
+  const al = alumnos.find(a=>a.id===_statCoach.alumnoId);
+  if(!al){ toast('No se encontró el alumno'); return; }
+  al.statsEjercicios = al.statsEjercicios || {};
+  const e = al.statsEjercicios[_statCoach.key] || {};
+  e.nombre = _statCoach.nombre;
+  e.hist = Array.isArray(e.hist) ? e.hist : [];
+  // Si ya hay un registro esa misma fecha, lo reemplaza
+  e.hist = e.hist.filter(h => String(h.fecha) !== String(fecha));
+  e.hist.push({ fecha, peso });
+  // Recalcular máximo
+  const pesos = e.hist.map(h=>parseFloat(h.peso)).filter(n=>!isNaN(n));
+  const max = Math.max(...pesos);
+  const maxEntry = e.hist.slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).find(h=>parseFloat(h.peso)===max);
+  e.max = max; e.fecha = maxEntry ? maxEntry.fecha : fecha;
+  al.statsEjercicios[_statCoach.key] = e;
+  saveAlumnos(alumnos);
+  const p=document.getElementById('stc-in-peso'); if(p) p.value='';
+  toast('Peso máximo guardado ✓');
+  _renderStatsCoach();
+}
+function _delStatsCoach(fecha, peso){
+  const alumnos = getAlumnos();
+  const al = alumnos.find(a=>a.id===_statCoach.alumnoId);
+  if(!al || !al.statsEjercicios || !al.statsEjercicios[_statCoach.key]) return;
+  const e = al.statsEjercicios[_statCoach.key];
+  e.hist = (e.hist||[]).filter(h => !(String(h.fecha).replace(/[^0-9-]/g,'')===String(fecha) && parseFloat(h.peso)===parseFloat(peso)));
+  if(e.hist.length){
+    const pesos = e.hist.map(h=>parseFloat(h.peso)).filter(n=>!isNaN(n));
+    const max = Math.max(...pesos);
+    const maxEntry = e.hist.slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).find(h=>parseFloat(h.peso)===max);
+    e.max = max; e.fecha = maxEntry ? maxEntry.fecha : '';
+    al.statsEjercicios[_statCoach.key] = e;
+  } else {
+    delete al.statsEjercicios[_statCoach.key];
+  }
+  saveAlumnos(alumnos);
+  _renderStatsCoach();
+}
+
 function seleccionarEjercicio(ejId, bloqueId, nombreOIdx) {
   // Soporte nombre (string) o índice legacy (number)
   let ex;
@@ -18682,16 +18866,15 @@ function seleccionarEjercicio(ejId, bloqueId, nombreOIdx) {
       if (bodyEl && !bodyEl.classList.contains('open')) toggleSeriesSec(ejId, 'efec');
     }
   }
-  // Mostrar ficha (la construye y la pone visible)
+  // Construir la ficha pero dejarla PLEGADA por defecto (ahorra espacio)
   mostrarFicha(ejId, ex);
-  // Asegurar que esté visible con display block (override el CSS)
   const fichaEl = document.getElementById(ejId+'-ficha');
-  if (fichaEl) { fichaEl.style.display = 'block'; fichaEl.className = 'ej-ficha visible'; }
-  // Mostrar toggle con texto OCULTAR
+  if (fichaEl) { fichaEl.style.display = 'none'; fichaEl.className = 'ej-ficha'; }
+  // Mostrar el enlace del toggle (para poder abrirla) con texto MOSTRAR
   const toggleWrap = document.getElementById(ejId+'-ficha-toggle-wrap');
   if (toggleWrap) toggleWrap.style.display = 'block';
   const text = document.getElementById(ejId+'-ficha-toggle-text');
-  if (text) text.textContent = 'OCULTAR INFORMACIÓN TÉCNICA';
+  if (text) text.textContent = 'MOSTRAR INFORMACIÓN TÉCNICA';
 }
 
 function mostrarFicha(ejId, ex) {

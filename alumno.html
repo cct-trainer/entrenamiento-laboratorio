@@ -808,8 +808,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260809200750 por un timestamp en cada deploy
-const _APP_VERSION = '20260809200750';
+// deploy.bat reemplaza 20260811170029 por un timestamp en cada deploy
+const _APP_VERSION = '20260811170029';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2065,7 +2065,10 @@ function _ejCard(ej, uid) {
 
   return '<div id="'+uid+'-card" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .2s;">'+
     '<div style="padding:12px 14px 12px;">'+
-      '<div style="font-size:16px;font-weight:900;color:var(--text);margin-bottom:3px;line-height:1.2;border-left:3px solid var(--gold);padding-left:9px;">'+(_nomEj(ej)||'—')+'</div>'+
+      '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:3px;">'+
+        '<div style="flex:1;min-width:0;font-size:16px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid var(--gold);padding-left:9px;">'+(_nomEj(ej)||'—')+'</div>'+
+        '<button onclick="_abrirStats(\''+uid+'\')" style="flex-shrink:0;display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;color:#C9A84C;background:rgba(201,168,76,.10);border:1px solid rgba(201,168,76,.45);border-radius:20px;padding:5px 10px;cursor:pointer;white-space:nowrap;">📊 '+(_LANG==='en'?'Stats':'Estadísticas')+'</button>'+
+      '</div>'+
       (ej.musculos ? '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;padding-left:12px;">'+_tc(ej.musculos)+'</div>' : '')+
       (ej.unilateral ? '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;padding-left:12px;">'+(_LANG==='en'?'Unilateral · do each set on both sides':'Unilateral · cada serie se hace de los dos lados')+'</div>' : '')+
       (()=>{ const nq=_notaEquipo(ej); return nq ? '<div style="font-size:10px;color:var(--muted);margin:2px 0 6px;padding-left:12px;line-height:1.45;">💡 '+nq+'</div>' : ''; })()+
@@ -2088,6 +2091,76 @@ function _toggleFicha(uid) {
   panel.style.display = open ? 'none' : 'block';
   if (arr) arr.style.transform = open ? '' : 'rotate(180deg)';
 }
+
+// ── ESTADÍSTICAS DEL EJERCICIO (peso máximo) ─────────────────────────────
+function _ejKey(n){ return String(n||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim(); }
+function _statsDe(nombre){
+  const m = (_data && (_data.statsEjercicios || (_data.perfil && _data.perfil.statsEjercicios))) || null;
+  return (m && m[_ejKey(nombre)]) || null;
+}
+function _fmtFechaStx(f){
+  if(!f) return '';
+  const m = String(f).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? (m[3]+'/'+m[2]+'/'+m[1]) : String(f);
+}
+function _ensureStatsUI(){
+  if(document.getElementById('stx-css')) return;
+  const st=document.createElement('style'); st.id='stx-css';
+  st.textContent =
+    '.stats-overlay{position:fixed;inset:0;z-index:9000;background:#0d1220;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;}'+
+    '.stx-top{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #243150;position:sticky;top:0;background:#0d1220;z-index:2;}'+
+    '.stx-back{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#9fb0cf;background:rgba(255,255,255,.05);border:1px solid #243150;border-radius:20px;padding:8px 14px;cursor:pointer;font-family:inherit;}'+
+    '.stx-back:hover{color:#fff;border-color:#C9A84C;}'+
+    '.stx-body{padding:16px;max-width:520px;margin:0 auto;}'+
+    '.stx-title{font-size:18px;font-weight:900;color:#fff;line-height:1.15;}'+
+    '.stx-sub{font-size:12px;color:#9fb0cf;margin-top:3px;}'+
+    '.stx-hero{margin-top:16px;background:linear-gradient(135deg,#20305a,#141c30);border:1px solid #243150;border-radius:14px;padding:22px 18px;text-align:center;}'+
+    '.stx-hero .lbl{font-size:11px;font-weight:800;letter-spacing:1px;color:#C9A84C;text-transform:uppercase;}'+
+    '.stx-hero .big{font-size:50px;font-weight:900;color:#fff;line-height:1;margin:10px 0 4px;}'+
+    '.stx-hero .big small{font-size:20px;color:#9fb0cf;font-weight:700;}'+
+    '.stx-hero .date{font-size:12px;color:#9fb0cf;}'+
+    '.stx-sec{font-size:11px;font-weight:800;letter-spacing:1px;color:#6b7c9e;margin:20px 0 8px;text-transform:uppercase;}'+
+    '.stx-hist{background:#141c30;border:1px solid #243150;border-radius:12px;overflow:hidden;}'+
+    '.stx-row{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid rgba(36,49,80,.5);font-size:14px;}'+
+    '.stx-row:last-child{border-bottom:none;}'+
+    '.stx-row .d{color:#9fb0cf;} .stx-row .w{font-weight:800;color:#fff;} .stx-row .w2{font-weight:700;color:#cdd7ea;}'+
+    '.stx-row .pr{font-size:10px;font-weight:800;color:#241d07;background:#C9A84C;border-radius:5px;padding:2px 7px;margin-left:8px;}'+
+    '.stx-empty{padding:16px;text-align:center;color:#6b7c9e;font-size:13px;}'+
+    '.stx-empty2{margin-top:26px;text-align:center;color:#9fb0cf;font-size:14px;line-height:1.7;background:#141c30;border:1px solid #243150;border-radius:14px;padding:30px 20px;}'+
+    '.stx-backbig{width:100%;margin-top:18px;background:linear-gradient(135deg,#C9A84C,#a8862f);color:#241d07;border:none;border-radius:11px;padding:14px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;}';
+  document.head.appendChild(st);
+}
+function _abrirStats(uid){
+  const ej = _ejStore[uid]; if(!ej) return;
+  _ensureStatsUI();
+  const en = _LANG==='en';
+  const nombre = _nomEj(ej)||'';
+  const st = _statsDe(ej.nombre||nombre);
+  const musc = ej.musculos ? _tc(ej.musculos) : '';
+  let ov = document.getElementById('stats-overlay');
+  if(!ov){ ov=document.createElement('div'); ov.id='stats-overlay'; ov.className='stats-overlay'; document.body.appendChild(ov); }
+  let body;
+  if(st && (st.max || (st.hist && st.hist.length))){
+    const hist = (st.hist||[]).slice().sort((a,b)=> String(b.fecha).localeCompare(String(a.fecha)));
+    const maxW = st.max || (hist[0]?hist[0].peso:'');
+    const maxF = st.fecha || (hist[0]?hist[0].fecha:'');
+    const histHTML = hist.length ? hist.map((h,i)=>
+      '<div class="stx-row"><span class="d">'+_fmtFechaStx(h.fecha)+'</span><span><span class="'+(i===0?'w':'w2')+'">'+h.peso+' kg</span>'+(i===0?' <span class="pr">'+(en?'MAX':'MÁX')+'</span>':'')+'</span></div>'
+    ).join('') : '<div class="stx-empty">—</div>';
+    body = '<div class="stx-hero"><div class="lbl">🏆 '+(en?'Max weight':'Peso máximo')+'</div><div class="big">'+maxW+' <small>kg</small></div><div class="date">'+_fmtFechaStx(maxF)+'</div></div>'
+         + '<div class="stx-sec">'+(en?'History':'Historial')+'</div><div class="stx-hist">'+histHTML+'</div>';
+  } else {
+    body = '<div class="stx-empty2">📊<br>'+(en?'No max weight recorded yet for this exercise.':'Todavía no hay un peso máximo cargado para este ejercicio.')+'</div>';
+  }
+  ov.innerHTML =
+    '<div class="stx-top"><button class="stx-back" onclick="_cerrarStats()">‹ '+(en?'Back to routine':'Volver a la rutina')+'</button></div>'+
+    '<div class="stx-body"><div class="stx-title">'+nombre+'</div>'+(musc?'<div class="stx-sub">'+musc+'</div>':'')+
+    body+
+    '<button class="stx-backbig" onclick="_cerrarStats()">← '+(en?'Back to routine':'Volver a la rutina')+'</button></div>';
+  ov.style.display='block'; ov.scrollTop=0;
+  document.body.style.overflow='hidden';
+}
+function _cerrarStats(){ const ov=document.getElementById('stats-overlay'); if(ov) ov.style.display='none'; document.body.style.overflow=''; }
 
 // ── Duración estimada de una sesión (series × tiempo + descansos) ──
 function _serieDur(reps){
