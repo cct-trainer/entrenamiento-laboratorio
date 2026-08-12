@@ -808,8 +808,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260811170029 por un timestamp en cada deploy
-const _APP_VERSION = '20260811170029';
+// deploy.bat reemplaza 20260812165937 por un timestamp en cada deploy
+const _APP_VERSION = '20260812165937';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1953,6 +1953,14 @@ function _ejCard(ej, uid) {
   // Prefijo único por sesión+ejercicio para guardar ediciones del alumno
   const _sp = (_semIdx||0)+'_'+(_diaIdx||0)+'_'+uid;
 
+  // Sustitución de ejercicio hecha por el alumno (máquina no disponible)
+  const _sust = _getEdit(_sp,'sust');
+  const _nomOrig = _nomEj(ej) || '—';
+  const _nomShow = _sust || _nomOrig;
+  const _cambiarHTML = _sust
+    ? '<div style="margin:8px 0 0 12px;font-size:11px;color:#7fe0a0;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.22);border-radius:8px;padding:7px 10px;line-height:1.45;">⇄ <b style="color:#a7f0c4;">'+(_LANG==="en"?"Changed by you.":"Cambiado por vos.")+'</b> '+(_LANG==="en"?"Original":"Original")+': '+_nomOrig+'. <span style="color:#8fb7e6;text-decoration:underline;cursor:pointer;" onclick="_revertirEj(\''+uid+'\')">'+(_LANG==="en"?"Back to original":"Volver al original")+'</span></div>'
+    : '<div style="margin:9px 0 0 12px;"><button onclick="_abrirCambiar(\''+uid+'\')" style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:#8fb7e6;background:rgba(96,165,224,.10);border:1px solid rgba(96,165,224,.4);border-radius:20px;padding:6px 12px;cursor:pointer;font-family:inherit;">⇄ '+(_LANG==="en"?"Not available · Change":"No está disponible · Cambiar")+'</button></div>';
+
   // Numeración continua a través de todas las secciones
   const nApro = sApro ? sApro.length : 0;
   const nEfec = sEfec ? sEfec.length : 0;
@@ -2066,9 +2074,10 @@ function _ejCard(ej, uid) {
   return '<div id="'+uid+'-card" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .2s;">'+
     '<div style="padding:12px 14px 12px;">'+
       '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:3px;">'+
-        '<div style="flex:1;min-width:0;font-size:16px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid var(--gold);padding-left:9px;">'+(_nomEj(ej)||'—')+'</div>'+
+        '<div style="flex:1;min-width:0;font-size:16px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#25D366':'var(--gold)')+';padding-left:9px;">'+_nomShow+'</div>'+
         '<button onclick="_abrirStats(\''+uid+'\')" style="flex-shrink:0;display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;color:#C9A84C;background:rgba(201,168,76,.10);border:1px solid rgba(201,168,76,.45);border-radius:20px;padding:5px 10px;cursor:pointer;white-space:nowrap;">📊 '+(_LANG==='en'?'Stats':'Estadísticas')+'</button>'+
       '</div>'+
+      _cambiarHTML+
       (ej.musculos ? '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;padding-left:12px;">'+_tc(ej.musculos)+'</div>' : '')+
       (ej.unilateral ? '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;padding-left:12px;">'+(_LANG==='en'?'Unilateral · do each set on both sides':'Unilateral · cada serie se hace de los dos lados')+'</div>' : '')+
       (()=>{ const nq=_notaEquipo(ej); return nq ? '<div style="font-size:10px;color:var(--muted);margin:2px 0 6px;padding-left:12px;line-height:1.45;">💡 '+nq+'</div>' : ''; })()+
@@ -2161,6 +2170,117 @@ function _abrirStats(uid){
   document.body.style.overflow='hidden';
 }
 function _cerrarStats(){ const ov=document.getElementById('stats-overlay'); if(ov) ov.style.display='none'; document.body.style.overflow=''; }
+
+// ── CAMBIAR / SUSTITUIR EJERCICIO (máquina no disponible) ────────────────
+const _CATALOGO = {
+  pecho:{lbl:'Pecho',items:[['Press plano con mancuernas','Pectoral · empuje horizontal'],['Press banca con barra','Pectoral · empuje horizontal'],['Press inclinado con mancuernas','Pectoral superior'],['Press en Smith','Pectoral · guiado'],['Aperturas con mancuernas','Pectoral · apertura'],['Peck deck (contractor)','Pectoral · máquina'],['Fondos en paralelas','Pectoral inferior'],['Flexiones de brazos','Pectoral · peso corporal']]},
+  espalda:{lbl:'Espalda',items:[['Jalón al pecho','Dorsal · vertical'],['Dominadas','Dorsal · peso corporal'],['Remo con barra','Dorsal · horizontal'],['Remo con mancuerna','Dorsal · unilateral'],['Remo en máquina','Dorsal · guiado'],['Remo en polea baja','Dorsal · horizontal'],['Pullover','Dorsal / pecho']]},
+  hombros:{lbl:'Hombros',items:[['Press militar con mancuernas','Deltoides · empuje vertical'],['Press militar con barra','Deltoides · empuje vertical'],['Press de hombro en máquina','Deltoides · guiado'],['Elevaciones laterales','Deltoides lateral'],['Elevaciones frontales','Deltoides anterior'],['Pájaros (deltoides posterior)','Deltoides posterior'],['Face pull','Deltoides posterior']]},
+  biceps:{lbl:'Bíceps',items:[['Curl con mancuernas','Bíceps'],['Curl con barra','Bíceps'],['Curl martillo','Bíceps / braquial'],['Curl en banco Scott','Bíceps'],['Curl en polea','Bíceps'],['Curl concentrado','Bíceps']]},
+  triceps:{lbl:'Tríceps',items:[['Extensión en polea','Tríceps'],['Press francés','Tríceps'],['Fondos en banco','Tríceps'],['Patada de tríceps','Tríceps'],['Extensión sobre la cabeza','Tríceps'],['Press cerrado','Tríceps / pecho']]},
+  cuadriceps:{lbl:'Cuádriceps',items:[['Sentadilla con barra','Cuádriceps'],['Prensa de piernas','Cuádriceps'],['Sentadilla hack','Cuádriceps'],['Extensión de cuádriceps','Cuádriceps'],['Zancadas','Cuádriceps / glúteo'],['Sentadilla búlgara','Cuádriceps / glúteo'],['Sentadilla goblet','Cuádriceps']]},
+  femorales:{lbl:'Femorales',items:[['Peso muerto rumano','Femoral / glúteo'],['Curl femoral tumbado','Femoral'],['Curl femoral sentado','Femoral'],['Peso muerto','Cadena posterior'],['Buenos días (good morning)','Femoral / lumbar'],['Hip thrust','Glúteo / femoral']]},
+  gluteos:{lbl:'Glúteos',items:[['Hip thrust','Glúteo mayor'],['Puente de glúteo','Glúteo'],['Patada de glúteo en polea','Glúteo'],['Abducción en máquina','Glúteo medio'],['Peso muerto rumano','Glúteo / femoral'],['Sentadilla búlgara','Glúteo / cuádriceps']]},
+  gemelos:{lbl:'Gemelos',items:[['Elevación de talones de pie','Gemelos'],['Elevación de talones sentado','Sóleo'],['Elevación de talones en prensa','Gemelos']]},
+  core:{lbl:'Core',items:[['Plancha abdominal','Core'],['Crunch abdominal','Recto abdominal'],['Elevación de piernas','Abdomen inferior'],['Rueda abdominal','Core'],['Rotaciones / oblicuos','Oblicuos']]}
+};
+function _grupoEj(ej){
+  const t = ((ej&&ej.musculos||'')+' '+(ej&&ej.nombre||'')).toLowerCase();
+  if(/gl[uú]te|hip thrust/.test(t)) return 'gluteos';
+  if(/isqui|femoral|peso muerto rumano/.test(t)) return 'femorales';
+  if(/cu[aá]dri|sentadilla|prensa|extensi[oó]n de pierna/.test(t)) return 'cuadriceps';
+  if(/gemelo|s[oó]leo|pantorr/.test(t)) return 'gemelos';
+  if(/pec|pectoral|press de pecho|press banca|apertura/.test(t)) return 'pecho';
+  if(/dorsa|espalda|jal[oó]n|dominada|\brem[o]|pull/.test(t)) return 'espalda';
+  if(/hombro|deltoi|press militar|elevaci[oó]n lateral|elevaci[oó]n frontal|p[aá]jaro/.test(t)) return 'hombros';
+  if(/b[ií]ceps|curl(?!\s*femoral)/.test(t)) return 'biceps';
+  if(/tr[ií]ceps|press franc[eé]s|fondos/.test(t)) return 'triceps';
+  if(/abdom|core|plancha|oblicuo/.test(t)) return 'core';
+  return '';
+}
+function _flatCatalogo(){ const o=[]; Object.values(_CATALOGO).forEach(g=>g.items.forEach(it=>o.push({n:it[0],s:it[1]}))); return o; }
+let _cambiarUid = null;
+function _ensureCambiarUI(){
+  if(document.getElementById('cmb-css')) return;
+  const st=document.createElement('style'); st.id='cmb-css';
+  st.textContent=
+    '.cmb-overlay{position:fixed;inset:0;z-index:9100;background:rgba(7,10,18,.72);display:none;align-items:flex-end;justify-content:center;}'+
+    '.cmb-modal{background:#0d1220;border:1px solid #243150;border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;box-shadow:0 -10px 50px rgba(0,0,0,.5);}'+
+    '.cmb-top{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid #243150;position:sticky;top:0;background:#0d1220;z-index:2;}'+
+    '.cmb-title{font-size:14px;font-weight:800;color:#fff;} .cmb-title small{display:block;font-size:11px;color:#9fb0cf;font-weight:600;margin-top:2px;}'+
+    '.cmb-x{background:none;border:none;color:#9fb0cf;font-size:22px;cursor:pointer;line-height:1;}'+
+    '.cmb-body{padding:14px 16px 22px;}'+
+    '.cmb-search{position:relative;margin-bottom:14px;}'+
+    '.cmb-search input{width:100%;background:#0f1626;border:1px solid #243150;border-radius:10px;padding:11px 12px 11px 36px;color:#eaf0fb;font-size:13px;outline:none;font-family:inherit;}'+
+    '.cmb-search .ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#6b7c9e;}'+
+    '.cmb-sec{font-size:10px;font-weight:800;letter-spacing:.8px;color:#6b7c9e;text-transform:uppercase;margin:4px 0 8px;}'+
+    '.cmb-opt{display:flex;align-items:center;gap:11px;padding:11px 12px;background:#0f1626;border:1px solid #243150;border-radius:10px;margin-bottom:8px;cursor:pointer;transition:.15s;}'+
+    '.cmb-opt:hover{border-color:#C9A84C;}'+
+    '.cmb-oi{width:34px;height:34px;border-radius:8px;background:#1b2540;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}'+
+    '.cmb-on{flex:1;min-width:0;} .cmb-ont{font-size:13px;font-weight:700;color:#fff;} .cmb-osub{font-size:10.5px;color:#6b7c9e;margin-top:1px;}'+
+    '.cmb-go{color:#6b7c9e;font-size:16px;} .cmb-empty{color:#6b7c9e;font-size:12.5px;text-align:center;padding:16px;}';
+  document.head.appendChild(st);
+}
+function _abrirCambiar(uid){
+  _cambiarUid = uid; _ensureCambiarUI();
+  let ov=document.getElementById('cambiar-overlay');
+  if(!ov){ ov=document.createElement('div'); ov.id='cambiar-overlay'; ov.className='cmb-overlay'; ov.onclick=function(e){ if(e.target===ov) _cerrarCambiar(); }; document.body.appendChild(ov); }
+  const en=_LANG==='en';
+  ov.innerHTML=
+    '<div class="cmb-modal">'+
+      '<div class="cmb-top"><div class="cmb-title">'+(en?'Change exercise':'Cambiar ejercicio')+'<small>'+(en?'Pick the one you did at the gym':'Elegí el que hiciste en el gimnasio')+'</small></div><button class="cmb-x" onclick="_cerrarCambiar()">×</button></div>'+
+      '<div class="cmb-body">'+
+        '<div class="cmb-search"><span class="ico">🔍</span><input id="cmb-q" placeholder="'+(en?'Search any exercise...':'Buscar cualquier ejercicio...')+'" oninput="_renderCambiarList(this.value)"></div>'+
+        '<div id="cambiar-list"></div>'+
+      '</div>'+
+    '</div>';
+  ov.style.display='flex'; document.body.style.overflow='hidden';
+  _renderCambiarList('');
+}
+function _cerrarCambiar(){ const ov=document.getElementById('cambiar-overlay'); if(ov) ov.style.display='none'; document.body.style.overflow=''; }
+function _renderCambiarList(q){
+  const cont=document.getElementById('cambiar-list'); if(!cont) return;
+  const ej=_ejStore[_cambiarUid]; const en=_LANG==='en';
+  q=(q||'').toLowerCase().trim();
+  let items, secLbl;
+  if(q){ items=_flatCatalogo().filter(x=>x.n.toLowerCase().includes(q)); secLbl=(en?'Results':'Resultados'); }
+  else { const g=_grupoEj(ej); const gd=_CATALOGO[g]; items=gd?gd.items.map(a=>({n:a[0],s:a[1]})):[]; secLbl=(en?'Similar':'Similares')+(gd?' · '+gd.lbl:''); }
+  const optHTML = items.length
+    ? items.map(it=>'<div class="cmb-opt" onclick="_sustituirEj('+JSON.stringify(it.n).replace(/"/g,'&quot;')+')"><div class="cmb-oi">🏋️</div><div class="cmb-on"><div class="cmb-ont">'+it.n+'</div><div class="cmb-osub">'+it.s+'</div></div><div class="cmb-go">›</div></div>').join('')
+    : '<div class="cmb-empty">'+(en?'No matches. Use the manual option below.':'Sin resultados. Usá la opción manual de abajo.')+'</div>';
+  cont.innerHTML =
+    '<div class="cmb-sec">'+secLbl+'</div>'+optHTML+
+    '<div class="cmb-sec" style="margin-top:14px;">'+(en?'Other':'Otros')+'</div>'+
+    '<div class="cmb-opt" onclick="_sustituirManual()"><div class="cmb-oi">✏️</div><div class="cmb-on"><div class="cmb-ont">'+(en?'Type the one I did…':'Escribir el que hice…')+'</div><div class="cmb-osub">'+(en?'Enter a name manually':'Anotar un nombre manualmente')+'</div></div><div class="cmb-go">›</div></div>';
+}
+function _sustituirManual(){
+  const en=_LANG==='en';
+  const nombre=(prompt(en?'Name of the exercise you did:':'Nombre del ejercicio que hiciste:')||'').trim();
+  if(nombre) _sustituirEj(nombre);
+}
+function _sustituirEj(nombre){
+  const uid=_cambiarUid; const ej=_ejStore[uid]; if(!ej||!nombre) return;
+  const _sp=(_semIdx||0)+'_'+(_diaIdx||0)+'_'+uid;
+  const orig=_nomEj(ej)||'';
+  _guardarEdit(_sp,'sust',nombre);
+  // Registrar para el coach (queda en el documento del alumno)
+  try{
+    if(_db && _alumnoId){
+      _db.collection('alumnos').doc(_alumnoId).update({
+        sustituciones: firebase.firestore.FieldValue.arrayUnion({
+          original:orig, nuevo:nombre, sem:(_semIdx||0), dia:(_diaIdx||0), fecha:new Date().toISOString()
+        })
+      }).catch(()=>{});
+    }
+  }catch(e){}
+  _cerrarCambiar();
+  renderRutina();
+}
+function _revertirEj(uid){
+  const _sp=(_semIdx||0)+'_'+(_diaIdx||0)+'_'+uid;
+  _guardarEdit(_sp,'sust','');
+  renderRutina();
+}
 
 // ── Duración estimada de una sesión (series × tiempo + descansos) ──
 function _serieDur(reps){
