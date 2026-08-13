@@ -614,6 +614,11 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .ps-copybox .lbl { font-size: 10px; font-weight: 800; color: #98a0ae; text-transform: uppercase; letter-spacing: .5px; }
 .ps-copybox select { font-size: 12px; padding: 7px 10px; border: 1px solid #e4e7ec; border-radius: 7px; background: #fff; color: #555; min-width: 180px; }
 .ps-copybox button { background: #1f2430; color: #fff; border: none; border-radius: 7px; padding: 8px 15px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.ps-semwrap { display: flex; flex-wrap: wrap; gap: 5px; }
+.ps-sem { font-size: 11px; font-weight: 800; color: #8a92a1; background: #f2f4f7; border: 1px solid #e4e7ec; border-radius: 7px; padding: 5px 9px; cursor: pointer; font-family: inherit; transition: .12s; }
+.ps-sem:hover { border-color: #C9A84C; }
+.ps-sem.done { background: #e7f6ec; color: #0f7a3d; border-color: #c7ebd3; }
+.ps-g.act { color: #b08d3a; border-color: #C9A84C; background: #faf4e4; }
 
 /* Planilla · tema oscuro */
 .plan-sheet.dark { background: #171b24; border-color: #2b3240; }
@@ -639,6 +644,9 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .plan-sheet.dark .ps-copybox select { background: #232a36; border-color: #2b3240; color: #cdd4e0; }
 .plan-sheet.dark .ps-copybox button { background: #C9A84C; color: #241d07; }
 .plan-sheet.dark .ps-copybox .lbl { color: #8a92a4; }
+.plan-sheet.dark .ps-sem { background: #232a36; color: #a7aec0; border-color: #2b3240; }
+.plan-sheet.dark .ps-sem.done { background: #123322; color: #7fe0a0; border-color: #1f5a3a; }
+.plan-sheet.dark .ps-g.act { color: #e0bd63; border-color: #C9A84C; background: #2a2412; }
 .plan-item-actions-row { display: flex; gap: 6px; padding: 12px 14px; align-items: center; }
 .pi-abrir { flex: 1; background: #141414; color: #fff; border: none; border-radius: 9px; padding: 10px; font-size: 12px; font-weight: 800; letter-spacing: 0.5px; cursor: pointer; transition: background 0.15s; }
 .pi-abrir:hover { background: #000; }
@@ -11737,6 +11745,95 @@ function abrirPlanDiaEditor(diaIdx, semIdx) {
   // Limpiar mensajes del chat embebido al abrir nuevo día
   const embMsg = document.getElementById('cop-embed-messages');
   if(embMsg) embMsg.innerHTML = '<div class="cop-embed-msg empty">Preguntame sobre la sesión, el alumno o los ejercicios...</div>';
+  // Cargar modificaciones que hizo el alumno en la app (aviso)
+  _cargarAvisoAlumno();
+}
+
+// ══════════ AVISO: modificaciones del alumno en la app ══════════
+let _avisoData = null;
+async function _cargarAvisoAlumno(){
+  _quitarBannerAviso();
+  const id = planSemOriginalAlumnoId || (typeof currentAlumnoId!=='undefined' ? currentAlumnoId : '');
+  if(!id || !window._db){ _avisoData=null; return; }
+  try{
+    const doc = await window._db.collection('alumnos').doc(id).get();
+    const d = doc.exists ? doc.data() : {};
+    _avisoData = { id, nombre:(d.perfil&&d.perfil.nombre)||'Tu alumno', pesoEdits:d.pesoEdits||{}, sustituciones:d.sustituciones||[], at:d.pesoEditsAt||'' };
+  }catch(e){ _avisoData=null; return; }
+  _renderAvisoAlumno();
+}
+function _sesionModifs(){
+  const d=_avisoData; if(!d) return {pesos:[],subs:[]};
+  const sem=planSemEditando, dia=planDiaAbierto, mod=_editorModTab;
+  const ses=(planDiasData[dia]||[])[mod];
+  const edits=d.pesoEdits||{};
+  const pesos=[];
+  if(ses && Array.isArray(ses.bloques)){
+    ses.bloques.forEach((b,bi)=>{
+      (b.ejercicios||[]).forEach((ej,ei)=>{
+        const uid='b'+bi+'e'+ei;
+        (ej.series||[]).forEach((s,k)=>{
+          const key=sem+'_'+dia+'_'+uid+'_efec_'+k;
+          const pe=edits[key]&&edits[key].peso;
+          const orig=String(s.peso||'').replace(/kg$/i,'').trim();
+          if(pe!==undefined && pe!=='' && String(pe)!==orig){
+            pesos.push({ej:ej.nombre||'Ejercicio', serie:k+1, old:orig||'—', nuevo:pe, bi:bi, ei:ei, k:k});
+          }
+        });
+      });
+    });
+  }
+  const subs=(d.sustituciones||[]).filter(s=>String(s.sem)===String(sem)&&String(s.dia)===String(dia));
+  return {pesos, subs};
+}
+function _avisoSeenKey(){ return 'SOCC_AVISO_'+(_avisoData?_avisoData.id:'')+'_'+planSemEditando+'_'+planDiaAbierto; }
+function _renderAvisoAlumno(){
+  _quitarBannerAviso();
+  if(!_avisoData) return;
+  const m=_sesionModifs();
+  if(!m.pesos.length && !m.subs.length) return;
+  // Si ya lo revisó para este set de cambios, no molestar
+  try{ if(localStorage.getItem(_avisoSeenKey())===String(_avisoData.at) && _avisoData.at) return; }catch(e){}
+  const scroll=document.getElementById('plan-editor-page-scroll');
+  const content=document.getElementById('plan-editor-page-content');
+  if(!scroll||!content) return;
+  const fecha = _avisoData.at ? new Date(_avisoData.at).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+  const pesoRows=m.pesos.map(p=>'<div style="display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #f1f3f6;"><div style="font-size:12.5px;color:#1f2430;"><b>'+p.ej+'</b> · S'+p.serie+'</div><div style="font-size:12px;white-space:nowrap;"><span style="color:#b0b0b0;text-decoration:line-through;">'+p.old+'</span> <span style="color:#0f7a3d;font-weight:800;">'+p.nuevo+' kg</span></div></div>').join('');
+  const subRows=m.subs.map(s=>'<div style="padding:9px 0;border-bottom:1px solid #f1f3f6;font-size:12.5px;color:#1f2430;">🔄 <b>'+(s.original||'—')+'</b> <span style="color:#8a92a1;">→</span> <b style="color:#0f7a3d;">'+(s.nuevo||'—')+'</b> <span style="color:#8a92a1;font-size:11px;">(cambió el ejercicio)</span></div>').join('');
+  const box=document.createElement('div');
+  box.id='aviso-modif-box';
+  box.style.cssText='margin:0 0 14px;background:#fff;border:1px solid #e4e7ec;border-left:4px solid #C9A84C;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(30,40,70,.08);';
+  box.innerHTML=
+    '<div style="display:flex;align-items:center;gap:10px;padding:13px 15px;background:#fffdf6;border-bottom:1px solid #f1ead2;">'+
+      '<div style="width:32px;height:32px;border-radius:9px;background:#C9A84C;color:#241d07;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🔔</div>'+
+      '<div style="flex:1;"><div style="font-size:13px;font-weight:800;color:#1f2430;">'+_avisoData.nombre+' modificó esta sesión</div><div style="font-size:11px;color:#8a92a1;font-weight:600;">'+(fecha?fecha+' · ':'')+'desde la app</div></div>'+
+      '<button onclick="_descartarAviso()" style="background:none;border:none;color:#9aa2b0;font-size:20px;cursor:pointer;line-height:1;">×</button>'+
+    '</div>'+
+    '<div style="padding:4px 15px 6px;">'+pesoRows+subRows+'</div>'+
+    '<div style="padding:13px 15px;background:#fafbfd;border-top:1px solid #eef0f3;">'+
+      '<div style="font-size:12.5px;font-weight:700;color:#2b3140;margin-bottom:10px;">¿Actualizar la sesión con los pesos del alumno?</div>'+
+      '<div style="display:flex;gap:8px;">'+
+        '<button onclick="_descartarAviso()" style="flex:1;background:#fff;color:#6b7280;border:1px solid #e4e7ec;border-radius:9px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">No, dejar como está</button>'+
+        '<button onclick="_aplicarModifSesion()" style="flex:1;background:#1f8a4c;color:#fff;border:none;border-radius:9px;padding:10px;font-size:13px;font-weight:800;cursor:pointer;">✓ Sí, actualizar</button>'+
+      '</div>'+
+      (m.subs.length?'<div style="font-size:10.5px;color:#9aa3b5;margin-top:9px;line-height:1.4;">Los cambios de ejercicio se muestran como referencia; se aplican solo los pesos.</div>':'')+
+    '</div>';
+  scroll.insertBefore(box, content);
+}
+function _quitarBannerAviso(){ const b=document.getElementById('aviso-modif-box'); if(b) b.remove(); }
+function _marcarAvisoVisto(){ try{ if(_avisoData&&_avisoData.at) localStorage.setItem(_avisoSeenKey(), String(_avisoData.at)); }catch(e){} }
+function _descartarAviso(){ _marcarAvisoVisto(); _quitarBannerAviso(); }
+function _aplicarModifSesion(){
+  const m=_sesionModifs();
+  const dia=planDiaAbierto, mod=_editorModTab;
+  const ses=(planDiasData[dia]||[])[mod];
+  if(ses){
+    m.pesos.forEach(p=>{ try{ const s=ses.bloques[p.bi].ejercicios[p.ei].series[p.k]; if(s) s.peso=String(p.nuevo); }catch(e){} });
+  }
+  renderPlanDiaEditor(dia);
+  _marcarAvisoVisto();
+  _quitarBannerAviso();
+  toast('Sesión actualizada con los pesos del alumno ✓ — tocá Guardar para confirmar');
 }
 
 function renderPlanDiaEditor(diaIdx) {
@@ -18099,24 +18196,29 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
       .concat(FASES_MACRO.map((ff,ii)=>'<option value="'+ii+'"'+(!auto&&faseIdx===ii?' selected':'')+'>'+ff.n+'</option>')).join('');
     const metaMes = [p.fecha, 'Mes '+mesN, semanas>1?semanas+' sem.':''].filter(Boolean).join(' · ');
 
+    const comp = Array.isArray(p.semanasCompletas) ? p.semanasCompletas : [];
+    const semChips = Array.from({length:semanas}).map((_,i)=>{
+      const done = comp.indexOf(i) >= 0;
+      return '<button class="ps-sem'+(done?' done':'')+'" onclick="_toggleSemanaCompleta(\''+p.id+'\','+i+')" title="'+(done?'Semana '+(i+1)+' completa · tocá para desmarcar':'Marcar semana '+(i+1)+' como completa')+'">S'+(i+1)+'</button>';
+    }).join('');
+    const nDone = comp.filter(i=>i<semanas).length;
     return `
       <tr class="mrow">
         <td><span class="ps-mes">${mesDisplay}<small>${metaMes}</small></span></td>
         <td><span class="ps-fase">FASE ${faseIdx+1}/${FASES_MACRO.length}</span>
             <select class="ps-fasesel" onchange="_setFaseMacro('${p.id}',this.value)">${opts}</select></td>
-        <td><span class="ps-bloque">${f.n}${auto?' · <span style="color:#aab2c0;font-weight:600;">auto</span>':''}<small>${f.obj}</small></span></td>
-        <td class="ps-param">${f.par||''}</td>
-        <td><div class="ps-prog"><div class="ps-track"><div class="ps-fill" style="width:${pct}%;"></div></div><span class="ps-pct">${pct}%</span></div></td>
-        <td><span class="ps-st ${activo?'on':'off'}" onclick="_toggleActivoMes('${p.id}')" title="Marcar / quitar mes activo">${activo?'● Activo':'○ En espera'}</span></td>
+        <td><div class="ps-semwrap">${semChips || '<span style="color:#9aa2b0;font-size:11px;">—</span>'}</div>
+            <div style="font-size:10px;color:#9aa2b0;margin-top:5px;font-weight:700;">${nDone}/${semanas} completas</div></td>
         <td><div class="ps-acts">
           <button class="ps-abrir" onclick="abrirPlanFuerzaExistente('${p.id}')">Abrir</button>
+          <button class="ps-g${activo?' act':''}" onclick="_toggleActivoMes('${p.id}')" title="Marcar / quitar mes activo">${activo?'★':'☆'}</button>
           <button class="ps-g" onclick="_togglePlanCopy('${p.id}')" title="Copiar y enviar a un alumno">📤</button>
           <button class="ps-g" onclick="renombrarPlanificacion('${p.id}')" title="Renombrar">✏️</button>
           <button class="ps-g del" onclick="eliminarPlanificacion('${p.id}')" title="Borrar">🗑</button>
         </div></td>
       </tr>
       <tr class="ps-copytr" id="copytr-${p.id}">
-        <td colspan="7"><div class="ps-copybox">
+        <td colspan="4"><div class="ps-copybox">
           <span class="lbl">📋 Copiar y enviar a:</span>
           <select id="copy-sel-${p.id}"><option value="">Seleccionar alumno...</option>${alumnoOpts}</select>
           <button onclick="copiarPlanInline('${p.id}','copy-sel-${p.id}')">Enviar</button>
@@ -18127,8 +18229,7 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
   c.innerHTML = themeRow + `<div class="plan-sheet ${theme==='dark'?'dark':''}">
     <table>
       <thead><tr>
-        <th style="width:22%;">Mes</th><th>Fase</th><th>Bloque / objetivo</th><th>Parámetros</th>
-        <th style="width:130px;">Progreso</th><th>Estado</th><th style="text-align:right;">Acciones</th>
+        <th style="width:26%;">Mes</th><th>Fase</th><th>Semanas completas</th><th style="text-align:right;">Acciones</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
@@ -18141,6 +18242,17 @@ function _setPlanTheme(t){
 function _togglePlanCopy(id){
   const tr = document.getElementById('copytr-' + id);
   if (tr) tr.classList.toggle('open');
+}
+function _toggleSemanaCompleta(id, idx){
+  const plans = getPlanificaciones();
+  const p = plans.find(x => x.id === id);
+  if (!p) return;
+  let c = Array.isArray(p.semanasCompletas) ? p.semanasCompletas.slice() : [];
+  const k = c.indexOf(idx);
+  if (k >= 0) c.splice(k, 1); else c.push(idx);
+  p.semanasCompletas = c;
+  savePlanificaciones(plans);
+  if (typeof currentAlumnoId !== 'undefined' && currentAlumnoId) renderPerfilPlanificaciones(currentAlumnoId, 'fuerza');
 }
 // Tipo actual de planificación siendo creada/editada
 let planTipoActual = 'fuerza';
@@ -18831,13 +18943,32 @@ function _renderStatsCoach(){
   const min = pesos.length?Math.min(...pesos):null;
   const prog = (max!=null&&min!=null)?(Math.round((max-min)*10)/10):0;
   const ult = hist.length?hist[0].peso:null;
+  // Entrada del máximo (con sus reps) para calcular 1RM
+  const maxEntry = (max!=null) ? hist.find(h=>parseFloat(h.peso)===max) : null;
+  const maxReps = (maxEntry && maxEntry.reps) ? parseInt(maxEntry.reps) : null;
+  // 1RM estimado (fórmula de Epley). Si no hay reps, se asume 1 (el peso ya es el 1RM).
+  const rm = (max!=null) ? Math.round(max*(1+((maxReps||1)/30))) : null;
   const boxes =
     '<div class="stc-box"><div class="k">Máximo</div><div class="v">'+(max!=null?max:'—')+'<small> kg</small></div></div>'+
+    '<div class="stc-box"><div class="k">1RM est.</div><div class="v" style="color:#e0bd63;">'+(rm!=null?rm:'—')+'<small> kg</small></div></div>'+
     '<div class="stc-box"><div class="k">Progreso</div><div class="v'+(prog>0?' up':'')+'">'+(prog>0?'+':'')+prog+'<small> kg</small></div></div>'+
-    '<div class="stc-box"><div class="k">Registros</div><div class="v">'+hist.length+'</div></div>'+
-    '<div class="stc-box"><div class="k">Última carga</div><div class="v">'+(ult!=null?ult:'—')+'<small> kg</small></div></div>';
+    '<div class="stc-box"><div class="k">Última carga</div><div class="v">'+(ult!=null?ult:'—')+'<small> kg</small></div></div>'+
+    '<div class="stc-box"><div class="k">Registros</div><div class="v">'+hist.length+'</div></div>';
+  // Tabla de %1RM (solo coach) para planificar
+  const pctTable = [[100,1],[95,2],[90,4],[85,6],[80,8],[75,10],[70,12],[65,15],[60,20]];
+  const rmBlock = (rm!=null) ? (
+    '<div class="stc-sub">1RM estimado y % · para planificar</div>'+
+    '<div style="background:#0f1626;border:1px solid #243150;border-radius:10px;overflow:hidden;">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid #243150;">'+
+        '<span style="font-size:11px;color:#9fb0cf;">1RM estimado'+(maxReps?' (base: '+max+' kg × '+maxReps+' reps)':' (base: '+max+' kg)')+'</span>'+
+        '<span style="font-size:16px;font-weight:900;color:#e0bd63;">'+rm+' kg</span></div>'+
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);">'+
+        pctTable.map(function(r){var pc=r[0],rp=r[1],kg=Math.round(rm*pc/100);return '<div style="padding:9px 11px;border-right:1px solid #1c2740;border-bottom:1px solid #1c2740;"><div style="font-size:10px;font-weight:800;color:#6b7c9e;">'+pc+'%</div><div style="font-size:15px;font-weight:800;color:#fff;">'+kg+'<span style="font-size:10px;color:#9fb0cf;"> kg</span></div><div style="font-size:9px;color:#6b7c9e;">~'+rp+' reps</div></div>';}).join('')+
+      '</div>'+
+    '</div>'
+  ) : '';
   const histHTML = hist.length
-    ? hist.map((h)=> '<div class="stc-hrow"><span class="d">'+_fmtFechaStc(h.fecha)+'</span><span><span class="w">'+h.peso+' kg</span> &nbsp;<button class="del" onclick="_delStatsCoach(\''+String(h.fecha).replace(/[^0-9-]/g,'')+'\','+h.peso+')" title="Eliminar">✕</button></span></div>').join('')
+    ? hist.map((h)=> '<div class="stc-hrow"><span class="d">'+_fmtFechaStc(h.fecha)+'</span><span><span class="w">'+h.peso+' kg'+(h.reps?' × '+h.reps:'')+'</span> &nbsp;<button class="del" onclick="_delStatsCoach(\''+String(h.fecha).replace(/[^0-9-]/g,'')+'\','+h.peso+')" title="Eliminar">✕</button></span></div>').join('')
     : '<div class="stc-empty">Todavía no cargaste ningún máximo.</div>';
   const hoy = new Date().toISOString().slice(0,10);
   ov.innerHTML =
@@ -18845,21 +18976,25 @@ function _renderStatsCoach(){
       '<div class="stc-head"><div class="stc-title">📊 '+_statCoach.nombre+'<small>Estadísticas · '+nom+'</small></div><button class="stc-x" onclick="_cerrarStatsCoach()">×</button></div>'+
       '<div class="stc-body">'+
         '<div class="stc-load">'+
-          '<div class="stc-fld"><label>Peso máximo (kg)</label><input id="stc-in-peso" type="number" inputmode="decimal" placeholder="0" step="0.5"></div>'+
+          '<div class="stc-fld"><label>Peso máx. (kg)</label><input id="stc-in-peso" type="number" inputmode="decimal" placeholder="0" step="0.5"></div>'+
+          '<div class="stc-fld" style="max-width:70px;"><label>Reps</label><input id="stc-in-reps" type="number" inputmode="numeric" placeholder="1" step="1" min="1"></div>'+
           '<div class="stc-fld"><label>Fecha</label><input id="stc-in-fecha" type="date" value="'+hoy+'"></div>'+
           '<button class="stc-ok" onclick="_guardarStatsCoach()">✓ Guardar</button>'+
         '</div>'+
         '<div class="stc-grid">'+boxes+'</div>'+
+        rmBlock+
         '<div class="stc-sub">Historial de máximos</div>'+
         '<div class="stc-hist">'+histHTML+'</div>'+
-        '<div class="stc-note">Solo lo ves vos. El alumno ve únicamente el peso máximo, la fecha y su historial. Se sincroniza a la app al guardar.</div>'+
+        '<div class="stc-note">El 1RM y los % los ves solo vos (para planificar). El alumno ve únicamente el peso máximo, la fecha y su historial.</div>'+
       '</div>'+
     '</div>';
 }
 function _guardarStatsCoach(){
   const pesoRaw = document.getElementById('stc-in-peso')?.value.trim();
+  const repsRaw = document.getElementById('stc-in-reps')?.value.trim();
   const fecha = document.getElementById('stc-in-fecha')?.value;
   const peso = parseFloat(String(pesoRaw||'').replace(',','.'));
+  const reps = parseInt(repsRaw||'');
   if(isNaN(peso) || peso<=0){ toast('Ingresá un peso válido'); return; }
   if(!fecha){ toast('Elegí una fecha'); return; }
   const alumnos = getAlumnos();
@@ -18871,15 +19006,19 @@ function _guardarStatsCoach(){
   e.hist = Array.isArray(e.hist) ? e.hist : [];
   // Si ya hay un registro esa misma fecha, lo reemplaza
   e.hist = e.hist.filter(h => String(h.fecha) !== String(fecha));
-  e.hist.push({ fecha, peso });
-  // Recalcular máximo
+  const entry = { fecha, peso };
+  if(!isNaN(reps) && reps>0) entry.reps = reps;
+  e.hist.push(entry);
+  // Recalcular máximo (y las reps de ese máximo, para el 1RM)
   const pesos = e.hist.map(h=>parseFloat(h.peso)).filter(n=>!isNaN(n));
   const max = Math.max(...pesos);
   const maxEntry = e.hist.slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).find(h=>parseFloat(h.peso)===max);
   e.max = max; e.fecha = maxEntry ? maxEntry.fecha : fecha;
+  e.maxReps = (maxEntry && maxEntry.reps) ? maxEntry.reps : null;
   al.statsEjercicios[_statCoach.key] = e;
   saveAlumnos(alumnos);
   const p=document.getElementById('stc-in-peso'); if(p) p.value='';
+  const rp=document.getElementById('stc-in-reps'); if(rp) rp.value='';
   toast('Peso máximo guardado ✓');
   _renderStatsCoach();
 }

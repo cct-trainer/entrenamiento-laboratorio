@@ -808,8 +808,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260812165937 por un timestamp en cada deploy
-const _APP_VERSION = '20260812165937';
+// deploy.bat reemplaza 20260813094803 por un timestamp en cada deploy
+const _APP_VERSION = '20260813094803';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -836,8 +836,23 @@ function _guardarEdit(key, campo, val) {
   if (!_pesoEdits[key]) _pesoEdits[key] = {};
   _pesoEdits[key][campo] = String(val).replace(/kg$/i,'').trim();
   try { localStorage.setItem('SOCC_EDITS_'+_alumnoId, JSON.stringify(_pesoEdits)); } catch(e) {}
+  _syncEditsFirebase();
 }
 function _getEdit(key, campo) { return (_pesoEdits[key] && _pesoEdits[key][campo]) || ''; }
+// Respaldo en la nube de las ediciones del alumno (para que no se pierdan y el coach las vea)
+let _editsSyncTimer = null;
+function _syncEditsFirebase(){
+  if (!_db || !_alumnoId) return;
+  clearTimeout(_editsSyncTimer);
+  _editsSyncTimer = setTimeout(function(){
+    try {
+      _db.collection('alumnos').doc(_alumnoId).set({
+        pesoEdits: _pesoEdits,
+        pesoEditsAt: new Date().toISOString()
+      }, { merge: true }).catch(function(){});
+    } catch(e) {}
+  }, 1500);
+}
 
 const TIPOS_RUN = {
   'pasadas':     {icon:'⚡', label:'Pasadas / Intervalos', color:'#f59e0b'},
@@ -901,6 +916,20 @@ const TIPOS_RUN = {
     const doc = await db.collection('alumnos').doc(id).get();
     if (!doc.exists) return showErr('Todavía no hay datos para este alumno. Pedile a tu coach que sincronice el portal desde su aplicación.');
     _data = doc.data();
+
+    // Recuperar ediciones del alumno guardadas en la nube (si el teléfono las perdió)
+    try {
+      const fbEdits = _data.pesoEdits;
+      if (fbEdits && typeof fbEdits === 'object') {
+        for (const k in fbEdits) {
+          if (!_pesoEdits[k]) _pesoEdits[k] = {};
+          for (const c in fbEdits[k]) {
+            if (_pesoEdits[k][c] === undefined || _pesoEdits[k][c] === '') _pesoEdits[k][c] = fbEdits[k][c];
+          }
+        }
+        try { localStorage.setItem('SOCC_EDITS_'+_alumnoId, JSON.stringify(_pesoEdits)); } catch(e) {}
+      }
+    } catch(e) {}
 
     // ── Control de acceso ────────────────────────────────────────────────────
     if (_data.accessUntil) {
