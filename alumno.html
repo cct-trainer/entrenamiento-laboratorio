@@ -808,8 +808,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260815111144 por un timestamp en cada deploy
-const _APP_VERSION = '20260815111144';
+// deploy.bat reemplaza 20260815194001 por un timestamp en cada deploy
+const _APP_VERSION = '20260815194001';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2111,11 +2111,11 @@ function _ejCard(ej, uid) {
       (ej.unilateral ? '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;padding-left:12px;">'+(_LANG==='en'?'Unilateral · do each set on both sides':'Unilateral · cada serie se hace de los dos lados')+'</div>' : '')+
       (()=>{ const nq=_notaEquipo(ej); return nq ? '<div style="font-size:10px;color:var(--muted);margin:2px 0 6px;padding-left:12px;line-height:1.45;">💡 '+nq+'</div>' : ''; })()+
       (ej.nota ? '<div style="font-size:12.5px;font-weight:600;color:var(--gold);margin:3px 0 7px;padding:6px 10px 6px 12px;background:rgba(201,168,76,.08);border-radius:7px;font-style:italic;line-height:1.45;">📝 '+ej.nota+'</div>' : '')+
+      videoHTML+
       (sEfec ? '' : ctrlGrid)+
       pesoRef+
       seriesTable+
       fichaHTML+
-      videoHTML+
       feedbackHTML+
     '</div>'+
   '</div>';
