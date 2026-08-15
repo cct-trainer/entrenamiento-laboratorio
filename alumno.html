@@ -808,8 +808,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260813094803 por un timestamp en cada deploy
-const _APP_VERSION = '20260813094803';
+// deploy.bat reemplaza 20260815111144 por un timestamp en cada deploy
+const _APP_VERSION = '20260815111144';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2172,6 +2172,7 @@ function _abrirStats(uid){
   const ej = _ejStore[uid]; if(!ej) return;
   _ensureStatsUI();
   const en = _LANG==='en';
+  const uni = (_data && _data.perfil && _data.perfil.unidadPeso==='lb') ? 'lb' : 'kg';
   const nombre = _nomEj(ej)||'';
   const st = _statsDe(ej.nombre||nombre);
   const musc = ej.musculos ? _tc(ej.musculos) : '';
@@ -2183,9 +2184,9 @@ function _abrirStats(uid){
     const maxW = st.max || (hist[0]?hist[0].peso:'');
     const maxF = st.fecha || (hist[0]?hist[0].fecha:'');
     const histHTML = hist.length ? hist.map((h,i)=>
-      '<div class="stx-row"><span class="d">'+_fmtFechaStx(h.fecha)+'</span><span><span class="'+(i===0?'w':'w2')+'">'+h.peso+' kg</span>'+(i===0?' <span class="pr">'+(en?'MAX':'MÁX')+'</span>':'')+'</span></div>'
+      '<div class="stx-row"><span class="d">'+_fmtFechaStx(h.fecha)+'</span><span><span class="'+(i===0?'w':'w2')+'">'+h.peso+' '+uni+'</span>'+(i===0?' <span class="pr">'+(en?'MAX':'MÁX')+'</span>':'')+'</span></div>'
     ).join('') : '<div class="stx-empty">—</div>';
-    body = '<div class="stx-hero"><div class="lbl">🏆 '+(en?'Max weight':'Peso máximo')+'</div><div class="big">'+maxW+' <small>kg</small></div><div class="date">'+_fmtFechaStx(maxF)+'</div></div>'
+    body = '<div class="stx-hero"><div class="lbl">🏆 '+(en?'Max weight':'Peso máximo')+'</div><div class="big">'+maxW+' <small>'+uni+'</small></div><div class="date">'+_fmtFechaStx(maxF)+'</div></div>'
          + '<div class="stx-sec">'+(en?'History':'Historial')+'</div><div class="stx-hist">'+histHTML+'</div>';
   } else {
     body = '<div class="stx-empty2">📊<br>'+(en?'No max weight recorded yet for this exercise.':'Todavía no hay un peso máximo cargado para este ejercicio.')+'</div>';

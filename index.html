@@ -2278,6 +2278,8 @@ select.toolbox-input option:disabled { color: #888; }
 .plan-fila:hover { border-color:#C9A84C; box-shadow:0 2px 8px rgba(0,0,0,.06); }
 .plan-fila--empty { border-style:dashed; }
 .plan-fila--empty:hover { box-shadow:none; }
+.plan-fila.dnd-dia-src { opacity:.4; }
+.plan-fila.dnd-dia-over { border-color:#C9A84C !important; border-style:solid; box-shadow:0 0 0 2px rgba(201,168,76,.35) !important; background:#fffdf6; }
 .pf-daycol { min-width:66px; flex-shrink:0; }
 .pf-dia { font-size:11px; font-weight:700; color:#333; letter-spacing:.5px; text-transform:uppercase; }
 .pf-fecha { font-size:10px; color:#9aa0a8; margin-top:1px; }
@@ -3187,6 +3189,7 @@ select.toolbox-input option:disabled { color: #888; }
     <button onclick="abrirActualizaciones()" class="pln-btn pln-btn-outline" title="Actualizaciones de plan que enviaron tus alumnos" style="position:relative;">🔄 Actualizaciones<span id="actual-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="abrirSuscripciones()" class="pln-btn pln-btn-outline" title="Planes, pagos y vencimientos" style="position:relative;">Suscripciones<span id="venc-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="abrirMetricas()" class="pln-btn pln-btn-outline" title="Métricas del piloto de adquisición">📊 Métricas</button>
+    <button onclick="_abrirBellModif()" class="pln-btn pln-btn-outline" title="Modificaciones de alumnos sin revisar" style="position:relative;">🔔<span id="bell-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="recuperarDesdePortales()" class="pln-btn pln-btn-outline" title="Recuperar tus alumnos leyendo sus documentos en la nube">↻ Recuperar</button>
     <button onclick="exportarBackupCompleto()" class="pln-btn pln-btn-guardar" title="Descargar backup completo de toda la base de datos">Backup</button>
     <button onclick="limpiarStorageEmergencia()" style="background:none;border:1px solid #ddd;color:#bbb;padding:7px 12px;border-radius:5px;font-size:11px;cursor:pointer;" title="Liberar espacio si hay errores de almacenamiento">🗑</button>
@@ -11836,6 +11839,50 @@ function _aplicarModifSesion(){
   toast('Sesión actualizada con los pesos del alumno ✓ — tocá Guardar para confirmar');
 }
 
+// ── Campanita global: alumnos con modificaciones sin revisar ──
+let _bellList = [];
+async function _initBellModif(){
+  if(!window._db) return;
+  try{
+    const snap = await window._db.collection('alumnos').get();
+    const list = [];
+    snap.forEach(doc=>{
+      const id = doc.id; if(id.indexOf('zz_')===0) return;
+      const d = doc.data()||{};
+      const at = d.pesoEditsAt||'';
+      const nSub = Array.isArray(d.sustituciones) ? d.sustituciones.length : 0;
+      const hasEdits = (d.pesoEdits && Object.keys(d.pesoEdits).length) || nSub;
+      if(!hasEdits) return;
+      let seen=''; try{ seen = localStorage.getItem('SOCC_BELL_'+id)||''; }catch(e){}
+      const nuevo = !!at && String(seen)!==String(at);
+      list.push({ id, nombre:(d.perfil&&d.perfil.nombre)||'Alumno', at, nSub, nuevo });
+    });
+    _bellList = list;
+    const nuevos = list.filter(x=>x.nuevo).length;
+    const badge = document.getElementById('bell-badge');
+    if(badge){ if(nuevos>0){ badge.textContent = nuevos; badge.style.display=''; } else badge.style.display='none'; }
+  }catch(e){}
+}
+async function _abrirBellModif(){
+  if(!_bellList.length) await _initBellModif();
+  let ov = document.getElementById('bell-overlay');
+  if(!ov){ ov=document.createElement('div'); ov.id='bell-overlay'; ov.className='stc-overlay'; ov.onclick=function(e){ if(e.target===ov) ov.style.display='none'; }; document.body.appendChild(ov); }
+  ov.style.display='flex';
+  const nuevos = _bellList.filter(x=>x.nuevo).sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+  const rows = nuevos.length ? nuevos.map(x=>{
+    const f = x.at ? new Date(x.at).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) : '';
+    return '<div class="stc-hrow" style="cursor:pointer;" onclick="_bellIr(\''+x.id+'\')"><div style="text-align:left;"><div style="font-size:13px;color:#eaf0fb;font-weight:700;">'+x.nombre+'</div><div style="font-size:10.5px;color:#6b7c9e;margin-top:2px;">Modificó su entrenamiento'+(f?' · '+f:'')+'</div></div><span style="color:#7fe0a0;font-size:16px;">›</span></div>';
+  }).join('') : '<div class="stc-empty">No hay modificaciones sin revisar 🎉</div>';
+  ov.innerHTML='<div class="stc-modal" onclick="event.stopPropagation()"><div class="stc-head"><div class="stc-title">🔔 Modificaciones de alumnos<small>Sin revisar</small></div><button class="stc-x" onclick="document.getElementById(\'bell-overlay\').style.display=\'none\'">×</button></div><div class="stc-body"><div class="stc-hist">'+rows+'</div><div class="stc-note">Tocá un alumno para abrir su perfil. Al abrir su sesión vas a ver el detalle y el botón para actualizar.</div></div></div>';
+}
+function _bellIr(id){
+  try{ const x=_bellList.find(y=>y.id===id); if(x) localStorage.setItem('SOCC_BELL_'+id, String(x.at)); }catch(e){}
+  const ov=document.getElementById('bell-overlay'); if(ov) ov.style.display='none';
+  _initBellModif();
+  openPerfilAlumno(id);
+}
+setTimeout(function(){ try{ _initBellModif(); }catch(e){} }, 3500);
+
 function renderPlanDiaEditor(diaIdx) {
   bloqueCounter=0; ejercicioCounter=0;
   const sesiones = planDiasData[diaIdx] || [{ bloques:[] }];
@@ -18932,10 +18979,20 @@ function _statEntry(){
   const m = ctx.al.statsEjercicios || {};
   return m[_statCoach.key] || null;
 }
+function _statUnidad(){ const c=_statAlumnoActual(); return (c && c.al && c.al.unidadPeso==='lb') ? 'lb' : 'kg'; }
+function _setStatUnidad(u){
+  const c=_statAlumnoActual(); if(!c) return;
+  const alumnos=getAlumnos(); const al=alumnos.find(a=>a.id===c.id);
+  if(!al) return;
+  al.unidadPeso = (u==='lb')?'lb':'kg';
+  saveAlumnos(alumnos);
+  _renderStatsCoach();
+}
 function _renderStatsCoach(){
   const ov = document.getElementById('stc-overlay'); if(!ov) return;
   const ctx = _statAlumnoActual();
   const nom = ctx && ctx.al ? (ctx.al.nombre||'Alumno') : '';
+  const uni = _statUnidad();
   const e = _statEntry();
   const hist = e && Array.isArray(e.hist) ? e.hist.slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))) : [];
   const pesos = hist.map(h=>parseFloat(h.peso)).filter(n=>!isNaN(n));
@@ -18943,40 +19000,42 @@ function _renderStatsCoach(){
   const min = pesos.length?Math.min(...pesos):null;
   const prog = (max!=null&&min!=null)?(Math.round((max-min)*10)/10):0;
   const ult = hist.length?hist[0].peso:null;
-  // Entrada del máximo (con sus reps) para calcular 1RM
   const maxEntry = (max!=null) ? hist.find(h=>parseFloat(h.peso)===max) : null;
   const maxReps = (maxEntry && maxEntry.reps) ? parseInt(maxEntry.reps) : null;
-  // 1RM estimado (fórmula de Epley). Si no hay reps, se asume 1 (el peso ya es el 1RM).
   const rm = (max!=null) ? Math.round(max*(1+((maxReps||1)/30))) : null;
   const boxes =
-    '<div class="stc-box"><div class="k">Máximo</div><div class="v">'+(max!=null?max:'—')+'<small> kg</small></div></div>'+
-    '<div class="stc-box"><div class="k">1RM est.</div><div class="v" style="color:#e0bd63;">'+(rm!=null?rm:'—')+'<small> kg</small></div></div>'+
-    '<div class="stc-box"><div class="k">Progreso</div><div class="v'+(prog>0?' up':'')+'">'+(prog>0?'+':'')+prog+'<small> kg</small></div></div>'+
-    '<div class="stc-box"><div class="k">Última carga</div><div class="v">'+(ult!=null?ult:'—')+'<small> kg</small></div></div>'+
+    '<div class="stc-box"><div class="k">Máximo</div><div class="v">'+(max!=null?max:'—')+'<small> '+uni+'</small></div></div>'+
+    '<div class="stc-box"><div class="k">1RM est.</div><div class="v" style="color:#e0bd63;">'+(rm!=null?rm:'—')+'<small> '+uni+'</small></div></div>'+
+    '<div class="stc-box"><div class="k">Progreso</div><div class="v'+(prog>0?' up':'')+'">'+(prog>0?'+':'')+prog+'<small> '+uni+'</small></div></div>'+
+    '<div class="stc-box"><div class="k">Última carga</div><div class="v">'+(ult!=null?ult:'—')+'<small> '+uni+'</small></div></div>'+
     '<div class="stc-box"><div class="k">Registros</div><div class="v">'+hist.length+'</div></div>';
-  // Tabla de %1RM (solo coach) para planificar
   const pctTable = [[100,1],[95,2],[90,4],[85,6],[80,8],[75,10],[70,12],[65,15],[60,20]];
   const rmBlock = (rm!=null) ? (
     '<div class="stc-sub">1RM estimado y % · para planificar</div>'+
     '<div style="background:#0f1626;border:1px solid #243150;border-radius:10px;overflow:hidden;">'+
       '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid #243150;">'+
-        '<span style="font-size:11px;color:#9fb0cf;">1RM estimado'+(maxReps?' (base: '+max+' kg × '+maxReps+' reps)':' (base: '+max+' kg)')+'</span>'+
-        '<span style="font-size:16px;font-weight:900;color:#e0bd63;">'+rm+' kg</span></div>'+
+        '<span style="font-size:11px;color:#9fb0cf;">1RM estimado'+(maxReps?' (base: '+max+' '+uni+' × '+maxReps+' reps)':' (base: '+max+' '+uni+')')+'</span>'+
+        '<span style="font-size:16px;font-weight:900;color:#e0bd63;">'+rm+' '+uni+'</span></div>'+
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);">'+
-        pctTable.map(function(r){var pc=r[0],rp=r[1],kg=Math.round(rm*pc/100);return '<div style="padding:9px 11px;border-right:1px solid #1c2740;border-bottom:1px solid #1c2740;"><div style="font-size:10px;font-weight:800;color:#6b7c9e;">'+pc+'%</div><div style="font-size:15px;font-weight:800;color:#fff;">'+kg+'<span style="font-size:10px;color:#9fb0cf;"> kg</span></div><div style="font-size:9px;color:#6b7c9e;">~'+rp+' reps</div></div>';}).join('')+
+        pctTable.map(function(r){var pc=r[0],rp=r[1],kg=Math.round(rm*pc/100);return '<div style="padding:9px 11px;border-right:1px solid #1c2740;border-bottom:1px solid #1c2740;"><div style="font-size:10px;font-weight:800;color:#6b7c9e;">'+pc+'%</div><div style="font-size:15px;font-weight:800;color:#fff;">'+kg+'<span style="font-size:10px;color:#9fb0cf;"> '+uni+'</span></div><div style="font-size:9px;color:#6b7c9e;">~'+rp+' reps</div></div>';}).join('')+
       '</div>'+
     '</div>'
   ) : '';
   const histHTML = hist.length
-    ? hist.map((h)=> '<div class="stc-hrow"><span class="d">'+_fmtFechaStc(h.fecha)+'</span><span><span class="w">'+h.peso+' kg'+(h.reps?' × '+h.reps:'')+'</span> &nbsp;<button class="del" onclick="_delStatsCoach(\''+String(h.fecha).replace(/[^0-9-]/g,'')+'\','+h.peso+')" title="Eliminar">✕</button></span></div>').join('')
+    ? hist.map((h)=> '<div class="stc-hrow"><span class="d">'+_fmtFechaStc(h.fecha)+'</span><span><span class="w">'+h.peso+' '+uni+(h.reps?' × '+h.reps:'')+'</span> &nbsp;<button class="del" onclick="_delStatsCoach(\''+String(h.fecha).replace(/[^0-9-]/g,'')+'\','+h.peso+')" title="Eliminar">✕</button></span></div>').join('')
     : '<div class="stc-empty">Todavía no cargaste ningún máximo.</div>';
   const hoy = new Date().toISOString().slice(0,10);
+  const uniTog =
+    '<div style="display:inline-flex;background:#0f1626;border:1px solid #243150;border-radius:8px;padding:2px;margin-right:8px;">'+
+      '<button onclick="_setStatUnidad(\'kg\')" style="border:none;border-radius:6px;font-size:11px;font-weight:800;padding:5px 10px;cursor:pointer;'+(uni==='kg'?'background:#C9A84C;color:#241d07;':'background:transparent;color:#8a92a4;')+'">kg</button>'+
+      '<button onclick="_setStatUnidad(\'lb\')" style="border:none;border-radius:6px;font-size:11px;font-weight:800;padding:5px 10px;cursor:pointer;'+(uni==='lb'?'background:#C9A84C;color:#241d07;':'background:transparent;color:#8a92a4;')+'">lb</button>'+
+    '</div>';
   ov.innerHTML =
     '<div class="stc-modal" onclick="event.stopPropagation()">'+
-      '<div class="stc-head"><div class="stc-title">📊 '+_statCoach.nombre+'<small>Estadísticas · '+nom+'</small></div><button class="stc-x" onclick="_cerrarStatsCoach()">×</button></div>'+
+      '<div class="stc-head"><div class="stc-title">📊 '+_statCoach.nombre+'<small>Estadísticas · '+nom+'</small></div><div style="display:flex;align-items:center;">'+uniTog+'<button class="stc-x" onclick="_cerrarStatsCoach()">×</button></div></div>'+
       '<div class="stc-body">'+
         '<div class="stc-load">'+
-          '<div class="stc-fld"><label>Peso máx. (kg)</label><input id="stc-in-peso" type="number" inputmode="decimal" placeholder="0" step="0.5"></div>'+
+          '<div class="stc-fld"><label>Peso máx. ('+uni+')</label><input id="stc-in-peso" type="number" inputmode="decimal" placeholder="0" step="0.5"></div>'+
           '<div class="stc-fld" style="max-width:70px;"><label>Reps</label><input id="stc-in-reps" type="number" inputmode="numeric" placeholder="1" step="1" min="1"></div>'+
           '<div class="stc-fld"><label>Fecha</label><input id="stc-in-fecha" type="date" value="'+hoy+'"></div>'+
           '<button class="stc-ok" onclick="_guardarStatsCoach()">✓ Guardar</button>'+
@@ -18985,7 +19044,7 @@ function _renderStatsCoach(){
         rmBlock+
         '<div class="stc-sub">Historial de máximos</div>'+
         '<div class="stc-hist">'+histHTML+'</div>'+
-        '<div class="stc-note">El 1RM y los % los ves solo vos (para planificar). El alumno ve únicamente el peso máximo, la fecha y su historial.</div>'+
+        '<div class="stc-note">El 1RM y los % los ves solo vos (para planificar). El alumno ve el peso máximo, la fecha y su historial en '+uni+'.</div>'+
       '</div>'+
     '</div>';
 }
@@ -28160,7 +28219,7 @@ async function macroGuardar() {
 
   document.addEventListener('dragover', function(e) {
     if (!_src) return;
-    var card = e.target.closest ? e.target.closest('.plan-dia-card') : null;
+    var card = e.target.closest ? e.target.closest('.plan-fila[data-dia]') : null;
     if (!card) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
@@ -28171,7 +28230,7 @@ async function macroGuardar() {
 
   document.addEventListener('drop', function(e) {
     if (!_src) return;
-    var card = e.target.closest ? e.target.closest('.plan-dia-card') : null;
+    var card = e.target.closest ? e.target.closest('.plan-fila[data-dia]') : null;
     if (!card || card === _src.card) return;
     e.preventDefault();
     doMove(parseInt(card.dataset.dia), parseInt(card.dataset.sem));
@@ -28211,7 +28270,7 @@ async function macroGuardar() {
     var el = document.elementFromPoint(touch.clientX, touch.clientY);
     _ghost.style.display = '';
     document.querySelectorAll('.dnd-dia-over').forEach(function(x){ x.classList.remove('dnd-dia-over'); });
-    var over = el ? el.closest('.plan-dia-card') : null;
+    var over = el ? el.closest('.plan-fila[data-dia]') : null;
     if (over && over !== _src.card) over.classList.add('dnd-dia-over');
   }, { passive: true });
 
@@ -28220,7 +28279,7 @@ async function macroGuardar() {
     var touch = e.changedTouches[0];
     if (_ghost) { _ghost.remove(); _ghost = null; }
     var el = document.elementFromPoint(touch.clientX, touch.clientY);
-    var destCard = el ? el.closest('.plan-dia-card') : null;
+    var destCard = el ? el.closest('.plan-fila[data-dia]') : null;
     if (destCard && destCard !== _src.card) {
       doMove(parseInt(destCard.dataset.dia), parseInt(destCard.dataset.sem));
     }
