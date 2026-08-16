@@ -11770,7 +11770,7 @@ function _sesionModifs(){
   const sem=planSemEditando, dia=planDiaAbierto, mod=_editorModTab;
   const ses=(planDiasData[dia]||[])[mod];
   const edits=d.pesoEdits||{};
-  const pesos=[];
+  const pesos=[]; const noHechas=[];
   if(ses && Array.isArray(ses.bloques)){
     ses.bloques.forEach((b,bi)=>{
       (b.ejercicios||[]).forEach((ej,ei)=>{
@@ -11782,19 +11782,22 @@ function _sesionModifs(){
           if(pe!==undefined && pe!=='' && String(pe)!==orig){
             pesos.push({ej:ej.nombre||'Ejercicio', serie:k+1, old:orig||'—', nuevo:pe, bi:bi, ei:ei, k:k});
           }
+          // Serie marcada como "no hecha" (omitida) por el alumno
+          const om = [key, key+'_d', key+'_i'].some(kk=>edits[kk] && edits[kk].omitida==='1');
+          if(om) noHechas.push({ej:ej.nombre||'Ejercicio', serie:k+1});
         });
       });
     });
   }
   const subs=(d.sustituciones||[]).filter(s=>String(s.sem)===String(sem)&&String(s.dia)===String(dia));
-  return {pesos, subs};
+  return {pesos, subs, noHechas};
 }
 function _avisoSeenKey(){ return 'SOCC_AVISO_'+(_avisoData?_avisoData.id:'')+'_'+planSemEditando+'_'+planDiaAbierto; }
 function _renderAvisoAlumno(){
   _quitarBannerAviso();
   if(!_avisoData) return;
   const m=_sesionModifs();
-  if(!m.pesos.length && !m.subs.length) return;
+  if(!m.pesos.length && !m.subs.length && !(m.noHechas&&m.noHechas.length)) return;
   // Si ya lo revisó para este set de cambios, no molestar
   try{ if(localStorage.getItem(_avisoSeenKey())===String(_avisoData.at) && _avisoData.at) return; }catch(e){}
   const scroll=document.getElementById('plan-editor-page-scroll');
@@ -11803,6 +11806,7 @@ function _renderAvisoAlumno(){
   const fecha = _avisoData.at ? new Date(_avisoData.at).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
   const pesoRows=m.pesos.map(p=>'<div style="display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #f1f3f6;"><div style="font-size:12.5px;color:#1f2430;"><b>'+p.ej+'</b> · S'+p.serie+'</div><div style="font-size:12px;white-space:nowrap;"><span style="color:#b0b0b0;text-decoration:line-through;">'+p.old+'</span> <span style="color:#0f7a3d;font-weight:800;">'+p.nuevo+' kg</span></div></div>').join('');
   const subRows=m.subs.map(s=>'<div style="padding:9px 0;border-bottom:1px solid #f1f3f6;font-size:12.5px;color:#1f2430;">🔄 <b>'+(s.original||'—')+'</b> <span style="color:#8a92a1;">→</span> <b style="color:#0f7a3d;">'+(s.nuevo||'—')+'</b> <span style="color:#8a92a1;font-size:11px;">(cambió el ejercicio)</span></div>').join('');
+  const noRows=(m.noHechas||[]).map(n=>'<div style="padding:9px 0;border-bottom:1px solid #f1f3f6;font-size:12.5px;color:#1f2430;">✗ <b>'+n.ej+'</b> · S'+n.serie+' <span style="color:#dc4c4c;font-weight:800;font-size:11px;">— no la hizo</span></div>').join('');
   const box=document.createElement('div');
   box.id='aviso-modif-box';
   box.style.cssText='margin:0 0 14px;background:#fff;border:1px solid #e4e7ec;border-left:4px solid #C9A84C;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(30,40,70,.08);';
@@ -11812,7 +11816,7 @@ function _renderAvisoAlumno(){
       '<div style="flex:1;"><div style="font-size:13px;font-weight:800;color:#1f2430;">'+_avisoData.nombre+' modificó esta sesión</div><div style="font-size:11px;color:#8a92a1;font-weight:600;">'+(fecha?fecha+' · ':'')+'desde la app</div></div>'+
       '<button onclick="_descartarAviso()" style="background:none;border:none;color:#9aa2b0;font-size:20px;cursor:pointer;line-height:1;">×</button>'+
     '</div>'+
-    '<div style="padding:4px 15px 6px;">'+pesoRows+subRows+'</div>'+
+    '<div style="padding:4px 15px 6px;">'+pesoRows+subRows+noRows+'</div>'+
     '<div style="padding:13px 15px;background:#fafbfd;border-top:1px solid #eef0f3;">'+
       '<div style="font-size:12.5px;font-weight:700;color:#2b3140;margin-bottom:10px;">¿Actualizar la sesión con los pesos del alumno?</div>'+
       '<div style="display:flex;gap:8px;">'+

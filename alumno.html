@@ -266,8 +266,8 @@ html.light .hdr{box-shadow:0 6px 18px -12px rgba(0,0,0,.18);}
 .s-tipo{display:inline-block;font-size:8px;font-weight:800;padding:1px 5px;border-radius:4px;margin-left:3px;vertical-align:middle;letter-spacing:.3px;cursor:pointer;user-select:none;}
 .serie-row{cursor:pointer;transition:background .1s;}
 .serie-row.lp-active{background:rgba(201,168,76,.12)!important;}
-.s-omitida{opacity:.3;}
-.s-omitida td{text-decoration:line-through;}
+.serie-row.s-omitida td{background:rgba(239,68,68,.14)!important;color:#f0a3a3!important;text-decoration:line-through;}
+.s-del.on{color:#fff;background:#ef4444;border-radius:6px;}
 /* Serie completada: el propio número S# es el botón */
 .s-num{display:inline-block;min-width:26px;padding:4px 9px;border-radius:8px;border:1.5px solid #444a57;color:#c8cdd6;font-weight:800;font-size:12px;line-height:1;transition:all .12s;}
 .s-num.on{background:#25D366;border-color:#25D366;color:#08260f;}
@@ -808,8 +808,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260815204925 por un timestamp en cada deploy
-const _APP_VERSION = '20260815204925';
+// deploy.bat reemplaza 20260816001230 por un timestamp en cada deploy
+const _APP_VERSION = '20260816001230';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1924,7 +1924,7 @@ function _ejCard(ej, uid) {
             'style="color:var(--gold);font-size:11px;font-weight:700;cursor:pointer;user-select:none;-webkit-user-select:none;">'+_compEsc(s.pausa)+'</span>'
         : (s.pausa||'—');
       const serieLbl = '<span class="s-num'+(done?' on':'')+'">S'+labelNum+'</span>' + (lado ? ' <span style="color:var(--muted);font-weight:600;">'+lado+'</span>' : '') + tipoBadge;
-      const delBtn = spBase ? '<button class="s-del" onclick="event.stopPropagation();_serieDel(\''+savePrefix+'\','+keyIdx+')" title="Eliminar serie">✕</button>' : '';
+      const delBtn = spBase ? '<button class="s-del'+(omitida?' on':'')+'" onclick="event.stopPropagation();_serieNoHecha(\''+sp+'\')" title="'+(omitida?'Marcar como hecha':'No la hice')+'">✕</button>' : '';
       return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+(done?' s-done':'')+'" '+touch+'>'+
         '<td style="'+tdBase+'font-size:11px;font-weight:800;cursor:pointer;" onclick="event.stopPropagation();_serieTap(\''+sp+'\')">'+serieLbl+'</td>'+
         '<td style="'+tdBase+'">'+repsCel+'</td>'+
@@ -2478,8 +2478,25 @@ function _serieTap(sp){
   if(!sp) return;
   const done = _getEdit(sp,'done')==='1';
   _guardarEdit(sp,'done', done?'':'1');
+  if(!done){ _guardarEdit(sp,'omitida',''); }
   const tr=document.getElementById('sr_'+sp);
-  if(tr){ tr.classList.toggle('s-done', !done); const c=tr.querySelector('.s-num'); if(c) c.classList.toggle('on', !done); }
+  if(tr){
+    tr.classList.toggle('s-done', !done);
+    const c=tr.querySelector('.s-num'); if(c) c.classList.toggle('on', !done);
+    if(!done){ tr.classList.remove('s-omitida'); const x=tr.querySelector('.s-del'); if(x) x.classList.remove('on'); }
+  }
+}
+function _serieNoHecha(sp){
+  if(!sp) return;
+  const om = _getEdit(sp,'omitida')==='1';
+  _guardarEdit(sp,'omitida', om?'':'1');
+  if(!om){ _guardarEdit(sp,'done',''); }
+  const tr=document.getElementById('sr_'+sp);
+  if(tr){
+    tr.classList.toggle('s-omitida', !om);
+    const x=tr.querySelector('.s-del'); if(x) x.classList.toggle('on', !om);
+    if(!om){ tr.classList.remove('s-done'); const c=tr.querySelector('.s-num'); if(c) c.classList.remove('on'); }
+  }
 }
 function _serieAdd(prefix){
   if(!prefix) return;
