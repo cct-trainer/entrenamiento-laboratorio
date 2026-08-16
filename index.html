@@ -25127,34 +25127,55 @@ document.addEventListener('keydown', function(e) {
     e.dataTransfer.setData('text/plain', el.id);
   }, true);
 
+  function _soccClearMarks(){
+    document.querySelectorAll('.socc-dnd-before,.socc-dnd-after').forEach(function(el){
+      el.classList.remove('socc-dnd-before','socc-dnd-after');
+    });
+  }
+  // Bloque hermano más cercano verticalmente al puntero
+  function _soccNearest(parent, sel, y){
+    var sibs = Array.prototype.filter.call(parent.children, function(c){ return c.matches && c.matches(sel); });
+    var best=null, bestD=Infinity;
+    sibs.forEach(function(c){
+      var r=c.getBoundingClientRect();
+      var d=Math.abs(y-(r.top+r.height/2));
+      if(d<bestD){ bestD=d; best=c; }
+    });
+    return best;
+  }
+
   document.addEventListener('dragover', function(e) {
     if (!src) return;
     var sel = src.type === 'bloque' ? '.bloque-wrap' : '.ej-card';
+    var parent = src.el.parentNode;
+    if (!parent) return;
     var over = e.target.closest ? e.target.closest(sel) : null;
-    if (!over || over === src.el) return;
-    if (over.parentNode !== src.el.parentNode) return;
+    // Si no estamos sobre un hermano válido, buscar el más cercano dentro del contenedor
+    if (!over || over.parentNode !== parent) {
+      var prect = parent.getBoundingClientRect();
+      if (e.clientY < prect.top - 60 || e.clientY > prect.bottom + 60) return;
+      over = _soccNearest(parent, sel, e.clientY);
+      if (!over) return;
+    }
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    document.querySelectorAll('.socc-dnd-before,.socc-dnd-after').forEach(function(el) {
-      el.classList.remove('socc-dnd-before','socc-dnd-after');
-    });
+    _soccClearMarks();
     var rect = over.getBoundingClientRect();
     over.classList.add(e.clientY < rect.top + rect.height / 2 ? 'socc-dnd-before' : 'socc-dnd-after');
   });
 
   document.addEventListener('drop', function(e) {
     if (!src) return;
-    var sel = src.type === 'bloque' ? '.bloque-wrap' : '.ej-card';
-    var over = e.target.closest ? e.target.closest(sel) : null;
-    if (!over || over === src.el || over.parentNode !== src.el.parentNode) return;
+    // Soltar donde quedó marcado durante el arrastre (más confiable)
+    var beforeEl = document.querySelector('.socc-dnd-before');
+    var afterEl  = document.querySelector('.socc-dnd-after');
+    var target = beforeEl || afterEl;
+    if (!target || target === src.el) { _soccClearMarks(); return; }
     e.preventDefault();
-    var parent = over.parentNode;
-    var rect = over.getBoundingClientRect();
-    if (e.clientY < rect.top + rect.height / 2) {
-      parent.insertBefore(src.el, over);
-    } else {
-      parent.insertBefore(src.el, over.nextSibling);
-    }
+    var parent = target.parentNode;
+    if (beforeEl) parent.insertBefore(src.el, beforeEl);
+    else parent.insertBefore(src.el, afterEl.nextSibling);
+    _soccClearMarks();
     if (src.type === 'bloque') {
       if (typeof actualizarLetrasBloque === 'function') actualizarLetrasBloque();
     } else {
@@ -25164,9 +25185,8 @@ document.addEventListener('keydown', function(e) {
   });
 
   document.addEventListener('dragend', function() {
-    document.querySelectorAll('.socc-dragging,.socc-dnd-before,.socc-dnd-after').forEach(function(el) {
-      el.classList.remove('socc-dragging','socc-dnd-before','socc-dnd-after');
-    });
+    document.querySelectorAll('.socc-dragging').forEach(function(el){ el.classList.remove('socc-dragging'); });
+    _soccClearMarks();
     src = null;
   });
 })();
@@ -27178,26 +27198,57 @@ function _traspParseEj(line){
   if(!nombre) nombre=t;
   return { nombre, series, reps, peso, rir, pausa, nota };
 }
+// ¿La línea es una serie suelta? ("1x15@13,6Kg", "3x12", "Serie 1: 8 reps", "S1 - 8x40")
+function _traspEsSerieLine(t){
+  const s=t.replace(/^[\-•*\s]+/,'');
+  if(/^\d+\s*[x×]\s*\d/.test(s)) return true;          // empieza con SxR, sin nombre → es una serie
+  if(/^(serie|set)\s*\d/i.test(s)) return true;
+  if(/^s\s*\d+\s*[:\-–)]/i.test(s)) return true;
+  if(/^\d+\s*[\.\)\-]/.test(s)){
+    const letras=s.replace(/[^a-záéíóúñ]/gi,'');
+    if(letras.length<=6) return true; // solo "reps"/"kg"/"min", no un nombre
+  }
+  return false;
+}
 function _traspBuildSesion(texto, lugar){
   const lines=String(texto||'').replace(/\r/g,'').split('\n');
-  const bloques=[]; let cur=null;
-  const nuevo=n=>({ nombre:n, tipo:_traspTipoBloque(n), serieTipo:'Serie Simple', ejercicios:[], cardioData:null });
+  const bloques=[]; let cur=null; let curEj=null;
+  const nuevoB=n=>({ nombre:n, tipo:_traspTipoBloque(n), serieTipo:'Serie Simple', ejercicios:[], cardioData:null });
+  const finEj=()=>{
+    if(!curEj) return;
+    if(!curEj.series.length){
+      curEj.series.push({reps:String(curEj._reps||''),peso:String(curEj._peso||''),rir:String(curEj._rir||''),pausa:String(curEj._pausa||''),comentarios:''});
+    }
+    curEj.ctrl.series=String(curEj.series.length);
+    curEj=null;
+  };
   lines.forEach(raw=>{
     const t=raw.trim(); if(!t) return;
-    if(_traspEsHeader(t)){ cur=nuevo(t.replace(/:$/,'').trim()); bloques.push(cur); return; }
-    if(!cur){ cur=nuevo('Trabajo principal'); bloques.push(cur); }
+    if(_traspEsHeader(t)){ finEj(); cur=nuevoB(t.replace(/:$/,'').trim()); bloques.push(cur); return; }
+    if(!cur){ cur=nuevoB('Trabajo principal'); bloques.push(cur); }
+    // Serie suelta debajo de un ejercicio → se agrega a ese ejercicio (no crea uno nuevo)
+    if(curEj && _traspEsSerieLine(t)){
+      const v=_traspParseEj(t);
+      const nS=Math.min(parseInt(v.series)||1,12);
+      for(let i=0;i<nS;i++) curEj.series.push({reps:String(v.reps||curEj._reps||''),peso:String(v.peso||curEj._peso||''),rir:String(v.rir||''),pausa:String(v.pausa||curEj._pausa||''),comentarios:''});
+      return;
+    }
+    // Ejercicio nuevo
+    finEj();
     const ej=_traspParseEj(t); if(!ej||!ej.nombre) return;
-    const nSer=Math.min(parseInt(ej.series)||1,10);
-    const fila=()=>({reps:String(ej.reps||''),peso:String(ej.peso||''),rir:String(ej.rir||''),pausa:String(ej.pausa||''),comentarios:''});
-    cur.ejercicios.push({
+    const nSer=Math.min(parseInt(ej.series)||0,12);
+    curEj={
       nombre:(typeof _iaMatchBiblioteca==='function'?_iaMatchBiblioteca(ej.nombre):ej.nombre),
       nota:String(ej.nota||''),
       ctrl:{series:String(ej.series||''),reps:String(ej.reps||''),peso:String(ej.peso||''),pausa:String(ej.pausa||''),rir:String(ej.rir||'')},
-      video:'', ficha:null,
-      series:Array.from({length:nSer},()=>fila()),
-      seriesApro:[], dropset:[]
-    });
+      video:'', ficha:null, series:[], seriesApro:[], dropset:[],
+      _reps:ej.reps, _peso:ej.peso, _rir:ej.rir, _pausa:ej.pausa
+    };
+    cur.ejercicios.push(curEj);
+    for(let i=0;i<nSer;i++) curEj.series.push({reps:String(ej.reps||''),peso:String(ej.peso||''),rir:String(ej.rir||''),pausa:String(ej.pausa||''),comentarios:''});
   });
+  finEj();
+  bloques.forEach(b=>b.ejercicios.forEach(e=>{ delete e._reps; delete e._peso; delete e._rir; delete e._pausa; }));
   return { bloques:bloques.filter(b=>b.ejercicios.length), lugar:lugar||'' };
 }
 // Mapea "Lunes"/"mié"/fecha → índice de día (Lun=0 … Dom=6)
