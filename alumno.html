@@ -822,8 +822,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260817140438 por un timestamp en cada deploy
-const _APP_VERSION = '20260817140438';
+// deploy.bat reemplaza 20260817141526 por un timestamp en cada deploy
+const _APP_VERSION = '20260817141526';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1964,7 +1964,11 @@ function _ejCard(ej, uid) {
                   : _mkRow(it.s,it.idx,labelNum,'','');
     }).join('');
     const addBtn = savePrefix ? '<button class="s-add" onclick="_serieAdd(\''+savePrefix+'\')">＋ Agregar serie</button>' : '';
-    return '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div>'+addBtn;
+    // Contenedor redondeado y elevado (la tabla "sale" de la pantalla)
+    const _wrapBd = _wt ? '#d7dbe3' : '#24272d';
+    const _wrapSh = _wt ? '0 10px 26px rgba(0,0,0,.6), 0 2px 0 rgba(255,255,255,.5) inset' : '0 10px 26px rgba(0,0,0,.7)';
+    const _wrapBg = _wt ? '#ffffff' : '#050506';
+    return '<div style="overflow:hidden;border-radius:14px;border:1px solid '+_wrapBd+';background:'+_wrapBg+';box-shadow:'+_wrapSh+';margin:2px 0 2px;"><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div></div>'+addBtn;
   }
 
   // Grid SERIES / REPS / PAUSA / RIR  (resumen de series efectivas)
