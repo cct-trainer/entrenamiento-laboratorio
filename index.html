@@ -1237,6 +1237,24 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 }
 .ej-btn-stat:hover { border-color: #C9A84C; background: #FDF9EF; }
 
+/* ══ TÉCNICA AVANZADA ══ */
+.tec-wrap { margin: 4px 0 8px; }
+.tec-toggle { width: 100%; display: flex; align-items: center; gap: 7px; background: #f7f4ea; border: 1px solid #e6ddc2; color: #8a6a1e; font-size: 11px; font-weight: 800; letter-spacing: .4px; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-family: inherit; }
+.tec-toggle:hover { background: #f3edda; }
+.tec-panel { border: 1px solid #eef0f3; border-radius: 10px; padding: 12px; margin-top: 7px; background: #fafbfd; }
+.tec-panel label { display: block; font-size: 9px; font-weight: 800; color: #8a92a1; letter-spacing: .5px; text-transform: uppercase; margin: 11px 0 4px; }
+.tec-panel > label:first-child, .tec-g2:first-child label { margin-top: 0; }
+.tec-panel select, .tec-panel input { width: 100%; border: 1px solid #d5d9e0; border-radius: 7px; padding: 8px 10px; font-size: 12.5px; color: #2b3140; background: #fff; font-family: inherit; }
+.tec-g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tec-g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.tec-g4 { display: grid; grid-template-columns: 26px 1fr 1fr 1fr; gap: 7px; align-items: center; margin-top: 5px; }
+.tec-g4 small { font-size: 9px; font-weight: 800; color: #8a92a1; text-align: center; text-transform: uppercase; }
+.tec-dn { font-size: 11px; font-weight: 800; color: #8a92a1; text-align: center; }
+.tec-ctx { background: #fff; border: 1px solid #e6e9ef; border-radius: 9px; padding: 11px; margin-top: 9px; }
+.tec-ctx-t { font-size: 12px; font-weight: 800; color: #8a6a1e; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.tec-inten { font-size: 8.5px; font-weight: 900; letter-spacing: .8px; color: #fff; background: #c0392b; border-radius: 5px; padding: 3px 8px; }
+.tec-warn { background: #fff6ec; border: 1px solid #f3d3a6; border-left: 3px solid #e8912f; border-radius: 8px; padding: 9px 11px; font-size: 11px; color: #8a5a10; margin-top: 10px; line-height: 1.5; }
+
 /* MODAL ESTADÍSTICAS DEL EJERCICIO (coach) */
 .stc-overlay { display:none; position:fixed; inset:0; background:rgba(10,15,26,.6); z-index:4000; align-items:center; justify-content:center; padding:20px; }
 .stc-modal { background:#141c30; border:1px solid #243150; border-radius:16px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; box-shadow:0 24px 70px rgba(0,0,0,.5); }
@@ -12634,6 +12652,8 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
     if(notaInp && datosPrevios.nota) notaInp.value = datosPrevios.nota;
     // Restaurar Bilateral/Unilateral
     if(datosPrevios.unilateral !== undefined) _setEjExec(ejId, datosPrevios.unilateral ? 1 : 0);
+    // Restaurar técnica avanzada (Etapa 1)
+    if(datosPrevios.tecnica && typeof _loadTecnica==='function') _loadTecnica(ejId, datosPrevios.tecnica);
     // Controles
     if(datosPrevios.ctrl) {
       const c = datosPrevios.ctrl;
@@ -18655,6 +18675,50 @@ function addEjercicio(bloqueId) {
       placeholder="✏️ Aclaración de ejecución (ej: 8 reps con pausa de 2 seg arriba, excéntrica lenta...)"
       style="width:100%;box-sizing:border-box;border:1px dashed #d0d0d8;border-radius:7px;padding:6px 12px;font-size:12px;font-style:italic;color:#555;background:#fafafa;margin:2px 0 6px;">
 
+    <!-- ══ TÉCNICA AVANZADA (ROM · tempo · tipo de serie · técnica) ══ -->
+    <div class="tec-wrap">
+      <button type="button" class="tec-toggle" onclick="_tecToggle('${ejId}')">⚙ Técnica avanzada · ROM · tempo <span id="${ejId}-tec-arr" style="margin-left:auto;">▾</span></button>
+      <div class="tec-panel" id="${ejId}-tec" style="display:none;">
+        <div class="tec-g2">
+          <div><label>Tipo de serie</label>
+            <select class="tec-tiposerie"><option>Efectiva</option><option>Aproximación</option><option>Feeder</option><option>Intensificación</option><option>FST-7</option></select></div>
+          <div><label>Tempo</label><input class="tec-tempo" placeholder="ej: 3-0-1-0"></div>
+        </div>
+        <label>Rango de movimiento (ROM)</label>
+        <select class="tec-rom" onchange="_tecRomChange('${ejId}')">
+          <option>ROM completo</option><option>3/4 de recorrido</option><option>Mitad inferior</option><option>Mitad superior</option><option>Parciales en elongación</option><option>Parciales en acortamiento</option><option>Parciales libres</option><option>Sin bloqueo</option><option>Recorrido personalizado…</option>
+        </select>
+        <input class="tec-rom-custom" placeholder="Describí el recorrido..." style="display:none;margin-top:6px;">
+        <label>Técnica avanzada <span style="color:#b9a05a;font-weight:600;text-transform:none;">(opcional)</span></label>
+        <div class="tec-g2">
+          <select class="tec-familia" onchange="_tecFamiliaChange('${ejId}')"><option value="">Ninguna</option><option>Mountain Dog / Intensificación</option><option>FST-7</option></select>
+          <select class="tec-tecnica" onchange="_tecTecnicaChange('${ejId}')" style="display:none;"></select>
+        </div>
+        <div class="tec-ctx" id="${ejId}-tec-drop" style="display:none;">
+          <div class="tec-ctx-t">⬇ Drop set <span class="tec-inten">INTENSIFICACIÓN</span></div>
+          <div class="tec-g4"><span></span><small>Peso</small><small>Reps</small><small>Reducción</small></div>
+          <div class="tec-g4"><span class="tec-dn">D1</span><input class="tec-drop-peso" placeholder="kg"><input class="tec-drop-reps" placeholder="reps"><input class="tec-drop-red" placeholder="-25%"></div>
+          <div class="tec-g2" style="margin-top:6px;"><div><label>Descensos</label><select class="tec-drop-n"><option>1</option><option>2</option><option>3</option></select></div><div><label>Pausa entre descensos</label><input class="tec-drop-pausa" value="0–15 seg"></div></div>
+        </div>
+        <div class="tec-ctx" id="${ejId}-tec-iso" style="display:none;">
+          <div class="tec-ctx-t">⏱ Iso-hold <span class="tec-inten">INTENSIFICACIÓN</span></div>
+          <div class="tec-g3"><div><label>Segundos</label><input class="tec-iso-seg" placeholder="10"></div><div><label>Posición</label><select class="tec-iso-pos"><option>Contracción máxima</option><option>Mitad de recorrido</option><option>Elongada</option><option>Personalizada</option></select></div><div><label>Momento</label><select class="tec-iso-mom"><option>Al finalizar la serie</option><option>Después de cada rep</option><option>Últimas reps</option></select></div></div>
+        </div>
+        <div class="tec-ctx" id="${ejId}-tec-rp" style="display:none;">
+          <div class="tec-ctx-t">⏸ Rest-pause <span class="tec-inten">INTENSIFICACIÓN</span></div>
+          <div class="tec-g4"><div><label>Reps ini.</label><input class="tec-rp-ini" placeholder="10"></div><div><label>Microdesc.</label><input class="tec-rp-micro" placeholder="20 s"></div><div><label>Reps adic.</label><input class="tec-rp-adic" placeholder="4"></div><div><label>Bloques</label><input class="tec-rp-blk" placeholder="2"></div></div>
+        </div>
+        <div class="tec-ctx" id="${ejId}-tec-fst" style="display:none;">
+          <div class="tec-ctx-t">💠 FST-7</div>
+          <div class="tec-g3"><div><label>Variante</label><select class="tec-fst-var"><option>FST-7</option><option>FST-4</option><option>FST-5</option><option>FST-6</option></select></div><div><label>Reps</label><input class="tec-fst-reps" value="10–12"></div><div><label>Descanso</label><input class="tec-fst-desc" value="30–45 seg"></div></div>
+          <label>Contracción entre series (opcional)</label><input class="tec-fst-contr" placeholder="ej: flexionar 5–10 s">
+        </div>
+        <label>Instrucciones especiales</label>
+        <input class="tec-instr" placeholder="ej: no bloquear codos, tensión continua...">
+        <div id="${ejId}-tec-warn" class="tec-warn" style="display:none;"></div>
+      </div>
+    </div>
+
 
     <div style="padding: 0 0 4px;">
 
@@ -18940,6 +19004,57 @@ function _setEquipoNote(ejId, equipo){
   }
   if(msg){ el.innerHTML = msg; el.style.display = 'block'; }
   else { el.innerHTML = ''; el.style.display = 'none'; }
+}
+
+// ══════════ TÉCNICA AVANZADA (Etapa 1) ══════════
+function _tecToggle(ejId){ const p=document.getElementById(ejId+'-tec'); const a=document.getElementById(ejId+'-tec-arr'); if(!p)return; const open=p.style.display!=='none'; p.style.display=open?'none':'block'; if(a)a.textContent=open?'▾':'▴'; }
+function _tecRomChange(ejId){ const el=document.querySelector('#'+ejId+' .tec-rom'); const c=document.querySelector('#'+ejId+' .tec-rom-custom'); if(el&&c) c.style.display=/personalizado/i.test(el.value)?'block':'none'; }
+function _tecCtx(ejId, which){ ['drop','iso','rp','fst'].forEach(function(k){ const e=document.getElementById(ejId+'-tec-'+k); if(e) e.style.display=(k===which)?'block':'none'; }); }
+function _tecFamiliaChange(ejId){
+  const famEl=document.querySelector('#'+ejId+' .tec-familia'); if(!famEl) return;
+  const fam=famEl.value;
+  const tsel=document.querySelector('#'+ejId+' .tec-tecnica');
+  if(fam==='FST-7'){ tsel.style.display='none'; tsel.innerHTML=''; _tecCtx(ejId,'fst'); }
+  else if(fam==='Mountain Dog / Intensificación'){ tsel.style.display=''; tsel.innerHTML=['Drop set','Iso-hold','Rest-pause'].map(function(t){return '<option>'+t+'</option>';}).join(''); _tecTecnicaChange(ejId); }
+  else { tsel.style.display='none'; tsel.innerHTML=''; _tecCtx(ejId,''); const w=document.getElementById(ejId+'-tec-warn'); if(w)w.style.display='none'; }
+}
+function _tecTecnicaChange(ejId){
+  const t=document.querySelector('#'+ejId+' .tec-tecnica'); const tv=t?t.value:'';
+  _tecCtx(ejId, tv==='Drop set'?'drop':tv==='Iso-hold'?'iso':tv==='Rest-pause'?'rp':'');
+  _tecWarn(ejId);
+}
+function _tecWarn(ejId){
+  const w=document.getElementById(ejId+'-tec-warn'); if(!w) return;
+  const nombre=(document.querySelector('#'+ejId+' .ej-nombre-input')?.value||'').toLowerCase();
+  const tec=document.querySelector('#'+ejId+' .tec-tecnica')?.value||'';
+  const pesado=/sentadilla|peso muerto|press.*barra|remo.*barra|desplante.*barra|hip thrust.*barra|buenos d[ií]as|good ?morning/.test(nombre);
+  const intenso=/drop|rest|forzad|fallo/i.test(tec);
+  if(pesado&&intenso){ w.textContent='⚠ Esta técnica puede aumentar significativamente la fatiga y deteriorar la ejecución en este ejercicio. Confirmá su aplicación.'; w.style.display='block'; }
+  else w.style.display='none';
+}
+function _readTecnica(eEl){
+  const v=function(c){ const e=eEl.querySelector('.'+c); return e?String(e.value||'').trim():''; };
+  const t={ tipoSerie:v('tec-tiposerie'), rom:v('tec-rom'), romCustom:v('tec-rom-custom'), tempo:v('tec-tempo'), familia:v('tec-familia'), tecnica:v('tec-tecnica'), instrucciones:v('tec-instr') };
+  if(t.tecnica==='Drop set') t.drop={ descensos:v('tec-drop-n'), peso:v('tec-drop-peso'), reps:v('tec-drop-reps'), reduccion:v('tec-drop-red'), pausa:v('tec-drop-pausa') };
+  if(t.tecnica==='Iso-hold') t.iso={ seg:v('tec-iso-seg'), posicion:v('tec-iso-pos'), momento:v('tec-iso-mom') };
+  if(t.tecnica==='Rest-pause') t.rp={ inicial:v('tec-rp-ini'), micro:v('tec-rp-micro'), adic:v('tec-rp-adic'), bloques:v('tec-rp-blk') };
+  if(t.familia==='FST-7') t.fst={ variante:v('tec-fst-var'), reps:v('tec-fst-reps'), descanso:v('tec-fst-desc'), contraccion:v('tec-fst-contr') };
+  const algo = t.rom&&t.rom!=='ROM completo' || t.tempo || t.tecnica || t.instrucciones || (t.tipoSerie&&t.tipoSerie!=='Efectiva') || t.familia;
+  return algo ? t : null;
+}
+function _loadTecnica(ejId, t){
+  if(!t) return;
+  const set=function(c,val){ const e=document.querySelector('#'+ejId+' .'+c); if(e&&val!=null&&val!=='') e.value=val; };
+  set('tec-tiposerie',t.tipoSerie); set('tec-rom',t.rom); set('tec-tempo',t.tempo); set('tec-instr',t.instrucciones);
+  _tecRomChange(ejId); if(t.romCustom) set('tec-rom-custom',t.romCustom);
+  if(t.familia){ set('tec-familia',t.familia); _tecFamiliaChange(ejId);
+    if(t.tecnica){ set('tec-tecnica',t.tecnica); _tecTecnicaChange(ejId); }
+    if(t.drop){ set('tec-drop-n',t.drop.descensos); set('tec-drop-peso',t.drop.peso); set('tec-drop-reps',t.drop.reps); set('tec-drop-red',t.drop.reduccion); set('tec-drop-pausa',t.drop.pausa); }
+    if(t.iso){ set('tec-iso-seg',t.iso.seg); set('tec-iso-pos',t.iso.posicion); set('tec-iso-mom',t.iso.momento); }
+    if(t.rp){ set('tec-rp-ini',t.rp.inicial); set('tec-rp-micro',t.rp.micro); set('tec-rp-adic',t.rp.adic); set('tec-rp-blk',t.rp.bloques); }
+    if(t.fst){ set('tec-fst-var',t.fst.variante); set('tec-fst-reps',t.fst.reps); set('tec-fst-desc',t.fst.descanso); set('tec-fst-contr',t.fst.contraccion); }
+  }
+  const p=document.getElementById(ejId+'-tec'); const a=document.getElementById(ejId+'-tec-arr'); if(p){ p.style.display='block'; if(a)a.textContent='▴'; }
 }
 
 // Selector Bilateral/Unilateral de un ejercicio en el editor
@@ -19401,7 +19516,8 @@ function leerBloques() {
         ejercicios.push({
           nombre: eNombre, nota: eNota, video, ficha, series, seriesApro, dropset,
           ctrlSeries, ctrlReps, ctrlPeso, ctrlPausa, ctrlRir,
-          ejecucion, musculos, tipo: tipoEj, unilateral: _uniEj
+          ejecucion, musculos, tipo: tipoEj, unilateral: _uniEj,
+          tecnica: (typeof _readTecnica==='function' ? _readTecnica(eEl) : null)
         });
       }
     });
