@@ -303,6 +303,15 @@ html.light .s-del{color:#71767f;}
 .tec .paso{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;font-size:10px;font-weight:900;color:#fff;background:#2f5bb0;border-radius:50%;}
 .tec-exp{padding:10px 12px;font-size:11.5px;color:#33507f;line-height:1.55;background:#f2f7ff;border-top:1px solid #dbe8fc;}
 .tec-exp b{color:#1e3a8a;}
+/* Tabla "Serie a realizar" (dentro del azul) */
+.tser-lbl{font-size:9px;font-weight:900;color:#2f5bb0;letter-spacing:.8px;padding:10px 12px 4px;text-transform:uppercase;}
+.tser{margin:0 12px 8px;background:#fff;border:1px solid #cfe0f7;border-radius:10px;overflow:hidden;}
+.tser table{width:100%;border-collapse:collapse;}
+.tser th{font-size:8.5px;font-weight:800;color:#5a7bb0;letter-spacing:.4px;padding:7px 6px;text-align:center;background:#eef4ff;border-bottom:1px solid #dbe8fc;border-right:1px solid #eaf1fe;}
+.tser td{text-align:center;padding:9px 6px;font-size:13px;font-weight:800;color:#1e3a8a;border-bottom:1px solid #eaf1fe;border-right:1px solid #eaf1fe;}
+.tser th:last-child,.tser td:last-child{border-right:none;} .tser tbody tr:last-child td{border-bottom:none;}
+.tser tr.hl td{background:#eaf1fe;}
+.tser .tag2{display:inline-block;font-size:9px;font-weight:800;color:#fff;background:#2f5bb0;border-radius:20px;padding:2px 8px;white-space:nowrap;}
 .s-add:active{background:color-mix(in srgb,var(--gold) 8%,transparent);}
 
 /* ── PROGRESIÓN BADGE ─────────────────────────────────────────────── */
@@ -836,8 +845,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260817162616 por un timestamp en cada deploy
-const _APP_VERSION = '20260817162616';
+// deploy.bat reemplaza 20260817164012 por un timestamp en cada deploy
+const _APP_VERSION = '20260817164012';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1865,9 +1874,7 @@ function _tmrPaint(tid){
 }
 
 // Construye la card completa de un ejercicio
-// Muestra de técnica avanzada al alumno · tabla azul con pasos + explicación
-function _tr_(k,v){ return '<tr><td class="tk">'+k+'</td><td>'+v+'</td></tr>'; }
-function _trp_(n,v){ return '<tr><td class="tk"><span class="paso">'+n+'</span></td><td>'+v+'</td></tr>'; }
+// Muestra de técnica avanzada al alumno · tabla azul con "serie a realizar" + explicación
 function _tecAppHTML(ej){
   const t = ej && ej.tecnica; if(!t) return '';
   const romTxt = (t.rom && t.rom!=='ROM completo') ? (/personalizado/i.test(t.rom)?(t.romCustom||'ROM personalizado'):t.rom) : '';
@@ -1875,39 +1882,47 @@ function _tecAppHTML(ej){
   if(romTxt) cond.push(['ROM', romTxt]);
   if(t.tempo) cond.push(['Tempo', t.tempo]);
   if(t.tipoSerie && t.tipoSerie!=='Efectiva') cond.push(['Tipo', t.tipoSerie]);
-  let icon='📋', title='Indicaciones', badge='', rows='', exp='', extra='';
+  let icon='📋', title='Indicaciones', badge='', cols=[], rows=[], exp='', extra='';
+  const D=function(x){ return (x===undefined||x===null||x==='')?'—':x; };
   if(t.familia==='FST-7' && t.fst){
     const n=(t.fst.variante||'FST-7').replace(/\D/g,'')||'7';
     icon='💠'; title='FST-'+n; badge='<span class="tag">'+n+' SERIES</span>';
-    rows+=_tr_('Series','<b>'+n+'</b> del mismo ejercicio');
-    if(t.fst.reps) rows+=_tr_('Reps','<b>'+t.fst.reps+'</b> por serie');
-    if(t.fst.descanso) rows+=_tr_('Descanso','<b>'+t.fst.descanso+'</b> (arranca solo)');
-    if(t.fst.contraccion) rows+=_tr_('Entre series', t.fst.contraccion);
-    exp='<b>FST-'+n+':</b> son varias series seguidas con poco descanso para llenar el músculo de sangre. Mantené el mismo peso y buena técnica.';
+    cols=['SERIE','REPS','DESCANSO'];
+    rows=[['1–'+n, D(t.fst.reps), D(t.fst.descanso)]];
+    exp=(t.fst.contraccion?'Entre series: '+t.fst.contraccion+'. ':'')+'<b>FST-'+n+':</b> '+n+' series del mismo ejercicio con descanso corto para llenar el músculo de sangre.';
   } else if(t.tecnica==='Drop set' && t.drop){
     icon='⬇'; title='Drop set · última serie'; badge='<span class="tag">INTENSIF.</span>';
-    rows+=_trp_(1,'Hacé la última serie completa');
-    rows+=_trp_(2,'Bajá el peso <b>'+(t.drop.reduccion||'-25%')+'</b>'+(t.drop.peso?' (a <b>'+t.drop.peso+'</b>)':''));
-    rows+=_trp_(3,'Seguí'+(t.drop.reps?' <b>'+t.drop.reps+'</b>':' al fallo técnico')+(t.drop.pausa?' (pausa '+t.drop.pausa+')':''));
-    exp='<b>Drop set:</b> al terminar la última serie bajás el peso rápido y seguís sin descansar para exprimir el músculo.';
+    cols=['PASO','REPS','CARGA'];
+    rows=[['Serie','completá', D(t.drop.peso)],['Drop', t.drop.reps?t.drop.reps:'al fallo', D(t.drop.reduccion||'-25%')]];
+    exp='<b>Drop set:</b> al terminar la serie bajás '+(t.drop.reduccion||'25%')+' y seguís sin descansar'+(t.drop.pausa?' (pausa '+t.drop.pausa+')':'')+'.';
+  } else if(t.tecnica==='Repeticiones parciales' && t.parc){
+    icon='◑'; title='Parciales'; badge='<span class="tag">INTENSIF.</span>';
+    cols=['SERIE','REPS','CARGA','RANGO'];
+    const reps=(t.parc.completas?t.parc.completas+' compl.':'')+(t.parc.parciales?(t.parc.completas?' + ':'')+t.parc.parciales+' parc.':'');
+    rows=[['Extra', D(reps), D(t.parc.carga), D(t.parc.zona||romTxt)]];
+    exp='<b>Parciales:</b> '+(t.parc.completas?t.parc.completas+' reps completas y ':'')+(t.parc.parciales?t.parc.parciales+' parciales':'parciales')+' en '+(t.parc.zona||'la zona indicada').toLowerCase()+(t.parc.carga?' con '+t.parc.carga:'')+'.';
   } else if(t.tecnica==='Iso-hold' && t.iso){
     icon='⏱'; title='Iso-hold'; badge='<span class="tag">INTENSIF.</span>';
-    rows+=_tr_('Cuándo', t.iso.momento||'Al finalizar la serie');
-    rows+=_tr_('Aguante','<b>'+(t.iso.seg||'')+' s</b> de contracción'+(t.iso.posicion&&t.iso.posicion!=='Contracción máxima'?' ('+t.iso.posicion+')':''));
+    cols=['CUÁNDO','AGUANTE','ZONA'];
+    rows=[[D(t.iso.momento||'Al finalizar'), (t.iso.seg?t.iso.seg+' s':'—'), D(t.iso.posicion)]];
     exp='<b>Iso-hold:</b> mantené la contracción apretando fuerte los segundos indicados. El timer arranca solo.';
   } else if(t.tecnica==='Rest-pause' && t.rp){
     icon='⏸'; title='Rest-pause'; badge='<span class="tag">INTENSIF.</span>';
-    rows+=_trp_(1,'<b>'+(t.rp.inicial||'')+'</b> reps');
-    rows+=_trp_(2,'Descansá <b>'+(t.rp.micro||'20 s')+'</b>');
-    rows+=_trp_(3,'<b>'+(t.rp.adic||'')+'</b> reps más'+(t.rp.bloques?' · repetí hasta <b>'+t.rp.bloques+'</b> bloques':''));
-    exp='<b>Rest-pause:</b> con el mismo peso hacés micro-descansos cortos para sumar reps cuando ya no podrías seguir de corrido.';
+    cols=['PASO','REPS','DESCANSO'];
+    rows=[['1', D(t.rp.inicial), D(t.rp.micro||'20 s')],['2', D(t.rp.adic), D(t.rp.micro||'20 s')],['3', D(t.rp.adic), '—']];
+    exp='<b>Rest-pause:</b> con el mismo peso hacés micro-descansos cortos para sumar reps'+(t.rp.bloques?' (hasta '+t.rp.bloques+' bloques)':'')+'.';
     const _mm=String(t.rp.micro||'20').match(/\d+/); const _ms=_mm?parseInt(_mm[0]):20;
     extra='<div style="padding:8px 12px 10px;"><button onclick="event.stopPropagation();_restStart('+_ms+')" style="width:100%;border:none;border-radius:9px;padding:9px;font-size:12px;font-weight:800;cursor:pointer;background:#2f5bb0;color:#fff;">▶ Micro-descanso '+_ms+' s</button></div>';
   }
-  if(!rows && !cond.length) return '';
+  if(!rows.length && !cond.length) return '';
   if(t.instrucciones) exp=(exp?exp+' ':'')+t.instrucciones;
   const condHTML = cond.length ? '<div class="tec-cond">'+cond.map(function(c){return '<span class="tcond">'+c[0]+': <b>'+c[1]+'</b></span>';}).join('')+'</div>' : '';
-  const tbl = rows ? '<table><tbody>'+rows+'</tbody></table>' : '';
+  let tbl='';
+  if(rows.length){
+    const thead='<tr>'+cols.map(function(c){return '<th>'+c+'</th>';}).join('')+'</tr>';
+    const tbody=rows.map(function(r,ri){ return '<tr'+(ri===rows.length-1&&rows.length>1?' class="hl"':'')+'>'+r.map(function(cell,ci){ return '<td>'+(ci===0?'<span class="tag2">'+cell+'</span>':cell)+'</td>'; }).join('')+'</tr>'; }).join('');
+    tbl='<div class="tser-lbl">'+(_LANG==='en'?'Set to perform':'Serie a realizar')+'</div><div class="tser"><table><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table></div>';
+  }
   return '<div class="tec"><div class="tec-h"><span class="ic">'+icon+'</span><span class="t">'+title+'</span>'+badge+'</div>'+condHTML+tbl+extra+(exp?'<div class="tec-exp">'+exp+'</div>':'')+'</div>';
 }
 function _ejCard(ej, uid) {

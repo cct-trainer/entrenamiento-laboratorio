@@ -18710,6 +18710,11 @@ function addEjercicio(bloqueId) {
           <div class="tec-ctx-t">⏸ Rest-pause <span class="tec-inten">INTENSIFICACIÓN</span></div>
           <div class="tec-g4"><div><label>Reps ini.</label><input class="tec-rp-ini" placeholder="10"></div><div><label>Microdesc.</label><input class="tec-rp-micro" placeholder="20 s"></div><div><label>Reps adic.</label><input class="tec-rp-adic" placeholder="4"></div><div><label>Bloques</label><input class="tec-rp-blk" placeholder="2"></div></div>
         </div>
+        <div class="tec-ctx" id="${ejId}-tec-parc" style="display:none;">
+          <div class="tec-ctx-t">◑ Repeticiones parciales <span class="tec-inten">INTENSIFICACIÓN</span></div>
+          <div class="tec-g3"><div><label>Reps completas</label><input class="tec-parc-full" placeholder="8"></div><div><label>Cant. parciales</label><input class="tec-parc-n" placeholder="15"></div><div><label>Carga</label><input class="tec-parc-carga" placeholder="65% 1RM"></div></div>
+          <div class="tec-g2"><div><label>Zona</label><select class="tec-parc-zona"><option>Inferior</option><option>Superior</option><option>Elongada</option><option>Acortada</option><option>Personalizada</option></select></div><div><label>Después de las completas</label><select class="tec-parc-desp"><option>Sí</option><option>No</option></select></div></div>
+        </div>
         <div class="tec-ctx" id="${ejId}-tec-fst" style="display:none;">
           <div class="tec-ctx-t">💠 FST-7</div>
           <div class="tec-g3"><div><label>Variante</label><select class="tec-fst-var"><option>FST-7</option><option>FST-4</option><option>FST-5</option><option>FST-6</option></select></div><div><label>Reps</label><input class="tec-fst-reps" value="10–12"></div><div><label>Descanso</label><input class="tec-fst-desc" value="30–45 seg"></div></div>
@@ -19011,18 +19016,18 @@ function _setEquipoNote(ejId, equipo){
 // ══════════ TÉCNICA AVANZADA (Etapa 1) ══════════
 function _tecToggle(ejId){ const p=document.getElementById(ejId+'-tec'); const a=document.getElementById(ejId+'-tec-arr'); if(!p)return; const open=p.style.display!=='none'; p.style.display=open?'none':'block'; if(a)a.textContent=open?'▾':'▴'; }
 function _tecRomChange(ejId){ const el=document.querySelector('#'+ejId+' .tec-rom'); const c=document.querySelector('#'+ejId+' .tec-rom-custom'); if(el&&c) c.style.display=/personalizado/i.test(el.value)?'block':'none'; }
-function _tecCtx(ejId, which){ ['drop','iso','rp','fst'].forEach(function(k){ const e=document.getElementById(ejId+'-tec-'+k); if(e) e.style.display=(k===which)?'block':'none'; }); }
+function _tecCtx(ejId, which){ ['drop','iso','rp','parc','fst'].forEach(function(k){ const e=document.getElementById(ejId+'-tec-'+k); if(e) e.style.display=(k===which)?'block':'none'; }); }
 function _tecFamiliaChange(ejId){
   const famEl=document.querySelector('#'+ejId+' .tec-familia'); if(!famEl) return;
   const fam=famEl.value;
   const tsel=document.querySelector('#'+ejId+' .tec-tecnica');
   if(fam==='FST-7'){ tsel.style.display='none'; tsel.innerHTML=''; _tecCtx(ejId,'fst'); }
-  else if(fam==='Mountain Dog / Intensificación'){ tsel.style.display=''; tsel.innerHTML=['Drop set','Iso-hold','Rest-pause'].map(function(t){return '<option>'+t+'</option>';}).join(''); _tecTecnicaChange(ejId); }
+  else if(fam==='Mountain Dog / Intensificación'){ tsel.style.display=''; tsel.innerHTML=['Drop set','Repeticiones parciales','Iso-hold','Rest-pause'].map(function(t){return '<option>'+t+'</option>';}).join(''); _tecTecnicaChange(ejId); }
   else { tsel.style.display='none'; tsel.innerHTML=''; _tecCtx(ejId,''); const w=document.getElementById(ejId+'-tec-warn'); if(w)w.style.display='none'; }
 }
 function _tecTecnicaChange(ejId){
   const t=document.querySelector('#'+ejId+' .tec-tecnica'); const tv=t?t.value:'';
-  _tecCtx(ejId, tv==='Drop set'?'drop':tv==='Iso-hold'?'iso':tv==='Rest-pause'?'rp':'');
+  _tecCtx(ejId, tv==='Drop set'?'drop':tv==='Iso-hold'?'iso':tv==='Rest-pause'?'rp':tv==='Repeticiones parciales'?'parc':'');
   _tecWarn(ejId);
 }
 function _tecWarn(ejId){
@@ -19040,6 +19045,7 @@ function _readTecnica(eEl){
   if(t.tecnica==='Drop set') t.drop={ descensos:v('tec-drop-n'), peso:v('tec-drop-peso'), reps:v('tec-drop-reps'), reduccion:v('tec-drop-red'), pausa:v('tec-drop-pausa') };
   if(t.tecnica==='Iso-hold') t.iso={ seg:v('tec-iso-seg'), posicion:v('tec-iso-pos'), momento:v('tec-iso-mom') };
   if(t.tecnica==='Rest-pause') t.rp={ inicial:v('tec-rp-ini'), micro:v('tec-rp-micro'), adic:v('tec-rp-adic'), bloques:v('tec-rp-blk') };
+  if(t.tecnica==='Repeticiones parciales') t.parc={ completas:v('tec-parc-full'), parciales:v('tec-parc-n'), carga:v('tec-parc-carga'), zona:v('tec-parc-zona'), despues:v('tec-parc-desp') };
   if(t.familia==='FST-7') t.fst={ variante:v('tec-fst-var'), reps:v('tec-fst-reps'), descanso:v('tec-fst-desc'), contraccion:v('tec-fst-contr') };
   const algo = t.rom&&t.rom!=='ROM completo' || t.tempo || t.tecnica || t.instrucciones || (t.tipoSerie&&t.tipoSerie!=='Efectiva') || t.familia;
   return algo ? t : null;
@@ -19054,6 +19060,7 @@ function _loadTecnica(ejId, t){
     if(t.drop){ set('tec-drop-n',t.drop.descensos); set('tec-drop-peso',t.drop.peso); set('tec-drop-reps',t.drop.reps); set('tec-drop-red',t.drop.reduccion); set('tec-drop-pausa',t.drop.pausa); }
     if(t.iso){ set('tec-iso-seg',t.iso.seg); set('tec-iso-pos',t.iso.posicion); set('tec-iso-mom',t.iso.momento); }
     if(t.rp){ set('tec-rp-ini',t.rp.inicial); set('tec-rp-micro',t.rp.micro); set('tec-rp-adic',t.rp.adic); set('tec-rp-blk',t.rp.bloques); }
+    if(t.parc){ set('tec-parc-full',t.parc.completas); set('tec-parc-n',t.parc.parciales); set('tec-parc-carga',t.parc.carga); set('tec-parc-zona',t.parc.zona); set('tec-parc-desp',t.parc.despues); }
     if(t.fst){ set('tec-fst-var',t.fst.variante); set('tec-fst-reps',t.fst.reps); set('tec-fst-desc',t.fst.descanso); set('tec-fst-contr',t.fst.contraccion); }
   }
   const p=document.getElementById(ejId+'-tec'); const a=document.getElementById(ejId+'-tec-arr'); if(p){ p.style.display='block'; if(a)a.textContent='▴'; }
