@@ -312,6 +312,8 @@ html.light .s-del{color:#71767f;}
 .tser th:last-child,.tser td:last-child{border-right:none;} .tser tbody tr:last-child td{border-bottom:none;}
 .tser tr.hl td{background:#eaf1fe;}
 .tser td.tk{text-align:left;color:#5a7bb0;font-weight:800;width:42%;}
+.tser .exp-row td{text-align:left;background:#eef4ff;color:#33507f;font-size:11.5px;font-weight:600;padding:9px 12px;border-top:1px solid #cfe0f7;line-height:1.5;}
+.tser .exp-row b{color:#1e3a8a;}
 .tser .tag2{display:inline-block;font-size:9px;font-weight:800;color:#fff;background:#2f5bb0;border-radius:20px;padding:2px 8px;white-space:nowrap;}
 .s-add:active{background:color-mix(in srgb,var(--gold) 8%,transparent);}
 
@@ -846,8 +848,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260817200641 por un timestamp en cada deploy
-const _APP_VERSION = '20260817200641';
+// deploy.bat reemplaza 20260817204609 por un timestamp en cada deploy
+const _APP_VERSION = '20260817204609';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1933,11 +1935,12 @@ function _tecAppHTML(ej){
   if(t.tipo==='rest_pause' && t.params && t.params.micro){ const m=String(t.params.micro).match(/\d+/); const s=m?parseInt(m[0]):20; extra='<div style="padding:8px 12px 10px;"><button onclick="event.stopPropagation();_restStart('+s+')" style="width:100%;border:none;border-radius:9px;padding:9px;font-size:12px;font-weight:800;cursor:pointer;background:#2f5bb0;color:#fff;">▶ Micro-descanso '+s+' s</button></div>'; }
   const condHTML = cond.length ? '<div class="tec-cond">'+cond.map(function(c){return '<span class="tcond">'+c[0]+': <b>'+c[1]+'</b></span>';}).join('')+'</div>' : '';
   let tbl='';
-  if(rows.length){
-    const tbody=rows.map(function(r){ return '<tr><td class="tk">'+r[0]+'</td><td>'+r[1]+'</td></tr>'; }).join('');
+  if(rows.length || exp){
+    let tbody=rows.map(function(r){ return '<tr><td class="tk">'+r[0]+'</td><td>'+r[1]+'</td></tr>'; }).join('');
+    if(exp) tbody+='<tr class="exp-row"><td colspan="2">'+exp+'</td></tr>'; // explicación integrada a la tabla
     tbl='<div class="tser-lbl">'+(_LANG==='en'?'Set to perform':'Serie a realizar')+'</div><div class="tser"><table><tbody>'+tbody+'</tbody></table></div>';
   }
-  return '<div class="tec"><div class="tec-h"><span class="ic">'+icon+'</span><span class="t">'+title+'</span>'+badge+'</div>'+condHTML+tbl+extra+(exp?'<div class="tec-exp">'+exp+'</div>':'')+'</div>';
+  return '<div class="tec"><div class="tec-h"><span class="ic">'+icon+'</span><span class="t">'+title+'</span>'+badge+'</div>'+condHTML+tbl+extra+'</div>';
 }
 function _ejCard(ej, uid) {
   _ejStore[uid] = ej; // guardar para re-render posterior

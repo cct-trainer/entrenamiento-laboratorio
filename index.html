@@ -18680,7 +18680,7 @@ function addEjercicio(bloqueId) {
 
     <!-- ══ TÉCNICA AVANZADA (ROM · tempo · tipo de serie · técnica) ══ -->
     <div class="tec-wrap">
-      <button type="button" class="tec-toggle" onclick="_tecToggle('${ejId}')">⚙ Técnica avanzada · ROM · tempo <span id="${ejId}-tec-arr" style="margin-left:auto;">▾</span></button>
+      <button type="button" class="tec-toggle" onclick="_tecToggle('${ejId}')">⚙ Sistema de entrenamiento · ROM · tempo <span id="${ejId}-tec-arr" style="margin-left:auto;">▾</span></button>
       <div class="tec-panel" id="${ejId}-tec" style="display:none;">
         <div class="tec-g2">
           <div><label>Tipo de serie</label>
@@ -18692,7 +18692,7 @@ function addEjercicio(bloqueId) {
           <option>ROM completo</option><option>3/4 de recorrido</option><option>Mitad inferior</option><option>Mitad superior</option><option>Parciales en elongación</option><option>Parciales en acortamiento</option><option>Parciales libres</option><option>Sin bloqueo</option><option>Recorrido personalizado…</option>
         </select>
         <input class="tec-rom-custom" placeholder="Describí el recorrido..." style="display:none;margin-top:6px;">
-        <label>Técnica de entrenamiento <span style="color:#b9a05a;font-weight:600;text-transform:none;">(opcional)</span></label>
+        <label>Sistema <span style="color:#b9a05a;font-weight:600;text-transform:none;">(elegí y se despliegan todos)</span></label>
         <select class="tec-tipo" onchange="_tecTipoChange('${ejId}')">${_tecTipoOptions()}</select>
         <div id="${ejId}-tec-aplicar-wrap" style="display:none;margin-top:8px;">
           <div class="tec-g2">
