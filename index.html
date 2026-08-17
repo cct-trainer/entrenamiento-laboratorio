@@ -18699,22 +18699,26 @@ function addEjercicio(bloqueId) {
         </div>
       </div>
 
-      ${mostrarDropset ? `<!-- DROPSETS -->
+      ${mostrarDropset ? `<!-- SISTEMA DE ENTRENAMIENTO -->
       <div class="series-section" id="${ejId}-drop-section">
         <div class="series-sec-header drop" onclick="toggleSeriesSec('${ejId}','drop')">
           <span class="series-sec-icon" id="${ejId}-drop-icon">▸</span>
-          DROPSETS
+          TÉCNICA DE INTENSIDAD
         </div>
         <div class="series-sec-body" id="${ejId}-drop-body">
+          <div style="padding:8px 0 4px;">
+            <select class="tec-sistema" onchange="_sistemaChange('${ejId}')" style="width:100%;border:1px solid #d5d9e0;border-radius:8px;padding:9px 11px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">${_tecTipoOptions()}</select>
+            <div id="${ejId}-sis-exp" style="display:none;font-size:11px;color:#33507f;background:#eef4ff;border:1px solid #cfe0f7;border-radius:8px;padding:8px 11px;margin-top:8px;line-height:1.5;"></div>
+          </div>
           <table class="series-table">
             <thead><tr>
-              <th>DS</th><th>Reps</th><th onclick="event.stopPropagation();_togglePesoUnit()" style="cursor:pointer;" title="Cambiar entre kg y lb">Peso (<span class="peso-unit">${_pesoUnit()}</span>)</th><th>RIR</th><th>Pausa</th><th></th>
+              <th>#</th><th>Reps</th><th onclick="event.stopPropagation();_togglePesoUnit()" style="cursor:pointer;" title="Cambiar entre kg y lb">Peso (<span class="peso-unit">${_pesoUnit()}</span>)</th><th>RIR</th><th>Pausa</th><th></th>
             </tr></thead>
             <tbody id="${ejId}-drop-tbody"></tbody>
           </table>
         </div>
         <div class="series-sec-footer" id="${ejId}-drop-footer" style="display:none;">
-          <span class="series-agregar-link" onclick="addDropset('${ejId}')">＋ Agregar dropset</span>
+          <span class="series-agregar-link" onclick="addDropset('${ejId}')">＋ Agregar serie del sistema</span>
         </div>
       </div>` : ''}
 
@@ -19005,41 +19009,44 @@ function _tecTipoChange(ejId){
   const aw=document.getElementById(ejId+'-tec-aplicar-wrap'); if(aw) aw.style.display = tipo?'block':'none';
   _tecWarn(ejId);
 }
-function _tecWarn(ejId){
-  const w=document.getElementById(ejId+'-tec-warn'); if(!w) return;
+const _TEC_DESC = {
+  drop_set:'al terminar la serie bajás la carga y seguís sin descansar.',
+  rest_pause:'con el mismo peso, micro-descansos cortos para sumar reps.',
+  parciales:'repeticiones en una parte del recorrido (rango parcial intencional).',
+  heavy_partials:'parciales con carga alta; el rango parcial es a propósito.',
+  iso_hold:'mantené la posición apretando fuerte los segundos indicados.',
+  forzadas:'con la ayuda mínima de un compañero, sumás reps al fallo. Requiere spotter.',
+  superserie:'dos ejercicios seguidos con poco o nada de descanso.',
+  mechanical_drop:'seguís la serie cambiando la variante para ganar ventaja mecánica.',
+  excentrica:'bajá el peso lento y controlado en la fase negativa.',
+  pausa_contraccion:'apretá fuerte arriba unos segundos en cada repetición.',
+  tension_continua:'movimiento continuo sin bloquear, para no perder tensión.',
+  challenge_set:'serie de desafío: dá tu máximo. Queda registrada para comparar.',
+  bandas:'con banda elástica, más resistencia en la parte de arriba.',
+  cadenas:'con cadenas, la carga aumenta a medida que subís.',
+  explosivo:'subí rápido con máxima intención, sin perder técnica.',
+  elongada:'énfasis en el estiramiento del músculo.',
+  fst7:'varias series del mismo ejercicio con descanso corto para llenar el músculo.'
+};
+function _sistemaChange(ejId){
+  const s=document.querySelector('#'+ejId+' .tec-sistema'); const tipo=s?s.value:'';
+  const exp=document.getElementById(ejId+'-sis-exp'); const d=_TEC_DEFS[tipo];
+  if(exp){ if(d){ exp.innerHTML='<b style="color:#1e3a8a;">'+d.ic+' '+d.lbl+'</b> — '+(_TEC_DESC[tipo]||'')+(d.inten?' <b style="color:#c0392b;">(intensificación)</b>':''); exp.style.display='block'; } else exp.style.display='none'; }
+  // Advertencia en ejercicios pesados con técnica dura
   const nombre=(document.querySelector('#'+ejId+' .ej-nombre-input')?.value||'').toLowerCase();
-  const tipo=document.querySelector('#'+ejId+' .tec-tipo')?.value||'';
-  const d=_TEC_DEFS[tipo];
   const pesado=/sentadilla|peso muerto|press.*barra|remo.*barra|desplante.*barra|hip thrust.*barra|buenos d[ií]as|good ?morning|bisagra/.test(nombre);
-  const dura = d && (d.inten || tipo==='forzadas');
-  if(pesado&&dura){ w.textContent='⚠ Esta técnica cerca del fallo puede aumentar la fatiga y deteriorar la ejecución acá. Preferí máquinas, poleas o aislamientos. Confirmá su aplicación.'; w.style.display='block'; }
-  else w.style.display='none';
+  if(d && exp && pesado && (d.inten||tipo==='forzadas')){ exp.innerHTML+='<br><span style="color:#8a5a10;">⚠ Cerca del fallo puede aumentar la fatiga y deteriorar la ejecución en este ejercicio. Preferí máquinas/poleas/aislamientos.</span>'; }
 }
 function _readTecnica(eEl){
-  const v=function(c){ const e=eEl.querySelector('.'+c); return e?String(e.value||'').trim():''; };
-  const tipo=v('tec-tipo');
-  const rom=v('tec-rom'), tempo=v('tec-tempo'), tipoSerie=v('tec-tiposerie'), instr=v('tec-instr');
-  const algo = tipo || (rom&&rom!=='ROM completo') || tempo || instr || (tipoSerie&&tipoSerie!=='Efectiva');
-  if(!algo) return null;
-  const t={ tipo:tipo, aplicarEn: tipo?(v('tec-aplicar-sel')||'last'):'', aplicarNum:v('tec-aplicar-num'), rom:rom, romCustom:v('tec-rom-custom'), tempo:tempo, tipoSerie:tipoSerie, instrucciones:instr, params:{} };
-  const d=_TEC_DEFS[tipo];
-  if(d){ d.par.forEach(function(p){ t.params[p.k]=v('tp-'+p.k); }); }
-  return t;
+  const s=eEl.querySelector('.tec-sistema'); const tipo=s?String(s.value||'').trim():'';
+  return tipo ? { tipo:tipo } : null;
 }
 function _loadTecnica(ejId, t){
   if(!t) return;
-  const set=function(c,val){ const e=document.querySelector('#'+ejId+' .'+c); if(e&&val!=null&&val!=='') e.value=val; };
-  set('tec-tiposerie',t.tipoSerie); set('tec-rom',t.rom); set('tec-tempo',t.tempo); set('tec-instr',t.instrucciones);
-  _tecRomChange(ejId); if(t.romCustom) set('tec-rom-custom',t.romCustom);
-  // Compatibilidad con el esquema anterior (familia/tecnica)
-  let tipo=t.tipo, params=t.params;
+  let tipo=t.tipo;
   if(!tipo && t.tecnica){ const map={'Drop set':'drop_set','Iso-hold':'iso_hold','Rest-pause':'rest_pause','Repeticiones parciales':'parciales'}; tipo=map[t.tecnica]||(t.familia==='FST-7'?'fst7':''); }
-  if(tipo){
-    set('tec-tipo',tipo); _tecTipoChange(ejId);
-    if(t.aplicarEn){ set('tec-aplicar-sel',t.aplicarEn); _tecAplicarChange(ejId); if(t.aplicarNum) set('tec-aplicar-num',t.aplicarNum); }
-    if(params){ Object.keys(params).forEach(function(k){ set('tp-'+k, params[k]); }); }
-  }
-  const pnl=document.getElementById(ejId+'-tec'); const a=document.getElementById(ejId+'-tec-arr'); if(pnl){ pnl.style.display='block'; if(a)a.textContent='▴'; }
+  if(!tipo) return;
+  const s=document.querySelector('#'+ejId+' .tec-sistema'); if(s){ s.value=tipo; _sistemaChange(ejId); }
 }
 
 // Selector Bilateral/Unilateral de un ejercicio en el editor

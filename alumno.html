@@ -848,8 +848,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260817205027 por un timestamp en cada deploy
-const _APP_VERSION = '20260817205027';
+// deploy.bat reemplaza 20260817205751 por un timestamp en cada deploy
+const _APP_VERSION = '20260817205751';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1922,8 +1922,7 @@ function _tecAppHTML(ej){
   const d = t.tipo ? _TEC_APP[t.tipo] : null;
   let icon = d?d.ic:'📋', title = d?d.lbl:'Indicaciones', badge='', extra='';
   if(d){
-    const ap = t.aplicarEn==='all'?'todas las series':t.aplicarEn==='spec'?('serie '+(t.aplicarNum||'?')):'última serie';
-    title = d.lbl+' · '+ap;
+    if(t.aplicarEn){ const ap = t.aplicarEn==='all'?'todas las series':t.aplicarEn==='spec'?('serie '+(t.aplicarNum||'?')):'última serie'; title = d.lbl+' · '+ap; }
     if(d.inten) badge='<span class="tag">INTENSIF.</span>';
   }
   const rows=[];
@@ -2135,8 +2134,10 @@ function _ejCard(ej, uid) {
   ) : '';
 
   // Sección de dropsets
+  const _sisTipo = (ej.tecnica && ej.tecnica.tipo) ? ej.tecnica.tipo : ((ej.tecnica && (ej.tecnica.tecnica||ej.tecnica.familia)) ? _tecNorm(ej.tecnica).tipo : '');
+  const _sisLbl = (_sisTipo && _TEC_APP[_sisTipo]) ? ('⚙ '+_TEC_APP[_sisTipo].ic+' '+_TEC_APP[_sisTipo].lbl.toUpperCase()) : _t('series_drop');
   const dropSection = sDrop ? (
-    '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">'+_t('series_drop')+'</div>'+
+    '<div style="font-size:9px;font-weight:800;color:'+(_sisTipo?'#7fb0e6':'#C9A84C')+';letter-spacing:1px;margin:12px 0 4px;">'+_sisLbl+'</div>'+
     _seriesTable(sDrop, 'S', _sp+'_drop', uid, nApro + nEfec)
   ) : '';
 
