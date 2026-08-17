@@ -275,14 +275,19 @@ html.light .blk-body{padding:0 2px 4px;}
 .s-tipo{display:inline-block;font-size:8px;font-weight:800;padding:1px 5px;border-radius:4px;margin-left:3px;vertical-align:middle;letter-spacing:.3px;cursor:pointer;user-select:none;}
 .serie-row{cursor:pointer;transition:background .1s;}
 .serie-row.lp-active{background:rgba(201,168,76,.12)!important;}
-.serie-row.s-omitida td{background:rgba(239,68,68,.14)!important;color:#f0a3a3!important;text-decoration:line-through;}
+/* Tabla BLANCA en tema oscuro (default): estilos claros */
+.serie-row.s-omitida td{background:#fdecec!important;color:#c0392b!important;text-decoration:line-through;}
 .s-del.on{color:#fff;background:#ef4444;border-radius:6px;}
 /* Serie completada: el propio número S# es el botón */
-.s-num{display:inline-block;min-width:26px;padding:4px 9px;border-radius:8px;border:1.5px solid #444a57;color:#c8cdd6;font-weight:800;font-size:12px;line-height:1;transition:all .12s;}
+.s-num{display:inline-block;min-width:26px;padding:4px 9px;border-radius:20px;border:1.5px solid #cbd0d8;color:#5b636f;background:#f5f6f8;font-weight:800;font-size:12px;line-height:1;transition:all .12s;}
 .s-num.on{background:#25D366;border-color:#25D366;color:#08260f;}
-.serie-row.s-done td{background:rgba(37,211,102,.12)!important;}
-.s-del{background:transparent;border:none;color:#6a707c;font-size:14px;font-weight:900;cursor:pointer;line-height:1;padding:2px 4px;}
+.serie-row.s-done td{background:rgba(37,211,102,.14)!important;}
+.s-del{background:transparent;border:none;color:#9aa2ae;font-size:14px;font-weight:900;cursor:pointer;line-height:1;padding:2px 4px;}
 .s-del:hover,.s-del:active{color:#e05656;}
+/* Tema CLARO → tabla NEGRA: invierte los estilos de arriba */
+html.light .serie-row.s-omitida td{background:rgba(239,68,68,.14)!important;color:#f0a3a3!important;}
+html.light .s-num{border-color:#2a2d33;color:#c8cdd6;background:#14161a;}
+html.light .s-del{color:#71767f;}
 .s-add{width:100%;margin-top:6px;background:transparent;border:1px dashed color-mix(in srgb,var(--gold) 45%,transparent);color:var(--gold);border-radius:9px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
 .s-add:active{background:color-mix(in srgb,var(--gold) 8%,transparent);}
 
@@ -817,8 +822,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260817121933 por un timestamp en cada deploy
-const _APP_VERSION = '20260817121933';
+// deploy.bat reemplaza 20260817140438 por un timestamp en cada deploy
+const _APP_VERSION = '20260817140438';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1868,13 +1873,18 @@ function _ejCard(ej, uid) {
     const hasPeso  = arr.some(s=>s.peso);
     const hasRir   = arr.some(s=>s.rir);
     const hasPausa = arr.some(s=>s.pausa);
-    const _cellDark = document.documentElement.classList.contains('light');
-    const cellBg   = _cellDark ? 'background:var(--card);' : 'background:#050506;';
-    const _cellBd  = _cellDark ? 'var(--border)' : '#1c1e22';
-    const thStyle  = cellBg+'font-size:8px;font-weight:800;color:var(--muted);padding:5px 8px;letter-spacing:1px;border:1px solid '+_cellBd+';text-align:center;';
-    const tdBase   = cellBg+'text-align:center;padding:4px 6px;border:1px solid '+_cellBd+';vertical-align:middle;color:var(--text);';
+    // Tabla invertida al tema: oscuro → tabla BLANCA · claro → tabla NEGRA
+    const _isLight = document.documentElement.classList.contains('light');
+    const _wt = !_isLight;
+    const cellBg  = _wt ? 'background:#ffffff;' : 'background:#050506;';
+    const _cellBd = _wt ? '#eef0f3' : '#1c1e22';
+    const _ctext  = _wt ? '#20242c' : '#eef1f5';
+    const _thbg   = _wt ? '#f4f6f8' : '#131417';
+    const _thc    = _wt ? '#8a92a1' : '#8891a5';
+    const thStyle  = 'background:'+_thbg+';font-size:8px;font-weight:800;color:'+_thc+';padding:5px 8px;letter-spacing:1px;border:1px solid '+_cellBd+';text-align:center;';
+    const tdBase   = cellBg+'text-align:center;padding:4px 6px;border:1px solid '+_cellBd+';vertical-align:middle;color:'+_ctext+';';
     const inpStyle = 'background:transparent;border:none;border-bottom:1px solid color-mix(in srgb,var(--gold) 35%,transparent);'+
-                     'color:var(--text);font-size:13px;font-weight:700;text-align:center;'+
+                     'color:'+_ctext+';font-size:13px;font-weight:700;text-align:center;'+
                      'width:100%;min-width:44px;max-width:70px;outline:none;'+
                      'padding:2px 0;-webkit-appearance:none;';
     const head = '<tr>'+
