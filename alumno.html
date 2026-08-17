@@ -289,15 +289,20 @@ html.light .serie-row.s-omitida td{background:rgba(239,68,68,.14)!important;colo
 html.light .s-num{border-color:#2a2d33;color:#c8cdd6;background:#14161a;}
 html.light .s-del{color:#71767f;}
 .s-add{width:100%;margin-top:6px;background:transparent;border:1px dashed color-mix(in srgb,var(--gold) 45%,transparent);color:var(--gold);border-radius:9px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
-/* Técnica avanzada (visible para el alumno) */
-.tec-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:900;letter-spacing:.5px;color:#e0bd63;background:rgba(201,168,76,.10);border:1px solid rgba(201,168,76,.3);border-radius:7px;padding:4px 9px;margin:9px 0 2px;text-transform:uppercase;}
-.tec-chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px;}
-.tec-chip{font-size:10.5px;font-weight:700;color:#cdd7ea;background:#14161a;border:1px solid #24272d;border-radius:20px;padding:4px 10px;}
-.tec-step{font-size:12.5px;color:#e6c98f;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:9px 11px;margin-top:9px;line-height:1.55;}
-.tec-step b{color:#f3d98a;}
-html.light .tec-chip{color:#5a6472;background:#eef0f3;border-color:#d5d9e0;}
-html.light .tec-badge{color:#8a6a1e;background:#faf4e4;border-color:#eeddb4;}
-html.light .tec-step{color:#8a6a1e;background:#fdf7e6;border-color:#eeddb4;} html.light .tec-step b{color:#6b5010;}
+/* Técnica avanzada · tabla azul claro (visible para el alumno) */
+.tec{margin-top:11px;background:#eaf1fe;border:1px solid #bcd3f5;border-radius:12px;overflow:hidden;box-shadow:0 8px 20px rgba(20,40,90,.35);}
+.tec-h{display:flex;align-items:center;gap:8px;background:#dbe8fc;border-bottom:1px solid #c3d6f4;padding:9px 12px;}
+.tec-h .ic{font-size:14px;} .tec-h .t{font-size:12.5px;font-weight:900;color:#1e3a8a;letter-spacing:.3px;text-transform:uppercase;}
+.tec-h .tag{margin-left:auto;font-size:8.5px;font-weight:900;letter-spacing:.6px;color:#fff;background:#2f5bb0;border-radius:5px;padding:3px 8px;white-space:nowrap;}
+.tec-cond{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 2px;}
+.tcond{font-size:10.5px;font-weight:700;color:#33507f;background:#dce8fb;border:1px solid #c3d6f4;border-radius:20px;padding:3px 9px;} .tcond b{color:#1e3a8a;}
+.tec table{width:100%;border-collapse:collapse;margin-top:4px;}
+.tec td{font-size:12.5px;color:#25406e;padding:8px 12px;border-bottom:1px solid #dbe8fc;font-weight:700;}
+.tec tr:last-child td{border-bottom:none;} .tec td b{color:#1e3a8a;}
+.tec td.tk{color:#5a7bb0;font-weight:800;width:34%;white-space:nowrap;}
+.tec .paso{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;font-size:10px;font-weight:900;color:#fff;background:#2f5bb0;border-radius:50%;}
+.tec-exp{padding:10px 12px;font-size:11.5px;color:#33507f;line-height:1.55;background:#f2f7ff;border-top:1px solid #dbe8fc;}
+.tec-exp b{color:#1e3a8a;}
 .s-add:active{background:color-mix(in srgb,var(--gold) 8%,transparent);}
 
 /* ── PROGRESIÓN BADGE ─────────────────────────────────────────────── */
@@ -831,8 +836,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260817160415 por un timestamp en cada deploy
-const _APP_VERSION = '20260817160415';
+// deploy.bat reemplaza 20260817161825 por un timestamp en cada deploy
+const _APP_VERSION = '20260817161825';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1860,29 +1865,48 @@ function _tmrPaint(tid){
 }
 
 // Construye la card completa de un ejercicio
-// Muestra de técnica avanzada al alumno (etiqueta + chips + paso)
+// Muestra de técnica avanzada al alumno · tabla azul con pasos + explicación
+function _tr_(k,v){ return '<tr><td class="tk">'+k+'</td><td>'+v+'</td></tr>'; }
+function _trp_(n,v){ return '<tr><td class="tk"><span class="paso">'+n+'</span></td><td>'+v+'</td></tr>'; }
 function _tecAppHTML(ej){
-  const t = ej && ej.tecnica; if(!t) return {top:'',step:''};
-  let badge='';
-  if(t.familia==='FST-7' && t.fst){ badge='💠 '+((t.fst.variante&&/FST/.test(t.fst.variante))?t.fst.variante:'FST-7'); }
-  else if(t.tecnica==='Drop set'){ badge='⬇ Drop set'; }
-  else if(t.tecnica==='Iso-hold'){ badge='⏱ Iso-hold'; }
-  else if(t.tecnica==='Rest-pause'){ badge='⏸ Rest-pause'; }
-  const chips=[];
-  if(t.rom && t.rom!=='ROM completo') chips.push(/personalizado/i.test(t.rom)?(t.romCustom||'ROM personalizado'):t.rom);
-  if(t.tempo) chips.push('Tempo '+t.tempo);
-  if(t.tipoSerie && t.tipoSerie!=='Efectiva') chips.push(t.tipoSerie);
-  if(t.familia==='FST-7' && t.fst){ if(t.fst.reps) chips.push(t.fst.reps+' reps'); if(t.fst.descanso) chips.push('Descanso '+t.fst.descanso); if(t.fst.contraccion) chips.push(t.fst.contraccion); }
-  let top='';
-  if(badge) top+='<span class="tec-badge">'+badge+'</span>';
-  if(chips.length) top+='<div class="tec-chips">'+chips.map(function(c){return '<span class="tec-chip">'+c+'</span>';}).join('')+'</div>';
-  let step='';
-  if(t.tecnica==='Drop set' && t.drop){ step='<b>Última serie:</b> completá las reps → bajá <b>'+(t.drop.reduccion||'25%')+'</b>'+(t.drop.reps?' → seguí <b>'+t.drop.reps+'</b>':' → seguí al fallo técnico')+(t.drop.pausa?' (pausa '+t.drop.pausa+')':''); }
-  else if(t.tecnica==='Iso-hold' && t.iso){ step='<b>'+(t.iso.momento||'Al finalizar la serie')+':</b> '+(t.iso.seg?t.iso.seg+' s':'')+' de contracción'+(t.iso.posicion&&t.iso.posicion!=='Contracción máxima'?' ('+t.iso.posicion+')':''); }
-  else if(t.tecnica==='Rest-pause' && t.rp){ step='<b>Rest-pause:</b> '+(t.rp.inicial||'')+' reps → '+(t.rp.micro||'20 s')+' → '+(t.rp.adic||'')+' reps'+(t.rp.bloques?' · '+t.rp.bloques+' bloques':''); }
-  else if(t.familia==='FST-7' && t.fst){ const n=(t.fst.variante||'FST-7').replace(/\D/g,'')||'7'; step='<b>FST-'+n+':</b> mismo ejercicio las '+n+' series con descanso corto. El descanso arranca solo al terminar cada una.'; }
-  if(t.instrucciones) step=(step?step+' · ':'')+t.instrucciones;
-  return {top, step: step?'<div class="tec-step">'+step+'</div>':''};
+  const t = ej && ej.tecnica; if(!t) return '';
+  const romTxt = (t.rom && t.rom!=='ROM completo') ? (/personalizado/i.test(t.rom)?(t.romCustom||'ROM personalizado'):t.rom) : '';
+  const cond=[];
+  if(romTxt) cond.push(['ROM', romTxt]);
+  if(t.tempo) cond.push(['Tempo', t.tempo]);
+  if(t.tipoSerie && t.tipoSerie!=='Efectiva') cond.push(['Tipo', t.tipoSerie]);
+  let icon='📋', title='Indicaciones', badge='', rows='', exp='';
+  if(t.familia==='FST-7' && t.fst){
+    const n=(t.fst.variante||'FST-7').replace(/\D/g,'')||'7';
+    icon='💠'; title='FST-'+n; badge='<span class="tag">'+n+' SERIES</span>';
+    rows+=_tr_('Series','<b>'+n+'</b> del mismo ejercicio');
+    if(t.fst.reps) rows+=_tr_('Reps','<b>'+t.fst.reps+'</b> por serie');
+    if(t.fst.descanso) rows+=_tr_('Descanso','<b>'+t.fst.descanso+'</b> (arranca solo)');
+    if(t.fst.contraccion) rows+=_tr_('Entre series', t.fst.contraccion);
+    exp='<b>FST-'+n+':</b> son varias series seguidas con poco descanso para llenar el músculo de sangre. Mantené el mismo peso y buena técnica.';
+  } else if(t.tecnica==='Drop set' && t.drop){
+    icon='⬇'; title='Drop set · última serie'; badge='<span class="tag">INTENSIF.</span>';
+    rows+=_trp_(1,'Hacé la última serie completa');
+    rows+=_trp_(2,'Bajá el peso <b>'+(t.drop.reduccion||'-25%')+'</b>'+(t.drop.peso?' (a <b>'+t.drop.peso+'</b>)':''));
+    rows+=_trp_(3,'Seguí'+(t.drop.reps?' <b>'+t.drop.reps+'</b>':' al fallo técnico')+(t.drop.pausa?' (pausa '+t.drop.pausa+')':''));
+    exp='<b>Drop set:</b> al terminar la última serie bajás el peso rápido y seguís sin descansar para exprimir el músculo.';
+  } else if(t.tecnica==='Iso-hold' && t.iso){
+    icon='⏱'; title='Iso-hold'; badge='<span class="tag">INTENSIF.</span>';
+    rows+=_tr_('Cuándo', t.iso.momento||'Al finalizar la serie');
+    rows+=_tr_('Aguante','<b>'+(t.iso.seg||'')+' s</b> de contracción'+(t.iso.posicion&&t.iso.posicion!=='Contracción máxima'?' ('+t.iso.posicion+')':''));
+    exp='<b>Iso-hold:</b> mantené la contracción apretando fuerte los segundos indicados. El timer arranca solo.';
+  } else if(t.tecnica==='Rest-pause' && t.rp){
+    icon='⏸'; title='Rest-pause'; badge='<span class="tag">INTENSIF.</span>';
+    rows+=_trp_(1,'<b>'+(t.rp.inicial||'')+'</b> reps');
+    rows+=_trp_(2,'Descansá <b>'+(t.rp.micro||'20 s')+'</b>');
+    rows+=_trp_(3,'<b>'+(t.rp.adic||'')+'</b> reps más'+(t.rp.bloques?' · repetí hasta <b>'+t.rp.bloques+'</b> bloques':''));
+    exp='<b>Rest-pause:</b> con el mismo peso hacés micro-descansos cortos para sumar reps cuando ya no podrías seguir de corrido.';
+  }
+  if(!rows && !cond.length) return '';
+  if(t.instrucciones) exp=(exp?exp+' ':'')+t.instrucciones;
+  const condHTML = cond.length ? '<div class="tec-cond">'+cond.map(function(c){return '<span class="tcond">'+c[0]+': <b>'+c[1]+'</b></span>';}).join('')+'</div>' : '';
+  const tbl = rows ? '<table><tbody>'+rows+'</tbody></table>' : '';
+  return '<div class="tec"><div class="tec-h"><span class="ic">'+icon+'</span><span class="t">'+title+'</span>'+badge+'</div>'+condHTML+tbl+(exp?'<div class="tec-exp">'+exp+'</div>':'')+'</div>';
 }
 function _ejCard(ej, uid) {
   _ejStore[uid] = ej; // guardar para re-render posterior
@@ -2175,7 +2199,6 @@ function _ejCard(ej, uid) {
     '<div style="padding:12px 14px 12px;">'+
       '<div style="font-size:17px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#25D366':'var(--gold)')+';padding-left:9px;">'+_nomShow+'</div>'+
       (ej.musculos ? '<div style="font-size:10px;color:var(--muted);margin:3px 0 0 12px;">'+_tc(ej.musculos)+'</div>' : '')+
-      _tecApp.top+
       _sustNote+
       (ej.unilateral ? '<div style="font-size:10px;color:var(--muted);margin:4px 0 0 12px;">'+(_LANG==='en'?'Unilateral · do each set on both sides':'Unilateral · cada serie se hace de los dos lados')+'</div>' : '')+
       (()=>{ const nq=_notaEquipo(ej); return nq ? '<div style="font-size:10px;color:var(--muted);margin:3px 0 0 12px;line-height:1.45;">💡 '+nq+'</div>' : ''; })()+
@@ -2186,7 +2209,7 @@ function _ejCard(ej, uid) {
       (sEfec ? '' : ctrlGrid)+
       pesoRef+
       seriesTable+
-      _tecApp.step+
+      _tecApp+
       _footer+
       fichaHTML+
       feedbackHTML+
