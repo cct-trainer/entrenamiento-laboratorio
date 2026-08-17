@@ -311,6 +311,7 @@ html.light .s-del{color:#71767f;}
 .tser td{text-align:center;padding:9px 6px;font-size:13px;font-weight:800;color:#1e3a8a;border-bottom:1px solid #eaf1fe;border-right:1px solid #eaf1fe;}
 .tser th:last-child,.tser td:last-child{border-right:none;} .tser tbody tr:last-child td{border-bottom:none;}
 .tser tr.hl td{background:#eaf1fe;}
+.tser td.tk{text-align:left;color:#5a7bb0;font-weight:800;width:42%;}
 .tser .tag2{display:inline-block;font-size:9px;font-weight:800;color:#fff;background:#2f5bb0;border-radius:20px;padding:2px 8px;white-space:nowrap;}
 .s-add:active{background:color-mix(in srgb,var(--gold) 8%,transparent);}
 
@@ -845,8 +846,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260817164012 por un timestamp en cada deploy
-const _APP_VERSION = '20260817164012';
+// deploy.bat reemplaza 20260817200641 por un timestamp en cada deploy
+const _APP_VERSION = '20260817200641';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1874,54 +1875,67 @@ function _tmrPaint(tid){
 }
 
 // Construye la card completa de un ejercicio
-// Muestra de técnica avanzada al alumno · tabla azul con "serie a realizar" + explicación
+// Biblioteca de técnicas (lado app) · etiqueta, ícono y explicación
+const _TEC_APP = {
+  drop_set:{lbl:'Drop Set',ic:'⬇',inten:true,desc:'al terminar la serie bajás la carga y seguís sin descansar.'},
+  rest_pause:{lbl:'Rest-Pause',ic:'⏸',inten:true,desc:'con el mismo peso, micro-descansos cortos para sumar reps.'},
+  parciales:{lbl:'Parciales',ic:'◑',inten:true,desc:'repeticiones en una parte del recorrido (rango parcial intencional).'},
+  heavy_partials:{lbl:'Heavy Partials',ic:'◐',inten:true,desc:'parciales con carga alta; el rango parcial es a propósito.'},
+  iso_hold:{lbl:'Iso-Hold',ic:'⏱',inten:true,desc:'mantené la posición apretando fuerte los segundos indicados. El timer arranca solo.'},
+  forzadas:{lbl:'Repeticiones Forzadas',ic:'🤝',inten:true,desc:'con la ayuda mínima de un compañero, sumás algunas reps al fallo.'},
+  superserie:{lbl:'Superserie',ic:'🔗',desc:'dos ejercicios seguidos con poco o nada de descanso entre ellos.'},
+  mechanical_drop:{lbl:'Serie Mecánica',ic:'⚙',inten:true,desc:'seguís la serie cambiando la variante para ganar ventaja mecánica.'},
+  excentrica:{lbl:'Excéntrica Lenta',ic:'🐢',desc:'bajá el peso lento y controlado en la fase negativa.'},
+  pausa_contraccion:{lbl:'Pausa en Contracción',ic:'✊',desc:'apretá fuerte arriba unos segundos en cada repetición.'},
+  tension_continua:{lbl:'Tensión Continua',ic:'♾️',desc:'movimiento continuo sin bloquear, para no perder tensión.'},
+  challenge_set:{lbl:'Challenge Set',ic:'🏁',desc:'serie de desafío: dá tu máximo. Queda registrada para comparar.'},
+  bandas:{lbl:'Bandas',ic:'🎗️',desc:'con banda elástica, más resistencia en la parte de arriba.'},
+  cadenas:{lbl:'Cadenas',ic:'⛓️',desc:'con cadenas, la carga aumenta a medida que subís.'},
+  explosivo:{lbl:'Trabajo Explosivo',ic:'⚡',desc:'subí rápido con máxima intención, sin perder la técnica.'},
+  elongada:{lbl:'Posición Elongada',ic:'↕️',desc:'énfasis en el estiramiento del músculo.'},
+  fst7:{lbl:'FST-7',ic:'💠',block:true,desc:'varias series del mismo ejercicio con descanso corto para llenar el músculo.'}
+};
+const _TEC_PAR_LBL = { reduccion:'Reducción',drops:'Drops',reps:'Reps',rir:'RIR',micro:'Pausa',mini:'Mini-series',cant:'Parciales',zona:'Zona',despues:'Tras completas',carga:'Carga',seg:'Segundos',pos:'Posición',mom:'Momento',ejB:'Ejercicio B',stipo:'Tipo',pausaEntre:'Pausa entre',pausaFin:'Pausa final',rondas:'Rondas',vA:'Variante A',vB:'Variante B',detalle:'Detalle',objetivo:'Objetivo',valor:'Valor',banda:'Banda',cadenas:'Cadenas',variante:'Variante',descanso:'Descanso',contr:'Contracción',pausa:'Pausa elong.' };
+// Normaliza el esquema viejo (familia/tecnica) al nuevo (tipo/params)
+function _tecNorm(t){
+  const map={'Drop set':'drop_set','Iso-hold':'iso_hold','Rest-pause':'rest_pause','Repeticiones parciales':'parciales'};
+  const tipo=map[t.tecnica]||(t.familia==='FST-7'?'fst7':'');
+  const p={};
+  if(t.drop){ p.reduccion=t.drop.reduccion; p.reps=t.drop.reps; }
+  if(t.iso){ p.seg=t.iso.seg; p.pos=t.iso.posicion; p.mom=t.iso.momento; }
+  if(t.rp){ p.micro=t.rp.micro; p.reps=t.rp.adic; }
+  if(t.parc){ p.cant=t.parc.parciales; p.zona=t.parc.zona; p.carga=t.parc.carga; }
+  if(t.fst){ p.variante=t.fst.variante; p.reps=t.fst.reps; p.descanso=t.fst.descanso; p.contr=t.fst.contraccion; }
+  return { tipo:tipo, aplicarEn:'last', rom:t.rom, romCustom:t.romCustom, tempo:t.tempo, tipoSerie:t.tipoSerie, instrucciones:t.instrucciones, params:p };
+}
+// Muestra de técnica al alumno · tabla azul con "serie a realizar" + explicación
 function _tecAppHTML(ej){
-  const t = ej && ej.tecnica; if(!t) return '';
+  let t = ej && ej.tecnica; if(!t) return '';
+  if(!t.tipo && (t.tecnica||t.familia)) t=_tecNorm(t);
   const romTxt = (t.rom && t.rom!=='ROM completo') ? (/personalizado/i.test(t.rom)?(t.romCustom||'ROM personalizado'):t.rom) : '';
   const cond=[];
   if(romTxt) cond.push(['ROM', romTxt]);
   if(t.tempo) cond.push(['Tempo', t.tempo]);
   if(t.tipoSerie && t.tipoSerie!=='Efectiva') cond.push(['Tipo', t.tipoSerie]);
-  let icon='📋', title='Indicaciones', badge='', cols=[], rows=[], exp='', extra='';
-  const D=function(x){ return (x===undefined||x===null||x==='')?'—':x; };
-  if(t.familia==='FST-7' && t.fst){
-    const n=(t.fst.variante||'FST-7').replace(/\D/g,'')||'7';
-    icon='💠'; title='FST-'+n; badge='<span class="tag">'+n+' SERIES</span>';
-    cols=['SERIE','REPS','DESCANSO'];
-    rows=[['1–'+n, D(t.fst.reps), D(t.fst.descanso)]];
-    exp=(t.fst.contraccion?'Entre series: '+t.fst.contraccion+'. ':'')+'<b>FST-'+n+':</b> '+n+' series del mismo ejercicio con descanso corto para llenar el músculo de sangre.';
-  } else if(t.tecnica==='Drop set' && t.drop){
-    icon='⬇'; title='Drop set · última serie'; badge='<span class="tag">INTENSIF.</span>';
-    cols=['PASO','REPS','CARGA'];
-    rows=[['Serie','completá', D(t.drop.peso)],['Drop', t.drop.reps?t.drop.reps:'al fallo', D(t.drop.reduccion||'-25%')]];
-    exp='<b>Drop set:</b> al terminar la serie bajás '+(t.drop.reduccion||'25%')+' y seguís sin descansar'+(t.drop.pausa?' (pausa '+t.drop.pausa+')':'')+'.';
-  } else if(t.tecnica==='Repeticiones parciales' && t.parc){
-    icon='◑'; title='Parciales'; badge='<span class="tag">INTENSIF.</span>';
-    cols=['SERIE','REPS','CARGA','RANGO'];
-    const reps=(t.parc.completas?t.parc.completas+' compl.':'')+(t.parc.parciales?(t.parc.completas?' + ':'')+t.parc.parciales+' parc.':'');
-    rows=[['Extra', D(reps), D(t.parc.carga), D(t.parc.zona||romTxt)]];
-    exp='<b>Parciales:</b> '+(t.parc.completas?t.parc.completas+' reps completas y ':'')+(t.parc.parciales?t.parc.parciales+' parciales':'parciales')+' en '+(t.parc.zona||'la zona indicada').toLowerCase()+(t.parc.carga?' con '+t.parc.carga:'')+'.';
-  } else if(t.tecnica==='Iso-hold' && t.iso){
-    icon='⏱'; title='Iso-hold'; badge='<span class="tag">INTENSIF.</span>';
-    cols=['CUÁNDO','AGUANTE','ZONA'];
-    rows=[[D(t.iso.momento||'Al finalizar'), (t.iso.seg?t.iso.seg+' s':'—'), D(t.iso.posicion)]];
-    exp='<b>Iso-hold:</b> mantené la contracción apretando fuerte los segundos indicados. El timer arranca solo.';
-  } else if(t.tecnica==='Rest-pause' && t.rp){
-    icon='⏸'; title='Rest-pause'; badge='<span class="tag">INTENSIF.</span>';
-    cols=['PASO','REPS','DESCANSO'];
-    rows=[['1', D(t.rp.inicial), D(t.rp.micro||'20 s')],['2', D(t.rp.adic), D(t.rp.micro||'20 s')],['3', D(t.rp.adic), '—']];
-    exp='<b>Rest-pause:</b> con el mismo peso hacés micro-descansos cortos para sumar reps'+(t.rp.bloques?' (hasta '+t.rp.bloques+' bloques)':'')+'.';
-    const _mm=String(t.rp.micro||'20').match(/\d+/); const _ms=_mm?parseInt(_mm[0]):20;
-    extra='<div style="padding:8px 12px 10px;"><button onclick="event.stopPropagation();_restStart('+_ms+')" style="width:100%;border:none;border-radius:9px;padding:9px;font-size:12px;font-weight:800;cursor:pointer;background:#2f5bb0;color:#fff;">▶ Micro-descanso '+_ms+' s</button></div>';
+  const d = t.tipo ? _TEC_APP[t.tipo] : null;
+  let icon = d?d.ic:'📋', title = d?d.lbl:'Indicaciones', badge='', extra='';
+  if(d){
+    const ap = t.aplicarEn==='all'?'todas las series':t.aplicarEn==='spec'?('serie '+(t.aplicarNum||'?')):'última serie';
+    title = d.lbl+' · '+ap;
+    if(d.inten) badge='<span class="tag">INTENSIF.</span>';
   }
+  const rows=[];
+  if(d && t.params){ Object.keys(t.params).forEach(function(k){ const val=t.params[k]; if(val!=='' && val!=null && _TEC_PAR_LBL[k]) rows.push([_TEC_PAR_LBL[k], val]); }); }
   if(!rows.length && !cond.length) return '';
-  if(t.instrucciones) exp=(exp?exp+' ':'')+t.instrucciones;
+  let exp = d ? ('<b>'+d.lbl+':</b> '+d.desc) : '';
+  if(t.instrucciones) exp = (exp?exp+' ':'')+t.instrucciones;
+  // Botón de micro-descanso para Rest-pause
+  if(t.tipo==='rest_pause' && t.params && t.params.micro){ const m=String(t.params.micro).match(/\d+/); const s=m?parseInt(m[0]):20; extra='<div style="padding:8px 12px 10px;"><button onclick="event.stopPropagation();_restStart('+s+')" style="width:100%;border:none;border-radius:9px;padding:9px;font-size:12px;font-weight:800;cursor:pointer;background:#2f5bb0;color:#fff;">▶ Micro-descanso '+s+' s</button></div>'; }
   const condHTML = cond.length ? '<div class="tec-cond">'+cond.map(function(c){return '<span class="tcond">'+c[0]+': <b>'+c[1]+'</b></span>';}).join('')+'</div>' : '';
   let tbl='';
   if(rows.length){
-    const thead='<tr>'+cols.map(function(c){return '<th>'+c+'</th>';}).join('')+'</tr>';
-    const tbody=rows.map(function(r,ri){ return '<tr'+(ri===rows.length-1&&rows.length>1?' class="hl"':'')+'>'+r.map(function(cell,ci){ return '<td>'+(ci===0?'<span class="tag2">'+cell+'</span>':cell)+'</td>'; }).join('')+'</tr>'; }).join('');
-    tbl='<div class="tser-lbl">'+(_LANG==='en'?'Set to perform':'Serie a realizar')+'</div><div class="tser"><table><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table></div>';
+    const tbody=rows.map(function(r){ return '<tr><td class="tk">'+r[0]+'</td><td>'+r[1]+'</td></tr>'; }).join('');
+    tbl='<div class="tser-lbl">'+(_LANG==='en'?'Set to perform':'Serie a realizar')+'</div><div class="tser"><table><tbody>'+tbody+'</tbody></table></div>';
   }
   return '<div class="tec"><div class="tec-h"><span class="ic">'+icon+'</span><span class="t">'+title+'</span>'+badge+'</div>'+condHTML+tbl+extra+(exp?'<div class="tec-exp">'+exp+'</div>':'')+'</div>';
 }
@@ -2025,11 +2039,13 @@ function _ejCard(ej, uid) {
             : '<button class="s-del'+(omitida?' on':'')+'" onclick="event.stopPropagation();_serieNoHecha(\''+sp+'\')" title="'+(omitida?'Marcar como hecha':'No la hice')+'">✕</button>')
         : '';
       // Timers de técnica: FST-7 usa su descanso corto; Iso-hold arranca al terminar la serie
-      const _tecR = (ej && ej.tecnica) || {};
+      const _tecR0 = (ej && ej.tecnica) || {};
+      const _tecR = _tecR0.tipo ? _tecR0 : ((_tecR0.tecnica||_tecR0.familia) ? _tecNorm(_tecR0) : _tecR0);
+      const _tecP = _tecR.params || {};
       let _restSec = _segDe(s.pausa)||0;
-      if(_tecR.familia==='FST-7' && _tecR.fst){ const m=String(_tecR.fst.descanso||'').match(/\d+/); if(m) _restSec=parseInt(m[0]); }
+      if(_tecR.tipo==='fst7' && _tecP.descanso){ const m=String(_tecP.descanso).match(/\d+/); if(m) _restSec=parseInt(m[0]); }
       let _isoSec = 0;
-      if(_tecR.tecnica==='Iso-hold' && _tecR.iso){ const m=String(_tecR.iso.seg||'').match(/\d+/); if(m) _isoSec=parseInt(m[0]); }
+      if(_tecR.tipo==='iso_hold' && _tecP.seg){ const m=String(_tecP.seg).match(/\d+/); if(m) _isoSec=parseInt(m[0]); }
       return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+(done?' s-done':'')+'" data-pausa="'+(_segDe(s.pausa)||0)+'" data-rest="'+_restSec+'" data-iso="'+_isoSec+'" '+touch+'>'+
         '<td style="'+tdBase+'font-size:11px;font-weight:800;cursor:pointer;" onclick="event.stopPropagation();_serieTap(\''+sp+'\')">'+serieLbl+'</td>'+
         '<td style="'+tdBase+'">'+repsCel+'</td>'+

@@ -1253,6 +1253,7 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .tec-ctx { background: #fff; border: 1px solid #e6e9ef; border-radius: 9px; padding: 11px; margin-top: 9px; }
 .tec-ctx-t { font-size: 12px; font-weight: 800; color: #8a6a1e; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
 .tec-inten { font-size: 8.5px; font-weight: 900; letter-spacing: .8px; color: #fff; background: #c0392b; border-radius: 5px; padding: 3px 8px; }
+.tec-pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .tec-warn { background: #fff6ec; border: 1px solid #f3d3a6; border-left: 3px solid #e8912f; border-radius: 8px; padding: 9px 11px; font-size: 11px; color: #8a5a10; margin-top: 10px; line-height: 1.5; }
 
 /* MODAL ESTADÍSTICAS DEL EJERCICIO (coach) */
@@ -18691,35 +18692,15 @@ function addEjercicio(bloqueId) {
           <option>ROM completo</option><option>3/4 de recorrido</option><option>Mitad inferior</option><option>Mitad superior</option><option>Parciales en elongación</option><option>Parciales en acortamiento</option><option>Parciales libres</option><option>Sin bloqueo</option><option>Recorrido personalizado…</option>
         </select>
         <input class="tec-rom-custom" placeholder="Describí el recorrido..." style="display:none;margin-top:6px;">
-        <label>Técnica avanzada <span style="color:#b9a05a;font-weight:600;text-transform:none;">(opcional)</span></label>
-        <div class="tec-g2">
-          <select class="tec-familia" onchange="_tecFamiliaChange('${ejId}')"><option value="">Ninguna</option><option>Mountain Dog / Intensificación</option><option>FST-7</option></select>
-          <select class="tec-tecnica" onchange="_tecTecnicaChange('${ejId}')" style="display:none;"></select>
+        <label>Técnica de entrenamiento <span style="color:#b9a05a;font-weight:600;text-transform:none;">(opcional)</span></label>
+        <select class="tec-tipo" onchange="_tecTipoChange('${ejId}')">${_tecTipoOptions()}</select>
+        <div id="${ejId}-tec-aplicar-wrap" style="display:none;margin-top:8px;">
+          <div class="tec-g2">
+            <div><label>Aplicar en</label><select class="tec-aplicar-sel" onchange="_tecAplicarChange('${ejId}')"><option value="last">Última serie</option><option value="all">Todas las series</option><option value="spec">Serie específica…</option></select></div>
+            <div class="tec-aplicar-numwrap" style="display:none;"><label>N° de serie</label><input class="tec-aplicar-num" placeholder="ej: 3"></div>
+          </div>
         </div>
-        <div class="tec-ctx" id="${ejId}-tec-drop" style="display:none;">
-          <div class="tec-ctx-t">⬇ Drop set <span class="tec-inten">INTENSIFICACIÓN</span></div>
-          <div class="tec-g4"><span></span><small>Peso</small><small>Reps</small><small>Reducción</small></div>
-          <div class="tec-g4"><span class="tec-dn">D1</span><input class="tec-drop-peso" placeholder="kg"><input class="tec-drop-reps" placeholder="reps"><input class="tec-drop-red" placeholder="-25%"></div>
-          <div class="tec-g2" style="margin-top:6px;"><div><label>Descensos</label><select class="tec-drop-n"><option>1</option><option>2</option><option>3</option></select></div><div><label>Pausa entre descensos</label><input class="tec-drop-pausa" value="0–15 seg"></div></div>
-        </div>
-        <div class="tec-ctx" id="${ejId}-tec-iso" style="display:none;">
-          <div class="tec-ctx-t">⏱ Iso-hold <span class="tec-inten">INTENSIFICACIÓN</span></div>
-          <div class="tec-g3"><div><label>Segundos</label><input class="tec-iso-seg" placeholder="10"></div><div><label>Posición</label><select class="tec-iso-pos"><option>Contracción máxima</option><option>Mitad de recorrido</option><option>Elongada</option><option>Personalizada</option></select></div><div><label>Momento</label><select class="tec-iso-mom"><option>Al finalizar la serie</option><option>Después de cada rep</option><option>Últimas reps</option></select></div></div>
-        </div>
-        <div class="tec-ctx" id="${ejId}-tec-rp" style="display:none;">
-          <div class="tec-ctx-t">⏸ Rest-pause <span class="tec-inten">INTENSIFICACIÓN</span></div>
-          <div class="tec-g4"><div><label>Reps ini.</label><input class="tec-rp-ini" placeholder="10"></div><div><label>Microdesc.</label><input class="tec-rp-micro" placeholder="20 s"></div><div><label>Reps adic.</label><input class="tec-rp-adic" placeholder="4"></div><div><label>Bloques</label><input class="tec-rp-blk" placeholder="2"></div></div>
-        </div>
-        <div class="tec-ctx" id="${ejId}-tec-parc" style="display:none;">
-          <div class="tec-ctx-t">◑ Repeticiones parciales <span class="tec-inten">INTENSIFICACIÓN</span></div>
-          <div class="tec-g3"><div><label>Reps completas</label><input class="tec-parc-full" placeholder="8"></div><div><label>Cant. parciales</label><input class="tec-parc-n" placeholder="15"></div><div><label>Carga</label><input class="tec-parc-carga" placeholder="65% 1RM"></div></div>
-          <div class="tec-g2"><div><label>Zona</label><select class="tec-parc-zona"><option>Inferior</option><option>Superior</option><option>Elongada</option><option>Acortada</option><option>Personalizada</option></select></div><div><label>Después de las completas</label><select class="tec-parc-desp"><option>Sí</option><option>No</option></select></div></div>
-        </div>
-        <div class="tec-ctx" id="${ejId}-tec-fst" style="display:none;">
-          <div class="tec-ctx-t">💠 FST-7</div>
-          <div class="tec-g3"><div><label>Variante</label><select class="tec-fst-var"><option>FST-7</option><option>FST-4</option><option>FST-5</option><option>FST-6</option></select></div><div><label>Reps</label><input class="tec-fst-reps" value="10–12"></div><div><label>Descanso</label><input class="tec-fst-desc" value="30–45 seg"></div></div>
-          <label>Contracción entre series (opcional)</label><input class="tec-fst-contr" placeholder="ej: flexionar 5–10 s">
-        </div>
+        <div class="tec-params" id="${ejId}-tec-params"></div>
         <label>Instrucciones especiales</label>
         <input class="tec-instr" placeholder="ej: no bloquear codos, tensión continua...">
         <div id="${ejId}-tec-warn" class="tec-warn" style="display:none;"></div>
@@ -19013,57 +18994,82 @@ function _setEquipoNote(ejId, equipo){
   else { el.innerHTML = ''; el.style.display = 'none'; }
 }
 
-// ══════════ TÉCNICA AVANZADA (Etapa 1) ══════════
+// ══════════ TÉCNICAS DE ENTRENAMIENTO (biblioteca estructurada) ══════════
+const _TEC_DEFS = {
+  drop_set:{lbl:'Drop Set',ic:'⬇',inten:true,par:[{k:'reduccion',l:'Reducción',ph:'-25%'},{k:'drops',l:'Cant. drops',ph:'1'},{k:'reps',l:'Reps objetivo',ph:'8-10'},{k:'rir',l:'RIR / fallo',ph:'0'}]},
+  rest_pause:{lbl:'Rest-Pause',ic:'⏸',inten:true,par:[{k:'micro',l:'Pausa',ph:'20 s'},{k:'mini',l:'Mini-series',ph:'2'},{k:'reps',l:'Reps c/u',ph:'4-3'},{k:'rir',l:'RIR ini/fin',ph:'0-1'}]},
+  parciales:{lbl:'Parciales',ic:'◑',inten:true,par:[{k:'cant',l:'Cant. parciales',ph:'15'},{k:'zona',l:'Zona',opt:['Elongada','Media','Acortada']},{k:'despues',l:'Después de completas',opt:['Sí','No']}]},
+  heavy_partials:{lbl:'Heavy Partials',ic:'◐',inten:true,par:[{k:'carga',l:'Carga',ph:'kg'},{k:'reps',l:'Reps',ph:'6'},{k:'zona',l:'Zona',opt:['Elongada','Media','Acortada']}]},
+  iso_hold:{lbl:'Iso-Hold',ic:'⏱',inten:true,par:[{k:'seg',l:'Segundos',ph:'10'},{k:'pos',l:'Posición',opt:['Contracción máxima','Media','Elongada']},{k:'mom',l:'Momento',opt:['Al finalizar','Últimas reps','Cada rep']}]},
+  forzadas:{lbl:'Repeticiones Forzadas',ic:'🤝',inten:true,nota:'Requiere spotter / asistencia',par:[{k:'cant',l:'Cant. forzadas',ph:'2'}]},
+  superserie:{lbl:'Superserie',ic:'🔗',par:[{k:'ejB',l:'Ejercicio B',ph:'nombre'},{k:'stipo',l:'Tipo',opt:['Mismo grupo','Antagonistas','Diferentes']},{k:'pausaEntre',l:'Pausa entre',ph:'0 s'},{k:'pausaFin',l:'Pausa final',ph:'90 s'},{k:'rondas',l:'Rondas',ph:'3'}]},
+  mechanical_drop:{lbl:'Mechanical Drop Set',ic:'⚙',inten:true,par:[{k:'vA',l:'Variante inicial',ph:''},{k:'vB',l:'Variante siguiente',ph:''},{k:'reps',l:'Reps por etapa',ph:'8'}]},
+  excentrica:{lbl:'Excéntrica Lenta',ic:'🐢',par:[{k:'seg',l:'Excéntrica (seg)',ph:'3'}]},
+  pausa_contraccion:{lbl:'Pausa en Contracción',ic:'✊',par:[{k:'seg',l:'Pausa (seg)',ph:'2'}]},
+  tension_continua:{lbl:'Tensión Continua',ic:'♾️',par:[{k:'detalle',l:'Detalle',ph:'sin bloquear · ROM 3/4'}]},
+  challenge_set:{lbl:'Challenge Set',ic:'🏁',reg:true,par:[{k:'objetivo',l:'Objetivo',opt:['Máx. reps','Carga','Tiempo','Superar récord']},{k:'valor',l:'Valor',ph:''}]},
+  bandas:{lbl:'Bandas',ic:'🎗️',par:[{k:'banda',l:'Banda / tensión',ph:''},{k:'carga',l:'Carga externa',ph:'kg'},{k:'reps',l:'Reps',ph:''}]},
+  cadenas:{lbl:'Cadenas',ic:'⛓️',par:[{k:'carga',l:'Carga convencional',ph:'kg'},{k:'cadenas',l:'Peso cadenas',ph:'kg'},{k:'reps',l:'Reps',ph:''}]},
+  explosivo:{lbl:'Trabajo Explosivo',ic:'⚡',par:[{k:'reps',l:'Reps',ph:''},{k:'carga',l:'Carga',ph:''},{k:'rir',l:'RIR / RPE',ph:''}]},
+  elongada:{lbl:'Posición Elongada',ic:'↕️',par:[{k:'pausa',l:'Pausa elong. (seg)',ph:''},{k:'rom',l:'ROM / detalle',ph:''},{k:'carga',l:'Carga',ph:''}]},
+  fst7:{lbl:'FST-7',ic:'💠',block:true,par:[{k:'variante',l:'Variante',opt:['FST-7','FST-6','FST-5','FST-4']},{k:'reps',l:'Reps',ph:'10-12'},{k:'descanso',l:'Descanso',ph:'30-45 s'},{k:'contr',l:'Contracción entre series',ph:''}]}
+};
+const _TEC_ORDER = ['drop_set','rest_pause','parciales','heavy_partials','iso_hold','forzadas','superserie','mechanical_drop','excentrica','pausa_contraccion','tension_continua','challenge_set','bandas','cadenas','explosivo','elongada','fst7'];
+function _tecTipoOptions(){ return '<option value="">Ninguna</option>'+_TEC_ORDER.map(function(k){return '<option value="'+k+'">'+_TEC_DEFS[k].lbl+'</option>';}).join(''); }
 function _tecToggle(ejId){ const p=document.getElementById(ejId+'-tec'); const a=document.getElementById(ejId+'-tec-arr'); if(!p)return; const open=p.style.display!=='none'; p.style.display=open?'none':'block'; if(a)a.textContent=open?'▾':'▴'; }
 function _tecRomChange(ejId){ const el=document.querySelector('#'+ejId+' .tec-rom'); const c=document.querySelector('#'+ejId+' .tec-rom-custom'); if(el&&c) c.style.display=/personalizado/i.test(el.value)?'block':'none'; }
-function _tecCtx(ejId, which){ ['drop','iso','rp','parc','fst'].forEach(function(k){ const e=document.getElementById(ejId+'-tec-'+k); if(e) e.style.display=(k===which)?'block':'none'; }); }
-function _tecFamiliaChange(ejId){
-  const famEl=document.querySelector('#'+ejId+' .tec-familia'); if(!famEl) return;
-  const fam=famEl.value;
-  const tsel=document.querySelector('#'+ejId+' .tec-tecnica');
-  if(fam==='FST-7'){ tsel.style.display='none'; tsel.innerHTML=''; _tecCtx(ejId,'fst'); }
-  else if(fam==='Mountain Dog / Intensificación'){ tsel.style.display=''; tsel.innerHTML=['Drop set','Repeticiones parciales','Iso-hold','Rest-pause'].map(function(t){return '<option>'+t+'</option>';}).join(''); _tecTecnicaChange(ejId); }
-  else { tsel.style.display='none'; tsel.innerHTML=''; _tecCtx(ejId,''); const w=document.getElementById(ejId+'-tec-warn'); if(w)w.style.display='none'; }
+function _tecAplicarChange(ejId){ const s=document.querySelector('#'+ejId+' .tec-aplicar-sel'); const w=document.querySelector('#'+ejId+' .tec-aplicar-numwrap'); if(s&&w) w.style.display=(s.value==='spec')?'block':'none'; }
+function _tecParamsHTML(tipo){
+  const d=_TEC_DEFS[tipo]; if(!d) return '';
+  let h='<div class="tec-ctx"><div class="tec-ctx-t">'+d.ic+' '+d.lbl+(d.inten?' <span class="tec-inten">INTENSIFICACIÓN</span>':'')+'</div><div class="tec-pgrid">';
+  d.par.forEach(function(p){
+    const field = p.opt ? '<select class="tp-'+p.k+'">'+p.opt.map(function(o){return '<option>'+o+'</option>';}).join('')+'</select>' : '<input class="tp-'+p.k+'" placeholder="'+(p.ph||'')+'">';
+    h+='<div><label>'+p.l+'</label>'+field+'</div>';
+  });
+  h+='</div>'+(d.nota?'<div style="font-size:10px;color:#8a6a1e;margin-top:6px;">⚠ '+d.nota+'</div>':'')+'</div>';
+  return h;
 }
-function _tecTecnicaChange(ejId){
-  const t=document.querySelector('#'+ejId+' .tec-tecnica'); const tv=t?t.value:'';
-  _tecCtx(ejId, tv==='Drop set'?'drop':tv==='Iso-hold'?'iso':tv==='Rest-pause'?'rp':tv==='Repeticiones parciales'?'parc':'');
+function _tecTipoChange(ejId){
+  const sel=document.querySelector('#'+ejId+' .tec-tipo'); const tipo=sel?sel.value:'';
+  const cont=document.getElementById(ejId+'-tec-params'); if(cont) cont.innerHTML = tipo? _tecParamsHTML(tipo) : '';
+  const aw=document.getElementById(ejId+'-tec-aplicar-wrap'); if(aw) aw.style.display = tipo?'block':'none';
   _tecWarn(ejId);
 }
 function _tecWarn(ejId){
   const w=document.getElementById(ejId+'-tec-warn'); if(!w) return;
   const nombre=(document.querySelector('#'+ejId+' .ej-nombre-input')?.value||'').toLowerCase();
-  const tec=document.querySelector('#'+ejId+' .tec-tecnica')?.value||'';
-  const pesado=/sentadilla|peso muerto|press.*barra|remo.*barra|desplante.*barra|hip thrust.*barra|buenos d[ií]as|good ?morning/.test(nombre);
-  const intenso=/drop|rest|forzad|fallo/i.test(tec);
-  if(pesado&&intenso){ w.textContent='⚠ Esta técnica puede aumentar significativamente la fatiga y deteriorar la ejecución en este ejercicio. Confirmá su aplicación.'; w.style.display='block'; }
+  const tipo=document.querySelector('#'+ejId+' .tec-tipo')?.value||'';
+  const d=_TEC_DEFS[tipo];
+  const pesado=/sentadilla|peso muerto|press.*barra|remo.*barra|desplante.*barra|hip thrust.*barra|buenos d[ií]as|good ?morning|bisagra/.test(nombre);
+  const dura = d && (d.inten || tipo==='forzadas');
+  if(pesado&&dura){ w.textContent='⚠ Esta técnica cerca del fallo puede aumentar la fatiga y deteriorar la ejecución acá. Preferí máquinas, poleas o aislamientos. Confirmá su aplicación.'; w.style.display='block'; }
   else w.style.display='none';
 }
 function _readTecnica(eEl){
   const v=function(c){ const e=eEl.querySelector('.'+c); return e?String(e.value||'').trim():''; };
-  const t={ tipoSerie:v('tec-tiposerie'), rom:v('tec-rom'), romCustom:v('tec-rom-custom'), tempo:v('tec-tempo'), familia:v('tec-familia'), tecnica:v('tec-tecnica'), instrucciones:v('tec-instr') };
-  if(t.tecnica==='Drop set') t.drop={ descensos:v('tec-drop-n'), peso:v('tec-drop-peso'), reps:v('tec-drop-reps'), reduccion:v('tec-drop-red'), pausa:v('tec-drop-pausa') };
-  if(t.tecnica==='Iso-hold') t.iso={ seg:v('tec-iso-seg'), posicion:v('tec-iso-pos'), momento:v('tec-iso-mom') };
-  if(t.tecnica==='Rest-pause') t.rp={ inicial:v('tec-rp-ini'), micro:v('tec-rp-micro'), adic:v('tec-rp-adic'), bloques:v('tec-rp-blk') };
-  if(t.tecnica==='Repeticiones parciales') t.parc={ completas:v('tec-parc-full'), parciales:v('tec-parc-n'), carga:v('tec-parc-carga'), zona:v('tec-parc-zona'), despues:v('tec-parc-desp') };
-  if(t.familia==='FST-7') t.fst={ variante:v('tec-fst-var'), reps:v('tec-fst-reps'), descanso:v('tec-fst-desc'), contraccion:v('tec-fst-contr') };
-  const algo = t.rom&&t.rom!=='ROM completo' || t.tempo || t.tecnica || t.instrucciones || (t.tipoSerie&&t.tipoSerie!=='Efectiva') || t.familia;
-  return algo ? t : null;
+  const tipo=v('tec-tipo');
+  const rom=v('tec-rom'), tempo=v('tec-tempo'), tipoSerie=v('tec-tiposerie'), instr=v('tec-instr');
+  const algo = tipo || (rom&&rom!=='ROM completo') || tempo || instr || (tipoSerie&&tipoSerie!=='Efectiva');
+  if(!algo) return null;
+  const t={ tipo:tipo, aplicarEn: tipo?(v('tec-aplicar-sel')||'last'):'', aplicarNum:v('tec-aplicar-num'), rom:rom, romCustom:v('tec-rom-custom'), tempo:tempo, tipoSerie:tipoSerie, instrucciones:instr, params:{} };
+  const d=_TEC_DEFS[tipo];
+  if(d){ d.par.forEach(function(p){ t.params[p.k]=v('tp-'+p.k); }); }
+  return t;
 }
 function _loadTecnica(ejId, t){
   if(!t) return;
   const set=function(c,val){ const e=document.querySelector('#'+ejId+' .'+c); if(e&&val!=null&&val!=='') e.value=val; };
   set('tec-tiposerie',t.tipoSerie); set('tec-rom',t.rom); set('tec-tempo',t.tempo); set('tec-instr',t.instrucciones);
   _tecRomChange(ejId); if(t.romCustom) set('tec-rom-custom',t.romCustom);
-  if(t.familia){ set('tec-familia',t.familia); _tecFamiliaChange(ejId);
-    if(t.tecnica){ set('tec-tecnica',t.tecnica); _tecTecnicaChange(ejId); }
-    if(t.drop){ set('tec-drop-n',t.drop.descensos); set('tec-drop-peso',t.drop.peso); set('tec-drop-reps',t.drop.reps); set('tec-drop-red',t.drop.reduccion); set('tec-drop-pausa',t.drop.pausa); }
-    if(t.iso){ set('tec-iso-seg',t.iso.seg); set('tec-iso-pos',t.iso.posicion); set('tec-iso-mom',t.iso.momento); }
-    if(t.rp){ set('tec-rp-ini',t.rp.inicial); set('tec-rp-micro',t.rp.micro); set('tec-rp-adic',t.rp.adic); set('tec-rp-blk',t.rp.bloques); }
-    if(t.parc){ set('tec-parc-full',t.parc.completas); set('tec-parc-n',t.parc.parciales); set('tec-parc-carga',t.parc.carga); set('tec-parc-zona',t.parc.zona); set('tec-parc-desp',t.parc.despues); }
-    if(t.fst){ set('tec-fst-var',t.fst.variante); set('tec-fst-reps',t.fst.reps); set('tec-fst-desc',t.fst.descanso); set('tec-fst-contr',t.fst.contraccion); }
+  // Compatibilidad con el esquema anterior (familia/tecnica)
+  let tipo=t.tipo, params=t.params;
+  if(!tipo && t.tecnica){ const map={'Drop set':'drop_set','Iso-hold':'iso_hold','Rest-pause':'rest_pause','Repeticiones parciales':'parciales'}; tipo=map[t.tecnica]||(t.familia==='FST-7'?'fst7':''); }
+  if(tipo){
+    set('tec-tipo',tipo); _tecTipoChange(ejId);
+    if(t.aplicarEn){ set('tec-aplicar-sel',t.aplicarEn); _tecAplicarChange(ejId); if(t.aplicarNum) set('tec-aplicar-num',t.aplicarNum); }
+    if(params){ Object.keys(params).forEach(function(k){ set('tp-'+k, params[k]); }); }
   }
-  const p=document.getElementById(ejId+'-tec'); const a=document.getElementById(ejId+'-tec-arr'); if(p){ p.style.display='block'; if(a)a.textContent='▴'; }
+  const pnl=document.getElementById(ejId+'-tec'); const a=document.getElementById(ejId+'-tec-arr'); if(pnl){ pnl.style.display='block'; if(a)a.textContent='▴'; }
 }
 
 // Selector Bilateral/Unilateral de un ejercicio en el editor
