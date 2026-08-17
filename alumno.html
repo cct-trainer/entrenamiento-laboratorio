@@ -822,8 +822,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260817142740 por un timestamp en cada deploy
-const _APP_VERSION = '20260817142740';
+// deploy.bat reemplaza 20260817143247 por un timestamp en cada deploy
+const _APP_VERSION = '20260817143247';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1042,6 +1042,8 @@ function _toggleTheme() {
   // Actualizar meta theme-color
   const meta = document.getElementById('meta-theme-color');
   if (meta) meta.content = isLight ? '#1d4ed8' : '#C9A84C';
+  // Re-dibujar la sesión abierta para que la tabla tome los colores del tema nuevo
+  try { if (typeof _diaIdx !== 'undefined' && _diaIdx !== null && typeof renderSesion === 'function') renderSesion(); } catch(e) {}
 }
 
 function render() {
