@@ -18678,36 +18678,6 @@ function addEjercicio(bloqueId) {
       placeholder="✏️ Aclaración de ejecución (ej: 8 reps con pausa de 2 seg arriba, excéntrica lenta...)"
       style="width:100%;box-sizing:border-box;border:1px dashed #d0d0d8;border-radius:7px;padding:6px 12px;font-size:12px;font-style:italic;color:#555;background:#fafafa;margin:2px 0 6px;">
 
-    <!-- ══ TÉCNICA AVANZADA (ROM · tempo · tipo de serie · técnica) ══ -->
-    <div class="tec-wrap">
-      <button type="button" class="tec-toggle" onclick="_tecToggle('${ejId}')">⚙ Sistema de entrenamiento · ROM · tempo <span id="${ejId}-tec-arr" style="margin-left:auto;">▾</span></button>
-      <div class="tec-panel" id="${ejId}-tec" style="display:none;">
-        <div class="tec-g2">
-          <div><label>Tipo de serie</label>
-            <select class="tec-tiposerie"><option>Efectiva</option><option>Aproximación</option><option>Feeder</option><option>Intensificación</option><option>FST-7</option></select></div>
-          <div><label>Tempo</label><input class="tec-tempo" placeholder="ej: 3-0-1-0"></div>
-        </div>
-        <label>Rango de movimiento (ROM)</label>
-        <select class="tec-rom" onchange="_tecRomChange('${ejId}')">
-          <option>ROM completo</option><option>3/4 de recorrido</option><option>Mitad inferior</option><option>Mitad superior</option><option>Parciales en elongación</option><option>Parciales en acortamiento</option><option>Parciales libres</option><option>Sin bloqueo</option><option>Recorrido personalizado…</option>
-        </select>
-        <input class="tec-rom-custom" placeholder="Describí el recorrido..." style="display:none;margin-top:6px;">
-        <label>Sistema <span style="color:#b9a05a;font-weight:600;text-transform:none;">(elegí y se despliegan todos)</span></label>
-        <select class="tec-tipo" onchange="_tecTipoChange('${ejId}')">${_tecTipoOptions()}</select>
-        <div id="${ejId}-tec-aplicar-wrap" style="display:none;margin-top:8px;">
-          <div class="tec-g2">
-            <div><label>Aplicar en</label><select class="tec-aplicar-sel" onchange="_tecAplicarChange('${ejId}')"><option value="last">Última serie</option><option value="all">Todas las series</option><option value="spec">Serie específica…</option></select></div>
-            <div class="tec-aplicar-numwrap" style="display:none;"><label>N° de serie</label><input class="tec-aplicar-num" placeholder="ej: 3"></div>
-          </div>
-        </div>
-        <div class="tec-params" id="${ejId}-tec-params"></div>
-        <label>Instrucciones especiales</label>
-        <input class="tec-instr" placeholder="ej: no bloquear codos, tensión continua...">
-        <div id="${ejId}-tec-warn" class="tec-warn" style="display:none;"></div>
-      </div>
-    </div>
-
-
     <div style="padding: 0 0 4px;">
 
       <!-- SERIES (única sección) -->
