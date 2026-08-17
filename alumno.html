@@ -289,6 +289,15 @@ html.light .serie-row.s-omitida td{background:rgba(239,68,68,.14)!important;colo
 html.light .s-num{border-color:#2a2d33;color:#c8cdd6;background:#14161a;}
 html.light .s-del{color:#71767f;}
 .s-add{width:100%;margin-top:6px;background:transparent;border:1px dashed color-mix(in srgb,var(--gold) 45%,transparent);color:var(--gold);border-radius:9px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+/* Técnica avanzada (visible para el alumno) */
+.tec-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:900;letter-spacing:.5px;color:#e0bd63;background:rgba(201,168,76,.10);border:1px solid rgba(201,168,76,.3);border-radius:7px;padding:4px 9px;margin:9px 0 2px;text-transform:uppercase;}
+.tec-chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px;}
+.tec-chip{font-size:10.5px;font-weight:700;color:#cdd7ea;background:#14161a;border:1px solid #24272d;border-radius:20px;padding:4px 10px;}
+.tec-step{font-size:12.5px;color:#e6c98f;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:9px 11px;margin-top:9px;line-height:1.55;}
+.tec-step b{color:#f3d98a;}
+html.light .tec-chip{color:#5a6472;background:#eef0f3;border-color:#d5d9e0;}
+html.light .tec-badge{color:#8a6a1e;background:#faf4e4;border-color:#eeddb4;}
+html.light .tec-step{color:#8a6a1e;background:#fdf7e6;border-color:#eeddb4;} html.light .tec-step b{color:#6b5010;}
 .s-add:active{background:color-mix(in srgb,var(--gold) 8%,transparent);}
 
 /* ── PROGRESIÓN BADGE ─────────────────────────────────────────────── */
@@ -822,8 +831,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260817150235 por un timestamp en cada deploy
-const _APP_VERSION = '20260817150235';
+// deploy.bat reemplaza 20260817155626 por un timestamp en cada deploy
+const _APP_VERSION = '20260817155626';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1851,6 +1860,30 @@ function _tmrPaint(tid){
 }
 
 // Construye la card completa de un ejercicio
+// Muestra de técnica avanzada al alumno (etiqueta + chips + paso)
+function _tecAppHTML(ej){
+  const t = ej && ej.tecnica; if(!t) return {top:'',step:''};
+  let badge='';
+  if(t.familia==='FST-7' && t.fst){ badge='💠 '+((t.fst.variante&&/FST/.test(t.fst.variante))?t.fst.variante:'FST-7'); }
+  else if(t.tecnica==='Drop set'){ badge='⬇ Drop set'; }
+  else if(t.tecnica==='Iso-hold'){ badge='⏱ Iso-hold'; }
+  else if(t.tecnica==='Rest-pause'){ badge='⏸ Rest-pause'; }
+  const chips=[];
+  if(t.rom && t.rom!=='ROM completo') chips.push(/personalizado/i.test(t.rom)?(t.romCustom||'ROM personalizado'):t.rom);
+  if(t.tempo) chips.push('Tempo '+t.tempo);
+  if(t.tipoSerie && t.tipoSerie!=='Efectiva') chips.push(t.tipoSerie);
+  if(t.familia==='FST-7' && t.fst){ if(t.fst.reps) chips.push(t.fst.reps+' reps'); if(t.fst.descanso) chips.push('Descanso '+t.fst.descanso); if(t.fst.contraccion) chips.push(t.fst.contraccion); }
+  let top='';
+  if(badge) top+='<span class="tec-badge">'+badge+'</span>';
+  if(chips.length) top+='<div class="tec-chips">'+chips.map(function(c){return '<span class="tec-chip">'+c+'</span>';}).join('')+'</div>';
+  let step='';
+  if(t.tecnica==='Drop set' && t.drop){ step='<b>Última serie:</b> completá las reps → bajá <b>'+(t.drop.reduccion||'25%')+'</b>'+(t.drop.reps?' → seguí <b>'+t.drop.reps+'</b>':' → seguí al fallo técnico')+(t.drop.pausa?' (pausa '+t.drop.pausa+')':''); }
+  else if(t.tecnica==='Iso-hold' && t.iso){ step='<b>'+(t.iso.momento||'Al finalizar la serie')+':</b> '+(t.iso.seg?t.iso.seg+' s':'')+' de contracción'+(t.iso.posicion&&t.iso.posicion!=='Contracción máxima'?' ('+t.iso.posicion+')':''); }
+  else if(t.tecnica==='Rest-pause' && t.rp){ step='<b>Rest-pause:</b> '+(t.rp.inicial||'')+' reps → '+(t.rp.micro||'20 s')+' → '+(t.rp.adic||'')+' reps'+(t.rp.bloques?' · '+t.rp.bloques+' bloques':''); }
+  else if(t.familia==='FST-7' && t.fst){ const n=(t.fst.variante||'FST-7').replace(/\D/g,'')||'7'; step='<b>FST-'+n+':</b> mismo ejercicio las '+n+' series con descanso corto. El descanso arranca solo al terminar cada una.'; }
+  if(t.instrucciones) step=(step?step+' · ':'')+t.instrucciones;
+  return {top, step: step?'<div class="tec-step">'+step+'</div>':''};
+}
 function _ejCard(ej, uid) {
   _ejStore[uid] = ej; // guardar para re-render posterior
 
@@ -2106,6 +2139,8 @@ function _ejCard(ej, uid) {
   })();
   const _hasFicha = !!fichaHTML;
 
+  // Técnica avanzada (Etapa 2): etiqueta + chips + paso
+  const _tecApp = _tecAppHTML(ej);
   // Nota verde si el alumno sustituyó el ejercicio
   const _sustNote = _sust
     ? '<div style="margin:8px 0 0 12px;font-size:11px;color:#7fe0a0;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.22);border-radius:8px;padding:7px 10px;line-height:1.45;">⇄ <b style="color:#a7f0c4;">'+(_LANG==="en"?"Changed by you.":"Cambiado por vos.")+'</b> '+(_LANG==="en"?"Original":"Original")+': '+_nomOrig+'. <span style="color:#8fb7e6;text-decoration:underline;cursor:pointer;" onclick="_revertirEj(\''+uid+'\')">'+(_LANG==="en"?"Back to original":"Volver al original")+'</span></div>'
@@ -2134,6 +2169,7 @@ function _ejCard(ej, uid) {
     '<div style="padding:12px 14px 12px;">'+
       '<div style="font-size:17px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#25D366':'var(--gold)')+';padding-left:9px;">'+_nomShow+'</div>'+
       (ej.musculos ? '<div style="font-size:10px;color:var(--muted);margin:3px 0 0 12px;">'+_tc(ej.musculos)+'</div>' : '')+
+      _tecApp.top+
       _sustNote+
       (ej.unilateral ? '<div style="font-size:10px;color:var(--muted);margin:4px 0 0 12px;">'+(_LANG==='en'?'Unilateral · do each set on both sides':'Unilateral · cada serie se hace de los dos lados')+'</div>' : '')+
       (()=>{ const nq=_notaEquipo(ej); return nq ? '<div style="font-size:10px;color:var(--muted);margin:3px 0 0 12px;line-height:1.45;">💡 '+nq+'</div>' : ''; })()+
@@ -2144,6 +2180,7 @@ function _ejCard(ej, uid) {
       (sEfec ? '' : ctrlGrid)+
       pesoRef+
       seriesTable+
+      _tecApp.step+
       _footer+
       fichaHTML+
       feedbackHTML+
