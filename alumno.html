@@ -831,8 +831,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260817155626 por un timestamp en cada deploy
-const _APP_VERSION = '20260817155626';
+// deploy.bat reemplaza 20260817160415 por un timestamp en cada deploy
+const _APP_VERSION = '20260817160415';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1976,7 +1976,13 @@ function _ejCard(ej, uid) {
       // La pausa se muestra como dato (el descanso lo maneja el timer automático al marcar la serie)
       const pausaCel = (s.pausa ? _compEsc(s.pausa) : '—');
       const serieLbl = '<span class="s-num'+(done?' on':'')+'">S'+labelNum+'</span>' + (lado ? ' <span style="color:var(--muted);font-weight:600;">'+lado+'</span>' : '') + tipoBadge;
-      const delBtn = spBase ? '<button class="s-del'+(omitida?' on':'')+'" onclick="event.stopPropagation();_serieNoHecha(\''+sp+'\')" title="'+(omitida?'Marcar como hecha':'No la hice')+'">✕</button>' : '';
+      // Serie agregada por el alumno (extra) → se puede eliminar. Serie del coach → ✕ = "no la hice".
+      const _esExtra = (keyIdx >= arr.length);
+      const delBtn = spBase
+        ? (_esExtra
+            ? '<button class="s-del s-del-rm" onclick="event.stopPropagation();_serieDel(\''+savePrefix+'\','+keyIdx+')" title="Eliminar esta serie que agregaste">🗑</button>'
+            : '<button class="s-del'+(omitida?' on':'')+'" onclick="event.stopPropagation();_serieNoHecha(\''+sp+'\')" title="'+(omitida?'Marcar como hecha':'No la hice')+'">✕</button>')
+        : '';
       return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+(done?' s-done':'')+'" data-pausa="'+(_segDe(s.pausa)||0)+'" '+touch+'>'+
         '<td style="'+tdBase+'font-size:11px;font-weight:800;cursor:pointer;" onclick="event.stopPropagation();_serieTap(\''+sp+'\')">'+serieLbl+'</td>'+
         '<td style="'+tdBase+'">'+repsCel+'</td>'+
