@@ -848,8 +848,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260818103542 por un timestamp en cada deploy
-const _APP_VERSION = '20260818103542';
+// deploy.bat reemplaza 20260818104639 por un timestamp en cada deploy
+const _APP_VERSION = '20260818104639';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2668,8 +2668,11 @@ async function _terminarEntrenamiento(){
   (ses.bloques||[]).forEach(function(b,bi){ (b.ejercicios||[]).forEach(function(ej,ei){
     if(ej && ej.tecnica){ const t=ej.tecnica; const lbl = (t.familia==='FST-7'?((t.fst&&t.fst.variante)||'FST-7'):(t.tecnica||'')); if(lbl) tecnicas.push({ uid:'b'+bi+'e'+ei, nombre:ej.nombre||'', tecnica:lbl }); }
   }); });
+  // Devolución final que escribió el alumno
+  const comentario = (document.getElementById('ses-devolucion')?.value || '').trim();
+  const at = new Date().toISOString();
   // Registro de completado (con los resultados adentro). No se crea semana nueva.
-  const completa = { planId, sem:_semIdx, dia:_diaIdx, mod:_diaModTab, fecha, nombre: ses.nombre || DN[_diaIdx], resultados, tecnicas };
+  const completa = { planId, sem:_semIdx, dia:_diaIdx, mod:_diaModTab, fecha, at, nombre: ses.nombre || DN[_diaIdx], resultados, tecnicas, comentario };
 
   if (!_data.sesionesCompletadas) _data.sesionesCompletadas = [];
   _data.sesionesCompletadas.push(completa);
@@ -2677,7 +2680,8 @@ async function _terminarEntrenamiento(){
   try {
     if (_db && _alumnoId){
       await _db.collection('alumnos').doc(_alumnoId).set({
-        sesionesCompletadas: firebase.firestore.FieldValue.arrayUnion(completa)
+        sesionesCompletadas: firebase.firestore.FieldValue.arrayUnion(completa),
+        sesionCompletadaAt: at   // para que se encienda el aviso del coach
       }, { merge: true });
     }
   } catch(e){ console.warn('terminar entrenamiento:', e); }
@@ -2924,6 +2928,13 @@ function renderSesion() {
 
   // Botón "Terminé mi entrenamiento" (o estado completado)
   const _yaComp = _sesionCompletada(_plan.id, _semIdx, _diaIdx, _diaModTab);
+  // Caja de devolución final (viaja con "Terminé" al coach)
+  const _compRec = (_data.sesionesCompletadas||[]).find(c=>c&&c.planId===_plan.id&&c.sem===_semIdx&&c.dia===_diaIdx&&c.mod===_diaModTab);
+  const _devPrev = _compRec ? (_compRec.comentario||'') : '';
+  const _devBox = '<div style="margin-top:18px;">'
+    +'<div style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.5px;margin-bottom:7px;">✍️ '+(_LANG==='en'?'FINAL FEEDBACK (OPTIONAL)':'DEVOLUCIÓN FINAL (OPCIONAL)')+'</div>'
+    +'<textarea id="ses-devolucion" placeholder="'+(_LANG==='en'?'Tell your coach how it felt: any discomfort, if something was too heavy or too light…':'Contale a tu coach cómo te sentiste: molestias, si algo estuvo muy pesado o liviano, cómo viste tu técnica…')+'" style="width:100%;min-height:74px;background:var(--card);border:1px solid rgba(128,128,128,.25);border-radius:12px;padding:12px;font-size:13px;color:var(--text);font-family:inherit;line-height:1.5;resize:vertical;box-sizing:border-box;outline:none;">'+_devPrev.replace(/</g,'&lt;')+'</textarea>'
+    +'</div>';
   const _finBtn = _yaComp
     ? '<div style="display:flex;gap:8px;margin-top:18px;align-items:stretch;">'
         +'<div style="flex:1;padding:14px;border-radius:14px;border:1px solid color-mix(in srgb,var(--green) 45%,transparent);background:color-mix(in srgb,var(--green) 10%,transparent);color:var(--green);font-size:14px;font-weight:800;text-align:center;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;">✓ '+_t('completado')+'</div>'
@@ -2939,7 +2950,7 @@ function renderSesion() {
     // Rectángulo de fondo (gris topo / tiza) con todo el contenido de la sesión
     '<div style="margin:0 -16px;padding:16px 16px 24px;background:var(--ses-panel);">'+
       _sesDetalleHTML(ses) +
-      _bloquesHTML + _finBtn +
+      _bloquesHTML + _devBox + _finBtn +
       // Feedback + WhatsApp: fijos abajo, debajo de "Terminé mi entrenamiento" (no flotantes)
       '<div style="display:flex;gap:8px;margin-top:12px;">'+
         '<button onclick="_abrirFeedback()" style="flex:1;background:linear-gradient(135deg,#C9A84C,#9A7A28);color:#fff;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">📋 Feedback</button>'+
