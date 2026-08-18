@@ -4480,15 +4480,17 @@ select.toolbox-input option:disabled { color: #888; }
       <div class="run-topbar-left" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <button class="mob-sb-toggle" onclick="mobToggleSidebar('plan-running-sidebar')">☰ Alumno</button>
         <div style="flex:1;min-width:0;">
-          <h1 class="run-titulo-sesion" id="run-titulo-display">🏃 PLANIFICACIÓN DE RUNNING</h1>
+          <h1 class="run-titulo-sesion" id="run-titulo-display" style="color:#111;">🏃 PLANIFICACIÓN DE RUNNING</h1>
           <input class="run-titulo-input" id="run-titulo" type="text"
             placeholder="Nombre del plan (ej: SEMANA 1 · BASE AERÓBICA)"
-            oninput="actualizarTituloRunning(this.value)">
+            oninput="actualizarTituloRunning(this.value)"
+            style="border-bottom-color:#C9A84C;">
         </div>
       </div>
       <div class="run-topbar-right">
+        <button class="pln-btn pln-btn-outline" onclick="abrirRunImport()" style="background:#ecfdf5;color:#059669;border-color:#10b981;">📥 Importar JSON</button>
         <button id="copiloto-toggle-btn-run" class="copiloto-toggle-btn" onclick="toggleCopiloto()" style="display:none;">Copiloto IA</button>
-        <button class="btn-run btn-run-naranja" onclick="guardarPlanRunning()">Guardar semana</button>
+        <button class="pln-btn pln-btn-guardar" onclick="guardarPlanRunning()">Guardar semana</button>
       </div>
     </div>
 
@@ -4523,15 +4525,15 @@ select.toolbox-input option:disabled { color: #888; }
       </div>
     </div>
 
-    <!-- NAV SEMANA -->
-    <div class="run-semana-header">
-      <div class="run-semana-titulo">DISTRIBUCIÓN SEMANAL</div>
-      <div class="run-semana-nav" style="display:flex;align-items:center;gap:8px;">
-        <button class="run-semana-btn" onclick="runSemanaAnterior()">‹</button>
-        <div class="run-semana-label" id="run-semana-label">Semana 1 de 1</div>
-        <button class="run-semana-btn" onclick="runSemanaSiguiente()">›</button>
-        <button class="btn-run btn-run-outline" style="font-size:11px;padding:5px 12px;background:#eef7ee;color:#166534;border-color:#22c55e;" onclick="runAgregarSemana()">＋ Agregar semana</button>
-        <button class="btn-run btn-run-outline" style="font-size:11px;padding:5px 10px;color:#c62828;border-color:#f0c0c0;" onclick="runEliminarSemana()" title="Eliminar esta semana">🗑</button>
+    <!-- NAV SEMANA (mismo estilo de solapa que fuerza) -->
+    <div style="display:flex;align-items:center;gap:0;border-bottom:2px solid #e8e0cc;margin-bottom:0;">
+      <div style="padding:10px 22px;font-size:12px;font-weight:800;letter-spacing:1px;border-bottom:3px solid #C9A84C;color:#C9A84C;">DISTRIBUCIÓN SEMANAL</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+        <button class="run-semana-btn" style="--c:#C9A84C;" onclick="runSemanaAnterior()">‹</button>
+        <div class="run-semana-label" id="run-semana-label" style="color:#C9A84C;">Semana 1 de 1</div>
+        <button class="run-semana-btn" style="--c:#C9A84C;" onclick="runSemanaSiguiente()">›</button>
+        <button class="pln-btn pln-btn-outline" style="font-size:11px;padding:6px 12px;" onclick="runAgregarSemana()">＋ Agregar semana</button>
+        <button class="pln-btn pln-btn-outline" style="font-size:11px;padding:6px 10px;color:#c62828;border-color:#f0c0c0;" onclick="runEliminarSemana()" title="Eliminar esta semana">🗑</button>
       </div>
     </div>
 
@@ -4541,13 +4543,12 @@ select.toolbox-input option:disabled { color: #888; }
     <!-- EDITOR DÍA (aparece al hacer clic en un día) -->
     <div id="run-dia-editor" style="display:none;"></div>
 
-    <!-- FOOTER -->
-    <div class="run-footer">
-      <button class="btn-run btn-run-outline" onclick="showView('inicio')">← Inicio</button>
-      <button class="btn-run btn-run-outline" onclick="volverAlPerfil()" style="background:#e8f0fe;color:#1a3a6a;border-color:#1a3a6a;font-weight:700;">← Volver al alumno</button>
-      <button class="btn-run btn-run-outline" onclick="irAPlanFuerza()" style="background:#FDF6E3;color:#9A7A28;border-color:#90caf9;">💪 Fuerza</button>
-      <button class="btn-run btn-run-outline" onclick="abrirRunImport()" style="background:#eef7ee;color:#166534;border-color:#22c55e;">📥 Importar (JSON)</button>
-      <button class="btn-run btn-run-guardar" onclick="guardarPlanRunning()">✓ Guardar semana</button>
+    <!-- FOOTER (mismo estilo que fuerza) -->
+    <div class="pln-footer">
+      <button class="pln-btn pln-btn-outline" onclick="showView('inicio')">← Inicio</button>
+      <button class="pln-btn pln-btn-outline" onclick="volverAlPerfil()" style="background:#e8f0fe;color:#1a3a6a;border-color:#1a3a6a;font-weight:700;">← Volver al alumno</button>
+      <button class="pln-btn pln-btn-outline" onclick="irAPlanFuerza()" style="background:#FDF6E3;color:#9A7A28;border-color:#90caf9;">💪 Fuerza</button>
+      <button class="pln-btn pln-btn-guardar" onclick="guardarPlanRunning()">✓ Guardar semana</button>
     </div>
 
     </div><!-- /plan-right running -->
