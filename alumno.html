@@ -848,8 +848,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260818092121 por un timestamp en cada deploy
-const _APP_VERSION = '20260818092121';
+// deploy.bat reemplaza 20260818094111 por un timestamp en cada deploy
+const _APP_VERSION = '20260818094111';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2063,6 +2063,38 @@ function _gripHTML(ej){
       '<div style="font-size:11.5px;color:#33507f;line-height:1.55;background:#f2f7ff;border-top:1px solid #dbe8fc;padding:10px 14px;"><b style="color:#1e3a8a;">'+(en?'Note:':'Nota:')+'</b> '+nota+'</div>'+
     '</div>';
 }
+// Configuración de tracción · vista simple para el alumno (espalda)
+const _PL_CODTXT={'Hacia la cadera':'Llevalos hacia abajo y hacia la cadera','Cerca del torso':'Pegados al torso','30° respecto del torso':'A unos 30° del torso','45°':'A unos 45° del torso','60°':'A unos 60°, hacia afuera','Abiertos':'Codos abiertos','Muy abiertos':'Bien abiertos, a la altura del hombro'};
+const _PL_OBJ={'Dorsal ancho':'Dorsal + espalda superior','Dorsal':'Dorsal','Dorsal (fibras inferiores)':'Dorsal','Espalda media':'Espalda media','Romboides':'Romboides + espalda media','Trapecio medio':'Espalda alta','Trapecio inferior':'Trapecio inferior','Trapecio superior':'Trapecio superior','Deltoides posterior':'Deltoides posterior','Erectores / espalda baja':'Espalda baja','General de espalda':'Espalda (general)'};
+function _pullHTML(ej){
+  const p = ej && ej.pull_configuration; if(!p) return '';
+  const en = _LANG==='en';
+  const rows=[];
+  // Agarre: tipo + ancho (ancho no aplica si "sin agarre")
+  let agarre = p.grip_type || '';
+  if(p.grip_width && !/sin agarre/i.test(agarre)) agarre = (agarre?agarre+' ':'') + p.grip_width.toLowerCase();
+  if(agarre) rows.push([en?'Grip':'Agarre', agarre]);
+  // Codos (instrucción)
+  if(p.elbow_path) rows.push([en?'Elbows':'Codos', _PL_CODTXT[p.elbow_path] || p.elbow_path]);
+  // Torso
+  if(p.torso_position) rows.push([en?'Torso':'Torso', p.torso_position]);
+  // Objetivo
+  if(p.training_emphasis && p.training_emphasis!=='Personalizado') rows.push([en?'Goal':'Enfoque', _PL_OBJ[p.training_emphasis] || p.training_emphasis]);
+  if(!rows.length) return '';
+  const rowK='font-size:10px;font-weight:900;color:#2f5bb0;text-transform:uppercase;letter-spacing:.5px;min-width:70px;';
+  const rowV='font-size:14px;font-weight:800;color:#1e3a8a;';
+  let body='';
+  rows.forEach(function(r,i){ body+='<div style="display:flex;align-items:baseline;gap:8px;'+(i<rows.length-1?'margin-bottom:8px;':'')+'"><span style="'+rowK+'">'+r[0]+'</span><span style="'+rowV+'">'+r[1]+'</span></div>'; });
+  const nota = p.notes
+    ? p.notes
+    : (en?'Think about driving the elbow, not pulling with the hand. Adjust slightly if you lose range or comfort.'
+         :'Pensá en conducir el codo, no en tirar con la mano. Ajustá levemente si perdés recorrido o comodidad.');
+  return '<div style="margin-top:11px;background:#eaf1fe;border:1px solid #bcd3f5;border-radius:12px;overflow:hidden;box-shadow:0 8px 20px rgba(20,40,90,.35);">'+
+      '<div style="display:flex;align-items:center;gap:8px;background:#dbe8fc;border-bottom:1px solid #c3d6f4;padding:9px 12px;"><span>🔙</span><span style="font-size:12px;font-weight:900;color:#1e3a8a;text-transform:uppercase;letter-spacing:.3px;">'+(en?'How to grip and pull':'Cómo agarrar y tirar')+'</span></div>'+
+      '<div style="padding:11px 14px 12px;">'+body+'</div>'+
+      '<div style="font-size:11.5px;color:#33507f;line-height:1.55;background:#f2f7ff;border-top:1px solid #dbe8fc;padding:10px 14px;"><b style="color:#1e3a8a;">'+(en?'Note:':'Nota:')+'</b> '+nota+'</div>'+
+    '</div>';
+}
 function _ejCard(ej, uid) {
   _ejStore[uid] = ej; // guardar para re-render posterior
 
@@ -2343,6 +2375,8 @@ function _ejCard(ej, uid) {
   const _footApp = _footPosHTML(ej);
   // Agarre (ejercicios de press)
   const _gripApp = _gripHTML(ej);
+  // Configuración de tracción (ejercicios de espalda)
+  const _pullApp = _pullHTML(ej);
   // Nota verde si el alumno sustituyó el ejercicio
   const _sustNote = _sust
     ? '<div style="margin:8px 0 0 12px;font-size:11px;color:#7fe0a0;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.22);border-radius:8px;padding:7px 10px;line-height:1.45;">⇄ <b style="color:#a7f0c4;">'+(_LANG==="en"?"Changed by you.":"Cambiado por vos.")+'</b> '+(_LANG==="en"?"Original":"Original")+': '+_nomOrig+'. <span style="color:#8fb7e6;text-decoration:underline;cursor:pointer;" onclick="_revertirEj(\''+uid+'\')">'+(_LANG==="en"?"Back to original":"Volver al original")+'</span></div>'
@@ -2390,6 +2424,7 @@ function _ejCard(ej, uid) {
       _tecApp+
       _footApp+
       _gripApp+
+      _pullApp+
       _footer+
       fichaHTML+
       feedbackHTML+

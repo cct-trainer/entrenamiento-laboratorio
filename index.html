@@ -12503,7 +12503,8 @@ function guardarEstadoDiaActual() {
       const _uniEj2 = (eEl.querySelector('.ej-uni')?.value === '1');
       const _footEj = (typeof _readFootPos==='function' ? _readFootPos(eEl) : null);
       const _gripEj = (typeof _readGrip==='function' ? _readGrip(eEl) : null);
-      if(eName) ejercicios.push({ nombre:eName, ctrl, video, nota, ficha, series, seriesApro, dropset, tecnica:_tecEj, unilateral:_uniEj2, foot_position:_footEj, grip_configuration:_gripEj });
+      const _pullEj = (typeof _readPull==='function' ? _readPull(eEl) : null);
+      if(eName) ejercicios.push({ nombre:eName, ctrl, video, nota, ficha, series, seriesApro, dropset, tecnica:_tecEj, unilateral:_uniEj2, foot_position:_footEj, grip_configuration:_gripEj, pull_configuration:_pullEj });
     });
     // Leer datos cardio si aplica
     let cardioData = null;
@@ -12665,6 +12666,9 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
     // Restaurar agarre (o mostrar la sección si el nombre lo amerita)
     if(datosPrevios.grip_configuration && typeof _loadGrip==='function') _loadGrip(ejId, datosPrevios.grip_configuration);
     else if(typeof _gripSync==='function') _gripSync(ejId);
+    // Restaurar configuración de tracción (o mostrar la sección si el nombre lo amerita)
+    if(datosPrevios.pull_configuration && typeof _loadPull==='function') _loadPull(ejId, datosPrevios.pull_configuration);
+    else if(typeof _pullSync==='function') _pullSync(ejId);
     // Controles
     if(datosPrevios.ctrl) {
       const c = datosPrevios.ctrl;
@@ -18855,6 +18859,65 @@ function addEjercicio(bloqueId) {
       </div>
     </div>
 
+    <!-- CONFIGURACIÓN DE TRACCIÓN (solo ejercicios de espalda) -->
+    <div class="series-section" id="${ejId}-pull" style="display:none;">
+      <div class="series-sec-header drop" onclick="togglePull('${ejId}')">
+        <span class="series-sec-icon" id="${ejId}-pull-icon">▸</span>
+        🔙 CONFIGURACIÓN DE TRACCIÓN
+      </div>
+      <div class="series-sec-body" id="${ejId}-pull-body" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:10px 2px 4px;">
+          <div style="grid-column:1 / -1;display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Enfoque muscular</label>
+            <select id="${ejId}-pl-enf" onchange="_plPreset('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+              <option>Dorsal ancho</option><option>Dorsal</option><option>Dorsal (fibras inferiores)</option><option>Espalda media</option><option>Romboides</option><option>Trapecio medio</option><option>Trapecio inferior</option><option>Trapecio superior</option><option>Deltoides posterior</option><option>Erectores / espalda baja</option><option>General de espalda</option><option>Personalizado</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Tipo de agarre</label>
+            <select id="${ejId}-pl-ag" onchange="_plMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+              <option>Pronado</option><option>Supinado</option><option>Neutro</option><option>Semineutro</option><option>Mixto</option><option>Sin agarre / brazos extendidos</option><option>Personalizado</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Ancho</label>
+            <select id="${ejId}-pl-an" onchange="_plMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+              <option>Muy cerrado</option><option>Cerrado</option><option>Medio</option><option>Medio-ancho</option><option>Ancho</option><option>Personalizado</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Orientación de manos</label>
+            <select id="${ejId}-pl-man" onchange="_plMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+              <option>Pronada</option><option>Neutra</option><option>Supinada</option><option>Semineutra</option><option>Personalizada</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#2f5bb0;letter-spacing:.4px;text-transform:uppercase;">Trayectoria de codos ⚑</label>
+            <select id="${ejId}-pl-cod" onchange="_plMark('${ejId}')" style="border:1px solid #9fc0ea;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#f4f8ff;font-family:inherit;">
+              <option>Hacia la cadera</option><option>Cerca del torso</option><option>30° respecto del torso</option><option>45°</option><option>60°</option><option>Abiertos</option><option>Muy abiertos</option><option>Personalizado</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Dirección del tirón</label>
+            <select id="${ejId}-pl-dir" onchange="_plMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+              <option>Vertical</option><option>Vertical hacia el pecho</option><option>Vertical unilateral</option><option>Horizontal hacia la cadera</option><option>Horizontal hacia abdomen</option><option>Horizontal hacia pecho</option><option>Diagonal alta-baja</option><option>Diagonal baja-alta</option><option>Personalizada</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Posición del torso</label>
+            <select id="${ejId}-pl-tor" onchange="_plMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+              <option>Vertical</option><option>Leve inclinación hacia atrás</option><option>Inclinado hacia adelante</option><option>Pecho apoyado</option><option>Apoyo unilateral</option><option>Arrodillado</option><option>Medio arrodillado</option><option>Personalizado</option>
+            </select>
+          </div>
+          <div id="${ejId}-pl-combo" style="grid-column:1 / -1;background:#eef4ff;border:1px solid #cfe0f7;border-radius:8px;padding:8px 10px;font-size:11.5px;font-weight:700;color:#2f5bb0;line-height:1.5;"></div>
+          <div style="grid-column:1 / -1;display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Observaciones técnicas</label>
+            <input id="${ejId}-pl-obs" type="text" placeholder="ej: llevá el codo hacia el bolsillo, sin encoger el hombro…" oninput="_plMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="${ejId}-ficha-toggle-wrap" style="display:none;">
       <div class="ej-ficha-toggle" onclick="toggleFichaEj('${ejId}')">
         <span id="${ejId}-ficha-toggle-icon">ⓘ</span>
@@ -19077,6 +19140,107 @@ function _loadGrip(ejId, gc){
   _gpMethod(ejId);
 }
 
+// ── CONFIGURACIÓN DE TRACCIÓN (ejercicios de espalda) ─────────────
+function _esTraccion(nombre){
+  const n=(nombre||'').toLowerCase();
+  if(!n) return false;
+  if(/press|prensa|sentadilla|hip\s*thrust|empuje/.test(n)) return false;
+  return /jal[oó]n|dominada|remo|\brow\b|pulldown|pull\s*over|pullover|pull\s*down|face\s*pull|pec\s*deck|meadows|serrucho|dorsalera|pull-?up|straight\s*arm|tracci[oó]n/.test(n);
+}
+const _PL_ENF={
+ 'Dorsal ancho':{ag:'Pronado',an:'Medio-ancho',man:'Pronada',cod:'Abiertos',dir:'Vertical hacia el pecho',tor:'Leve inclinación hacia atrás',obj:'Dorsal + espalda superior',codTxt:'Llevalos hacia abajo y algo hacia afuera'},
+ 'Dorsal':{ag:'Neutro',an:'Medio',man:'Neutra',cod:'Hacia la cadera',dir:'Vertical hacia el pecho',tor:'Leve inclinación hacia atrás',obj:'Dorsal',codTxt:'Llevalos hacia abajo y hacia la cadera'},
+ 'Dorsal (fibras inferiores)':{ag:'Neutro',an:'Cerrado',man:'Neutra',cod:'Hacia la cadera',dir:'Horizontal hacia la cadera',tor:'Leve inclinación hacia atrás',obj:'Dorsal',codTxt:'Bien hacia abajo, pegados al torso'},
+ 'Espalda media':{ag:'Neutro',an:'Medio',man:'Neutra',cod:'45°',dir:'Horizontal hacia abdomen',tor:'Vertical',obj:'Espalda media',codTxt:'Codos a unos 45°, hacia el abdomen'},
+ 'Romboides':{ag:'Pronado',an:'Medio',man:'Pronada',cod:'45°',dir:'Horizontal hacia abdomen',tor:'Vertical',obj:'Romboides + espalda media',codTxt:'Juntá los omóplatos, codos a 45°'},
+ 'Trapecio medio':{ag:'Pronado',an:'Medio-ancho',man:'Pronada',cod:'60°',dir:'Horizontal hacia pecho',tor:'Pecho apoyado',obj:'Espalda alta',codTxt:'Codos abiertos, hacia el pecho'},
+ 'Trapecio inferior':{ag:'Neutro',an:'Medio',man:'Neutra',cod:'30° respecto del torso',dir:'Diagonal baja-alta',tor:'Inclinado hacia adelante',obj:'Trapecio inferior',codTxt:'Llevá los codos hacia abajo y atrás'},
+ 'Trapecio superior':{ag:'Neutro',an:'Cerrado',man:'Neutra',cod:'Muy abiertos',dir:'Diagonal baja-alta',tor:'Vertical',obj:'Trapecio superior',codTxt:'Encogé y elevá, codos altos'},
+ 'Deltoides posterior':{ag:'Pronado',an:'Medio-ancho',man:'Pronada',cod:'Muy abiertos',dir:'Horizontal hacia pecho',tor:'Inclinado hacia adelante',obj:'Deltoides posterior',codTxt:'Codos bien abiertos, a la altura del hombro'},
+ 'Erectores / espalda baja':{ag:'Pronado',an:'Medio',man:'Pronada',cod:'Cerca del torso',dir:'Horizontal hacia la cadera',tor:'Inclinado hacia adelante',obj:'Erectores / espalda baja',codTxt:'Mantené la espalda firme, codos al cuerpo'},
+ 'General de espalda':{ag:'Neutro',an:'Medio',man:'Neutra',cod:'45°',dir:'Horizontal hacia abdomen',tor:'Vertical',obj:'Espalda (general)',codTxt:'Codos hacia el abdomen'},
+ 'Personalizado':{}
+};
+function togglePull(ejId){
+  const body=document.getElementById(ejId+'-pull-body');
+  const ico=document.getElementById(ejId+'-pull-icon');
+  if(!body) return;
+  const open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  if(ico) ico.textContent=open?'▸':'▾';
+}
+function _plVal(ejId,id){ const el=document.getElementById(ejId+'-pl-'+id); return el?el.value:''; }
+function _plSetSel(ejId,id,v){ const el=document.getElementById(ejId+'-pl-'+id); if(el && v) el.value=v; }
+function _plMark(ejId){ const sec=document.getElementById(ejId+'-pull'); if(sec) sec.setAttribute('data-custom','1'); _plCombo(ejId); }
+function _plCombo(ejId){
+  const box=document.getElementById(ejId+'-pl-combo'); if(!box) return;
+  const enf=_plVal(ejId,'enf'); const p=_PL_ENF[enf]||{};
+  box.innerHTML='Combinación: <b>'+_plVal(ejId,'ag')+'</b> · codos <b>'+_plVal(ejId,'cod')+'</b> · <b>'+_plVal(ejId,'dir')+'</b> · torso <b>'+(_plVal(ejId,'tor')||'').toLowerCase()+'</b> → énfasis <b>'+(p.obj||enf)+'</b>';
+}
+function _plPreset(ejId){
+  const enf=_plVal(ejId,'enf'); const p=_PL_ENF[enf];
+  const sec=document.getElementById(ejId+'-pull'); if(sec) sec.setAttribute('data-custom','1');
+  if(p){ if(p.ag)_plSetSel(ejId,'ag',p.ag); if(p.an)_plSetSel(ejId,'an',p.an); if(p.man)_plSetSel(ejId,'man',p.man); if(p.cod)_plSetSel(ejId,'cod',p.cod); if(p.dir)_plSetSel(ejId,'dir',p.dir); if(p.tor)_plSetSel(ejId,'tor',p.tor); }
+  _plCombo(ejId);
+}
+function _pullSync(ejId){
+  const sec=document.getElementById(ejId+'-pull'); if(!sec) return;
+  const nInp=document.querySelector('#'+ejId+' .ej-nombre-input');
+  const nombre=nInp?nInp.value:'';
+  const showByName=_esTraccion(nombre);
+  const hasData=sec.getAttribute('data-has')==='1';
+  sec.style.display=(showByName||hasData)?'block':'none';
+  if(showByName && !hasData && sec.getAttribute('data-init')!=='1'){
+    sec.setAttribute('data-init','1');
+    const enf=document.getElementById(ejId+'-pl-enf');
+    if(enf){
+      if(/face\s*pull|pec\s*deck|posterior|reverse/i.test(nombre)) enf.value='Deltoides posterior';
+      else if(/pullover|pull\s*over|straight/i.test(nombre)) enf.value='Dorsal';
+      else if(/remo|row|serrucho|meadows/i.test(nombre) && /alt|apoyad|pecho apoyado|high\s*row/i.test(nombre)) enf.value='Trapecio medio';
+      else if(/ancho|wide/i.test(nombre)) enf.value='Dorsal ancho';
+      else enf.value='Dorsal';
+    }
+    _plPreset(ejId);
+    if(/pullover|pull\s*over|straight/i.test(nombre)) _plSetSel(ejId,'ag','Sin agarre / brazos extendidos');
+    if(/supinad/i.test(nombre)){ _plSetSel(ejId,'ag','Supinado'); _plSetSel(ejId,'man','Supinada'); }
+    sec.removeAttribute('data-custom');
+    _plCombo(ejId);
+  } else { _plCombo(ejId); }
+}
+function _readPull(eEl){
+  const ejId=eEl.id;
+  const sec=document.getElementById(ejId+'-pull');
+  if(!sec || sec.style.display==='none') return null;
+  const notes=(_plVal(ejId,'obs')||'').trim();
+  return {
+    grip_type: _plVal(ejId,'ag'),
+    grip_width: _plVal(ejId,'an'),
+    hand_orientation: _plVal(ejId,'man'),
+    elbow_path: _plVal(ejId,'cod'),
+    pull_direction: _plVal(ejId,'dir'),
+    torso_position: _plVal(ejId,'tor'),
+    training_emphasis: _plVal(ejId,'enf'),
+    notes: notes,
+    customized_by_coach: sec.getAttribute('data-custom')==='1'
+  };
+}
+function _loadPull(ejId, pc){
+  if(!pc) return;
+  const sec=document.getElementById(ejId+'-pull'); if(!sec) return;
+  _plSetSel(ejId,'enf', pc.training_emphasis);
+  _plSetSel(ejId,'ag', pc.grip_type);
+  _plSetSel(ejId,'an', pc.grip_width);
+  _plSetSel(ejId,'man', pc.hand_orientation);
+  _plSetSel(ejId,'cod', pc.elbow_path);
+  _plSetSel(ejId,'dir', pc.pull_direction);
+  _plSetSel(ejId,'tor', pc.torso_position);
+  const obs=document.getElementById(ejId+'-pl-obs'); if(obs) obs.value=pc.notes||'';
+  if(pc.customized_by_coach) sec.setAttribute('data-custom','1');
+  sec.setAttribute('data-has','1'); sec.setAttribute('data-init','1');
+  sec.style.display='block';
+  _plCombo(ejId);
+}
+
 function toggleFichaEj(ejId) {
   const ficha = document.getElementById(ejId+'-ficha');
   const icon  = document.getElementById(ejId+'-ficha-toggle-icon');
@@ -19287,6 +19451,7 @@ function onEjNombreInput(e, ejId, bloqueId) {
   renderDropdown(ejId, bloqueId, resultados, val);
   if(typeof _footPosSync==='function') _footPosSync(ejId);
   if(typeof _gripSync==='function') _gripSync(ejId);
+  if(typeof _pullSync==='function') _pullSync(ejId);
 }
 
 function closeDropdown(ejId) {
@@ -19568,6 +19733,7 @@ function seleccionarEjercicio(ejId, bloqueId, nombreOIdx) {
   closeDropdown(ejId);
   if(typeof _footPosSync==='function') _footPosSync(ejId);
   if(typeof _gripSync==='function') _gripSync(ejId);
+  if(typeof _pullSync==='function') _pullSync(ejId);
   // Prefijar Bilateral/Unilateral según la biblioteca (editable por el coach)
   if (ex.unilateral !== undefined) _setEjExec(ejId, ex.unilateral ? 1 : 0);
   // Nota automática de equipamiento
