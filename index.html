@@ -12502,7 +12502,8 @@ function guardarEstadoDiaActual() {
       const _tecEj = (typeof _readTecnica==='function' ? _readTecnica(eEl) : null);
       const _uniEj2 = (eEl.querySelector('.ej-uni')?.value === '1');
       const _footEj = (typeof _readFootPos==='function' ? _readFootPos(eEl) : null);
-      if(eName) ejercicios.push({ nombre:eName, ctrl, video, nota, ficha, series, seriesApro, dropset, tecnica:_tecEj, unilateral:_uniEj2, foot_position:_footEj });
+      const _gripEj = (typeof _readGrip==='function' ? _readGrip(eEl) : null);
+      if(eName) ejercicios.push({ nombre:eName, ctrl, video, nota, ficha, series, seriesApro, dropset, tecnica:_tecEj, unilateral:_uniEj2, foot_position:_footEj, grip_configuration:_gripEj });
     });
     // Leer datos cardio si aplica
     let cardioData = null;
@@ -12661,6 +12662,9 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
     // Restaurar posición de pies (o mostrar la sección si el nombre lo amerita)
     if(datosPrevios.foot_position && typeof _loadFootPos==='function') _loadFootPos(ejId, datosPrevios.foot_position);
     else if(typeof _footPosSync==='function') _footPosSync(ejId);
+    // Restaurar agarre (o mostrar la sección si el nombre lo amerita)
+    if(datosPrevios.grip_configuration && typeof _loadGrip==='function') _loadGrip(ejId, datosPrevios.grip_configuration);
+    else if(typeof _gripSync==='function') _gripSync(ejId);
     // Controles
     if(datosPrevios.ctrl) {
       const c = datosPrevios.ctrl;
@@ -18771,6 +18775,86 @@ function addEjercicio(bloqueId) {
       </div>
     </div>
 
+    <!-- AGARRE (solo ejercicios de press) -->
+    <div class="series-section" id="${ejId}-grip" style="display:none;">
+      <div class="series-sec-header drop" onclick="toggleGrip('${ejId}')">
+        <span class="series-sec-icon" id="${ejId}-grip-icon">▸</span>
+        ✋ AGARRE
+      </div>
+      <div class="series-sec-body" id="${ejId}-grip-body" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:10px 2px 4px;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Enfoque / énfasis</label>
+            <select id="${ejId}-gp-enf" onchange="_gpEnfoque('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+              <option>Pectoral general</option><option>Pectoral (aducción horizontal)</option><option>Tríceps</option><option>Deltoides anterior</option><option>Fuerza / rendimiento</option><option>Recorrido confortable</option><option>Personalizado</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Tipo de agarre</label>
+            <select id="${ejId}-gp-tipo" onchange="_gpMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+              <option>Cerrado</option><option>Medio</option><option>Medio-ancho</option><option>Ancho</option><option>Muy ancho</option><option>Personalizado</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Método de medición</label>
+            <select id="${ejId}-gp-met" onchange="_gpMethod('${ejId}');_gpMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+              <option value="ratio">Ancho de hombros</option><option value="cm">Distancia entre manos</option><option value="visual">Referencia visual</option><option value="machine">Máquina (asa)</option><option value="dumbbell">Mancuernas</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;" id="${ejId}-gp-wbi">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Ancho biacromial (cm)</label>
+            <input id="${ejId}-gp-bi" type="number" step="0.5" placeholder="ej: 42" oninput="_gpFromFac('${ejId}');_gpMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;" id="${ejId}-gp-wfac">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Factor de agarre</label>
+            <input id="${ejId}-gp-fac" type="number" step="0.05" placeholder="ej: 1.5" oninput="_gpFromFac('${ejId}');_gpMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;" id="${ejId}-gp-wcm">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Distancia (cm) entre manos</label>
+            <input id="${ejId}-gp-cm" type="number" step="0.5" placeholder="ej: 63" oninput="_gpFromCm('${ejId}');_gpMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+          </div>
+          <div id="${ejId}-gp-eq" style="grid-column:1 / -1;background:#eef4ff;border:1px solid #cfe0f7;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:800;color:#2f5bb0;">Cargá biacromial y factor para ver la equivalencia.</div>
+          <div style="grid-column:1 / -1;display:none;flex-direction:column;gap:4px;" id="${ejId}-gp-wvis">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Referencia visual (texto)</label>
+            <input id="${ejId}-gp-vis" type="text" placeholder="ej: un puño por fuera de cada hombro" oninput="_gpMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+          </div>
+          <div style="display:none;flex-direction:column;gap:4px;" id="${ejId}-gp-wasa">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Selección de asa</label>
+            <select id="${ejId}-gp-asa" onchange="_gpMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+              <option value="">—</option><option>Interna</option><option>Media</option><option>Externa</option>
+            </select>
+          </div>
+          <div style="display:none;flex-direction:column;gap:4px;" id="${ejId}-gp-wtray">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Trayectoria</label>
+            <select id="${ejId}-gp-tray" onchange="_gpMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+              <option value="">—</option><option>Convergente</option><option>Paralela</option><option>Personalizada</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Orientación de manos</label>
+            <select id="${ejId}-gp-man" onchange="_gpMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+              <option>Pronado</option><option>Neutro</option><option>Semineutro</option><option>Supinado</option><option>Personalizado</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Codos (° respecto del torso)</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input id="${ejId}-gp-emin" type="number" placeholder="45" oninput="_gpMark('${ejId}')" style="width:64px;border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;"><span style="font-size:12px;color:#8b93a0;">a</span>
+              <input id="${ejId}-gp-emax" type="number" placeholder="60" oninput="_gpMark('${ejId}')" style="width:64px;border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;"><span style="font-size:12px;color:#8b93a0;">°</span>
+            </div>
+          </div>
+          <div style="display:none;flex-direction:column;gap:4px;" id="${ejId}-gp-wbanco">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Ángulo del banco</label>
+            <input id="${ejId}-gp-banco" type="text" placeholder="ej: 30°" oninput="_gpMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+          </div>
+          <div style="grid-column:1 / -1;display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Observaciones técnicas</label>
+            <input id="${ejId}-gp-obs" type="text" placeholder="ej: mejor sensación del pectoral con 61 cm…" oninput="_gpMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="${ejId}-ficha-toggle-wrap" style="display:none;">
       <div class="ej-ficha-toggle" onclick="toggleFichaEj('${ejId}')">
         <span id="${ejId}-ficha-toggle-icon">ⓘ</span>
@@ -18867,6 +18951,130 @@ function _loadFootPos(ejId, fp){
   sec.setAttribute('data-has','1'); sec.setAttribute('data-init','1');
   sec.style.display='block';
   _fpRender(ejId);
+}
+
+// ── AGARRE (ejercicios de press) ──────────────────────────────────
+function _esPress(nombre){
+  const n=(nombre||'').toLowerCase();
+  if(!n) return false;
+  if(/prensa|leg\s*press|pierna|sentadilla|hip\s*thrust/.test(n)) return false;
+  return /press|empuje|chest|hammer/.test(n);
+}
+const _GP_ENF = {
+  'Pectoral general':{f:1.5,tipo:'Medio-ancho',obj:'Pectoral',ref:'Moderadamente más ancho que los hombros'},
+  'Pectoral (aducción horizontal)':{f:1.55,tipo:'Ancho',obj:'Pectoral',ref:'Más ancho que los hombros'},
+  'Tríceps':{f:1.2,tipo:'Medio',obj:'Tríceps',ref:'Apenas más ancho que los hombros'},
+  'Deltoides anterior':{f:1.4,tipo:'Medio-ancho',obj:'Deltoides anterior',ref:'Cerca del ancho de hombros'},
+  'Fuerza / rendimiento':{f:1.5,tipo:'Personalizado',obj:'Fuerza',ref:'Según técnica individual'},
+  'Recorrido confortable':{f:1.35,tipo:'Medio',obj:'Recorrido confortable',ref:'Cerca del ancho de hombros'},
+  'Personalizado':{f:0,tipo:'Personalizado',obj:'Personalizado',ref:'Referencia manual'}
+};
+function toggleGrip(ejId){
+  const body=document.getElementById(ejId+'-grip-body');
+  const ico=document.getElementById(ejId+'-grip-icon');
+  if(!body) return;
+  const open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  if(ico) ico.textContent=open?'▸':'▾';
+}
+function _gpNum(id){ const el=document.getElementById(id); return el?(parseFloat(el.value)||0):0; }
+function _gpSet(id,v){ const el=document.getElementById(id); if(el) el.value=(v===0||v==='')?'':v; }
+function _gpMark(ejId){ const sec=document.getElementById(ejId+'-grip'); if(sec) sec.setAttribute('data-custom','1'); }
+function _gpMethod(ejId){
+  const m=(document.getElementById(ejId+'-gp-met')||{}).value||'ratio';
+  const show=(id,on)=>{ const el=document.getElementById(id); if(el) el.style.display=on?'flex':'none'; };
+  show(ejId+'-gp-wbi', m==='ratio');
+  show(ejId+'-gp-wfac', m==='ratio');
+  show(ejId+'-gp-wcm', m==='ratio'||m==='cm');
+  show(ejId+'-gp-wvis', m==='visual');
+  show(ejId+'-gp-wasa', m==='machine');
+  show(ejId+'-gp-wtray', m==='dumbbell');
+  const eq=document.getElementById(ejId+'-gp-eq'); if(eq) eq.style.display=(m==='ratio'||m==='cm')?'block':'none';
+  _gpRender(ejId);
+}
+function _gpRender(ejId){
+  const m=(document.getElementById(ejId+'-gp-met')||{}).value||'ratio';
+  const eq=document.getElementById(ejId+'-gp-eq'); if(!eq) return;
+  const cm=_gpNum(ejId+'-gp-cm'), f=_gpNum(ejId+'-gp-fac');
+  if(m==='ratio') eq.innerHTML=(f?String(Math.round(f*100)/100).replace('.',','):'—')+' × ancho de hombros ≈ <b>'+(cm?Math.round(cm*10)/10:'—')+' cm</b> entre manos';
+  else if(m==='cm') eq.innerHTML='<b>'+(cm?Math.round(cm*10)/10:'—')+' cm</b> entre manos';
+}
+function _gpFromFac(ejId){ const bi=_gpNum(ejId+'-gp-bi'),f=_gpNum(ejId+'-gp-fac'); if(bi>0&&f>0) _gpSet(ejId+'-gp-cm', Math.round(bi*f*10)/10); _gpRender(ejId); }
+function _gpFromCm(ejId){ const bi=_gpNum(ejId+'-gp-bi'),cm=_gpNum(ejId+'-gp-cm'); const m=(document.getElementById(ejId+'-gp-met')||{}).value; if(m==='ratio'&&bi>0&&cm>0) _gpSet(ejId+'-gp-fac', Math.round(cm/bi*100)/100); _gpRender(ejId); }
+function _gpEnfoque(ejId){
+  const sel=document.getElementById(ejId+'-gp-enf'); const e=sel?_GP_ENF[sel.value]:null;
+  _gpMark(ejId);
+  if(e && e.f){
+    if(!_gpNum(ejId+'-gp-fac')) _gpSet(ejId+'-gp-fac', e.f);
+    const t=document.getElementById(ejId+'-gp-tipo'); if(t && (!t.value||t.selectedIndex<=0)) t.value=e.tipo;
+    _gpFromFac(ejId);
+  }
+  _gpRender(ejId);
+}
+function _gripSync(ejId){
+  const sec=document.getElementById(ejId+'-grip'); if(!sec) return;
+  const nInp=document.querySelector('#'+ejId+' .ej-nombre-input');
+  const nombre=nInp?nInp.value:'';
+  const showByName=_esPress(nombre);
+  const hasData=sec.getAttribute('data-has')==='1';
+  sec.style.display=(showByName||hasData)?'block':'none';
+  // Banco visible solo en inclinado/declinado
+  const wb=document.getElementById(ejId+'-gp-wbanco'); if(wb) wb.style.display=/inclinad|declinad/i.test(nombre)?'flex':'none';
+  if(showByName && !hasData && sec.getAttribute('data-init')!=='1'){
+    sec.setAttribute('data-init','1');
+    const met=document.getElementById(ejId+'-gp-met');
+    if(/mancuerna/i.test(nombre) && met){ met.value='dumbbell'; }
+    else if(/hammer|chest\s*press|convergente/i.test(nombre) && met){ met.value='machine'; }
+    else if(met){ met.value='ratio'; }
+    // Enfoque por nombre
+    const enf=document.getElementById(ejId+'-gp-enf');
+    if(enf){ if(/cerrado|tr[ií]ceps|franc[eé]s/i.test(nombre)) enf.value='Tríceps'; else if(/hombro|militar|overhead/i.test(nombre)) enf.value='Deltoides anterior'; }
+    _gpMethod(ejId); _gpEnfoque(ejId);
+    sec.removeAttribute('data-custom'); // el prefill no cuenta como ajuste manual
+  } else { _gpMethod(ejId); }
+}
+function _readGrip(eEl){
+  const ejId=eEl.id;
+  const sec=document.getElementById(ejId+'-grip');
+  if(!sec || sec.style.display==='none') return null;
+  const g=(id)=>{ const el=document.getElementById(ejId+'-gp-'+id); return el?el.value:''; };
+  const met=g('met')||'ratio';
+  const cm=_gpNum(ejId+'-gp-cm'), f=_gpNum(ejId+'-gp-fac'), bi=_gpNum(ejId+'-gp-bi');
+  const emin=_gpNum(ejId+'-gp-emin'), emax=_gpNum(ejId+'-gp-emax');
+  const vis=g('vis').trim(), asa=g('asa'), tray=g('tray'), banco=g('banco').trim(), notes=g('obs').trim();
+  if(!cm && !f && !bi && !vis && !asa && !tray && !banco && !notes && !emin && !emax) return null;
+  return {
+    grip_type: g('tipo'),
+    measurement_method: met,
+    biacromial_width_cm: bi,
+    grip_factor: f,
+    calculated_grip_width_cm: cm,
+    hand_orientation: g('man'),
+    elbow_angle_min: emin,
+    elbow_angle_max: emax,
+    training_emphasis: g('enf'),
+    visual_ref: vis,
+    handle_selection: asa,
+    trajectory: tray,
+    bench_angle: banco,
+    notes: notes,
+    customized_by_coach: sec.getAttribute('data-custom')==='1'
+  };
+}
+function _loadGrip(ejId, gc){
+  if(!gc) return;
+  const sec=document.getElementById(ejId+'-grip'); if(!sec) return;
+  const s=(id,v)=>{ const el=document.getElementById(ejId+'-gp-'+id); if(el && v!==undefined && v!==null && v!=='') el.value=v; };
+  const met=document.getElementById(ejId+'-gp-met'); if(met && gc.measurement_method) met.value=gc.measurement_method;
+  s('enf', gc.training_emphasis); s('tipo', gc.grip_type);
+  s('bi', gc.biacromial_width_cm||''); s('fac', gc.grip_factor||''); s('cm', gc.calculated_grip_width_cm||'');
+  s('man', gc.hand_orientation); s('emin', gc.elbow_angle_min||''); s('emax', gc.elbow_angle_max||'');
+  s('vis', gc.visual_ref); s('asa', gc.handle_selection); s('tray', gc.trajectory); s('banco', gc.bench_angle); s('obs', gc.notes);
+  if(gc.customized_by_coach) sec.setAttribute('data-custom','1');
+  sec.setAttribute('data-has','1'); sec.setAttribute('data-init','1');
+  sec.style.display='block';
+  const wb=document.getElementById(ejId+'-gp-wbanco'); if(wb && gc.bench_angle) wb.style.display='flex';
+  _gpMethod(ejId);
 }
 
 function toggleFichaEj(ejId) {
@@ -19078,6 +19286,7 @@ function onEjNombreInput(e, ejId, bloqueId) {
   const resultados = buscarEjercicios(val);
   renderDropdown(ejId, bloqueId, resultados, val);
   if(typeof _footPosSync==='function') _footPosSync(ejId);
+  if(typeof _gripSync==='function') _gripSync(ejId);
 }
 
 function closeDropdown(ejId) {
@@ -19358,6 +19567,7 @@ function seleccionarEjercicio(ejId, bloqueId, nombreOIdx) {
   if (input) input.value = ex.nombre;
   closeDropdown(ejId);
   if(typeof _footPosSync==='function') _footPosSync(ejId);
+  if(typeof _gripSync==='function') _gripSync(ejId);
   // Prefijar Bilateral/Unilateral según la biblioteca (editable por el coach)
   if (ex.unilateral !== undefined) _setEjExec(ejId, ex.unilateral ? 1 : 0);
   // Nota automática de equipamiento
