@@ -848,8 +848,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260817205751 por un timestamp en cada deploy
-const _APP_VERSION = '20260817205751';
+// deploy.bat reemplaza 20260817222319 por un timestamp en cada deploy
+const _APP_VERSION = '20260817222319';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1897,6 +1897,35 @@ const _TEC_APP = {
   elongada:{lbl:'Posición Elongada',ic:'↕️',desc:'énfasis en el estiramiento del músculo.'},
   fst7:{lbl:'FST-7',ic:'💠',block:true,desc:'varias series del mismo ejercicio con descanso corto para llenar el músculo.'}
 };
+// Descripción de la técnica: para qué sirve + cómo se compone (se integra al final de la tabla)
+const _TEC_INFO = {
+  drop_set:{para:'Suma estrés metabólico y fatiga en las fibras cerca del fallo. Útil para hipertrofia en la última serie.',comp:'Llegás cerca del fallo, bajás la carga ~20-25% y seguís sin descanso. Se hacen 2-3 descensos seguidos.'},
+  rest_pause:{para:'Permite acumular más repeticiones con una carga alta usando micro-pausas. Orientado a fuerza-hipertrofia.',comp:'Hacés la serie hasta cerca del fallo, descansás 15-20 s y seguís. Repetís 2-3 veces con el mismo peso.'},
+  parciales:{para:'Aumenta el tiempo bajo tensión en un rango específico del movimiento, sobre todo en elongación.',comp:'Repeticiones en una parte del recorrido (no completo), de forma intencional, al final de la serie.'},
+  heavy_partials:{para:'Sobrecarga con cargas altas en el tramo más fuerte del movimiento. Útil para fuerza y tejido conectivo.',comp:'Parciales con una carga mayor a la de rango completo, en la porción fuerte del recorrido.'},
+  iso_hold:{para:'Genera máxima tensión sostenida; mejora el control y la congestión del músculo.',comp:'Mantenés la posición apretando fuerte los segundos indicados. El timer arranca solo.'},
+  forzadas:{para:'Extiende la serie más allá del fallo. Alto estímulo, pero también alta fatiga.',comp:'Al llegar al fallo, un compañero te asiste lo justo para sumar 2-3 repeticiones más.'},
+  superserie:{para:'Aumenta la densidad del trabajo y ahorra tiempo. Puede sumar congestión.',comp:'Dos ejercicios seguidos con poco o nada de descanso entre ellos.'},
+  mechanical_drop:{para:'Extiende la serie cambiando a una variante mecánicamente más ventajosa.',comp:'Al fallar, modificás ángulo o agarre para seguir con el mismo peso.'},
+  excentrica:{para:'Enfatiza la fase negativa, muy asociada a la hipertrofia.',comp:'Bajás el peso lento y controlado (3-5 s) en cada repetición.'},
+  pausa_contraccion:{para:'Refuerza la contracción máxima y la conexión mente-músculo.',comp:'Apretás fuerte 1-2 s en el punto de máxima contracción de cada rep.'},
+  tension_continua:{para:'Mantiene la tensión constante, aumentando el estrés metabólico.',comp:'Movés sin bloquear ni descansar en los extremos; recorrido continuo.'},
+  challenge_set:{para:'Mide tu progreso real con una serie de máximo esfuerzo.',comp:'Serie de desafío: dás tu máximo. Queda registrada para comparar.'},
+  bandas:{para:'Agrega resistencia variable, mayor en el tramo final del movimiento.',comp:'Con banda elástica sumada a la carga; más tensión en la parte de arriba.'},
+  cadenas:{para:'Resistencia acomodada: más carga donde sos más fuerte.',comp:'Con cadenas que se levantan del piso al subir, aumentando el peso.'},
+  explosivo:{para:'Desarrolla potencia y reclutamiento rápido de fibras.',comp:'Subís rápido con máxima intención y bajás controlado. Técnica intacta.'},
+  elongada:{para:'Prioriza la tensión en el estiramiento, muy ligada a la hipertrofia.',comp:'Énfasis en la posición de máximo estiramiento del músculo en cada repetición.'},
+  fst7:{para:'Busca congestión y volumen local (fascia) con muchas series y descanso corto.',comp:'7 series del mismo ejercicio, 10-12 reps, con 30-45 s de descanso entre cada una.'}
+};
+// Construye las 2 filas de descripción integradas al final de la tabla del sistema
+function _tecDescRows(tipo){
+  const info = tipo && _TEC_INFO[tipo]; if(!info) return '';
+  const cell = 'background:#eef4ff;text-align:left;padding:9px 12px;border-top:1px solid #dbe8fc;line-height:1.5;';
+  const k = 'display:block;font-size:9px;font-weight:900;color:#2f5bb0;letter-spacing:.6px;text-transform:uppercase;margin-bottom:3px;';
+  const v = 'font-size:11.5px;font-weight:600;color:#33507f;';
+  function r(t,txt){ return '<tr><td colspan="9" style="'+cell+'"><span style="'+k+'">'+t+'</span><span style="'+v+'">'+txt+'</span></td></tr>'; }
+  return r('¿Para qué sirve?', info.para) + r('¿Cómo se compone?', info.comp);
+}
 const _TEC_PAR_LBL = { reduccion:'Reducción',drops:'Drops',reps:'Reps',rir:'RIR',micro:'Pausa',mini:'Mini-series',cant:'Parciales',zona:'Zona',despues:'Tras completas',carga:'Carga',seg:'Segundos',pos:'Posición',mom:'Momento',ejB:'Ejercicio B',stipo:'Tipo',pausaEntre:'Pausa entre',pausaFin:'Pausa final',rondas:'Rondas',vA:'Variante A',vB:'Variante B',detalle:'Detalle',objetivo:'Objetivo',valor:'Valor',banda:'Banda',cadenas:'Cadenas',variante:'Variante',descanso:'Descanso',contr:'Contracción',pausa:'Pausa elong.' };
 // Normaliza el esquema viejo (familia/tecnica) al nuevo (tipo/params)
 function _tecNorm(t){
@@ -2136,9 +2165,11 @@ function _ejCard(ej, uid) {
   // Sección de dropsets
   const _sisTipo = (ej.tecnica && ej.tecnica.tipo) ? ej.tecnica.tipo : ((ej.tecnica && (ej.tecnica.tecnica||ej.tecnica.familia)) ? _tecNorm(ej.tecnica).tipo : '');
   const _sisLbl = (_sisTipo && _TEC_APP[_sisTipo]) ? ('⚙ '+_TEC_APP[_sisTipo].ic+' '+_TEC_APP[_sisTipo].lbl.toUpperCase()) : _t('series_drop');
+  let _dropTbl = sDrop ? _seriesTable(sDrop, 'S', _sp+'_drop', uid, nApro + nEfec) : '';
+  if(_dropTbl && _sisTipo){ const _dr=_tecDescRows(_sisTipo); if(_dr){ const _i=_dropTbl.lastIndexOf('</tbody>'); if(_i>-1) _dropTbl=_dropTbl.slice(0,_i)+_dr+_dropTbl.slice(_i); } }
   const dropSection = sDrop ? (
     '<div style="font-size:9px;font-weight:800;color:'+(_sisTipo?'#7fb0e6':'#C9A84C')+';letter-spacing:1px;margin:12px 0 4px;">'+_sisLbl+'</div>'+
-    _seriesTable(sDrop, 'S', _sp+'_drop', uid, nApro + nEfec)
+    _dropTbl
   ) : '';
 
   // Badge de progresión (basado en historial guardado o ctrlPeso+2.5)
