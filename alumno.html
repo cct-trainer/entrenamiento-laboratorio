@@ -580,37 +580,25 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
   </div>
 
   <nav class="bnav">
-    <button class="nb on" id="nb-rutina" onclick="goTab('rutina')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7h8M8 12h8M8 17h5"/></svg>
-      <span data-i18n="nav_rutina">RUTINA</span>
-    </button>
-    <button class="nb" id="nb-running" onclick="goTab('running')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="m7.5 13.5 2.5-3 3 2.5 2-2.5"/><path d="M17 17H7l-2-8h14l-2 8z"/></svg>
-      <span data-i18n="nav_running">RUNNING</span>
-    </button>
     <button class="nb" id="nb-agenda" onclick="goTab('agenda')" style="display:none;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
       <span>SEMANA</span>
     </button>
-    <button class="nb" id="nb-cargas" onclick="goTab('cargas')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-      <span data-i18n="nav_complementos">COMPLEMENTOS</span>
+    <button class="nb on" id="nb-rutina" onclick="goTab('rutina')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7h8M8 12h8M8 17h5"/></svg>
+      <span data-i18n="nav_rutina">R. FUERZA</span>
     </button>
-    <button class="nb" id="nb-stats" onclick="goTab('stats')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-      <span data-i18n="nav_stats">STATS</span>
+    <button class="nb" id="nb-running" onclick="goTab('running')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="m7.5 13.5 2.5-3 3 2.5 2-2.5"/><path d="M17 17H7l-2-8h14l-2 8z"/></svg>
+      <span data-i18n="nav_running">R. RUNNING</span>
     </button>
     <button class="nb" id="nb-medidas" onclick="goTab('medidas')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4l-14 14l-4 -4z"/><path d="M16 7l-1.5 -1.5"/><path d="M13 10l-1.5 -1.5"/><path d="M10 13l-1.5 -1.5"/><path d="M7 16l-1.5 -1.5"/></svg>
-      <span data-i18n="nav_medidas">MEDIDAS</span>
+      <span data-i18n="nav_medidas">DATOS</span>
     </button>
-    <button class="nb" id="nb-coach" onclick="goTab('coach')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-      <span data-i18n="nav_coach">COACH</span>
-    </button>
-    <button class="nb" id="nb-charlas" onclick="goTab('charlas')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4M8 22h8"/></svg>
-      <span data-i18n="nav_charlas">CHARLAS</span>
+    <button class="nb" id="nb-cargas" onclick="goTab('cargas')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <span data-i18n="nav_complementos">COMPLEMENTOS</span>
     </button>
   </nav>
 </div>
@@ -672,7 +660,7 @@ const _I18N = {
     running:'RUNNING', running_sub:'Carrera · resistencia · ritmo',
     entrar:'Entrar',
     coach_de:'Coach:', plan_activo:'Plan activo',
-    nav_rutina:'RUTINA', nav_running:'RUNNING', nav_complementos:'COMPLEMENTOS',
+    nav_rutina:'R. FUERZA', nav_running:'R. RUNNING', nav_complementos:'COMPLEMENTOS',
     nav_stats:'STATS', nav_medidas:'DATOS', nav_coach:'COACH', nav_charlas:'CHARLAS',
     charlas:'CHARLAS', charlas_sub:'Salud, movimiento y evidencia — en mis palabras',
     sin_charlas:'Todavía no hay charlas publicadas.',
@@ -714,7 +702,7 @@ const _I18N = {
     running:'RUNNING', running_sub:'Running · endurance · pace',
     entrar:'Enter',
     coach_de:'Coach:', plan_activo:'Active plan',
-    nav_rutina:'PROGRAM', nav_running:'RUNNING', nav_complementos:'EXTRAS',
+    nav_rutina:'R. STRENGTH', nav_running:'R. RUNNING', nav_complementos:'EXTRAS',
     nav_stats:'STATS', nav_medidas:'DATA', nav_coach:'COACH', nav_charlas:'TALKS',
     charlas:'TALKS', charlas_sub:'Health, movement and evidence — in my own words',
     sin_charlas:'No talks published yet.',
@@ -895,8 +883,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260818134133 por un timestamp en cada deploy
-const _APP_VERSION = '20260818134133';
+// deploy.bat reemplaza 20260818135751 por un timestamp en cada deploy
+const _APP_VERSION = '20260818135751';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1229,10 +1217,10 @@ function _configNavModo() {
   const f = _tieneFuerza(), r = _tieneRunning();
   const nbRut = document.getElementById('nb-rutina');
   const nbRun = document.getElementById('nb-running');
-  if (nbRut) nbRut.style.display = (_modo === 'fuerza')  ? '' : 'none';
-  if (nbRun) nbRun.style.display = (_modo === 'running') ? '' : 'none';
+  if (nbRut) nbRut.style.display = f ? '' : 'none';   // R. FUERZA si tiene fuerza
+  if (nbRun) nbRun.style.display = r ? '' : 'none';   // R. RUNNING si tiene running
   const nbAg = document.getElementById('nb-agenda');
-  if (nbAg) nbAg.style.display = (f && r) ? '' : 'none';   // solo si tiene ambos
+  if (nbAg) nbAg.style.display = (f && r) ? '' : 'none';   // SEMANA solo si tiene ambos
   const bm = document.getElementById('btn-modo');
   if (bm) bm.style.display = (f && r) ? 'inline-flex' : 'none';
 }
@@ -1245,6 +1233,8 @@ function goTab(t) {
     if (tab) tab.classList.toggle('on',x===t);
     if (btn) btn.classList.toggle('on',x===t);
   });
+  if (t==='rutina'){ _modo='fuerza'; if(typeof renderRutina==='function' && _plan) renderRutina(); }
+  if (t==='running') _modo='running';
   if (t==='agenda')  renderAgenda();
   if (t==='cargas')  renderComplementos();
   if (t==='medidas') renderMedidas();
