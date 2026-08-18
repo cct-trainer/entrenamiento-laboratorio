@@ -3208,6 +3208,7 @@ select.toolbox-input option:disabled { color: #888; }
     <button onclick="abrirActualizaciones()" class="pln-btn pln-btn-outline" title="Actualizaciones de plan que enviaron tus alumnos" style="position:relative;">🔄 Actualizaciones<span id="actual-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="abrirSuscripciones()" class="pln-btn pln-btn-outline" title="Planes, pagos y vencimientos" style="position:relative;">Suscripciones<span id="venc-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="abrirMetricas()" class="pln-btn pln-btn-outline" title="Métricas del piloto de adquisición">📊 Métricas</button>
+    <button onclick="_abrirBandeja()" class="pln-btn pln-btn-outline" title="Bandeja de actividad de tus alumnos" style="position:relative;">📥 Actividad<span id="bandeja-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="_abrirBellModif()" class="pln-btn pln-btn-outline" title="Modificaciones de alumnos sin revisar" style="position:relative;">🔔<span id="bell-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="recuperarDesdePortales()" class="pln-btn pln-btn-outline" title="Recuperar tus alumnos leyendo sus documentos en la nube">↻ Recuperar</button>
     <button onclick="exportarBackupCompleto()" class="pln-btn pln-btn-guardar" title="Descargar backup completo de toda la base de datos">Backup</button>
@@ -11901,6 +11902,11 @@ async function _initBellModif(){
     const nuevos = list.filter(x=>x.nuevo).length;
     const badge = document.getElementById('bell-badge');
     if(badge){ if(nuevos>0){ badge.textContent = nuevos; badge.style.display=''; } else badge.style.display='none'; }
+    // Badge de la Bandeja: sesiones terminadas sin revisar
+    let sinRev=0;
+    snap.forEach(doc=>{ const id=doc.id; if(id.indexOf('zz_')===0) return; const d=doc.data()||{}; const comp=Array.isArray(d.sesionesCompletadas)?d.sesionesCompletadas:[]; const revis=Array.isArray(d.sesionesRevisadas)?d.sesionesRevisadas:[]; comp.forEach(c=>{ if(c && !_bandejaRevisado(revis,c)) sinRev++; }); });
+    const bBadge = document.getElementById('bandeja-badge');
+    if(bBadge){ if(sinRev>0){ bBadge.textContent = sinRev; bBadge.style.display=''; } else bBadge.style.display='none'; }
   }catch(e){}
 }
 async function _abrirBellModif(){
@@ -11922,6 +11928,77 @@ function _bellIr(id){
   openPerfilAlumno(id);
 }
 setTimeout(function(){ try{ _initBellModif(); }catch(e){} }, 3500);
+
+// ══════════ BANDEJA DE ACTIVIDAD ══════════
+// Junta en un solo lugar todo lo que hicieron los alumnos: sesiones terminadas,
+// lo que no hicieron, cambios de ejercicio y la devolución final.
+function _bandejaRevisado(revis, c){
+  return (revis||[]).some(r=> r && String(r.sem)===String(c.sem) && String(r.dia)===String(c.dia) && String(r.mod)===String(c.mod) && String(r.at||'')>=String(c.at||''));
+}
+function _bandejaItemsDeDoc(id, d){
+  const nombre=(d.perfil&&d.perfil.nombre)||'Alumno';
+  const comp=Array.isArray(d.sesionesCompletadas)?d.sesionesCompletadas:[];
+  const revis=Array.isArray(d.sesionesRevisadas)?d.sesionesRevisadas:[];
+  const subs=Array.isArray(d.sustituciones)?d.sustituciones:[];
+  const edits=d.pesoEdits||{};
+  const out=[];
+  comp.forEach(c=>{
+    if(!c) return;
+    const pref=c.sem+'_'+c.dia+'_';
+    let nNo=0;
+    Object.keys(edits).forEach(k=>{ if(k.indexOf(pref)===0 && edits[k] && edits[k].omitida==='1' && !/_[di]$/.test(k)) nNo++; });
+    const nSub=subs.filter(s=>String(s.sem)===String(c.sem)&&String(s.dia)===String(c.dia)).length;
+    out.push({ id, nombre, sem:c.sem, dia:c.dia, mod:c.mod, at:c.at||c.fecha||'', fecha:c.fecha||'', sesion:c.nombre||'', comentario:c.comentario||'', nNo, nSub, revisado:_bandejaRevisado(revis,c) });
+  });
+  return out;
+}
+let _bandejaItems=[];
+async function _abrirBandeja(){
+  let ov=document.getElementById('bandeja-overlay');
+  if(!ov){ ov=document.createElement('div'); ov.id='bandeja-overlay'; ov.className='stc-overlay'; ov.onclick=function(e){ if(e.target===ov) ov.style.display='none'; }; document.body.appendChild(ov); }
+  ov.style.display='flex';
+  ov.innerHTML='<div class="stc-modal" onclick="event.stopPropagation()"><div class="stc-head"><div class="stc-title">📥 Bandeja de actividad<small>Lo que hicieron tus alumnos</small></div><button class="stc-x" onclick="document.getElementById(\'bandeja-overlay\').style.display=\'none\'">×</button></div><div class="stc-body"><div class="stc-empty">Cargando…</div></div></div>';
+  if(!window._db) return;
+  try{
+    const snap=await window._db.collection('alumnos').get();
+    let items=[];
+    snap.forEach(doc=>{ const id=doc.id; if(id.indexOf('zz_')===0) return; items=items.concat(_bandejaItemsDeDoc(id, doc.data()||{})); });
+    items.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+    _bandejaItems=items.slice(0,60);
+    _renderBandeja();
+  }catch(e){ console.warn('bandeja:', e); }
+}
+function _renderBandeja(){
+  const ov=document.getElementById('bandeja-overlay'); if(!ov) return;
+  const body=ov.querySelector('.stc-body'); if(!body) return;
+  if(!_bandejaItems.length){ body.innerHTML='<div class="stc-empty">Todavía no hay actividad de alumnos 🎉</div>'; return; }
+  const fmt=at=>{ if(!at) return ''; const dt=new Date(at); return isNaN(dt)?String(at):dt.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}); };
+  const chip=(txt,bg,col)=>'<span style="font-size:10px;font-weight:800;background:'+bg+';color:'+col+';border-radius:20px;padding:2px 8px;white-space:nowrap;">'+txt+'</span>';
+  const rows=_bandejaItems.map((x,i)=>{
+    const chips=[];
+    chips.push(chip('✓ terminó','#e6f4ea','#1f8a4c'));
+    if(x.nNo) chips.push(chip('✗ '+x.nNo+' sin hacer','#fdeaea','#c23b3b'));
+    if(x.nSub) chips.push(chip('🔄 '+x.nSub+' cambió','#eef2fb','#3a5bb0'));
+    if(x.comentario) chips.push(chip('💬 devolución','#fdf6e3','#8a6d1f'));
+    const dot=x.revisado?'':'<span style="position:absolute;left:8px;top:14px;width:9px;height:9px;border-radius:50%;background:#ef4444;"></span>';
+    const prev=x.comentario?('<div style="font-size:11.5px;color:#c8cfdd;font-style:italic;margin-top:6px;line-height:1.45;">“'+String(x.comentario).slice(0,140).replace(/</g,'&lt;')+(x.comentario.length>140?'…':'')+'”</div>'):'';
+    return '<div class="stc-hrow" style="cursor:pointer;position:relative;padding-left:22px;align-items:flex-start;flex-direction:column;'+(x.revisado?'opacity:.62;':'')+'" onclick="_bandejaIr('+i+')">'+dot+
+      '<div style="display:flex;justify-content:space-between;width:100%;gap:8px;"><div style="text-align:left;"><div style="font-size:13px;color:#eaf0fb;font-weight:800;">'+x.nombre+'</div><div style="font-size:10.5px;color:#6b7c9e;margin-top:1px;">'+(x.sesion||'Sesión')+' · S'+((+x.sem)+1)+'</div></div><div style="font-size:10.5px;color:#6b7c9e;white-space:nowrap;">'+fmt(x.at)+'</div></div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;">'+chips.join('')+'</div>'+prev+
+    '</div>';
+  }).join('');
+  body.innerHTML='<div class="stc-hist">'+rows+'</div><div class="stc-note">Tocá una fila para abrir el perfil del alumno y revisar la sesión. Al abrirla se marca como vista y el alumno ve que ya la revisaste.</div>';
+}
+async function _bandejaIr(i){
+  const x=_bandejaItems[i]; if(!x) return;
+  try{
+    if(window._db){ await window._db.collection('alumnos').doc(x.id).set({ sesionesRevisadas: firebase.firestore.FieldValue.arrayUnion({ sem:x.sem, dia:x.dia, mod:x.mod, at:new Date().toISOString() }) }, { merge:true }); }
+  }catch(e){ console.warn('bandeja revisar:', e); }
+  x.revisado=true;
+  const ov=document.getElementById('bandeja-overlay'); if(ov) ov.style.display='none';
+  try{ _initBellModif(); }catch(e){}
+  openPerfilAlumno(x.id);
+}
 
 function renderPlanDiaEditor(diaIdx) {
   bloqueCounter=0; ejercicioCounter=0;

@@ -848,8 +848,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260818104639 por un timestamp en cada deploy
-const _APP_VERSION = '20260818104639';
+// deploy.bat reemplaza 20260818105903 por un timestamp en cada deploy
+const _APP_VERSION = '20260818105903';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2941,6 +2941,11 @@ function renderSesion() {
         +'<button onclick="_reabrirEntrenamiento()" title="'+(_LANG==='en'?'Edit / reopen':'Editar / reabrir')+'" style="width:56px;border:1px solid color-mix(in srgb,var(--gold) 50%,transparent);background:color-mix(in srgb,var(--gold) 12%,transparent);color:var(--gold);border-radius:14px;font-size:19px;cursor:pointer;">✏️</button>'
       +'</div>'
     : '<button onclick="_terminarEntrenamiento()" style="margin-top:18px;width:100%;padding:16px;border:none;border-radius:14px;background:var(--gold);color:var(--letra-text);font-size:15px;font-weight:800;letter-spacing:.3px;cursor:pointer;">✓ '+_t('terminar')+'</button>';
+  // Círculo cerrado: el coach ya revisó esta sesión
+  const _sesRev = _yaComp && (_data.sesionesRevisadas||[]).some(r=>r && String(r.sem)===String(_semIdx) && String(r.dia)===String(_diaIdx) && String(r.mod)===String(_diaModTab) && String(r.at||'')>=String((_compRec&&_compRec.at)||''));
+  const _revBadge = _sesRev
+    ? '<div style="margin-top:10px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;font-weight:800;color:#7fb0e6;background:rgba(96,165,224,.10);border:1px solid rgba(96,165,224,.28);border-radius:12px;padding:10px;">👁️ '+(_LANG==='en'?'Your coach reviewed this workout':'Tu coach vio tu entrenamiento')+'</div>'
+    : '';
 
   ctn.innerHTML= back + tabs +
     // Foto limpia arriba (con un pequeño degradado final hacia el rectángulo)
@@ -2950,11 +2955,10 @@ function renderSesion() {
     // Rectángulo de fondo (gris topo / tiza) con todo el contenido de la sesión
     '<div style="margin:0 -16px;padding:16px 16px 24px;background:var(--ses-panel);">'+
       _sesDetalleHTML(ses) +
-      _bloquesHTML + _devBox + _finBtn +
-      // Feedback + WhatsApp: fijos abajo, debajo de "Terminé mi entrenamiento" (no flotantes)
-      '<div style="display:flex;gap:8px;margin-top:12px;">'+
-        '<button onclick="_abrirFeedback()" style="flex:1;background:linear-gradient(135deg,#C9A84C,#9A7A28);color:#fff;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">📋 Feedback</button>'+
-        '<button onclick="_enviarWA()" style="flex:1;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">📲 WhatsApp</button>'+
+      _bloquesHTML + _devBox + _finBtn + _revBadge +
+      // Check-in estructurado (energía/RPE/sueño/dolor) — alimenta el dashboard del coach
+      '<div style="margin-top:12px;">'+
+        '<button onclick="_abrirFeedback()" style="width:100%;background:linear-gradient(135deg,#C9A84C,#9A7A28);color:#fff;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">📋 '+(_LANG==='en'?'Session check-in':'Check-in de la sesión')+'</button>'+
       '</div>'+
     '</div>';
   _updProgreso();
@@ -4427,8 +4431,7 @@ function _buildFeedbackHTML(sesNombre) {
   h += _fbSecOpts('molestia');
   h += '<div class="fb-section" style="margin-top:-8px;"><input class="fb-input" placeholder="¿En qué ejercicio? (opcional)" oninput="_fbVal(\'molestiaDonde\',this.value)"></div>';
   h += _fbSecOpts('cierre');
-  h += '<div class="fb-section"><div class="fb-ttl">COMENTARIO (opcional)</div>'+
-    '<textarea class="fb-input" rows="2" placeholder="Algo puntual sobre la sesión..." oninput="_fbVal(\'obs\',this.value)" style="resize:none;"></textarea></div>';
+  h += '<div style="font-size:11px;color:var(--muted);line-height:1.5;margin:2px 2px 10px;">'+(_LANG==='en'?'For a written note to your coach, use the "Final feedback" box at the end of the session.':'Para dejarle un mensaje escrito a tu coach, usá la caja de "Devolución final" al terminar la sesión.')+'</div>';
   h += '<button onclick="_guardarFeedback()" style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-d));color:#0d0d1a;border:none;border-radius:14px;padding:16px;font-size:15px;font-weight:900;cursor:pointer;margin-top:4px;">💾 Enviar feedback</button>'+
        '<button onclick="_cerrarFeedback()" style="width:100%;background:transparent;border:1.5px solid rgba(255,255,255,.1);color:var(--muted);border-radius:14px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;">Cancelar</button>';
   return h;
