@@ -848,8 +848,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260817222319 por un timestamp en cada deploy
-const _APP_VERSION = '20260817222319';
+// deploy.bat reemplaza 20260818071149 por un timestamp en cada deploy
+const _APP_VERSION = '20260818071149';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1924,8 +1924,26 @@ function _tecDescRows(tipo){
   const k = 'display:block;font-size:9px;font-weight:900;color:#2f5bb0;letter-spacing:.6px;text-transform:uppercase;margin-bottom:3px;';
   const v = 'font-size:11.5px;font-weight:600;color:#33507f;';
   function r(t,txt){ return '<tr><td colspan="9" style="'+cell+'"><span style="'+k+'">'+t+'</span><span style="'+v+'">'+txt+'</span></td></tr>'; }
-  return r('¿Para qué sirve?', info.para) + r('¿Cómo se compone?', info.comp);
+  return r('¿Cómo se compone?', info.comp);
 }
+// Ventana con la explicación "para qué sirve" del método
+function _tecInfo(tipo){
+  const d=_TEC_APP[tipo]; const info=_TEC_INFO[tipo]; if(!d||!info) return;
+  let ov=document.getElementById('tecinfo-overlay');
+  if(!ov){ ov=document.createElement('div'); ov.id='tecinfo-overlay'; ov.className='cmb-overlay'; ov.onclick=function(e){ if(e.target===ov) _cerrarTecInfo(); }; document.body.appendChild(ov); }
+  ov.innerHTML=
+    '<div class="cmb-modal" style="max-width:420px;">'+
+      '<div class="cmb-top"><div class="cmb-title">'+d.ic+' '+d.lbl+'<small>Técnica de intensidad</small></div><button class="cmb-x" onclick="_cerrarTecInfo()">×</button></div>'+
+      '<div class="cmb-body" style="padding:16px 18px 20px;">'+
+        '<div style="font-size:10px;font-weight:900;color:#2f5bb0;letter-spacing:.6px;text-transform:uppercase;margin-bottom:6px;">¿Para qué sirve?</div>'+
+        '<div style="font-size:14px;font-weight:600;color:var(--text);line-height:1.6;">'+info.para+'</div>'+
+        '<div style="font-size:10px;font-weight:900;color:#2f5bb0;letter-spacing:.6px;text-transform:uppercase;margin:16px 0 6px;">¿Cómo se compone?</div>'+
+        '<div style="font-size:14px;font-weight:600;color:var(--text);line-height:1.6;">'+info.comp+'</div>'+
+      '</div>'+
+    '</div>';
+  ov.style.display='flex'; document.body.style.overflow='hidden';
+}
+function _cerrarTecInfo(){ const ov=document.getElementById('tecinfo-overlay'); if(ov) ov.style.display='none'; document.body.style.overflow=''; }
 const _TEC_PAR_LBL = { reduccion:'Reducción',drops:'Drops',reps:'Reps',rir:'RIR',micro:'Pausa',mini:'Mini-series',cant:'Parciales',zona:'Zona',despues:'Tras completas',carga:'Carga',seg:'Segundos',pos:'Posición',mom:'Momento',ejB:'Ejercicio B',stipo:'Tipo',pausaEntre:'Pausa entre',pausaFin:'Pausa final',rondas:'Rondas',vA:'Variante A',vB:'Variante B',detalle:'Detalle',objetivo:'Objetivo',valor:'Valor',banda:'Banda',cadenas:'Cadenas',variante:'Variante',descanso:'Descanso',contr:'Contracción',pausa:'Pausa elong.' };
 // Normaliza el esquema viejo (familia/tecnica) al nuevo (tipo/params)
 function _tecNorm(t){
@@ -2167,8 +2185,9 @@ function _ejCard(ej, uid) {
   const _sisLbl = (_sisTipo && _TEC_APP[_sisTipo]) ? ('⚙ '+_TEC_APP[_sisTipo].ic+' '+_TEC_APP[_sisTipo].lbl.toUpperCase()) : _t('series_drop');
   let _dropTbl = sDrop ? _seriesTable(sDrop, 'S', _sp+'_drop', uid, nApro + nEfec) : '';
   if(_dropTbl && _sisTipo){ const _dr=_tecDescRows(_sisTipo); if(_dr){ const _i=_dropTbl.lastIndexOf('</tbody>'); if(_i>-1) _dropTbl=_dropTbl.slice(0,_i)+_dr+_dropTbl.slice(_i); } }
+  const _sisInfoIco = _sisTipo ? '<span onclick="_tecInfo(\''+_sisTipo+'\')" title="¿Para qué sirve?" style="cursor:pointer;margin-left:7px;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:rgba(96,165,224,.18);border:1px solid rgba(96,165,224,.5);color:#8fb7e6;font-size:11px;font-weight:900;font-style:italic;vertical-align:middle;">i</span>' : '';
   const dropSection = sDrop ? (
-    '<div style="font-size:9px;font-weight:800;color:'+(_sisTipo?'#7fb0e6':'#C9A84C')+';letter-spacing:1px;margin:12px 0 4px;">'+_sisLbl+'</div>'+
+    '<div style="font-size:9px;font-weight:800;color:'+(_sisTipo?'#7fb0e6':'#C9A84C')+';letter-spacing:1px;margin:12px 0 4px;">'+_sisLbl+_sisInfoIco+'</div>'+
     _dropTbl
   ) : '';
 
