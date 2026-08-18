@@ -883,8 +883,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260818150704 por un timestamp en cada deploy
-const _APP_VERSION = '20260818150704';
+// deploy.bat reemplaza 20260818151252 por un timestamp en cada deploy
+const _APP_VERSION = '20260818151252';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3125,11 +3125,11 @@ function _renderDiaRunning_LEGACY() {
     // Main content según tipo
     let mainHTML = '';
     if (b.tipo === 'pasadas' && b.pasadas?.length) {
-      const unidad = b.unidad||'m';
+      const unidad = b.unidad||'m'; const _uL = unidad==='tiempo'?'':' '+unidad;
       const rows = b.pasadas.map((p,pi) =>
         '<tr>'+
           '<td style="background:rgba(245,158,11,.1);color:#f59e0b;font-size:10px;font-weight:800;text-align:center;padding:7px 8px;border:1px solid rgba(255,255,255,.06);">'+(pi+1)+'</td>'+
-          '<td style="text-align:center;padding:7px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:#fff;">'+(p.distancia||'—')+' '+unidad+'</td>'+
+          '<td style="text-align:center;padding:7px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:#fff;">'+(p.distancia||'—')+_uL+'</td>'+
           '<td style="text-align:center;padding:7px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:#C9A84C;">'+(p.ritmo||'—')+'/km</td>'+
           '<td style="text-align:center;padding:7px 8px;border:1px solid rgba(255,255,255,.06);font-size:11px;color:#888;">'+(p.pausa||'—')+'</td>'+
         '</tr>'
@@ -3366,11 +3366,11 @@ function _runBloqueHTML(b){
     '</div>') : '';
   let mainHTML = '';
   if (b.tipo==='pasadas' && b.pasadas?.length){
-    const unidad=b.unidad||'m';
+    const unidad=b.unidad||'m'; const _uL = unidad==='tiempo'?'':' '+unidad;
     const rows=b.pasadas.map((p,pi)=>
       '<tr>'+
         '<td style="background:color-mix(in srgb,var(--gold) 12%,transparent);color:var(--gold);font-size:10px;font-weight:800;text-align:center;padding:7px 8px;border:1px solid var(--border);">'+(pi+1)+'</td>'+
-        '<td style="text-align:center;padding:7px 8px;border:1px solid var(--border);font-size:13px;font-weight:700;color:var(--text);">'+(p.distancia||'—')+' '+unidad+'</td>'+
+        '<td style="text-align:center;padding:7px 8px;border:1px solid var(--border);font-size:13px;font-weight:700;color:var(--text);">'+(p.distancia||'—')+_uL+'</td>'+
         '<td style="text-align:center;padding:7px 8px;border:1px solid var(--border);font-size:13px;font-weight:700;color:var(--gold);">'+(p.ritmo||'—')+'/km</td>'+
         '<td style="text-align:center;padding:7px 8px;border:1px solid var(--border);font-size:11px;color:var(--muted);">'+(p.pausa||'—')+'</td>'+
       '</tr>').join('');

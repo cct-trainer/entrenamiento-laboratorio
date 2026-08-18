@@ -9746,11 +9746,11 @@ function buildBloqueEditorHTML(diaIdx, bloqueIdx, b) {
 // ── PASADAS / INTERVALOS ──────────────────────────────────────────────────────
 function buildPasadasHTML(diaIdx, bi, b, tipo) {
   const pasadas = b.pasadas || [];
-  const unidad = b.unidad || 'm'; // 'm' o 'km'
+  const unidad = b.unidad || 'm'; // 'm', 'km' o 'tiempo'
 
   // ── helper: placeholder y label según unidad ──
-  const distPlaceholder = unidad==='km' ? '1' : '1000';
-  const distLabel = unidad==='km' ? 'km' : 'm';
+  const distPlaceholder = unidad==='km' ? '1' : (unidad==='tiempo' ? '30 seg' : '1000');
+  const distLabel = unidad==='km' ? 'km' : (unidad==='tiempo' ? '' : 'm');
 
   const rows = pasadas.map((p,pi) => {
     const tiempoTotal = calcularTiempoTotal(p.distancia, p.ritmo, unidad==='km');
@@ -10165,7 +10165,8 @@ function eliminarBloqueRunning(diaIdx, bi) {
 
 // ── ASISTENTE DE PLANILLA (running): dictado → planilla ───────────────────────
 function _secRunParse(texto){
-  const lineas = texto.split(/\n|·|;|\s\+\s/).map(s=>s.trim()).filter(Boolean);
+  // Un bloque por línea. NO cortar por "·" (se usa como separador interno de ritmo/pausa).
+  const lineas = texto.split(/\n/).map(s=>s.trim()).filter(Boolean);
   const arr = lineas.length ? lineas : [texto];
   const bloques = [];
   arr.forEach(l=>{ const b=_secRunParseLinea(l); if(b) bloques.push(b); });
@@ -10173,16 +10174,23 @@ function _secRunParse(texto){
 }
 function _secRunParseLinea(raw){
   const l = raw.toLowerCase();
-  // Pasadas / series / intervalos: patrón NxD
-  let m = l.match(/(\d+)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(km|k|m)?/);
+  // Saltar encabezados en MAYÚSCULAS sin números (ej: "MOVILIDAD Y CALENTAMIENTO", "CARDIO")
+  const soloLetras = raw.replace(/[^a-záéíóúñ]/gi,'');
+  if(soloLetras && soloLetras===soloLetras.toUpperCase() && !/\d/.test(raw)) return null;
+  // Pasadas / series / intervalos: patrón NxD (D puede ser DISTANCIA o TIEMPO)
+  let m = l.match(/(\d+)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(km|min|seg|k|m|s|'|")?/);
   if(m || /series|pasada|interval|repetici/.test(l)){
     if(!m) m = l.match(/(\d+)\s*[x×]\s*(\d+(?:[.,]\d+)?)/);
     const reps = m ? parseInt(m[1]) : 6;
-    const dist = m ? parseFloat(String(m[2]).replace(',','.')) : 400;
-    const unidad = (m && /km|k/.test(m[3]||'')) ? 'km' : (dist<50 ? 'km' : 'm');
-    const ritmo = (l.match(/(?:a|ritmo)\s*(\d{1,2}:\d{2})/)||[])[1] || (l.match(/(\d{1,2}:\d{2})/)||[])[1] || '';
+    const val  = m ? parseFloat(String(m[2]).replace(',','.')) : 400;
+    const u = (m && m[3]) ? m[3] : '';
+    const esTiempo = /^(min|'|seg|s|")$/.test(u);   // "1x12 min", "3x20 seg" → tiempo, NO km
+    const ritmo = (l.match(/(?:a|ritmo|hasta|@)\s*(\d{1,2}:\d{2})/)||[])[1] || (l.match(/(\d{1,2}:\d{2})/)||[])[1] || '';
     const pausa = (l.match(/(?:rec|recup|pausa|descanso)\s*([\d:]+\s*(?:min|m|s|seg|'|")?)/)||[])[1] || '';
-    const pasadas = Array.from({length:reps}, ()=>({ distancia:String(dist), ritmo:ritmo, pausa:pausa, obs:'' }));
+    let unidad, distTxt;
+    if(esTiempo){ unidad='tiempo'; distTxt = String(val)+' '+((/min|'/.test(u))?'min':'seg'); }
+    else { unidad = /km|k/.test(u) ? 'km' : (val<50 ? 'km' : 'm'); distTxt = String(val); }
+    const pasadas = Array.from({length:reps}, ()=>({ distancia:distTxt, ritmo:ritmo, pausa:pausa, obs:'' }));
     return { tipo:'pasadas', label:'Pasadas / Intervalos', unidad:unidad, pasadas:pasadas, calent:{}, vuelta:{} };
   }
   // Continua / fondo / fartlek / tempo / progresivos
