@@ -4062,6 +4062,10 @@ select.toolbox-input option:disabled { color: #888; }
           <div style="padding:22px 26px 12px;border-bottom:1px solid #eee;">
             <div style="font-size:16px;font-weight:900;color:#1a1a2e;">📋 CATTA_VR · Pasar sesión a planilla</div>
             <div style="font-size:12px;color:#888;margin-top:4px;">Transfiere tu sesión tal cual a la planilla del alumno. No la modifica ni la optimiza.</div>
+            <div style="display:flex;gap:8px;margin-top:14px;">
+              <button id="trasp-tab-fuerza" onclick="_traspSetTipo('fuerza')" style="flex:1;padding:10px;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;background:#7c3aed;color:#fff;font-family:inherit;">💪 Fuerza</button>
+              <button id="trasp-tab-running" onclick="_traspSetTipo('running')" style="flex:1;padding:10px;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;background:#f0f0f0;color:#666;font-family:inherit;">🏃 Running</button>
+            </div>
           </div>
           <div style="padding:16px 26px;overflow-y:auto;">
             <div style="font-size:10px;font-weight:900;color:#7c3aed;letter-spacing:.6px;margin-bottom:10px;">1 · ¿DÓNDE VA LA SESIÓN?</div>
@@ -4072,7 +4076,7 @@ select.toolbox-input option:disabled { color: #888; }
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
               <div><label style="font-size:10px;font-weight:800;color:#666;display:block;margin-bottom:4px;">FECHA</label>
                 <input id="trasp-fecha" type="date" onchange="_traspCheck()" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;"></div>
-              <div><label style="font-size:10px;font-weight:800;color:#666;display:block;margin-bottom:4px;">LUGAR</label>
+              <div id="trasp-lugar-wrap"><label style="font-size:10px;font-weight:800;color:#666;display:block;margin-bottom:4px;">LUGAR</label>
                 <select id="trasp-lugar" onchange="_traspCheck()" style="width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;"><option value="">— Elegí —</option><option value="Gym">Gym</option><option value="Casa">Casa</option></select></div>
             </div>
             <div id="trasp-gate" style="font-size:12px;color:#a06b00;background:#fff8e6;border:1px solid #f4e0a0;border-radius:9px;padding:9px 12px;margin-top:12px;">🔒 Elegí alumno, semana, fecha y lugar para escribir la sesión.</div>
@@ -9708,13 +9712,6 @@ function renderDiaEditor(diaIdx) {
         </div>
       </div>
       <div class="run-sesion-body">
-        <!-- ASISTENTE DE PLANILLA (dictar sesión → cargar) -->
-        <div style="background:#fff7ef;border:1px solid #ffd9b3;border-radius:10px;padding:12px;margin-bottom:14px;">
-          <div style="font-size:11px;font-weight:800;color:#e65100;letter-spacing:.5px;margin-bottom:8px;">📋 ASISTENTE DE PLANILLA — DICTÁ LA SESIÓN</div>
-          <textarea id="run-sec-input" rows="4" placeholder="Ej:&#10;series 6x400 rec 90s a 4:00&#10;rodaje 40 min zona 2&#10;fondo 14k a 5:30&#10;fartlek 30 min" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #ffd9b3;border-radius:8px;color:#333;font-size:12px;padding:9px;font-family:inherit;resize:vertical;"></textarea>
-          <button onclick="runSecInterpretar(${diaIdx})" style="margin-top:7px;width:100%;background:#e65100;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:800;padding:9px;cursor:pointer;font-family:inherit;">🤖 Interpretar y cargar</button>
-          <div id="run-sec-preview" style="display:none;margin-top:8px;"></div>
-        </div>
         ${bloquesHTML}
         <!-- Selector tipo de bloque -->
         <div style="margin-top:12px;">
@@ -10210,30 +10207,6 @@ function _secRunResumen(b){
   if(b.tipo==='pasadas'){ const p=b.pasadas||[]; const f=p[0]||{}; return p.length+' × '+(f.distancia||'?')+(b.unidad||'m')+(f.ritmo?' a '+f.ritmo:'')+(f.pausa?' · rec '+f.pausa:''); }
   if(b.tipo==='descanso') return 'Descanso activo';
   return [b.distancia?b.distancia+' km':'', b.duracion?b.duracion+' min':'', b.ritmo?b.ritmo+'/km':'', b.zona||''].filter(Boolean).join(' · ') || '—';
-}
-function runSecInterpretar(diaIdx){
-  const input = document.getElementById('run-sec-input');
-  const prev  = document.getElementById('run-sec-preview');
-  const texto = (input && input.value || '').trim();
-  if(!texto){ if(prev){ prev.style.display='block'; prev.innerHTML='<div style="color:#c23b3b;font-size:11px;">Dictá la sesión. Ej: "series 6x400 rec 90s", "rodaje 40 min z2", "fondo 14k a 5:30".</div>'; } return; }
-  try{
-    const bloques = _secRunParse(texto);
-    if(!bloques.length) throw new Error('No pude interpretar. Probá: "series 6x400 rec 90s" o "rodaje 40 min z2".');
-    window._runSecPend = { diaIdx: diaIdx, bloques: bloques };
-    const tipoObj = id => TIPOS_SESION_RUNNING.find(t=>t.id===id) || {icon:'🏃',label:id};
-    const rows = bloques.map(b=>{ const t=tipoObj(b.tipo); return '<div style="background:#fff;border:1px solid #ffe0c2;border-radius:7px;padding:7px 9px;margin-bottom:6px;"><div style="font-size:11px;font-weight:700;color:#333;">'+t.icon+' '+t.label+'</div><div style="font-size:10px;color:#e6803a;margin-top:2px;">'+_secRunResumen(b)+'</div></div>'; }).join('');
-    if(prev){ prev.style.display='block'; prev.innerHTML='<div style="font-size:9px;font-weight:800;color:#166534;margin-bottom:6px;">✓ '+bloques.length+' bloque'+(bloques.length!==1?'s':'')+' interpretado'+(bloques.length!==1?'s':'')+'</div>'+rows+'<button onclick="runSecCargar()" style="width:100%;background:#e65100;border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:800;padding:9px;margin-top:4px;cursor:pointer;font-family:inherit;">⚡ Cargar en la planilla</button>'; }
-  }catch(e){ if(prev){ prev.style.display='block'; prev.innerHTML='<div style="color:#c23b3b;font-size:11px;">⚠️ '+e.message+'</div>'; } }
-}
-function runSecCargar(){
-  const p = window._runSecPend; if(!p || !p.bloques || !p.bloques.length) return;
-  const diaIdx = p.diaIdx;
-  if(!runDiasData[diaIdx]) runDiasData[diaIdx]=[];
-  if(runDiasData[diaIdx].length){ if(!confirm('El día ya tiene sesión. ¿Reemplazarla con la dictada?')) return; }
-  runDiasData[diaIdx] = JSON.parse(JSON.stringify(p.bloques));
-  renderDiaEditor(diaIdx);
-  renderRunDias();
-  toast('✓ Sesión cargada en la planilla');
 }
 
 // ── GUARDAR PLANIFICACIÓN RUNNING ─────────────────────────────────────────────
@@ -27414,8 +27387,23 @@ function _iaImportarJSON() {
   }
 }
 
+let _traspTipo='fuerza';
+function _traspSetTipo(t){
+  _traspTipo=t;
+  const bf=document.getElementById('trasp-tab-fuerza'), br=document.getElementById('trasp-tab-running');
+  if(bf){ bf.style.background=t==='fuerza'?'#7c3aed':'#f0f0f0'; bf.style.color=t==='fuerza'?'#fff':'#666'; }
+  if(br){ br.style.background=t==='running'?'#e65100':'#f0f0f0'; br.style.color=t==='running'?'#fff':'#666'; }
+  const lw=document.getElementById('trasp-lugar-wrap'); if(lw) lw.style.display = (t==='running')?'none':'';
+  const ta=document.getElementById('trasp-texto');
+  if(ta){ ta.placeholder = (t==='running')
+    ? 'UNA SESIÓN:\nseries 6x400 rec 90s a 4:00\n— o —\nrodaje 40 min zona 2\nfondo 14k a 5:30\n\n— O TODA LA SEMANA (separá con DÍA:) —\nDÍA: Lunes\nrodaje 40 min z2\nDÍA: Miércoles\nseries 8x200 rec 60s\nDÍA: Sábado\nfondo 16k a 5:40'
+    : 'UNA SESIÓN:\nFUERZA PRINCIPAL\nSentadilla 4x6 @ 100kg · RIR 2 · pausa 3min\nACCESORIOS\nPrensa 3x12 · Curl femoral 3x12\n\n— O TODA LA SEMANA (separá con DÍA:) —\nDÍA: Lunes\nSentadilla 4x6 @ 100kg\nDÍA: Miércoles\nPress banca 4x8 @ 60kg'; }
+  _traspCargarSemanas();
+  _traspCheck();
+}
 function _traspCheck(){
-  const ok = document.getElementById('trasp-alumno').value && document.getElementById('trasp-destino').value && document.getElementById('trasp-fecha').value && document.getElementById('trasp-lugar').value;
+  const base = document.getElementById('trasp-alumno').value && document.getElementById('trasp-destino').value && document.getElementById('trasp-fecha').value;
+  const ok = base && (_traspTipo==='running' || document.getElementById('trasp-lugar').value);
   const w=document.getElementById('trasp-textwrap'); if(w) w.style.display= ok?'block':'none';
   const g=document.getElementById('trasp-gate'); if(g) g.style.display= ok?'none':'block';
 }
@@ -27424,7 +27412,7 @@ function _traspCargarSemanas(){
   const sel=document.getElementById('trasp-destino'); if(!sel) return;
   let opts='<option value="new">➕ Nueva planificación (crear semana)</option>';
   if(id){
-    const planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]).filter(p=>p.alumnoId===id && p.tipoPlan!=='running');
+    const planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]).filter(p=>p.alumnoId===id && (_traspTipo==='running' ? p.tipoPlan==='running' : p.tipoPlan!=='running'));
     planes.forEach(p=>{
       const sems=(Array.isArray(p.semanasArray)&&p.semanasArray.length)?p.semanasArray:[{semana:1,fechaInicio:p.fecha||''}];
       sems.forEach((w,wi)=>{
@@ -27455,7 +27443,7 @@ function _iaTraspasoAbrir(){
     if(pre && arr.some(a=>a.id===pre)) sel.value=pre;
   }
   const f=document.getElementById('trasp-fecha'); if(f && !f.value) f.value=new Date().toISOString().slice(0,10);
-  _traspCargarSemanas();
+  _traspSetTipo('fuerza');   // arranca en Fuerza (recarga destinos + placeholder)
   document.getElementById('trasp-modal').style.display='flex';
 }
 // ── Parser LOCAL (sin API): lee tu texto y arma la sesión ──
@@ -27577,6 +27565,7 @@ function _traspSplitSemana(texto){
   return out.filter(s=>s.lineas.some(l=>l.trim()));
 }
 function _traspEnviar(){
+  if(_traspTipo==='running') return _traspEnviarRunning();
   const id=document.getElementById('trasp-alumno').value;
   const dest=document.getElementById('trasp-destino').value;
   const fecha=document.getElementById('trasp-fecha').value;
@@ -27671,6 +27660,54 @@ function _traspEnviar(){
   const t=document.getElementById('trasp-texto'); if(t) t.value='';
   toast('✅ Sesión cargada en la planilla');
   if(typeof abrirPlanFuerzaExistente==='function') abrirPlanFuerzaExistente(planId);
+}
+// ── Enviar a la planilla de RUNNING ──────────────────────────────────────────
+function _traspEnviarRunning(){
+  const id=document.getElementById('trasp-alumno').value;
+  const dest=document.getElementById('trasp-destino').value;
+  const fecha=document.getElementById('trasp-fecha').value;
+  const txt=(document.getElementById('trasp-texto').value||'').trim();
+  if(!id||!dest||!fecha){ toast('Completá alumno, semana y fecha','error'); return; }
+  if(!txt){ toast('Escribí o pegá la sesión','error'); return; }
+  const planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]);
+  // ¿Semana completa? (varias sesiones con "DÍA: ...")
+  const partes=_traspSplitSemana(txt);
+  const esSemana = partes.length>1 || (partes.length===1 && /^\s*d[ií]a\s*[:\-]/im.test(txt));
+  const diasData={}; let cargadas=0;
+  if(esSemana){
+    partes.forEach(pt=>{ const dIdx=_traspDiaIdx(pt.dia); if(dIdx<0) return; const bloques=_secRunParse(pt.lineas.join('\n')); if(!bloques.length) return; diasData[String(dIdx)]=bloques; cargadas++; });
+    if(!cargadas){ toast('No pude leer las sesiones. Separá cada día con "DÍA: Lunes".','error'); return; }
+  } else {
+    const bloques=_secRunParse(txt);
+    if(!bloques.length){ toast('No pude leer la sesión. Ej: "series 6x400 rec 90s" o "rodaje 40 min z2".','error'); return; }
+    const dayIdx=(new Date(fecha+'T12:00:00').getDay()+6)%7; // Lun=0
+    diasData[String(dayIdx)]=bloques; cargadas=1;
+  }
+  let planId;
+  if(dest==='new'){
+    const lunes=_getLunesDe(fecha);
+    const nuevo={ id:genId(), alumnoId:id, tipoPlan:'running', tipoPlanEstructura:'semanal',
+      titulo:'Plan running', semanaNum:1, fecha:lunes, objetivo:'', nivel:'',
+      diasData:diasData, semanasArray:[{semana:1,fechaInicio:lunes,diasData:diasData}], createdAt:new Date().toISOString() };
+    planes.push(nuevo); planId=nuevo.id;
+  } else {
+    const parts=dest.split('|'); const wi=+parts[1]; const p=planes.find(x=>x.id===parts[0]);
+    if(!p){ toast('No encontré el plan destino','error'); return; }
+    if(!(Array.isArray(p.semanasArray)&&p.semanasArray.length)) p.semanasArray=[{semana:1,fechaInicio:p.fecha||_getLunesDe(fecha),diasData:p.diasData||{}}];
+    const w=p.semanasArray[wi]||p.semanasArray[0];
+    w.diasData=w.diasData||{};
+    const ocupados=Object.keys(diasData).filter(k=>Array.isArray(w.diasData[k])&&w.diasData[k].length);
+    if(ocupados.length && !confirm('Esa semana ya tiene '+ocupados.length+' día(s) con sesión de running. ¿Reemplazarlos?')) return;
+    Object.keys(diasData).forEach(k=>{ w.diasData[k]=diasData[k]; });
+    if(p.semanasArray.indexOf(w)===0) p.diasData=p.semanasArray[0].diasData;
+    planId=p.id;
+  }
+  savePlanificaciones(planes);
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+  document.getElementById('trasp-modal').style.display='none';
+  const t=document.getElementById('trasp-texto'); if(t) t.value='';
+  toast('✅ '+cargadas+' sesión'+(cargadas!==1?'es':'')+' de running cargada'+(cargadas!==1?'s':'')+' en la planilla');
+  if(typeof renderPerfilPlanificaciones==='function' && currentAlumnoId===id) renderPerfilPlanificaciones(id,'running');
 }
 async function _iaEnviarPlanificador(contentOverride, alumnoOverride, opts) {
   const content = (contentOverride!=null && String(contentOverride).trim()!=='') ? String(contentOverride) : (localStorage.getItem('SOCC_IA_LAST_PLAN') || '');
