@@ -4483,7 +4483,7 @@ select.toolbox-input option:disabled { color: #888; }
         </div>
       </div>
       <div class="run-topbar-right">
-        <button id="copiloto-toggle-btn-run" class="copiloto-toggle-btn" onclick="toggleCopiloto()">🏃 Copiloto IA</button>
+        <button id="copiloto-toggle-btn-run" class="copiloto-toggle-btn" onclick="toggleCopiloto()" style="display:none;">Copiloto IA</button>
         <button class="btn-run btn-run-naranja" onclick="guardarPlanRunning()">Guardar semana</button>
       </div>
     </div>
@@ -9708,6 +9708,13 @@ function renderDiaEditor(diaIdx) {
         </div>
       </div>
       <div class="run-sesion-body">
+        <!-- ASISTENTE DE PLANILLA (dictar sesión → cargar) -->
+        <div style="background:#fff7ef;border:1px solid #ffd9b3;border-radius:10px;padding:12px;margin-bottom:14px;">
+          <div style="font-size:11px;font-weight:800;color:#e65100;letter-spacing:.5px;margin-bottom:8px;">📋 ASISTENTE DE PLANILLA — DICTÁ LA SESIÓN</div>
+          <textarea id="run-sec-input" rows="4" placeholder="Ej:&#10;series 6x400 rec 90s a 4:00&#10;rodaje 40 min zona 2&#10;fondo 14k a 5:30&#10;fartlek 30 min" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #ffd9b3;border-radius:8px;color:#333;font-size:12px;padding:9px;font-family:inherit;resize:vertical;"></textarea>
+          <button onclick="runSecInterpretar(${diaIdx})" style="margin-top:7px;width:100%;background:#e65100;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:800;padding:9px;cursor:pointer;font-family:inherit;">🤖 Interpretar y cargar</button>
+          <div id="run-sec-preview" style="display:none;margin-top:8px;"></div>
+        </div>
         ${bloquesHTML}
         <!-- Selector tipo de bloque -->
         <div style="margin-top:12px;">
@@ -10156,6 +10163,77 @@ function eliminarBloqueRunning(diaIdx, bi) {
   if(!confirm('¿Eliminar este bloque?')) return;
   runDiasData[diaIdx].splice(bi,1);
   renderDiaEditor(diaIdx);
+}
+
+// ── ASISTENTE DE PLANILLA (running): dictado → planilla ───────────────────────
+function _secRunParse(texto){
+  const lineas = texto.split(/\n|·|;|\s\+\s/).map(s=>s.trim()).filter(Boolean);
+  const arr = lineas.length ? lineas : [texto];
+  const bloques = [];
+  arr.forEach(l=>{ const b=_secRunParseLinea(l); if(b) bloques.push(b); });
+  return bloques;
+}
+function _secRunParseLinea(raw){
+  const l = raw.toLowerCase();
+  // Pasadas / series / intervalos: patrón NxD
+  let m = l.match(/(\d+)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(km|k|m)?/);
+  if(m || /series|pasada|interval|repetici/.test(l)){
+    if(!m) m = l.match(/(\d+)\s*[x×]\s*(\d+(?:[.,]\d+)?)/);
+    const reps = m ? parseInt(m[1]) : 6;
+    const dist = m ? parseFloat(String(m[2]).replace(',','.')) : 400;
+    const unidad = (m && /km|k/.test(m[3]||'')) ? 'km' : (dist<50 ? 'km' : 'm');
+    const ritmo = (l.match(/(?:a|ritmo)\s*(\d{1,2}:\d{2})/)||[])[1] || (l.match(/(\d{1,2}:\d{2})/)||[])[1] || '';
+    const pausa = (l.match(/(?:rec|recup|pausa|descanso)\s*([\d:]+\s*(?:min|m|s|seg|'|")?)/)||[])[1] || '';
+    const pasadas = Array.from({length:reps}, ()=>({ distancia:String(dist), ritmo:ritmo, pausa:pausa, obs:'' }));
+    return { tipo:'pasadas', label:'Pasadas / Intervalos', unidad:unidad, pasadas:pasadas, calent:{}, vuelta:{} };
+  }
+  // Continua / fondo / fartlek / tempo / progresivos
+  let tipo='continua-m', label='Carrera continua media';
+  if(/fondo|largo|long/.test(l)){ tipo='continua-l'; label='Carrera continua larga'; }
+  else if(/regenerat|recuper|trote suave|suave|regenerativ/.test(l)){ tipo='recuperacion'; label='Trote suave / Recuperación'; }
+  else if(/fartlek/.test(l)){ tipo='fartlek'; label='Fartlek'; }
+  else if(/tempo|umbral/.test(l)){ tipo='tempo'; label='Tempo run'; }
+  else if(/progresiv/.test(l)){ tipo='progresivos'; label='Progresivos'; }
+  else if(/descanso/.test(l)){ tipo='descanso'; label='Descanso activo'; }
+  else if(/cort/.test(l)){ tipo='continua-c'; label='Carrera continua corta'; }
+  const dist = (l.match(/(\d+(?:[.,]\d+)?)\s*(?:km|k)\b/)||[])[1];
+  const dur  = (l.match(/(\d+)\s*(?:min|')/)||[])[1];
+  const ritmo = (l.match(/(\d{1,2}:\d{2})/)||[])[1] || '';
+  const zonaM = l.match(/z(?:ona)?\s*([1-5])/);
+  const zonas = ['','Zona 1 (Recuperación)','Zona 2 (Aeróbico)','Zona 3 (Tempo)','Zona 4 (Umbral)','Zona 5 (Máximo)'];
+  const zona = zonaM ? zonas[parseInt(zonaM[1])] : '';
+  if(tipo==='descanso') return { tipo, label };
+  if(tipo==='progresivos') return { tipo, label, distancia:dist?String(dist).replace(',','.'):'', duracion:dur||'', ritmo, obs:raw };
+  return { tipo, label, distancia:dist?String(dist).replace(',','.'):'', ritmo, duracion:dur||'', zona, obs:'' };
+}
+function _secRunResumen(b){
+  if(b.tipo==='pasadas'){ const p=b.pasadas||[]; const f=p[0]||{}; return p.length+' × '+(f.distancia||'?')+(b.unidad||'m')+(f.ritmo?' a '+f.ritmo:'')+(f.pausa?' · rec '+f.pausa:''); }
+  if(b.tipo==='descanso') return 'Descanso activo';
+  return [b.distancia?b.distancia+' km':'', b.duracion?b.duracion+' min':'', b.ritmo?b.ritmo+'/km':'', b.zona||''].filter(Boolean).join(' · ') || '—';
+}
+function runSecInterpretar(diaIdx){
+  const input = document.getElementById('run-sec-input');
+  const prev  = document.getElementById('run-sec-preview');
+  const texto = (input && input.value || '').trim();
+  if(!texto){ if(prev){ prev.style.display='block'; prev.innerHTML='<div style="color:#c23b3b;font-size:11px;">Dictá la sesión. Ej: "series 6x400 rec 90s", "rodaje 40 min z2", "fondo 14k a 5:30".</div>'; } return; }
+  try{
+    const bloques = _secRunParse(texto);
+    if(!bloques.length) throw new Error('No pude interpretar. Probá: "series 6x400 rec 90s" o "rodaje 40 min z2".');
+    window._runSecPend = { diaIdx: diaIdx, bloques: bloques };
+    const tipoObj = id => TIPOS_SESION_RUNNING.find(t=>t.id===id) || {icon:'🏃',label:id};
+    const rows = bloques.map(b=>{ const t=tipoObj(b.tipo); return '<div style="background:#fff;border:1px solid #ffe0c2;border-radius:7px;padding:7px 9px;margin-bottom:6px;"><div style="font-size:11px;font-weight:700;color:#333;">'+t.icon+' '+t.label+'</div><div style="font-size:10px;color:#e6803a;margin-top:2px;">'+_secRunResumen(b)+'</div></div>'; }).join('');
+    if(prev){ prev.style.display='block'; prev.innerHTML='<div style="font-size:9px;font-weight:800;color:#166534;margin-bottom:6px;">✓ '+bloques.length+' bloque'+(bloques.length!==1?'s':'')+' interpretado'+(bloques.length!==1?'s':'')+'</div>'+rows+'<button onclick="runSecCargar()" style="width:100%;background:#e65100;border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:800;padding:9px;margin-top:4px;cursor:pointer;font-family:inherit;">⚡ Cargar en la planilla</button>'; }
+  }catch(e){ if(prev){ prev.style.display='block'; prev.innerHTML='<div style="color:#c23b3b;font-size:11px;">⚠️ '+e.message+'</div>'; } }
+}
+function runSecCargar(){
+  const p = window._runSecPend; if(!p || !p.bloques || !p.bloques.length) return;
+  const diaIdx = p.diaIdx;
+  if(!runDiasData[diaIdx]) runDiasData[diaIdx]=[];
+  if(runDiasData[diaIdx].length){ if(!confirm('El día ya tiene sesión. ¿Reemplazarla con la dictada?')) return; }
+  runDiasData[diaIdx] = JSON.parse(JSON.stringify(p.bloques));
+  renderDiaEditor(diaIdx);
+  renderRunDias();
+  toast('✓ Sesión cargada en la planilla');
 }
 
 // ── GUARDAR PLANIFICACIÓN RUNNING ─────────────────────────────────────────────
@@ -23441,11 +23519,8 @@ function toggleCopiloto() {
   if (copilotoAbierto) cerrarCopiloto();
   else abrirCopiloto();
 }
-let _copRunModo = false;
 function abrirCopiloto() {
   copilotoAbierto = true;
-  // Detectar si estamos en el planificador de running
-  _copRunModo = !!(document.getElementById('view-running') && document.getElementById('view-running').classList.contains('active'));
   document.getElementById('copiloto-panel').classList.add('abierto');
   document.getElementById('copiloto-backdrop').classList.add('visible');
   // Marcar activo en ambos botones (planificador + running)
@@ -25066,7 +25141,6 @@ function _copGruposComplementarios(grupos, principales) {
 
 // ── UI: Interpretar sesión dictada por Christian y cargarla al planificador ───
 function copilotoInterpretarSesion() {
-  if (_copRunModo) return _copRunInterpretar();
   const input = document.getElementById('cop-gen-input');
   const textoSesion = (input?.value || '').trim();
   if (!textoSesion) {
@@ -25278,96 +25352,6 @@ function _copInsertarBloques(sesionData, diaIdx) {
 
 
 
-
-// ══════════ COPILOTO RUNNING ══════════
-// Interpreta el dictado del entrenador y arma la sesión de running.
-function _copRunInterpretar(){
-  const input = document.getElementById('cop-gen-input');
-  const texto = (input && input.value || '').trim();
-  if(!texto){ _copChatAgregar('ai','🏃 Dictame la sesión de running. Ej: "series 6x400 rec 90s a 4:00", "rodaje 40 min zona 2", "fondo 14k a 5:30", "fartlek 30 min", "tempo 20 min".'); return; }
-  _copChatAgregar('user', texto.substring(0,80)+(texto.length>80?'...':''));
-  try{
-    const bloques = _copRunParse(texto);
-    if(!bloques.length) throw new Error('No pude interpretar la sesión. Probá: "series 6x400 rec 90s" o "rodaje 40 min z2".');
-    _copChatAgregar('ai','✓ '+bloques.length+' bloque'+(bloques.length!==1?'s':'')+' de running interpretado'+(bloques.length!==1?'s':'')+'.');
-    _copRunPreview(bloques);
-    if(input) input.value='';
-  }catch(err){
-    _copChatAgregar('ai','⚠️ '+err.message);
-    const z=document.getElementById('cop-preview-zone'); if(z) z.innerHTML='<div style="padding:12px;color:#fca5a5;font-size:11px;">⚠️ '+err.message+'</div>';
-  }
-}
-function _copRunParse(texto){
-  const lineas = texto.split(/\n|·|;|\s\+\s/).map(s=>s.trim()).filter(Boolean);
-  const arr = lineas.length ? lineas : [texto];
-  const bloques = [];
-  arr.forEach(l=>{ const b=_copRunParseLinea(l); if(b) bloques.push(b); });
-  return bloques;
-}
-function _copRunParseLinea(raw){
-  const l = raw.toLowerCase();
-  // ── Pasadas / series / intervalos: patrón NxD ──
-  let m = l.match(/(\d+)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(km|k|m)?/);
-  if(m || /series|pasada|interval|repetici/.test(l)){
-    if(!m) m = l.match(/(\d+)\s*[x×]\s*(\d+(?:[.,]\d+)?)/);
-    const reps = m ? parseInt(m[1]) : 6;
-    const dist = m ? parseFloat(String(m[2]).replace(',','.')) : 400;
-    let unidad = (m && /km|k/.test(m[3]||'')) ? 'km' : (dist<50 ? 'km' : 'm');
-    const ritmo = (l.match(/(?:a|ritmo)\s*(\d{1,2}:\d{2})/)||[])[1] || (l.match(/(\d{1,2}:\d{2})/)||[])[1] || '';
-    const pausa = (l.match(/(?:rec|recup|pausa|descanso)\s*([\d:]+\s*(?:min|m|s|seg|'|")?)/)||[])[1] || '';
-    const pasadas = Array.from({length:reps}, ()=>({ distancia:String(dist), ritmo:ritmo, pausa:pausa, obs:'' }));
-    return { tipo:'pasadas', label:'Pasadas / Intervalos', unidad:unidad, pasadas:pasadas, calent:{}, vuelta:{} };
-  }
-  // ── Continua / fondo / fartlek / tempo / progresivos ──
-  let tipo='continua-m', label='Carrera continua media';
-  if(/fondo|largo|long/.test(l)){ tipo='continua-l'; label='Carrera continua larga'; }
-  else if(/regenerat|recuper|trote suave|suave|regenerativ/.test(l)){ tipo='recuperacion'; label='Trote suave / Recuperación'; }
-  else if(/fartlek/.test(l)){ tipo='fartlek'; label='Fartlek'; }
-  else if(/tempo|umbral/.test(l)){ tipo='tempo'; label='Tempo run'; }
-  else if(/progresiv/.test(l)){ tipo='progresivos'; label='Progresivos'; }
-  else if(/descanso/.test(l)){ tipo='descanso'; label='Descanso activo'; }
-  else if(/cort/.test(l)){ tipo='continua-c'; label='Carrera continua corta'; }
-  const dist = (l.match(/(\d+(?:[.,]\d+)?)\s*(?:km|k)\b/)||[])[1];
-  const dur  = (l.match(/(\d+)\s*(?:min|')/)||[])[1];
-  const ritmo = (l.match(/(\d{1,2}:\d{2})/)||[])[1] || '';
-  const zonaM = l.match(/z(?:ona)?\s*([1-5])/);
-  const zonas = ['','Zona 1 (Recuperación)','Zona 2 (Aeróbico)','Zona 3 (Tempo)','Zona 4 (Umbral)','Zona 5 (Máximo)'];
-  const zona = zonaM ? zonas[parseInt(zonaM[1])] : '';
-  if(tipo==='descanso') return { tipo, label };
-  if(tipo==='progresivos') return { tipo, label, distancia:dist?String(dist).replace(',','.'):'', duracion:dur||'', ritmo, obs:raw };
-  return { tipo, label, distancia:dist?String(dist).replace(',','.'):'', ritmo, duracion:dur||'', zona, obs:'' };
-}
-function _copRunResumen(b){
-  if(b.tipo==='pasadas'){ const p=b.pasadas||[]; const f=p[0]||{}; return p.length+' × '+(f.distancia||'?')+(b.unidad||'m')+(f.ritmo?' a '+f.ritmo:'')+(f.pausa?' · rec '+f.pausa:''); }
-  if(b.tipo==='descanso') return 'Descanso activo';
-  return [b.distancia?b.distancia+' km':'', b.duracion?b.duracion+' min':'', b.ritmo?b.ritmo+'/km':'', b.zona||''].filter(Boolean).join(' · ') || '—';
-}
-function _copRunPreview(bloques){
-  const zone = document.getElementById('cop-preview-zone'); if(!zone) return;
-  const tipoObj = id => TIPOS_SESION_RUNNING.find(t=>t.id===id) || {icon:'🏃',label:id};
-  const rows = bloques.map(b=>{ const t=tipoObj(b.tipo); return '<div style="margin-bottom:8px;background:#ffffff08;border-radius:7px;padding:9px 11px;"><div style="font-size:11px;font-weight:700;color:#fff;">'+t.icon+' '+t.label+'</div><div style="font-size:10px;color:#f4a15a;margin-top:3px;">'+_copRunResumen(b)+'</div></div>'; }).join('');
-  zone.style.display='block';
-  zone.innerHTML = '<div style="border-top:1px solid #ffffff15;padding-top:14px;margin-top:4px;">'
-    +'<div style="font-size:8px;font-weight:800;color:#e6803a;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">SESIÓN DE RUNNING GENERADA</div>'
-    +rows
-    +'<div style="display:flex;gap:6px;margin-top:12px;"><button onclick="_copRunCargar()" style="flex:1;background:#e6803a;border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:800;cursor:pointer;padding:10px;font-family:inherit;">⚡ Cargar en el planificador</button></div>'
-    +'<div style="margin-top:8px;font-size:9px;color:#6b7280;line-height:1.5;">Se carga en el día abierto del planificador de running (o el lunes si no hay ninguno abierto). Podés ajustar todo después.</div>'
-    +'</div>';
-  window._lastCopRunBloques = bloques;
-}
-function _copRunCargar(){
-  const bloques = window._lastCopRunBloques; if(!bloques || !bloques.length) return;
-  let abierto = (typeof runDiaAbierto!=='undefined' && runDiaAbierto!==null);
-  let diaIdx = abierto ? runDiaAbierto : 0;
-  if(!abierto){ try{ abrirDiaEditor(0); }catch(e){} diaIdx=0; }
-  if(!runDiasData[diaIdx]) runDiasData[diaIdx]=[];
-  if(runDiasData[diaIdx].length){ if(!confirm('El día ya tiene sesión. ¿Reemplazarla con la generada?')) return; }
-  runDiasData[diaIdx] = JSON.parse(JSON.stringify(bloques));
-  try{ renderDiaEditor(diaIdx); }catch(e){}
-  try{ renderRunDias(); }catch(e){}
-  cerrarCopiloto();
-  toast('✓ Sesión de running cargada');
-}
 
 // ── Copiloto — Reconocimiento de voz ─────────────────────────────────────────
 let _copMicActivo = false;
