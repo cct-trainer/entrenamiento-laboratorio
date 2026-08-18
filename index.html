@@ -11811,10 +11811,10 @@ function _sesionModifs(){
   }
   const subs=(d.sustituciones||[]).filter(s=>String(s.sem)===String(sem)&&String(s.dia)===String(dia));
   // Devolución final del alumno para esta sesión (si terminó el entrenamiento)
-  let comentario='', compAt='';
+  let comentario='', compAt='', audio=false;
   const rec=(d.completadas||[]).find(c=>c&&String(c.sem)===String(sem)&&String(c.dia)===String(dia)&&String(c.mod)===String(mod));
-  if(rec){ comentario=rec.comentario||''; compAt=rec.at||''; }
-  return {pesos, subs, noHechas, comentario, compAt};
+  if(rec){ comentario=rec.comentario||''; compAt=rec.at||''; audio=!!rec.audio; }
+  return {pesos, subs, noHechas, comentario, compAt, audio};
 }
 function _avisoSeenKey(){ return 'SOCC_AVISO_'+(_avisoData?_avisoData.id:'')+'_'+planSemEditando+'_'+planDiaAbierto; }
 function _avisoVer(){ const a=_avisoData?String(_avisoData.at||''):'', c=_avisoData?String(_avisoData.compAt||''):''; return c>a?c:a; }
@@ -11822,7 +11822,7 @@ function _renderAvisoAlumno(){
   _quitarBannerAviso();
   if(!_avisoData) return;
   const m=_sesionModifs();
-  if(!m.pesos.length && !m.subs.length && !(m.noHechas&&m.noHechas.length) && !m.comentario) return;
+  if(!m.pesos.length && !m.subs.length && !(m.noHechas&&m.noHechas.length) && !m.comentario && !m.audio) return;
   // Si ya lo revisó para este set de cambios, no molestar
   try{ const v=_avisoVer(); if(v && localStorage.getItem(_avisoSeenKey())===String(v)) return; }catch(e){}
   const scroll=document.getElementById('plan-editor-page-scroll');
@@ -11833,13 +11833,15 @@ function _renderAvisoAlumno(){
   const subRows=m.subs.map(s=>'<div style="padding:9px 0;border-bottom:1px solid #f1f3f6;font-size:12.5px;color:#1f2430;">🔄 <b>'+(s.original||'—')+'</b> <span style="color:#8a92a1;">→</span> <b style="color:#0f7a3d;">'+(s.nuevo||'—')+'</b> <span style="color:#8a92a1;font-size:11px;">(cambió el ejercicio)</span></div>').join('');
   const noRows=(m.noHechas||[]).map(n=>'<div style="padding:9px 0;border-bottom:1px solid #f1f3f6;font-size:12.5px;color:#1f2430;">✗ <b>'+n.ej+'</b> · S'+n.serie+' <span style="color:#dc4c4c;font-weight:800;font-size:11px;">— no la hizo</span></div>').join('');
   const devRow=m.comentario?('<div style="padding:11px 0 4px;"><div style="font-size:10.5px;font-weight:800;color:#8a6d1f;letter-spacing:.4px;margin-bottom:5px;">✍️ DEVOLUCIÓN DEL ALUMNO</div><div style="font-size:12.5px;color:#3a3320;background:#fdf7e6;border:1px solid #f0e4c0;border-radius:9px;padding:10px 12px;line-height:1.5;white-space:pre-wrap;">'+String(m.comentario).replace(/</g,'&lt;')+'</div></div>'):'';
+  const audioRow=m.audio?('<div style="padding:8px 0 4px;"><button onclick="_coachPlayAudio(\''+_avisoData.id+'\','+planSemEditando+','+planDiaAbierto+','+_editorModTab+')" style="display:inline-flex;align-items:center;gap:8px;background:#2f5bb0;color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:12.5px;font-weight:800;cursor:pointer;">🎙️ ▶ Escuchar devolución en audio</button></div>'):'';
   const box=document.createElement('div');
   box.id='aviso-modif-box';
   box.style.cssText='margin:0 0 14px;background:#fff;border:1px solid #e4e7ec;border-left:4px solid #C9A84C;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(30,40,70,.08);';
   const _hayMods = m.pesos.length || m.subs.length || (m.noHechas&&m.noHechas.length);
-  const _titulo = m.comentario && !_hayMods
+  const _hayDev = m.comentario || m.audio;
+  const _titulo = _hayDev && !_hayMods
     ? _avisoData.nombre+' terminó esta sesión'
-    : _avisoData.nombre+' '+(m.comentario?'terminó y modificó esta sesión':'modificó esta sesión');
+    : _avisoData.nombre+' '+(_hayDev?'terminó y modificó esta sesión':'modificó esta sesión');
   const _footer = m.pesos.length
     ? '<div style="padding:13px 15px;background:#fafbfd;border-top:1px solid #eef0f3;">'+
         '<div style="font-size:12.5px;font-weight:700;color:#2b3140;margin-bottom:10px;">¿Actualizar la sesión con los pesos del alumno?</div>'+
@@ -11858,7 +11860,7 @@ function _renderAvisoAlumno(){
       '<div style="flex:1;"><div style="font-size:13px;font-weight:800;color:#1f2430;">'+_titulo+'</div><div style="font-size:11px;color:#8a92a1;font-weight:600;">'+(fecha?fecha+' · ':'')+'desde la app</div></div>'+
       '<button onclick="_descartarAviso()" style="background:none;border:none;color:#9aa2b0;font-size:20px;cursor:pointer;line-height:1;">×</button>'+
     '</div>'+
-    '<div style="padding:4px 15px 6px;">'+pesoRows+subRows+noRows+devRow+'</div>'+
+    '<div style="padding:4px 15px 6px;">'+pesoRows+subRows+noRows+devRow+audioRow+'</div>'+
     _footer;
   scroll.insertBefore(box, content);
 }
@@ -11948,9 +11950,18 @@ function _bandejaItemsDeDoc(id, d){
     let nNo=0;
     Object.keys(edits).forEach(k=>{ if(k.indexOf(pref)===0 && edits[k] && edits[k].omitida==='1' && !/_[di]$/.test(k)) nNo++; });
     const nSub=subs.filter(s=>String(s.sem)===String(c.sem)&&String(s.dia)===String(c.dia)).length;
-    out.push({ id, nombre, sem:c.sem, dia:c.dia, mod:c.mod, at:c.at||c.fecha||'', fecha:c.fecha||'', sesion:c.nombre||'', comentario:c.comentario||'', nNo, nSub, revisado:_bandejaRevisado(revis,c) });
+    out.push({ id, nombre, sem:c.sem, dia:c.dia, mod:c.mod, at:c.at||c.fecha||'', fecha:c.fecha||'', sesion:c.nombre||'', comentario:c.comentario||'', audio:!!c.audio, nNo, nSub, revisado:_bandejaRevisado(revis,c) });
   });
   return out;
+}
+let _coachAudioEl=null;
+async function _coachPlayAudio(alumnoId,sem,dia,mod){
+  try{
+    const aid=alumnoId+'_'+sem+'_'+dia+'_'+mod;
+    const doc=await window._db.collection('audiosDevolucion').doc(aid).get();
+    if(doc.exists && doc.data().data){ if(!_coachAudioEl) _coachAudioEl=new Audio(); _coachAudioEl.src=doc.data().data; _coachAudioEl.play().catch(()=>{}); }
+    else { try{ toast('No se encontró el audio'); }catch(e){} }
+  }catch(e){ console.warn('play audio:', e); }
 }
 let _bandejaItems=[];
 async function _abrirBandeja(){
@@ -11980,11 +11991,13 @@ function _renderBandeja(){
     if(x.nNo) chips.push(chip('✗ '+x.nNo+' sin hacer','#fdeaea','#c23b3b'));
     if(x.nSub) chips.push(chip('🔄 '+x.nSub+' cambió','#eef2fb','#3a5bb0'));
     if(x.comentario) chips.push(chip('💬 devolución','#fdf6e3','#8a6d1f'));
+    if(x.audio) chips.push(chip('🎙️ audio','#e6f0fb','#2f5bb0'));
     const dot=x.revisado?'':'<span style="position:absolute;left:8px;top:14px;width:9px;height:9px;border-radius:50%;background:#ef4444;"></span>';
     const prev=x.comentario?('<div style="font-size:11.5px;color:#c8cfdd;font-style:italic;margin-top:6px;line-height:1.45;">“'+String(x.comentario).slice(0,140).replace(/</g,'&lt;')+(x.comentario.length>140?'…':'')+'”</div>'):'';
+    const audioBtn=x.audio?('<button onclick="event.stopPropagation();_coachPlayAudio(\''+x.id+'\','+(+x.sem)+','+(+x.dia)+','+(+x.mod)+')" style="margin-top:8px;background:#2f5bb0;color:#fff;border:none;border-radius:9px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer;">▶ Escuchar audio</button>'):'';
     return '<div class="stc-hrow" style="cursor:pointer;position:relative;padding-left:22px;align-items:flex-start;flex-direction:column;'+(x.revisado?'opacity:.62;':'')+'" onclick="_bandejaIr('+i+')">'+dot+
       '<div style="display:flex;justify-content:space-between;width:100%;gap:8px;"><div style="text-align:left;"><div style="font-size:13px;color:#eaf0fb;font-weight:800;">'+x.nombre+'</div><div style="font-size:10.5px;color:#6b7c9e;margin-top:1px;">'+(x.sesion||'Sesión')+' · S'+((+x.sem)+1)+'</div></div><div style="font-size:10.5px;color:#6b7c9e;white-space:nowrap;">'+fmt(x.at)+'</div></div>'+
-      '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;">'+chips.join('')+'</div>'+prev+
+      '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;">'+chips.join('')+'</div>'+prev+audioBtn+
     '</div>';
   }).join('');
   body.innerHTML='<div class="stc-hist">'+rows+'</div><div class="stc-note">Tocá una fila para abrir el perfil del alumno y revisar la sesión. Al abrirla se marca como vista y el alumno ve que ya la revisaste.</div>';

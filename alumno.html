@@ -848,8 +848,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260818105903 por un timestamp en cada deploy
-const _APP_VERSION = '20260818105903';
+// deploy.bat reemplaza 20260818111621 por un timestamp en cada deploy
+const _APP_VERSION = '20260818111621';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2651,6 +2651,66 @@ function _sesionCompletada(planId, sem, dia, mod){
   const arr = (_data && _data.sesionesCompletadas) || [];
   return arr.some(c => c && c.planId===planId && c.sem===sem && c.dia===dia && c.mod===mod);
 }
+// ── AUDIO DE DEVOLUCIÓN (micrófono) ──────────────────────────────
+let _devAudio=null, _devRec=null, _devChunks=[], _devTimer=null, _devT0=0, _devAudioEl=null;
+function _fmtDur(s){ s=Math.round(s); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function _devAudioRefresh(){ const el=document.getElementById('dev-audio-box'); if(el) el.innerHTML=_devAudioUI(); }
+function _devAudioUI(){
+  const a=_devAudio||{}; const en=_LANG==='en';
+  if(a.recording){
+    return '<div style="display:flex;align-items:center;gap:10px;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.35);border-radius:12px;padding:10px 12px;">'
+      +'<span style="width:11px;height:11px;border-radius:50%;background:#ef4444;flex-shrink:0;"></span>'
+      +'<span style="flex:1;font-size:13px;font-weight:800;color:#ef6666;">'+(en?'Recording…':'Grabando…')+' <span id="dev-mic-timer">0:00</span></span>'
+      +'<button onclick="_devMicStop()" style="background:#ef4444;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;">■ '+(en?'Stop':'Detener')+'</button>'
+      +'</div>';
+  }
+  if(a.dataUrl){
+    return '<div style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid rgba(128,128,128,.25);border-radius:12px;padding:8px 10px;">'
+      +'<button onclick="_devMicPlay()" style="background:var(--gold);color:#111;border:none;border-radius:10px;width:38px;height:38px;font-size:15px;cursor:pointer;flex-shrink:0;">▶</button>'
+      +'<span style="flex:1;font-size:12.5px;font-weight:700;color:var(--text);">🎙️ '+(en?'Audio ready':'Audio listo')+(a.dur?' · '+_fmtDur(a.dur):'')+'</span>'
+      +'<button onclick="_devMicDelete()" title="'+(en?'Delete':'Borrar')+'" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;flex-shrink:0;">🗑</button>'
+      +'</div>';
+  }
+  if(a.existing){
+    return '<div style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid rgba(128,128,128,.25);border-radius:12px;padding:8px 10px;">'
+      +'<button onclick="_devPlaySaved()" style="background:var(--gold);color:#111;border:none;border-radius:10px;width:38px;height:38px;font-size:15px;cursor:pointer;flex-shrink:0;">▶</button>'
+      +'<span style="flex:1;font-size:12.5px;font-weight:700;color:var(--text);">🎙️ '+(en?'Audio sent':'Audio enviado')+'</span>'
+      +'<button onclick="_devMicStart()" style="background:none;border:1px solid rgba(128,128,128,.3);color:var(--muted);border-radius:10px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">'+(en?'Re-record':'Regrabar')+'</button>'
+      +'</div>';
+  }
+  return '<button onclick="_devMicStart()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--card);border:1px dashed rgba(201,168,76,.5);color:var(--gold);border-radius:12px;padding:11px;font-size:13px;font-weight:800;cursor:pointer;">🎙️ '+(en?'Record audio instead of typing':'Grabar audio en vez de escribir')+'</button>';
+}
+async function _devMicStart(){
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    let mime='audio/webm;codecs=opus';
+    if(!(window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(mime))) mime='audio/mp4';
+    if(!(MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(mime))) mime='';
+    _devRec = new MediaRecorder(stream, mime?{mimeType:mime,audioBitsPerSecond:24000}:undefined);
+    _devChunks=[];
+    _devRec.ondataavailable=e=>{ if(e.data&&e.data.size) _devChunks.push(e.data); };
+    _devRec.onstop=()=>{
+      const blob=new Blob(_devChunks,{type:(_devRec.mimeType||'audio/webm')});
+      const dur=(Date.now()-_devT0)/1000;
+      try{ stream.getTracks().forEach(t=>t.stop()); }catch(e){}
+      const fr=new FileReader();
+      fr.onload=()=>{ const durl=String(fr.result||'');
+        if(durl.length>900000){ alert(_LANG==='en'?'Audio too long. Keep it under ~90 seconds.':'El audio quedó muy largo. Que sea de menos de ~90 segundos.'); _devAudio={existing:!!(_devAudio&&_devAudio.existing)}; _devAudioRefresh(); return; }
+        _devAudio={ dataUrl:durl, mime:blob.type, dur:dur, existing:!!(_devAudio&&_devAudio.existing) }; _devAudioRefresh(); };
+      fr.readAsDataURL(blob);
+    };
+    _devAudio={ recording:true, existing:!!(_devAudio&&_devAudio.existing) };
+    _devRec.start(); _devT0=Date.now(); _devAudioRefresh();
+    _devTimer=setInterval(()=>{ const s=(Date.now()-_devT0)/1000; const el=document.getElementById('dev-mic-timer'); if(el) el.textContent=_fmtDur(s); if(s>=120) _devMicStop(); },300);
+  }catch(e){ alert(_LANG==='en'?'Could not access the microphone. Check the app permissions.':'No pude acceder al micrófono. Revisá los permisos de la app.'); }
+}
+function _devMicStop(){ if(_devTimer){ clearInterval(_devTimer); _devTimer=null; } try{ if(_devRec&&_devRec.state!=='inactive') _devRec.stop(); }catch(e){} }
+function _devMicPlay(){ if(!_devAudio||!_devAudio.dataUrl) return; if(!_devAudioEl) _devAudioEl=new Audio(); _devAudioEl.src=_devAudio.dataUrl; _devAudioEl.play().catch(()=>{}); }
+function _devMicDelete(){ _devAudio={existing:!!(_devAudio&&_devAudio.existing)}; _devAudioRefresh(); }
+async function _devPlaySaved(){
+  try{ const aid=_alumnoId+'_'+_semIdx+'_'+_diaIdx+'_'+_diaModTab; const doc=await _db.collection('audiosDevolucion').doc(aid).get(); if(doc.exists&&doc.data().data){ if(!_devAudioEl) _devAudioEl=new Audio(); _devAudioEl.src=doc.data().data; _devAudioEl.play().catch(()=>{}); } }catch(e){}
+}
+
 async function _terminarEntrenamiento(){
   if (!_plan) return;
   if (!confirm(_t('terminar_confirm'))) return;
@@ -2671,8 +2731,21 @@ async function _terminarEntrenamiento(){
   // Devolución final que escribió el alumno
   const comentario = (document.getElementById('ses-devolucion')?.value || '').trim();
   const at = new Date().toISOString();
+  // Audio de devolución (si grabó uno nuevo) → se guarda en su propio documento
+  let audioFlag = !!(_devAudio && _devAudio.existing);
+  if (_devAudio && _devAudio.dataUrl && _db && _alumnoId){
+    try{
+      const aid = _alumnoId+'_'+_semIdx+'_'+_diaIdx+'_'+_diaModTab;
+      await _db.collection('audiosDevolucion').doc(aid).set({
+        alumnoId:_alumnoId, nombre:(_data.perfil&&_data.perfil.nombre)||'', planId,
+        sem:_semIdx, dia:_diaIdx, mod:_diaModTab, at, mime:_devAudio.mime||'audio/webm',
+        dur:_devAudio.dur||0, data:_devAudio.dataUrl
+      });
+      audioFlag = true;
+    }catch(e){ console.warn('audio devolucion:', e); }
+  }
   // Registro de completado (con los resultados adentro). No se crea semana nueva.
-  const completa = { planId, sem:_semIdx, dia:_diaIdx, mod:_diaModTab, fecha, at, nombre: ses.nombre || DN[_diaIdx], resultados, tecnicas, comentario };
+  const completa = { planId, sem:_semIdx, dia:_diaIdx, mod:_diaModTab, fecha, at, nombre: ses.nombre || DN[_diaIdx], resultados, tecnicas, comentario, audio:audioFlag };
 
   if (!_data.sesionesCompletadas) _data.sesionesCompletadas = [];
   _data.sesionesCompletadas.push(completa);
@@ -2931,9 +3004,12 @@ function renderSesion() {
   // Caja de devolución final (viaja con "Terminé" al coach)
   const _compRec = (_data.sesionesCompletadas||[]).find(c=>c&&c.planId===_plan.id&&c.sem===_semIdx&&c.dia===_diaIdx&&c.mod===_diaModTab);
   const _devPrev = _compRec ? (_compRec.comentario||'') : '';
+  _devAudio = { existing: !!(_compRec && _compRec.audio) };   // reset del estado de grabación por sesión
   const _devBox = '<div style="margin-top:18px;">'
     +'<div style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.5px;margin-bottom:7px;">✍️ '+(_LANG==='en'?'FINAL FEEDBACK (OPTIONAL)':'DEVOLUCIÓN FINAL (OPCIONAL)')+'</div>'
     +'<textarea id="ses-devolucion" placeholder="'+(_LANG==='en'?'Tell your coach how it felt: any discomfort, if something was too heavy or too light…':'Contale a tu coach cómo te sentiste: molestias, si algo estuvo muy pesado o liviano, cómo viste tu técnica…')+'" style="width:100%;min-height:74px;background:var(--card);border:1px solid rgba(128,128,128,.25);border-radius:12px;padding:12px;font-size:13px;color:var(--text);font-family:inherit;line-height:1.5;resize:vertical;box-sizing:border-box;outline:none;">'+_devPrev.replace(/</g,'&lt;')+'</textarea>'
+    +'<div style="font-size:10.5px;color:var(--muted);text-align:center;margin:8px 0 6px;">'+(_LANG==='en'?'— or —':'— o —')+'</div>'
+    +'<div id="dev-audio-box">'+_devAudioUI()+'</div>'
     +'</div>';
   const _finBtn = _yaComp
     ? '<div style="display:flex;gap:8px;margin-top:18px;align-items:stretch;">'
