@@ -848,8 +848,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260818112925 por un timestamp en cada deploy
-const _APP_VERSION = '20260818112925';
+// deploy.bat reemplaza 20260818115005 por un timestamp en cada deploy
+const _APP_VERSION = '20260818115005';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2686,7 +2686,7 @@ async function _devMicStart(){
     let mime='audio/webm;codecs=opus';
     if(!(window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(mime))) mime='audio/mp4';
     if(!(MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(mime))) mime='';
-    _devRec = new MediaRecorder(stream, mime?{mimeType:mime,audioBitsPerSecond:24000}:undefined);
+    _devRec = new MediaRecorder(stream, mime?{mimeType:mime,audioBitsPerSecond:16000}:undefined);
     _devChunks=[];
     _devRec.ondataavailable=e=>{ if(e.data&&e.data.size) _devChunks.push(e.data); };
     _devRec.onstop=()=>{
@@ -2701,14 +2701,14 @@ async function _devMicStart(){
     };
     _devAudio={ recording:true, existing:!!(_devAudio&&_devAudio.existing) };
     _devRec.start(); _devT0=Date.now(); _devAudioRefresh();
-    _devTimer=setInterval(()=>{ const s=(Date.now()-_devT0)/1000; const el=document.getElementById('dev-mic-timer'); if(el) el.textContent=_fmtDur(s); if(s>=120) _devMicStop(); },300);
+    _devTimer=setInterval(()=>{ const s=(Date.now()-_devT0)/1000; const el=document.getElementById('dev-mic-timer'); if(el) el.textContent=_fmtDur(s); if(s>=75) _devMicStop(); },300);
   }catch(e){ alert(_LANG==='en'?'Could not access the microphone. Check the app permissions.':'No pude acceder al micrófono. Revisá los permisos de la app.'); }
 }
 function _devMicStop(){ if(_devTimer){ clearInterval(_devTimer); _devTimer=null; } try{ if(_devRec&&_devRec.state!=='inactive') _devRec.stop(); }catch(e){} }
 function _devMicPlay(){ if(!_devAudio||!_devAudio.dataUrl) return; if(!_devAudioEl) _devAudioEl=new Audio(); _devAudioEl.src=_devAudio.dataUrl; _devAudioEl.play().catch(()=>{}); }
 function _devMicDelete(){ _devAudio={existing:!!(_devAudio&&_devAudio.existing)}; _devAudioRefresh(); }
 async function _devPlaySaved(){
-  try{ const aid=_alumnoId+'_'+_semIdx+'_'+_diaIdx+'_'+_diaModTab; const doc=await _db.collection('audiosDevolucion').doc(aid).get(); if(doc.exists&&doc.data().data){ if(!_devAudioEl) _devAudioEl=new Audio(); _devAudioEl.src=doc.data().data; _devAudioEl.play().catch(()=>{}); } }catch(e){}
+  try{ const key=_semIdx+'_'+_diaIdx+'_'+_diaModTab; const a=(_data.audioDevoluciones||{})[key]; if(a&&a.data){ if(!_devAudioEl) _devAudioEl=new Audio(); _devAudioEl.src=a.data; _devAudioEl.play().catch(()=>{}); } }catch(e){}
 }
 
 async function _terminarEntrenamiento(){
@@ -2731,16 +2731,18 @@ async function _terminarEntrenamiento(){
   // Devolución final que escribió el alumno
   const comentario = (document.getElementById('ses-devolucion')?.value || '').trim();
   const at = new Date().toISOString();
-  // Audio de devolución (si grabó uno nuevo) → se guarda en su propio documento
+  // Audio de devolución (si grabó uno nuevo) → dentro del documento del alumno
   let audioFlag = !!(_devAudio && _devAudio.existing);
   if (_devAudio && _devAudio.dataUrl && _db && _alumnoId){
     try{
-      const aid = _alumnoId+'_'+_semIdx+'_'+_diaIdx+'_'+_diaModTab;
-      await _db.collection('audiosDevolucion').doc(aid).set({
-        alumnoId:_alumnoId, nombre:(_data.perfil&&_data.perfil.nombre)||'', planId,
-        sem:_semIdx, dia:_diaIdx, mod:_diaModTab, at, mime:_devAudio.mime||'audio/webm',
-        dur:_devAudio.dur||0, data:_devAudio.dataUrl
-      });
+      const key = _semIdx+'_'+_diaIdx+'_'+_diaModTab;
+      const mapa = Object.assign({}, _data.audioDevoluciones||{});
+      mapa[key] = { at, mime:_devAudio.mime||'audio/webm', dur:_devAudio.dur||0, data:_devAudio.dataUrl };
+      // Conservar solo los 3 audios más recientes (límite de tamaño del documento)
+      const keys = Object.keys(mapa).sort((a,b)=> String((mapa[b]&&mapa[b].at)||'').localeCompare(String((mapa[a]&&mapa[a].at)||'')) );
+      keys.slice(3).forEach(k=>{ delete mapa[k]; });
+      await _db.collection('alumnos').doc(_alumnoId).set({ audioDevoluciones: mapa }, { merge:true });
+      _data.audioDevoluciones = mapa;
       audioFlag = true;
     }catch(e){ console.warn('audio devolucion:', e); }
   }

@@ -11781,7 +11781,7 @@ async function _cargarAvisoAlumno(){
   try{
     const doc = await window._db.collection('alumnos').doc(id).get();
     const d = doc.exists ? doc.data() : {};
-    _avisoData = { id, nombre:(d.perfil&&d.perfil.nombre)||'Tu alumno', pesoEdits:d.pesoEdits||{}, sustituciones:d.sustituciones||[], at:d.pesoEditsAt||'', completadas:Array.isArray(d.sesionesCompletadas)?d.sesionesCompletadas:[], compAt:d.sesionCompletadaAt||'' };
+    _avisoData = { id, nombre:(d.perfil&&d.perfil.nombre)||'Tu alumno', pesoEdits:d.pesoEdits||{}, sustituciones:d.sustituciones||[], at:d.pesoEditsAt||'', completadas:Array.isArray(d.sesionesCompletadas)?d.sesionesCompletadas:[], compAt:d.sesionCompletadaAt||'', audios:d.audioDevoluciones||{} };
   }catch(e){ _avisoData=null; return; }
   _renderAvisoAlumno();
 }
@@ -11813,7 +11813,8 @@ function _sesionModifs(){
   // Devolución final del alumno para esta sesión (si terminó el entrenamiento)
   let comentario='', compAt='', audio=false;
   const rec=(d.completadas||[]).find(c=>c&&String(c.sem)===String(sem)&&String(c.dia)===String(dia)&&String(c.mod)===String(mod));
-  if(rec){ comentario=rec.comentario||''; compAt=rec.at||''; audio=!!rec.audio; }
+  if(rec){ comentario=rec.comentario||''; compAt=rec.at||''; }
+  audio = !!((d.audios||{})[sem+'_'+dia+'_'+mod]) || (rec&&!!rec.audio);
   return {pesos, subs, noHechas, comentario, compAt, audio};
 }
 function _avisoSeenKey(){ return 'SOCC_AVISO_'+(_avisoData?_avisoData.id:'')+'_'+planSemEditando+'_'+planDiaAbierto; }
@@ -11943,6 +11944,7 @@ function _bandejaItemsDeDoc(id, d){
   const revis=Array.isArray(d.sesionesRevisadas)?d.sesionesRevisadas:[];
   const subs=Array.isArray(d.sustituciones)?d.sustituciones:[];
   const edits=d.pesoEdits||{};
+  const audios=d.audioDevoluciones||{};
   const out=[];
   comp.forEach(c=>{
     if(!c) return;
@@ -11950,16 +11952,18 @@ function _bandejaItemsDeDoc(id, d){
     let nNo=0;
     Object.keys(edits).forEach(k=>{ if(k.indexOf(pref)===0 && edits[k] && edits[k].omitida==='1' && !/_[di]$/.test(k)) nNo++; });
     const nSub=subs.filter(s=>String(s.sem)===String(c.sem)&&String(s.dia)===String(c.dia)).length;
-    out.push({ id, nombre, sem:c.sem, dia:c.dia, mod:c.mod, at:c.at||c.fecha||'', fecha:c.fecha||'', sesion:c.nombre||'', comentario:c.comentario||'', audio:!!c.audio, nNo, nSub, revisado:_bandejaRevisado(revis,c) });
+    const tieneAudio = !!audios[c.sem+'_'+c.dia+'_'+c.mod] || !!c.audio;
+    out.push({ id, nombre, sem:c.sem, dia:c.dia, mod:c.mod, at:c.at||c.fecha||'', fecha:c.fecha||'', sesion:c.nombre||'', comentario:c.comentario||'', audio:tieneAudio, nNo, nSub, revisado:_bandejaRevisado(revis,c) });
   });
   return out;
 }
 let _coachAudioEl=null;
 async function _coachPlayAudio(alumnoId,sem,dia,mod){
   try{
-    const aid=alumnoId+'_'+sem+'_'+dia+'_'+mod;
-    const doc=await window._db.collection('audiosDevolucion').doc(aid).get();
-    if(doc.exists && doc.data().data){ if(!_coachAudioEl) _coachAudioEl=new Audio(); _coachAudioEl.src=doc.data().data; _coachAudioEl.play().catch(()=>{}); }
+    const doc=await window._db.collection('alumnos').doc(alumnoId).get();
+    const map=(doc.exists && doc.data().audioDevoluciones) || {};
+    const a=map[sem+'_'+dia+'_'+mod];
+    if(a && a.data){ if(!_coachAudioEl) _coachAudioEl=new Audio(); _coachAudioEl.src=a.data; _coachAudioEl.play().catch(()=>{}); }
     else { try{ toast('No se encontró el audio'); }catch(e){} }
   }catch(e){ console.warn('play audio:', e); }
 }
