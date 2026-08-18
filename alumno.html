@@ -848,8 +848,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260818094111 por un timestamp en cada deploy
-const _APP_VERSION = '20260818094111';
+// deploy.bat reemplaza 20260818095750 por un timestamp en cada deploy
+const _APP_VERSION = '20260818095750';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1988,113 +1988,6 @@ function _tecAppHTML(ej){
   }
   return '<div class="tec"><div class="tec-h"><span class="ic">'+icon+'</span><span class="t">'+title+'</span>'+badge+'</div>'+condHTML+tbl+extra+'</div>';
 }
-// Posición de pies · vista simple para el alumno (sin cálculos internos)
-function _footPosHTML(ej){
-  const fp = ej && ej.foot_position; if(!fp) return '';
-  const en = _LANG==='en';
-  const r1 = Math.round((fp.stance_value||0)*10)/10;
-  const rc = Math.round((fp.calculated_distance_cm||0)*10)/10;
-  let apertura='';
-  if(r1) apertura = r1 + (en?' foot-lengths':' largos de tu pie');
-  if(rc){ const c = '≈'+rc+' cm'+(en?' between heels':' entre talones'); apertura = apertura ? apertura+' <small style="font-weight:700;color:#33507f;">('+c+')</small>' : c; }
-  const amin=fp.toe_angle_min, amax=fp.toe_angle_max;
-  let puntas='';
-  if(amin&&amax) puntas = amin+'°–'+amax+'°'+(en?' outward':' hacia afuera');
-  else if(amin) puntas = amin+'°'+(en?' outward':' hacia afuera');
-  if(!apertura && !puntas) return '';
-  const rowK='font-size:10px;font-weight:900;color:#2f5bb0;text-transform:uppercase;letter-spacing:.5px;min-width:78px;';
-  const rowV='font-size:14.5px;font-weight:800;color:#1e3a8a;';
-  let body='';
-  if(apertura) body+='<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;"><span style="'+rowK+'">'+(en?'Opening':'Apertura')+'</span><span style="'+rowV+'">'+apertura+'</span></div>';
-  if(puntas)   body+='<div style="display:flex;align-items:baseline;gap:8px;"><span style="'+rowK+'">'+(en?'Toes':'Puntas')+'</span><span style="'+rowV+'">'+puntas+'</span></div>';
-  const diag='<div style="display:flex;justify-content:center;padding:2px 0 8px;"><svg width="140" height="52" viewBox="0 0 150 60"><line x1="30" y1="46" x2="120" y2="46" stroke="#9bbcea" stroke-width="1.5" stroke-dasharray="4 4"/>'+(rc?'<text x="75" y="59" text-anchor="middle" font-size="9" fill="#2f5bb0" font-weight="800">≈'+rc+' cm</text>':'')+'<g transform="translate(30,28) rotate(-'+(amax||35)+')"><ellipse cx="0" cy="0" rx="7" ry="14" fill="#1e3a8a"/></g><g transform="translate(120,28) rotate('+(amax||35)+')"><ellipse cx="0" cy="0" rx="7" ry="14" fill="#1e3a8a"/></g></svg></div>';
-  const nota = fp.notes
-    ? fp.notes
-    : (en?'Adjust the opening slightly if needed to keep a stable base and move comfortably. It is an initial reference, not a fixed position.'
-         :'Ajustá ligeramente la apertura si hace falta para apoyar estable y moverte cómodo. Es una referencia inicial, no una posición fija.');
-  return '<div style="margin-top:11px;background:#eaf1fe;border:1px solid #bcd3f5;border-radius:12px;overflow:hidden;box-shadow:0 8px 20px rgba(20,40,90,.35);">'+
-      '<div style="display:flex;align-items:center;gap:8px;background:#dbe8fc;border-bottom:1px solid #c3d6f4;padding:9px 12px;"><span>🦶</span><span style="font-size:12px;font-weight:900;color:#1e3a8a;text-transform:uppercase;letter-spacing:.3px;">'+(en?'Foot position':'Posición de pies')+'</span></div>'+
-      '<div style="padding:10px 14px 12px;">'+diag+body+'</div>'+
-      '<div style="font-size:11.5px;color:#33507f;line-height:1.55;background:#f2f7ff;border-top:1px solid #dbe8fc;padding:10px 14px;"><b style="color:#1e3a8a;">'+(en?'Note:':'Nota:')+'</b> '+nota+'</div>'+
-    '</div>';
-}
-// Agarre · vista simple para el alumno (solo lo necesario para reproducir la posición)
-function _gripHTML(ej){
-  const g = ej && ej.grip_configuration; if(!g) return '';
-  const en = _LANG==='en';
-  const met = g.measurement_method || 'ratio';
-  const cm = Math.round((g.calculated_grip_width_cm||0)*10)/10;
-  const rows=[];
-  // Agarre principal según método
-  let agarre='';
-  if(met==='machine'){ if(g.handle_selection) agarre=(en?'Handle: ':'Asa: ')+g.handle_selection; }
-  else if(met==='dumbbell'){ const parts=[]; if(g.trajectory) parts.push((en?'trajectory ':'trayectoria ')+g.trajectory.toLowerCase()); agarre=parts.join(' · '); }
-  else if(met==='visual'){ agarre=g.visual_ref||''; }
-  else { if(cm) agarre='≈'+cm+' cm'+(en?' between hands':' entre manos'); }
-  if(agarre) rows.push([en?'Grip':'Agarre', agarre]);
-  // Referencia relativa (según tipo de agarre)
-  const refMap={'Cerrado':'Apenas más cerrado que los hombros','Medio':'Cerca del ancho de hombros','Medio-ancho':'Moderadamente más ancho que los hombros','Ancho':'Más ancho que los hombros','Muy ancho':'Bastante más ancho que los hombros'};
-  if(g.grip_type && refMap[g.grip_type] && met!=='machine' && met!=='dumbbell') rows.push([en?'Reference':'Referencia', refMap[g.grip_type]]);
-  if(g.bench_angle) rows.push([en?'Bench':'Banco', g.bench_angle]);
-  // Manos
-  if(g.hand_orientation){ const mo={'Pronado':'Pronadas','Neutro':'Neutras','Semineutro':'Semineutras','Supinado':'Supinadas'}; rows.push([en?'Hands':'Manos', mo[g.hand_orientation]||g.hand_orientation]); }
-  // Codos
-  const emin=g.elbow_angle_min, emax=g.elbow_angle_max;
-  if(emin&&emax) rows.push([en?'Elbows':'Codos', (en?'Moderately open ':'Moderadamente abiertos ')+'('+emin+'°–'+emax+'°)']);
-  else if(emin) rows.push([en?'Elbows':'Codos', emin+'°']);
-  // Objetivo
-  const objMap={'Pectoral general':'Pectoral','Pectoral (aducción horizontal)':'Pectoral','Tríceps':'Tríceps','Deltoides anterior':'Deltoides anterior','Fuerza / rendimiento':'Fuerza','Recorrido confortable':'Recorrido confortable'};
-  if(g.training_emphasis && g.training_emphasis!=='Personalizado') rows.push([en?'Goal':'Objetivo', objMap[g.training_emphasis]||g.training_emphasis]);
-  if(!rows.length) return '';
-  const rowK='font-size:10px;font-weight:900;color:#2f5bb0;text-transform:uppercase;letter-spacing:.5px;min-width:92px;';
-  const rowV='font-size:14px;font-weight:800;color:#1e3a8a;';
-  let body='';
-  rows.forEach(function(r,i){ body+='<div style="display:flex;align-items:baseline;gap:8px;'+(i<rows.length-1?'margin-bottom:8px;':'')+'"><span style="'+rowK+'">'+r[0]+'</span><span style="'+rowV+'">'+r[1]+'</span></div>'; });
-  const diag = (met!=='machine'&&met!=='dumbbell'&&cm)
-    ? '<div style="display:flex;justify-content:center;padding:2px 0 8px;"><svg width="180" height="44" viewBox="0 0 200 50"><rect x="10" y="22" width="180" height="5" rx="2.5" fill="#9bbcea"/><rect x="60" y="14" width="7" height="22" rx="3" fill="#1e3a8a"/><rect x="133" y="14" width="7" height="22" rx="3" fill="#1e3a8a"/><line x1="63" y1="44" x2="137" y2="44" stroke="#9bbcea" stroke-width="1.2" stroke-dasharray="4 4"/><text x="100" y="49" text-anchor="middle" font-size="9" fill="#2f5bb0" font-weight="800">≈'+cm+' cm</text></svg></div>'
-    : '';
-  const nota = g.notes
-    ? g.notes
-    : (en?'Initial reference. Adjust the grip slightly if needed for a stable wrist and a comfortable range.'
-         :'Es una referencia inicial. Ajustá ligeramente el agarre si hace falta para una muñeca estable y un recorrido cómodo.');
-  return '<div style="margin-top:11px;background:#eaf1fe;border:1px solid #bcd3f5;border-radius:12px;overflow:hidden;box-shadow:0 8px 20px rgba(20,40,90,.35);">'+
-      '<div style="display:flex;align-items:center;gap:8px;background:#dbe8fc;border-bottom:1px solid #c3d6f4;padding:9px 12px;"><span>✋</span><span style="font-size:12px;font-weight:900;color:#1e3a8a;text-transform:uppercase;letter-spacing:.3px;">'+(en?'Grip':'Agarre')+'</span></div>'+
-      '<div style="padding:10px 14px 12px;">'+diag+body+'</div>'+
-      '<div style="font-size:11.5px;color:#33507f;line-height:1.55;background:#f2f7ff;border-top:1px solid #dbe8fc;padding:10px 14px;"><b style="color:#1e3a8a;">'+(en?'Note:':'Nota:')+'</b> '+nota+'</div>'+
-    '</div>';
-}
-// Configuración de tracción · vista simple para el alumno (espalda)
-const _PL_CODTXT={'Hacia la cadera':'Llevalos hacia abajo y hacia la cadera','Cerca del torso':'Pegados al torso','30° respecto del torso':'A unos 30° del torso','45°':'A unos 45° del torso','60°':'A unos 60°, hacia afuera','Abiertos':'Codos abiertos','Muy abiertos':'Bien abiertos, a la altura del hombro'};
-const _PL_OBJ={'Dorsal ancho':'Dorsal + espalda superior','Dorsal':'Dorsal','Dorsal (fibras inferiores)':'Dorsal','Espalda media':'Espalda media','Romboides':'Romboides + espalda media','Trapecio medio':'Espalda alta','Trapecio inferior':'Trapecio inferior','Trapecio superior':'Trapecio superior','Deltoides posterior':'Deltoides posterior','Erectores / espalda baja':'Espalda baja','General de espalda':'Espalda (general)'};
-function _pullHTML(ej){
-  const p = ej && ej.pull_configuration; if(!p) return '';
-  const en = _LANG==='en';
-  const rows=[];
-  // Agarre: tipo + ancho (ancho no aplica si "sin agarre")
-  let agarre = p.grip_type || '';
-  if(p.grip_width && !/sin agarre/i.test(agarre)) agarre = (agarre?agarre+' ':'') + p.grip_width.toLowerCase();
-  if(agarre) rows.push([en?'Grip':'Agarre', agarre]);
-  // Codos (instrucción)
-  if(p.elbow_path) rows.push([en?'Elbows':'Codos', _PL_CODTXT[p.elbow_path] || p.elbow_path]);
-  // Torso
-  if(p.torso_position) rows.push([en?'Torso':'Torso', p.torso_position]);
-  // Objetivo
-  if(p.training_emphasis && p.training_emphasis!=='Personalizado') rows.push([en?'Goal':'Enfoque', _PL_OBJ[p.training_emphasis] || p.training_emphasis]);
-  if(!rows.length) return '';
-  const rowK='font-size:10px;font-weight:900;color:#2f5bb0;text-transform:uppercase;letter-spacing:.5px;min-width:70px;';
-  const rowV='font-size:14px;font-weight:800;color:#1e3a8a;';
-  let body='';
-  rows.forEach(function(r,i){ body+='<div style="display:flex;align-items:baseline;gap:8px;'+(i<rows.length-1?'margin-bottom:8px;':'')+'"><span style="'+rowK+'">'+r[0]+'</span><span style="'+rowV+'">'+r[1]+'</span></div>'; });
-  const nota = p.notes
-    ? p.notes
-    : (en?'Think about driving the elbow, not pulling with the hand. Adjust slightly if you lose range or comfort.'
-         :'Pensá en conducir el codo, no en tirar con la mano. Ajustá levemente si perdés recorrido o comodidad.');
-  return '<div style="margin-top:11px;background:#eaf1fe;border:1px solid #bcd3f5;border-radius:12px;overflow:hidden;box-shadow:0 8px 20px rgba(20,40,90,.35);">'+
-      '<div style="display:flex;align-items:center;gap:8px;background:#dbe8fc;border-bottom:1px solid #c3d6f4;padding:9px 12px;"><span>🔙</span><span style="font-size:12px;font-weight:900;color:#1e3a8a;text-transform:uppercase;letter-spacing:.3px;">'+(en?'How to grip and pull':'Cómo agarrar y tirar')+'</span></div>'+
-      '<div style="padding:11px 14px 12px;">'+body+'</div>'+
-      '<div style="font-size:11.5px;color:#33507f;line-height:1.55;background:#f2f7ff;border-top:1px solid #dbe8fc;padding:10px 14px;"><b style="color:#1e3a8a;">'+(en?'Note:':'Nota:')+'</b> '+nota+'</div>'+
-    '</div>';
-}
 function _ejCard(ej, uid) {
   _ejStore[uid] = ej; // guardar para re-render posterior
 
@@ -2371,12 +2264,6 @@ function _ejCard(ej, uid) {
 
   // Técnica avanzada (Etapa 2): etiqueta + chips + paso
   const _tecApp = _tecAppHTML(ej);
-  // Posición de pies (ejercicios de base abierta)
-  const _footApp = _footPosHTML(ej);
-  // Agarre (ejercicios de press)
-  const _gripApp = _gripHTML(ej);
-  // Configuración de tracción (ejercicios de espalda)
-  const _pullApp = _pullHTML(ej);
   // Nota verde si el alumno sustituyó el ejercicio
   const _sustNote = _sust
     ? '<div style="margin:8px 0 0 12px;font-size:11px;color:#7fe0a0;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.22);border-radius:8px;padding:7px 10px;line-height:1.45;">⇄ <b style="color:#a7f0c4;">'+(_LANG==="en"?"Changed by you.":"Cambiado por vos.")+'</b> '+(_LANG==="en"?"Original":"Original")+': '+_nomOrig+'. <span style="color:#8fb7e6;text-decoration:underline;cursor:pointer;" onclick="_revertirEj(\''+uid+'\')">'+(_LANG==="en"?"Back to original":"Volver al original")+'</span></div>'
@@ -2422,9 +2309,6 @@ function _ejCard(ej, uid) {
       pesoRef+
       seriesTable+
       _tecApp+
-      _footApp+
-      _gripApp+
-      _pullApp+
       _footer+
       fichaHTML+
       feedbackHTML+
