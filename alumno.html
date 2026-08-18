@@ -848,8 +848,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260818100946 por un timestamp en cada deploy
-const _APP_VERSION = '20260818100946';
+// deploy.bat reemplaza 20260818102030 por un timestamp en cada deploy
+const _APP_VERSION = '20260818102030';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -4089,7 +4089,7 @@ function _tmFrac(m){ const map={1.75:'1¾',2.25:'2¼',2.5:'2½',2.75:'2¾'}; ret
 function _tmVal(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
 // Lee los inputs actuales (sin guardar) para vista previa
 function _tmFromInputs(){
-  return { height_cm:_tmVal('tm-alt'), shoe_size:_tmVal('tm-talle'), shoe_size_system:_tmVal('tm-sis'), foot_length_real:_tmVal('tm-real') };
+  return { height_cm:_tmVal('tm-alt'), shoe_size:_tmVal('tm-talle'), foot_length_real:_tmVal('tm-real') };
 }
 function _tmRowsHTML(footV, tm){
   const custom=(tm && tm.lower_body_positions)||{};
@@ -4099,8 +4099,10 @@ function _tmRowsHTML(footV, tm){
     const c=custom[d.key];
     const cm=(c && c.customized && c.distance_cm) ? Math.round(c.distance_cm) : Math.round(footV*d.m);
     const badge=(c && c.customized) ? ' <span style="font-size:8px;font-weight:800;color:#8a5a00;background:#ffe6b0;border-radius:20px;padding:1px 6px;">COACH</span>' : '';
+    const pasos=Math.round(footV*d.m / footV); // = Math.round(d.m), pasos enteros
+    const pl=pasos===1?(_LANG==='en'?'step':'paso'):(_LANG==='en'?'steps':'pasos');
     h+='<tr><td><div style="font-weight:900;">'+d.ej+badge+'</div><div style="font-size:10.5px;color:#33507f;font-weight:700;">'+d.en+(d.ang?' · puntas '+d.ang:'')+'</div></td>'
-      +'<td style="font-weight:900;white-space:nowrap;">'+_tmFrac(d.m)+' largos</td>'
+      +'<td style="font-weight:900;white-space:nowrap;">'+pasos+' '+pl+'</td>'
       +'<td style="font-weight:900;color:#2f5bb0;white-space:nowrap;text-align:right;">≈'+cm+' cm</td></tr>';
   });
   return h;
@@ -4130,9 +4132,7 @@ function _renderMedidasTecnicas(ctn){
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">'
         +'<div><label style="'+lbl+'">'+(en?'Height (cm)':'Altura (cm)')+'</label><input id="tm-alt" type="number" value="'+(tm.height_cm||'')+'" oninput="_tmPreview()" style="'+inp+'"></div>'
         +'<div><label style="'+lbl+'">'+(en?'Shoe size':'Talle de calzado')+'</label><input id="tm-talle" type="text" value="'+(tm.shoe_size||'')+'" placeholder="ej: 38/39" oninput="_tmPreview()" style="'+inp+'"></div>'
-        +'<div><label style="'+lbl+'">'+(en?'Size system':'Sistema de talle')+'</label><select id="tm-sis" onchange="_tmPreview()" style="'+inp+'">'
-          +['EU_AR','US','UK','OTRO'].map(s=>'<option value="'+s+'"'+((tm.shoe_size_system||'EU_AR')===s?' selected':'')+'>'+(s==='EU_AR'?'EU / AR':s==='OTRO'?(en?'Other':'Otro'):s)+'</option>').join('')+'</select></div>'
-        +'<div><label style="'+lbl+'">'+(en?'Real foot length (cm)':'Longitud real del pie (cm)')+'</label><input id="tm-real" type="number" step="0.1" value="'+(tm.foot_length_real||'')+'" placeholder="'+(en?'optional':'opcional')+'" oninput="_tmPreview()" style="'+inp+'"></div>'
+        +'<div style="grid-column:1 / -1;"><label style="'+lbl+'">'+(en?'Real foot length (cm)':'Longitud real del pie (cm)')+'</label><input id="tm-real" type="number" step="0.1" value="'+(tm.foot_length_real||'')+'" placeholder="'+(en?'optional':'opcional')+'" oninput="_tmPreview()" style="'+inp+'"></div>'
         +'<div style="grid-column:1 / -1;font-size:10.5px;color:var(--muted);line-height:1.5;background:rgba(255,255,255,.03);border:1px solid #1c1e22;border-radius:8px;padding:8px 10px;">'+(en?'If you know your real foot length, enter it for a better reference. Otherwise we estimate it from your shoe size.':'Si conocés la <b>longitud real</b> de tu pie, cargala para mejorar la referencia. Si no, usamos una estimación según tu talle.')+'</div>'
         +'<button onclick="_tmGuardar()" id="tm-btn" style="grid-column:1 / -1;margin-top:2px;padding:12px;background:var(--gold);color:#111;border:none;border-radius:10px;font-size:13px;font-weight:900;letter-spacing:.5px;cursor:pointer;">'+(en?'SAVE MY DATA':'GUARDAR MIS DATOS')+'</button>'
       +'</div>'
@@ -4145,7 +4145,8 @@ function _renderMedidasTecnicas(ctn){
     +'</div>';
   const tbl='<style>#tm-tbl table{width:100%;border-collapse:collapse;}#tm-tbl th{font-size:8.5px;font-weight:800;color:#5a7bb0;letter-spacing:.4px;text-transform:uppercase;padding:8px 8px;background:#dbe8fc;border-bottom:1px solid #c3d6f4;text-align:left;}#tm-tbl td{font-size:12px;color:#1e3a8a;padding:9px 8px;border-bottom:1px solid #d3e0f5;}#tm-tbl tr:last-child td{border-bottom:none;}#tm-tbl .tm-grp td{background:#dce8fb;font-size:9px;font-weight:900;color:#2f5bb0;letter-spacing:.5px;text-transform:uppercase;padding:5px 8px;}</style>'
     +'<div style="font-size:10px;font-weight:900;color:var(--gold);letter-spacing:1px;margin:16px 0 8px;">'+(en?'MY REFERENCES · LEGS':'MIS REFERENCIAS · PIERNAS')+'</div>'
-    +'<div id="tm-tbl" style="background:#eaf1fe;border:1px solid #bcd3f5;border-radius:14px;overflow:hidden;box-shadow:0 8px 20px rgba(20,40,90,.35);"><table><thead><tr><th>'+(en?'Exercise':'Ejercicio')+'</th><th>'+(en?'Foot-lengths':'Largos')+'</th><th style="text-align:right;">'+(en?'Distance':'Distancia')+'</th></tr></thead><tbody id="tm-tbody"></tbody></table></div>'
+    +'<div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin:-2px 0 8px;">'+(en?'1 step = 1 length of your foot (heel against toe).':'1 paso = 1 largo de tu pie (talón contra punta). Contá los pasos apoyando un pie delante del otro.')+'</div>'
+    +'<div id="tm-tbl" style="background:#eaf1fe;border:1px solid #bcd3f5;border-radius:14px;overflow:hidden;box-shadow:0 8px 20px rgba(20,40,90,.35);"><table><thead><tr><th>'+(en?'Exercise':'Ejercicio')+'</th><th>'+(en?'Steps':'Pasos')+'</th><th style="text-align:right;">'+(en?'Distance':'Distancia')+'</th></tr></thead><tbody id="tm-tbody"></tbody></table></div>'
     +'<div style="font-size:11px;color:var(--muted);line-height:1.55;margin-top:10px;padding:10px 12px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.18);border-radius:10px;"><b style="color:#e0bd63;">'+(en?'Suggested starting position.':'Posición inicial sugerida.')+'</b> '+(en?'Adjust it slightly if needed for comfort, mobility, stability and technique. It is a reproducible starting point, not a replacement for your coach\'s assessment.':'Ajustá ligeramente la posición si fuera necesario según comodidad, movilidad, estabilidad y técnica. Es un punto de partida reproducible, no reemplaza la evaluación de tu coach.')+'</div>';
   ctn.insertAdjacentHTML('beforeend', cat+form+datos+tbl);
   _tmPreview();
@@ -4164,7 +4165,7 @@ async function _tmGuardar(){
     if(p.customized){ lbp[d.key]=p; }
     else { lbp[d.key]={ multiplier:d.m, distance_cm:Math.round(fl.v*d.m*100)/100, customized:false }; if(d.ang){ const a=d.ang.match(/\d+/g); if(a){ lbp[d.key].toe_angle_min=+a[0]; lbp[d.key].toe_angle_max=+a[1]; } } }
   });
-  const obj={ height_cm:tm.height_cm||null, shoe_size:tm.shoe_size||null, shoe_size_system:tm.shoe_size_system||'EU_AR',
+  const obj={ height_cm:tm.height_cm||null, shoe_size:tm.shoe_size||null,
     foot_length_real:tm.foot_length_real||null, foot_length_cm:Math.round(fl.v*100)/100,
     foot_length_source:(tm.foot_length_real?'real':'estimated'), lower_body_positions:lbp, updatedAt:new Date().toISOString() };
   if(btn){ btn.disabled=true; btn.textContent=_LANG==='en'?'Saving...':'Guardando...'; }
