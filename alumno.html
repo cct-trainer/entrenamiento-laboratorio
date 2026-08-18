@@ -883,8 +883,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260818151252 por un timestamp en cada deploy
-const _APP_VERSION = '20260818151252';
+// deploy.bat reemplaza 20260818151533 por un timestamp en cada deploy
+const _APP_VERSION = '20260818151533';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1189,10 +1189,16 @@ function _tieneFuerza(){ return (_planesFuerza||[]).length > 0; }
 function _tieneRunning(){ return !!_planRun; }
 
 function entrarApp() {
-  document.getElementById('portada').style.display = 'none';
+  // Sin selector: se entra directo al escritorio con las pestañas.
   const f = _tieneFuerza(), r = _tieneRunning();
-  if (f && r) { _mostrarChooser(); return; }
-  _entrarModo((r && !f) ? 'running' : 'fuerza');
+  const ch=document.getElementById('modo-chooser'); if(ch) ch.style.display='none';
+  document.getElementById('portada').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  _modo = (r && !f) ? 'running' : 'fuerza';
+  _configNavModo();
+  const tab = (f && r) ? 'agenda' : ((r && !f) ? 'running' : 'rutina');
+  goTab(tab);
+  window.scrollTo(0,0);
 }
 function _mostrarChooser() {
   const nombre = _data?.perfil?.nombre || _data?.perfil?.name || '';
@@ -1222,7 +1228,7 @@ function _configNavModo() {
   const nbAg = document.getElementById('nb-agenda');
   if (nbAg) nbAg.style.display = (f && r) ? '' : 'none';   // SEMANA solo si tiene ambos
   const bm = document.getElementById('btn-modo');
-  if (bm) bm.style.display = (f && r) ? 'inline-flex' : 'none';
+  if (bm) bm.style.display = 'none';   // sin selector: el ⇄ ya no se usa
 }
 function _volverChooser() { _mostrarChooser(); }
 
