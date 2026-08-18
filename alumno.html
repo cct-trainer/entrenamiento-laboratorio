@@ -848,8 +848,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260818102030 por un timestamp en cada deploy
-const _APP_VERSION = '20260818102030';
+// deploy.bat reemplaza 20260818103542 por un timestamp en cada deploy
+const _APP_VERSION = '20260818103542';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2686,6 +2686,30 @@ async function _terminarEntrenamiento(){
   try { if (typeof toast === 'function') toast(_t('terminar_ok')); else alert(_t('terminar_ok')); } catch(e){ alert(_t('terminar_ok')); }
 }
 
+// Reabrir una sesión ya completada para poder editarla (por si se tocó sin querer)
+async function _reabrirEntrenamiento(){
+  if (!_plan) return;
+  const msg = _LANG==='en'
+    ? 'Reopen this session to edit it? You will be able to change your loads and finish it again.'
+    : '¿Reabrir esta sesión para editarla? Vas a poder modificar tus cargas y volver a terminarla.';
+  if (!confirm(msg)) return;
+  const planId = _plan.id;
+  const match = c => c && c.planId===planId && c.sem===_semIdx && c.dia===_diaIdx && c.mod===_diaModTab;
+  const arr = _data.sesionesCompletadas || [];
+  const quitar = arr.filter(match);
+  _data.sesionesCompletadas = arr.filter(c => !match(c));
+  try {
+    if (_db && _alumnoId && quitar.length){
+      for (const r of quitar){
+        await _db.collection('alumnos').doc(_alumnoId).set({
+          sesionesCompletadas: firebase.firestore.FieldValue.arrayRemove(r)
+        }, { merge: true });
+      }
+    }
+  } catch(e){ console.warn('reabrir entrenamiento:', e); }
+  renderSesion();   // vuelve al estado editable con el botón "Terminé"
+}
+
 // ── Series: marcar hecha / agregar / eliminar (lado alumno) ──
 function _serieTap(sp){
   if(!sp) return;
@@ -2901,7 +2925,10 @@ function renderSesion() {
   // Botón "Terminé mi entrenamiento" (o estado completado)
   const _yaComp = _sesionCompletada(_plan.id, _semIdx, _diaIdx, _diaModTab);
   const _finBtn = _yaComp
-    ? '<div style="margin-top:18px;padding:14px;border-radius:14px;border:1px solid color-mix(in srgb,var(--green) 45%,transparent);background:color-mix(in srgb,var(--green) 10%,transparent);color:var(--green);font-size:14px;font-weight:800;text-align:center;letter-spacing:.3px;">✓ '+_t('completado')+'</div>'
+    ? '<div style="display:flex;gap:8px;margin-top:18px;align-items:stretch;">'
+        +'<div style="flex:1;padding:14px;border-radius:14px;border:1px solid color-mix(in srgb,var(--green) 45%,transparent);background:color-mix(in srgb,var(--green) 10%,transparent);color:var(--green);font-size:14px;font-weight:800;text-align:center;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;">✓ '+_t('completado')+'</div>'
+        +'<button onclick="_reabrirEntrenamiento()" title="'+(_LANG==='en'?'Edit / reopen':'Editar / reabrir')+'" style="width:56px;border:1px solid color-mix(in srgb,var(--gold) 50%,transparent);background:color-mix(in srgb,var(--gold) 12%,transparent);color:var(--gold);border-radius:14px;font-size:19px;cursor:pointer;">✏️</button>'
+      +'</div>'
     : '<button onclick="_terminarEntrenamiento()" style="margin-top:18px;width:100%;padding:16px;border:none;border-radius:14px;background:var(--gold);color:var(--letra-text);font-size:15px;font-weight:800;letter-spacing:.3px;cursor:pointer;">✓ '+_t('terminar')+'</button>';
 
   ctn.innerHTML= back + tabs +
