@@ -626,7 +626,7 @@ const _I18N = {
     entrar:'Entrar',
     coach_de:'Coach:', plan_activo:'Plan activo',
     nav_rutina:'RUTINA', nav_running:'RUNNING', nav_complementos:'COMPLEMENTOS',
-    nav_stats:'STATS', nav_medidas:'MEDIDAS', nav_coach:'COACH', nav_charlas:'CHARLAS',
+    nav_stats:'STATS', nav_medidas:'DATOS', nav_coach:'COACH', nav_charlas:'CHARLAS',
     charlas:'CHARLAS', charlas_sub:'Salud, movimiento y evidencia — en mis palabras',
     sin_charlas:'Todavía no hay charlas publicadas.',
     sin_charlas_sub:'Christian va a subir videos sobre movilidad, salud metabólica y cardiovascular, siempre con respaldo científico.',
@@ -668,7 +668,7 @@ const _I18N = {
     entrar:'Enter',
     coach_de:'Coach:', plan_activo:'Active plan',
     nav_rutina:'PROGRAM', nav_running:'RUNNING', nav_complementos:'EXTRAS',
-    nav_stats:'STATS', nav_medidas:'MEASURES', nav_coach:'COACH', nav_charlas:'TALKS',
+    nav_stats:'STATS', nav_medidas:'DATA', nav_coach:'COACH', nav_charlas:'TALKS',
     charlas:'TALKS', charlas_sub:'Health, movement and evidence — in my own words',
     sin_charlas:'No talks published yet.',
     sin_charlas_sub:'Christian will upload videos on mobility, metabolic and cardiovascular health, always backed by science.',
@@ -848,8 +848,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260818095750 por un timestamp en cada deploy
-const _APP_VERSION = '20260818095750';
+// deploy.bat reemplaza 20260818100946 por un timestamp en cada deploy
+const _APP_VERSION = '20260818100946';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3984,8 +3984,25 @@ async function _antroGuardar() {
   }
 }
 
+let _datosSub = 'corporales';
+function _setDatosSub(s){ _datosSub=s; renderMedidas(); }
+function _datosSegBtn(id,label){
+  const on=_datosSub===id;
+  return '<button onclick="_setDatosSub(\''+id+'\')" style="flex:1;padding:9px 6px;border:none;border-radius:9px;font-size:11px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;'
+    +(on?'background:var(--gold);color:#111;':'background:transparent;color:var(--muted);')+'">'+label+'</button>';
+}
 function renderMedidas() {
   const ctn=document.getElementById('medidas-ctn');
+  if(!ctn) return;
+  const seg = '<div style="display:flex;gap:6px;background:var(--card);border:1px solid #1c1e22;border-radius:12px;padding:4px;margin-bottom:14px;">'
+    + _datosSegBtn('corporales', _LANG==='en'?'Body measures':'Medidas corporales')
+    + _datosSegBtn('tecnicas', _LANG==='en'?'Training measures':'Medidas técnicas')
+    + '</div>';
+  if(_datosSub==='tecnicas'){ ctn.innerHTML = seg + '<div id="datos-tec-ctn"></div>'; _renderMedidasTecnicas(document.getElementById('datos-tec-ctn')); return; }
+  ctn.innerHTML = seg + '<div id="datos-corp-ctn"></div>';
+  _renderMedidasCorporales(document.getElementById('datos-corp-ctn'));
+}
+function _renderMedidasCorporales(ctn) {
   const antro=_data.antropometria||[];
   const propio=_antroRenderRegistro();
   if (!antro.length) { ctn.innerHTML=propio+'<div style="margin-top:14px;"></div>'+noData('📏','Sin medidas del coach','Tu coach aún no registró mediciones profesionales.'); return; }
@@ -4033,6 +4050,129 @@ function renderMedidas() {
 
 function noData(ico,ttl,txt) {
   return '<div class="empty"><div class="empty-ico">'+ico+'</div><div class="empty-ttl">'+ttl+'</div>'+(txt?'<div class="empty-txt">'+txt+'</div>':'')+'</div>';
+}
+
+// ── MEDIDAS TÉCNICAS · POSICIÓN DE PIES (PIERNAS) ──────────────────────────
+// Tabla talle EU/AR → longitud aprox. del pie (configurable a futuro desde admin)
+const _TM_TABLE_EU={35:22.5,36:23,37:23.5,38:24,39:25,40:25.5,41:26,42:27,43:27.5,44:28,45:29};
+// Coeficientes (× largo del pie). A futuro configurables / personalizables por el coach.
+const _TM_DEFS=[
+  {grp:'Sentadilla bilateral'},
+  {key:'squat_quad',ej:'Sentadilla',en:'Cuádriceps',m:1.75,ang:'10°–30°'},
+  {key:'squat_balanced',ej:'Sentadilla',en:'Equilibrada',m:1.90},
+  {key:'squat_glute',ej:'Sentadilla',en:'Glúteos',m:2.10,ang:'20°–35°'},
+  {key:'sumo_squat',ej:'Sentadilla Sumo',en:'Glúteos / aductores',m:2.75,ang:'30°–45°'},
+  {grp:'Split squat (separación adelante–atrás)'},
+  {key:'split_squat_quad',ej:'Split Squat',en:'Cuádriceps',m:2.25},
+  {key:'split_squat_balanced',ej:'Split Squat',en:'Equilibrada',m:2.50},
+  {key:'split_squat_glute',ej:'Split Squat',en:'Glúteos',m:2.75},
+  {grp:'Bulgarian split squat'},
+  {key:'bulgarian_quad',ej:'Búlgara',en:'Cuádriceps',m:2.25},
+  {key:'bulgarian_balanced',ej:'Búlgara',en:'Equilibrada',m:2.50},
+  {key:'bulgarian_glute',ej:'Búlgara',en:'Glúteos',m:2.75}
+];
+function _tmParseTalle(str){
+  const nums=(str||'').match(/\d+([.,]\d+)?/g); if(!nums) return null;
+  return Math.max.apply(null, nums.map(x=>parseFloat(x.replace(',','.'))));
+}
+// Prioridad: longitud real → estimada por talle → genérica
+function _tmFootLen(tm){
+  const real=parseFloat(tm && tm.foot_length_real);
+  if(!isNaN(real) && real>0) return {v:real, src:_LANG==='en'?'real':'real'};
+  const t=_tmParseTalle(tm && tm.shoe_size);
+  if(t){ const keys=Object.keys(_TM_TABLE_EU).map(Number); let best=keys[0];
+    keys.forEach(k=>{ if(Math.abs(k-t)<Math.abs(best-t)) best=k; });
+    return {v:_TM_TABLE_EU[best], src:_LANG==='en'?'estimated':'estimada'}; }
+  return {v:25, src:_LANG==='en'?'generic':'genérica'};
+}
+function _tmFrac(m){ const map={1.75:'1¾',2.25:'2¼',2.5:'2½',2.75:'2¾'}; return map[m]||String(m).replace('.',','); }
+function _tmVal(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
+// Lee los inputs actuales (sin guardar) para vista previa
+function _tmFromInputs(){
+  return { height_cm:_tmVal('tm-alt'), shoe_size:_tmVal('tm-talle'), shoe_size_system:_tmVal('tm-sis'), foot_length_real:_tmVal('tm-real') };
+}
+function _tmRowsHTML(footV, tm){
+  const custom=(tm && tm.lower_body_positions)||{};
+  let h='';
+  _TM_DEFS.forEach(d=>{
+    if(d.grp){ h+='<tr class="tm-grp"><td colspan="3">'+d.grp+'</td></tr>'; return; }
+    const c=custom[d.key];
+    const cm=(c && c.customized && c.distance_cm) ? Math.round(c.distance_cm) : Math.round(footV*d.m);
+    const badge=(c && c.customized) ? ' <span style="font-size:8px;font-weight:800;color:#8a5a00;background:#ffe6b0;border-radius:20px;padding:1px 6px;">COACH</span>' : '';
+    h+='<tr><td><div style="font-weight:900;">'+d.ej+badge+'</div><div style="font-size:10.5px;color:#33507f;font-weight:700;">'+d.en+(d.ang?' · puntas '+d.ang:'')+'</div></td>'
+      +'<td style="font-weight:900;white-space:nowrap;">'+_tmFrac(d.m)+' largos</td>'
+      +'<td style="font-weight:900;color:#2f5bb0;white-space:nowrap;text-align:right;">≈'+cm+' cm</td></tr>';
+  });
+  return h;
+}
+// Vista previa en vivo (al tipear, sin guardar)
+function _tmPreview(){
+  const tm=_tmFromInputs();
+  const fl=_tmFootLen(tm);
+  const alt=document.getElementById('tm-d-alt'); if(alt) alt.innerHTML=(tm.height_cm||'—')+' <small style="color:var(--muted);font-weight:700;">cm</small>';
+  const tal=document.getElementById('tm-d-talle'); if(tal) tal.textContent=tm.shoe_size||'—';
+  const pie=document.getElementById('tm-d-pie'); if(pie) pie.innerHTML='≈'+(Math.round(fl.v*10)/10)+' <small style="color:var(--muted);font-weight:700;">cm · '+fl.src+'</small>';
+  const tb=document.getElementById('tm-tbody'); if(tb) tb.innerHTML=_tmRowsHTML(fl.v, _data.trainingMeasurements);
+}
+function _renderMedidasTecnicas(ctn){
+  if(!ctn) return;
+  const en=_LANG==='en';
+  const tm=_data.trainingMeasurements||{};
+  const cat='<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">'
+    +'<div style="display:flex;align-items:center;gap:10px;background:linear-gradient(160deg,#1a1a12,#111);border:1px solid var(--gold);border-radius:12px;padding:12px 13px;"><span style="font-size:18px;">🦶</span><span style="flex:1;font-size:13px;font-weight:800;color:var(--text);">'+(en?'Foot position · Legs':'Posición de pies · Piernas')+'<small style="display:block;font-size:10px;font-weight:600;color:var(--muted);margin-top:2px;">'+(en?'Squat, sumo, split, bulgarian':'Sentadillas, sumo, split, búlgara')+'</small></span><span style="font-size:8px;font-weight:800;color:#c9a84c;border:1px solid #5a4d24;border-radius:20px;padding:2px 7px;">'+(en?'ACTIVE':'ACTIVO')+'</span></div>'
+    +'<div style="display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid #23262d;border-radius:12px;padding:12px 13px;opacity:.5;"><span style="font-size:18px;">✋</span><span style="flex:1;font-size:13px;font-weight:800;color:var(--text);">'+(en?'Press grips':'Agarres para press')+'<small style="display:block;font-size:10px;color:var(--muted);margin-top:2px;">'+(en?'Coming soon':'Próximamente')+'</small></span><span style="font-size:8px;font-weight:800;color:var(--muted);border:1px solid #2a2d33;border-radius:20px;padding:2px 7px;">'+(en?'SOON':'PRONTO')+'</span></div>'
+    +'<div style="display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid #23262d;border-radius:12px;padding:12px 13px;opacity:.5;"><span style="font-size:18px;">🔙</span><span style="flex:1;font-size:13px;font-weight:800;color:var(--text);">'+(en?'Back setup':'Configuración de espalda')+'<small style="display:block;font-size:10px;color:var(--muted);margin-top:2px;">'+(en?'Coming soon':'Próximamente')+'</small></span><span style="font-size:8px;font-weight:800;color:var(--muted);border:1px solid #2a2d33;border-radius:20px;padding:2px 7px;">'+(en?'SOON':'PRONTO')+'</span></div>'
+    +'</div>';
+  const inp='background:var(--bg);border:1px solid rgba(128,128,128,.25);border-radius:8px;color:var(--text);font-size:13px;font-weight:700;padding:9px 10px;font-family:inherit;outline:none;width:100%;box-sizing:border-box;';
+  const lbl='font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;display:block;margin-bottom:4px;';
+  const form='<div style="font-size:10px;font-weight:900;color:var(--gold);letter-spacing:1px;margin:4px 0 8px;">'+(en?'YOUR DATA':'TUS DATOS')+'</div>'
+    +'<div style="background:var(--card);border:1px solid #1c1e22;border-radius:14px;padding:13px;">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">'
+        +'<div><label style="'+lbl+'">'+(en?'Height (cm)':'Altura (cm)')+'</label><input id="tm-alt" type="number" value="'+(tm.height_cm||'')+'" oninput="_tmPreview()" style="'+inp+'"></div>'
+        +'<div><label style="'+lbl+'">'+(en?'Shoe size':'Talle de calzado')+'</label><input id="tm-talle" type="text" value="'+(tm.shoe_size||'')+'" placeholder="ej: 38/39" oninput="_tmPreview()" style="'+inp+'"></div>'
+        +'<div><label style="'+lbl+'">'+(en?'Size system':'Sistema de talle')+'</label><select id="tm-sis" onchange="_tmPreview()" style="'+inp+'">'
+          +['EU_AR','US','UK','OTRO'].map(s=>'<option value="'+s+'"'+((tm.shoe_size_system||'EU_AR')===s?' selected':'')+'>'+(s==='EU_AR'?'EU / AR':s==='OTRO'?(en?'Other':'Otro'):s)+'</option>').join('')+'</select></div>'
+        +'<div><label style="'+lbl+'">'+(en?'Real foot length (cm)':'Longitud real del pie (cm)')+'</label><input id="tm-real" type="number" step="0.1" value="'+(tm.foot_length_real||'')+'" placeholder="'+(en?'optional':'opcional')+'" oninput="_tmPreview()" style="'+inp+'"></div>'
+        +'<div style="grid-column:1 / -1;font-size:10.5px;color:var(--muted);line-height:1.5;background:rgba(255,255,255,.03);border:1px solid #1c1e22;border-radius:8px;padding:8px 10px;">'+(en?'If you know your real foot length, enter it for a better reference. Otherwise we estimate it from your shoe size.':'Si conocés la <b>longitud real</b> de tu pie, cargala para mejorar la referencia. Si no, usamos una estimación según tu talle.')+'</div>'
+        +'<button onclick="_tmGuardar()" id="tm-btn" style="grid-column:1 / -1;margin-top:2px;padding:12px;background:var(--gold);color:#111;border:none;border-radius:10px;font-size:13px;font-weight:900;letter-spacing:.5px;cursor:pointer;">'+(en?'SAVE MY DATA':'GUARDAR MIS DATOS')+'</button>'
+      +'</div>'
+    +'</div>';
+  const datos='<div style="font-size:10px;font-weight:900;color:var(--gold);letter-spacing:1px;margin:16px 0 8px;">'+(en?'YOUR ESTIMATES':'TUS DATOS ESTIMADOS')+'</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:10px 18px;background:var(--card);border:1px solid #1c1e22;border-radius:14px;padding:12px 14px;">'
+      +'<div><div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;">'+(en?'Height':'Altura')+'</div><div style="font-size:15px;font-weight:900;color:var(--text);" id="tm-d-alt">—</div></div>'
+      +'<div><div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;">'+(en?'Footwear':'Calzado')+'</div><div style="font-size:15px;font-weight:900;color:var(--text);" id="tm-d-talle">—</div></div>'
+      +'<div><div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;">'+(en?'Foot length':'Longitud del pie')+'</div><div style="font-size:15px;font-weight:900;color:var(--text);" id="tm-d-pie">—</div></div>'
+    +'</div>';
+  const tbl='<style>#tm-tbl table{width:100%;border-collapse:collapse;}#tm-tbl th{font-size:8.5px;font-weight:800;color:#5a7bb0;letter-spacing:.4px;text-transform:uppercase;padding:8px 8px;background:#dbe8fc;border-bottom:1px solid #c3d6f4;text-align:left;}#tm-tbl td{font-size:12px;color:#1e3a8a;padding:9px 8px;border-bottom:1px solid #d3e0f5;}#tm-tbl tr:last-child td{border-bottom:none;}#tm-tbl .tm-grp td{background:#dce8fb;font-size:9px;font-weight:900;color:#2f5bb0;letter-spacing:.5px;text-transform:uppercase;padding:5px 8px;}</style>'
+    +'<div style="font-size:10px;font-weight:900;color:var(--gold);letter-spacing:1px;margin:16px 0 8px;">'+(en?'MY REFERENCES · LEGS':'MIS REFERENCIAS · PIERNAS')+'</div>'
+    +'<div id="tm-tbl" style="background:#eaf1fe;border:1px solid #bcd3f5;border-radius:14px;overflow:hidden;box-shadow:0 8px 20px rgba(20,40,90,.35);"><table><thead><tr><th>'+(en?'Exercise':'Ejercicio')+'</th><th>'+(en?'Foot-lengths':'Largos')+'</th><th style="text-align:right;">'+(en?'Distance':'Distancia')+'</th></tr></thead><tbody id="tm-tbody"></tbody></table></div>'
+    +'<div style="font-size:11px;color:var(--muted);line-height:1.55;margin-top:10px;padding:10px 12px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.18);border-radius:10px;"><b style="color:#e0bd63;">'+(en?'Suggested starting position.':'Posición inicial sugerida.')+'</b> '+(en?'Adjust it slightly if needed for comfort, mobility, stability and technique. It is a reproducible starting point, not a replacement for your coach\'s assessment.':'Ajustá ligeramente la posición si fuera necesario según comodidad, movilidad, estabilidad y técnica. Es un punto de partida reproducible, no reemplaza la evaluación de tu coach.')+'</div>';
+  ctn.insertAdjacentHTML('beforeend', cat+form+datos+tbl);
+  _tmPreview();
+}
+async function _tmGuardar(){
+  const btn=document.getElementById('tm-btn');
+  const tm=_tmFromInputs();
+  if(!tm.height_cm && !tm.shoe_size && !tm.foot_length_real){ alert(_LANG==='en'?'Enter your height and shoe size':'Cargá tu altura y talle'); return; }
+  const fl=_tmFootLen(tm);
+  // Preservar referencias personalizadas por el coach
+  const prev=(_data.trainingMeasurements && _data.trainingMeasurements.lower_body_positions)||{};
+  const lbp={};
+  _TM_DEFS.forEach(d=>{
+    if(d.grp) return;
+    const p=prev[d.key]||{};
+    if(p.customized){ lbp[d.key]=p; }
+    else { lbp[d.key]={ multiplier:d.m, distance_cm:Math.round(fl.v*d.m*100)/100, customized:false }; if(d.ang){ const a=d.ang.match(/\d+/g); if(a){ lbp[d.key].toe_angle_min=+a[0]; lbp[d.key].toe_angle_max=+a[1]; } } }
+  });
+  const obj={ height_cm:tm.height_cm||null, shoe_size:tm.shoe_size||null, shoe_size_system:tm.shoe_size_system||'EU_AR',
+    foot_length_real:tm.foot_length_real||null, foot_length_cm:Math.round(fl.v*100)/100,
+    foot_length_source:(tm.foot_length_real?'real':'estimated'), lower_body_positions:lbp, updatedAt:new Date().toISOString() };
+  if(btn){ btn.disabled=true; btn.textContent=_LANG==='en'?'Saving...':'Guardando...'; }
+  try{
+    if(_db && _alumnoId){ await _db.collection('alumnos').doc(_alumnoId).update({ trainingMeasurements:obj }); }
+    _data.trainingMeasurements=obj;
+    _datosSub='tecnicas'; renderMedidas();
+  }catch(e){ console.error(e); if(btn){ btn.disabled=false; btn.textContent=_LANG==='en'?'SAVE MY DATA':'GUARDAR MIS DATOS'; } alert(_LANG==='en'?'Could not save. Check your connection.':'No se pudo guardar. Revisá tu conexión.'); }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
