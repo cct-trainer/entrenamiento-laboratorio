@@ -12501,7 +12501,8 @@ function guardarEstadoDiaActual() {
       const dropset = _leerTbodyLocal(eId+'-drop-tbody');
       const _tecEj = (typeof _readTecnica==='function' ? _readTecnica(eEl) : null);
       const _uniEj2 = (eEl.querySelector('.ej-uni')?.value === '1');
-      if(eName) ejercicios.push({ nombre:eName, ctrl, video, nota, ficha, series, seriesApro, dropset, tecnica:_tecEj, unilateral:_uniEj2 });
+      const _footEj = (typeof _readFootPos==='function' ? _readFootPos(eEl) : null);
+      if(eName) ejercicios.push({ nombre:eName, ctrl, video, nota, ficha, series, seriesApro, dropset, tecnica:_tecEj, unilateral:_uniEj2, foot_position:_footEj });
     });
     // Leer datos cardio si aplica
     let cardioData = null;
@@ -12657,6 +12658,9 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
     if(datosPrevios.unilateral !== undefined) _setEjExec(ejId, datosPrevios.unilateral ? 1 : 0);
     // Restaurar técnica avanzada (Etapa 1)
     if(datosPrevios.tecnica && typeof _loadTecnica==='function') _loadTecnica(ejId, datosPrevios.tecnica);
+    // Restaurar posición de pies (o mostrar la sección si el nombre lo amerita)
+    if(datosPrevios.foot_position && typeof _loadFootPos==='function') _loadFootPos(ejId, datosPrevios.foot_position);
+    else if(typeof _footPosSync==='function') _footPosSync(ejId);
     // Controles
     if(datosPrevios.ctrl) {
       const c = datosPrevios.ctrl;
@@ -18724,6 +18728,49 @@ function addEjercicio(bloqueId) {
 
     </div>
 
+    <!-- POSICIÓN DE PIES (solo ejercicios de base abierta) -->
+    <div class="series-section" id="${ejId}-footpos" style="display:none;">
+      <div class="series-sec-header drop" onclick="toggleFootPos('${ejId}')">
+        <span class="series-sec-icon" id="${ejId}-footpos-icon">▸</span>
+        🦶 POSICIÓN DE PIES
+      </div>
+      <div class="series-sec-body" id="${ejId}-footpos-body" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:10px 2px 4px;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Tipo de apertura</label>
+            <select id="${ejId}-fp-tipo" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+              <option>Estrecha</option><option>Ancho de caderas</option><option>Ancho de hombros</option><option>Amplia</option><option>Sumo</option><option>Personalizada</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Longitud del pie (cm)</label>
+            <input id="${ejId}-fp-pie" type="number" step="0.5" placeholder="ej: 25" oninput="_fpFromPie('${ejId}');_fpMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Largos de pie</label>
+            <input id="${ejId}-fp-largos" type="number" step="0.1" placeholder="ej: 3" oninput="_fpFromLargos('${ejId}');_fpMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Distancia (cm) entre talones</label>
+            <input id="${ejId}-fp-cm" type="number" step="0.5" placeholder="ej: 75" oninput="_fpFromCm('${ejId}');_fpMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+          </div>
+          <div id="${ejId}-fp-eq" style="grid-column:1 / -1;background:#eef4ff;border:1px solid #cfe0f7;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:800;color:#2f5bb0;">Cargá longitud del pie y largos para ver la equivalencia.</div>
+          <div style="grid-column:1 / -1;display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Ángulo de las puntas</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input id="${ejId}-fp-amin" type="number" placeholder="30" oninput="_fpMark('${ejId}')" style="width:70px;border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;"><span style="font-size:12px;color:#8b93a0;">°</span>
+              <span style="font-size:12px;color:#8b93a0;">a</span>
+              <input id="${ejId}-fp-amax" type="number" placeholder="45" oninput="_fpMark('${ejId}')" style="width:70px;border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;"><span style="font-size:12px;color:#8b93a0;">° hacia afuera</span>
+            </div>
+          </div>
+          <div style="grid-column:1 / -1;display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:9px;font-weight:800;color:#7d8698;letter-spacing:.4px;text-transform:uppercase;">Observaciones</label>
+            <input id="${ejId}-fp-obs" type="text" placeholder="ej: mejor profundidad con apertura algo menor…" oninput="_fpMark('${ejId}')" style="border:1px solid #d5d9e0;border-radius:8px;padding:8px 9px;font-size:13px;color:#2b3140;background:#fafbfd;font-family:inherit;">
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="${ejId}-ficha-toggle-wrap" style="display:none;">
       <div class="ej-ficha-toggle" onclick="toggleFichaEj('${ejId}')">
         <span id="${ejId}-ficha-toggle-icon">ⓘ</span>
@@ -18734,6 +18781,92 @@ function addEjercicio(bloqueId) {
     <div class="ej-ficha" id="${ejId}-ficha"></div>
 `;
   body.appendChild(div);
+}
+
+// ── POSICIÓN DE PIES ──────────────────────────────────────────────
+// Detecta ejercicios de base abierta por nombre (excluye variantes a una pierna)
+function _esBaseAbierta(nombre){
+  const n=(nombre||'').toLowerCase();
+  if(!n) return false;
+  if(/b[uú]lgara|una pierna|split|zancada|lunge|pistol|unilateral/.test(n)) return false;
+  return /sentadilla|squat|sumo|prensa|leg\s*press|hack|peso muerto sumo/.test(n);
+}
+function toggleFootPos(ejId){
+  const body=document.getElementById(ejId+'-footpos-body');
+  const ico=document.getElementById(ejId+'-footpos-icon');
+  if(!body) return;
+  const open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  if(ico) ico.textContent=open?'▸':'▾';
+}
+function _fpNum(id){ const el=document.getElementById(id); return el?(parseFloat(el.value)||0):0; }
+function _fpSet(id,v){ const el=document.getElementById(id); if(el) el.value=(v===0||v==='')?'':v; }
+function _fpMark(ejId){ const sec=document.getElementById(ejId+'-footpos'); if(sec) sec.setAttribute('data-custom','1'); }
+function _fpRender(ejId){
+  const l=_fpNum(ejId+'-fp-largos'), cm=_fpNum(ejId+'-fp-cm');
+  const eq=document.getElementById(ejId+'-fp-eq'); if(!eq) return;
+  if(l||cm) eq.innerHTML=(Math.round(l*10)/10)+' largos de pie ≈ <b>'+(Math.round(cm*10)/10)+' cm</b> entre talones';
+  else eq.textContent='Cargá longitud del pie y largos para ver la equivalencia.';
+}
+function _fpFromLargos(ejId){ const pie=_fpNum(ejId+'-fp-pie'),l=_fpNum(ejId+'-fp-largos'); if(pie>0&&l>0) _fpSet(ejId+'-fp-cm', Math.round(pie*l*10)/10); _fpRender(ejId); }
+function _fpFromCm(ejId){ const pie=_fpNum(ejId+'-fp-pie'),cm=_fpNum(ejId+'-fp-cm'); if(pie>0&&cm>0) _fpSet(ejId+'-fp-largos', Math.round(cm/pie*10)/10); _fpRender(ejId); }
+function _fpFromPie(ejId){ _fpFromLargos(ejId); }
+// Muestra/oculta la sección según el nombre; prefill de referencia para sumo
+function _footPosSync(ejId){
+  const sec=document.getElementById(ejId+'-footpos'); if(!sec) return;
+  const nInp=document.querySelector('#'+ejId+' .ej-nombre-input');
+  const nombre=nInp?nInp.value:'';
+  const showByName=_esBaseAbierta(nombre);
+  const hasData=sec.getAttribute('data-has')==='1';
+  sec.style.display=(showByName||hasData)?'block':'none';
+  // Prefill de referencia inicial solo para SUMO y solo una vez
+  if(showByName && !hasData && sec.getAttribute('data-init')!=='1'){
+    sec.setAttribute('data-init','1');
+    if(/sumo/i.test(nombre)){
+      const t=document.getElementById(ejId+'-fp-tipo'); if(t) t.value='Sumo';
+      if(!_fpNum(ejId+'-fp-largos')) _fpSet(ejId+'-fp-largos',3);
+      if(!_fpNum(ejId+'-fp-amin')) _fpSet(ejId+'-fp-amin',30);
+      if(!_fpNum(ejId+'-fp-amax')) _fpSet(ejId+'-fp-amax',45);
+      _fpRender(ejId);
+    }
+  }
+}
+function _readFootPos(eEl){
+  const ejId=eEl.id;
+  const sec=document.getElementById(ejId+'-footpos');
+  if(!sec || sec.style.display==='none') return null;
+  const tipoEl=document.getElementById(ejId+'-fp-tipo');
+  const stance=tipoEl?tipoEl.value:'';
+  const largos=_fpNum(ejId+'-fp-largos'), pie=_fpNum(ejId+'-fp-pie'), cm=_fpNum(ejId+'-fp-cm');
+  const amin=_fpNum(ejId+'-fp-amin'), amax=_fpNum(ejId+'-fp-amax');
+  const obsEl=document.getElementById(ejId+'-fp-obs'); const notes=obsEl?obsEl.value.trim():'';
+  if(!largos && !cm && !amin && !amax && !notes) return null;
+  return {
+    stance_type: stance,
+    measurement_method:'foot_length',
+    stance_value: largos,
+    foot_length_cm: pie,
+    calculated_distance_cm: cm,
+    toe_angle_min: amin,
+    toe_angle_max: amax,
+    notes: notes,
+    customized_by_coach: sec.getAttribute('data-custom')==='1'
+  };
+}
+function _loadFootPos(ejId, fp){
+  if(!fp) return;
+  const sec=document.getElementById(ejId+'-footpos'); if(!sec) return;
+  _fpSet(ejId+'-fp-pie', fp.foot_length_cm||'');
+  _fpSet(ejId+'-fp-largos', fp.stance_value||'');
+  _fpSet(ejId+'-fp-cm', fp.calculated_distance_cm||'');
+  _fpSet(ejId+'-fp-amin', fp.toe_angle_min||'');
+  _fpSet(ejId+'-fp-amax', fp.toe_angle_max||'');
+  const tipoEl=document.getElementById(ejId+'-fp-tipo'); if(tipoEl && fp.stance_type) tipoEl.value=fp.stance_type;
+  const obsEl=document.getElementById(ejId+'-fp-obs'); if(obsEl) obsEl.value=fp.notes||'';
+  if(fp.customized_by_coach) sec.setAttribute('data-custom','1');
+  sec.setAttribute('data-has','1'); sec.setAttribute('data-init','1');
+  sec.style.display='block';
+  _fpRender(ejId);
 }
 
 function toggleFichaEj(ejId) {
@@ -18944,6 +19077,7 @@ function onEjNombreInput(e, ejId, bloqueId) {
   const val = e.target.value;
   const resultados = buscarEjercicios(val);
   renderDropdown(ejId, bloqueId, resultados, val);
+  if(typeof _footPosSync==='function') _footPosSync(ejId);
 }
 
 function closeDropdown(ejId) {
@@ -19223,6 +19357,7 @@ function seleccionarEjercicio(ejId, bloqueId, nombreOIdx) {
   const input = document.querySelector(`#${ejId} .ej-nombre-input`);
   if (input) input.value = ex.nombre;
   closeDropdown(ejId);
+  if(typeof _footPosSync==='function') _footPosSync(ejId);
   // Prefijar Bilateral/Unilateral según la biblioteca (editable por el coach)
   if (ex.unilateral !== undefined) _setEjExec(ejId, ex.unilateral ? 1 : 0);
   // Nota automática de equipamiento

@@ -848,8 +848,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260818071149 por un timestamp en cada deploy
-const _APP_VERSION = '20260818071149';
+// deploy.bat reemplaza 20260818090136 por un timestamp en cada deploy
+const _APP_VERSION = '20260818090136';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1988,6 +1988,36 @@ function _tecAppHTML(ej){
   }
   return '<div class="tec"><div class="tec-h"><span class="ic">'+icon+'</span><span class="t">'+title+'</span>'+badge+'</div>'+condHTML+tbl+extra+'</div>';
 }
+// Posición de pies · vista simple para el alumno (sin cálculos internos)
+function _footPosHTML(ej){
+  const fp = ej && ej.foot_position; if(!fp) return '';
+  const en = _LANG==='en';
+  const r1 = Math.round((fp.stance_value||0)*10)/10;
+  const rc = Math.round((fp.calculated_distance_cm||0)*10)/10;
+  let apertura='';
+  if(r1) apertura = r1 + (en?' foot-lengths':' largos de tu pie');
+  if(rc){ const c = '≈'+rc+' cm'+(en?' between heels':' entre talones'); apertura = apertura ? apertura+' <small style="font-weight:700;color:#33507f;">('+c+')</small>' : c; }
+  const amin=fp.toe_angle_min, amax=fp.toe_angle_max;
+  let puntas='';
+  if(amin&&amax) puntas = amin+'°–'+amax+'°'+(en?' outward':' hacia afuera');
+  else if(amin) puntas = amin+'°'+(en?' outward':' hacia afuera');
+  if(!apertura && !puntas) return '';
+  const rowK='font-size:10px;font-weight:900;color:#2f5bb0;text-transform:uppercase;letter-spacing:.5px;min-width:78px;';
+  const rowV='font-size:14.5px;font-weight:800;color:#1e3a8a;';
+  let body='';
+  if(apertura) body+='<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;"><span style="'+rowK+'">'+(en?'Opening':'Apertura')+'</span><span style="'+rowV+'">'+apertura+'</span></div>';
+  if(puntas)   body+='<div style="display:flex;align-items:baseline;gap:8px;"><span style="'+rowK+'">'+(en?'Toes':'Puntas')+'</span><span style="'+rowV+'">'+puntas+'</span></div>';
+  const diag='<div style="display:flex;justify-content:center;padding:2px 0 8px;"><svg width="140" height="52" viewBox="0 0 150 60"><line x1="30" y1="46" x2="120" y2="46" stroke="#9bbcea" stroke-width="1.5" stroke-dasharray="4 4"/>'+(rc?'<text x="75" y="59" text-anchor="middle" font-size="9" fill="#2f5bb0" font-weight="800">≈'+rc+' cm</text>':'')+'<g transform="translate(30,28) rotate(-'+(amax||35)+')"><ellipse cx="0" cy="0" rx="7" ry="14" fill="#1e3a8a"/></g><g transform="translate(120,28) rotate('+(amax||35)+')"><ellipse cx="0" cy="0" rx="7" ry="14" fill="#1e3a8a"/></g></svg></div>';
+  const nota = fp.notes
+    ? fp.notes
+    : (en?'Adjust the opening slightly if needed to keep a stable base and move comfortably. It is an initial reference, not a fixed position.'
+         :'Ajustá ligeramente la apertura si hace falta para apoyar estable y moverte cómodo. Es una referencia inicial, no una posición fija.');
+  return '<div style="margin-top:11px;background:#eaf1fe;border:1px solid #bcd3f5;border-radius:12px;overflow:hidden;box-shadow:0 8px 20px rgba(20,40,90,.35);">'+
+      '<div style="display:flex;align-items:center;gap:8px;background:#dbe8fc;border-bottom:1px solid #c3d6f4;padding:9px 12px;"><span>🦶</span><span style="font-size:12px;font-weight:900;color:#1e3a8a;text-transform:uppercase;letter-spacing:.3px;">'+(en?'Foot position':'Posición de pies')+'</span></div>'+
+      '<div style="padding:10px 14px 12px;">'+diag+body+'</div>'+
+      '<div style="font-size:11.5px;color:#33507f;line-height:1.55;background:#f2f7ff;border-top:1px solid #dbe8fc;padding:10px 14px;"><b style="color:#1e3a8a;">'+(en?'Note:':'Nota:')+'</b> '+nota+'</div>'+
+    '</div>';
+}
 function _ejCard(ej, uid) {
   _ejStore[uid] = ej; // guardar para re-render posterior
 
@@ -2264,6 +2294,8 @@ function _ejCard(ej, uid) {
 
   // Técnica avanzada (Etapa 2): etiqueta + chips + paso
   const _tecApp = _tecAppHTML(ej);
+  // Posición de pies (ejercicios de base abierta)
+  const _footApp = _footPosHTML(ej);
   // Nota verde si el alumno sustituyó el ejercicio
   const _sustNote = _sust
     ? '<div style="margin:8px 0 0 12px;font-size:11px;color:#7fe0a0;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.22);border-radius:8px;padding:7px 10px;line-height:1.45;">⇄ <b style="color:#a7f0c4;">'+(_LANG==="en"?"Changed by you.":"Cambiado por vos.")+'</b> '+(_LANG==="en"?"Original":"Original")+': '+_nomOrig+'. <span style="color:#8fb7e6;text-decoration:underline;cursor:pointer;" onclick="_revertirEj(\''+uid+'\')">'+(_LANG==="en"?"Back to original":"Volver al original")+'</span></div>'
@@ -2309,6 +2341,7 @@ function _ejCard(ej, uid) {
       pesoRef+
       seriesTable+
       _tecApp+
+      _footApp+
       _footer+
       fichaHTML+
       feedbackHTML+
