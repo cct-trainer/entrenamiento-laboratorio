@@ -883,8 +883,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260818151533 por un timestamp en cada deploy
-const _APP_VERSION = '20260818151533';
+// deploy.bat reemplaza 20260818233649 por un timestamp en cada deploy
+const _APP_VERSION = '20260818233649';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1186,7 +1186,8 @@ let _modo = null;
 const _MC_IMG_FUERZA = 'mc-fuerza.jpg';   // foto poster de fuerza (en el repo, junto a alumno.html)
 const _MC_IMG_RUNNING = 'mc-running.jpg'; // foto poster de running
 function _tieneFuerza(){ return (_planesFuerza||[]).length > 0; }
-function _tieneRunning(){ return !!_planRun; }
+// Running desactivado en la app (solo fuerza/gym). Para reactivarlo: return !!_planRun;
+function _tieneRunning(){ return false; }
 
 function entrarApp() {
   // Sin selector: se entra directo al escritorio con las pestañas.

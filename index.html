@@ -3230,7 +3230,7 @@ select.toolbox-input option:disabled { color: #888; }
       <button class="nav-dropdown-item" onclick="navIrFuerza()">
         <span><span class="nav-dd-label">Fuerza</span><span class="nav-dd-sub">Planificación de fuerza e hipertrofia</span></span>
       </button>
-      <button class="nav-dropdown-item" onclick="navIrRunning()">
+      <button class="nav-dropdown-item" onclick="navIrRunning()" style="display:none;">
         <span><span class="nav-dd-label">Running</span><span class="nav-dd-sub">Planificación de running</span></span>
       </button>
       <button class="nav-dropdown-item" onclick="navIrCalendario()">
@@ -3260,7 +3260,7 @@ select.toolbox-input option:disabled { color: #888; }
           <button class="pmm-left-item" id="pmm-cat-fuerza" data-cat="fuerza" onclick="perfilPlanSelectCat('fuerza')">
             Fuerza
           </button>
-          <button class="pmm-left-item" id="pmm-cat-running" data-cat="running" onclick="perfilPlanSelectCat('running')">
+          <button class="pmm-left-item" id="pmm-cat-running" data-cat="running" onclick="perfilPlanSelectCat('running')" style="display:none;">
             Running
           </button>
           <div class="pmm-left-divider"></div>
@@ -3589,7 +3589,7 @@ select.toolbox-input option:disabled { color: #888; }
         <div class="module-content">
           <div class="perfil-subtabs">
             <button class="perfil-subtab active" onclick="switchPerfilSubtab('plan','fuerza')">Fuerza</button>
-            <button class="perfil-subtab" onclick="switchPerfilSubtab('plan','running')">Running</button>
+            <button class="perfil-subtab" onclick="switchPerfilSubtab('plan','running')" style="display:none;">Running</button>
             <button class="perfil-subtab" onclick="switchPerfilSubtab('plan','calendario')">Calendario</button>
           </div>
           <div id="plan-sub-fuerza" class="perfil-subcontent active">
@@ -4064,7 +4064,7 @@ select.toolbox-input option:disabled { color: #888; }
             <div style="font-size:12px;color:#888;margin-top:4px;">Transfiere tu sesión tal cual a la planilla del alumno. No la modifica ni la optimiza.</div>
             <div style="display:flex;gap:8px;margin-top:14px;">
               <button id="trasp-tab-fuerza" onclick="_traspSetTipo('fuerza')" style="flex:1;padding:10px;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;background:#7c3aed;color:#fff;font-family:inherit;">💪 Fuerza</button>
-              <button id="trasp-tab-running" onclick="_traspSetTipo('running')" style="flex:1;padding:10px;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;background:#f0f0f0;color:#666;font-family:inherit;">🏃 Running</button>
+              <button id="trasp-tab-running" onclick="_traspSetTipo('running')" style="display:none;flex:1;padding:10px;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;background:#f0f0f0;color:#666;font-family:inherit;">🏃 Running</button>
             </div>
           </div>
           <div style="padding:16px 26px;overflow-y:auto;">
@@ -4403,7 +4403,7 @@ select.toolbox-input option:disabled { color: #888; }
     <div class="pln-footer">
       <button class="pln-btn pln-btn-outline" onclick="showView('inicio')">← Inicio</button>
       <button class="pln-btn pln-btn-outline" onclick="volverAlPerfil()" style="background:#e8f0fe;color:#1a3a6a;border-color:#1a3a6a;font-weight:700;">← Volver al alumno</button>
-      <button class="pln-btn pln-btn-outline" onclick="irAPlanRunning()">Running</button>
+      <button class="pln-btn pln-btn-outline" onclick="irAPlanRunning()" style="display:none;">Running</button>
       <button class="pln-btn pln-btn-guardar" onclick="guardarPlanSemanal()">Guardar semana</button>
     </div>
 
@@ -14068,7 +14068,7 @@ function renderPerfilDashboard(alumnoId) {
     <div style="margin-top:24px;">
       <div style="font-size:11px;font-weight:700;color:#999;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">RESUMEN DEL ALUMNO</div>
       <div style="display:flex;align-items:stretch;border:1px solid #e8e8e8;border-radius:12px;overflow:hidden;background:#fff;">
-        ${cards.map((c, i) => `
+        ${cards.filter(c=>c.titulo!=='RUNNING').map((c, i) => `
           <div onclick="switchPerfilTab('${c.tab}')"
             style="flex:1;cursor:pointer;padding:20px 14px;text-align:center;transition:background .15s;position:relative;${i > 0 ? 'border-left:2px dotted #ddd;' : ''}"
             onmouseenter="this.style.background='#fafafa'"
