@@ -12076,17 +12076,27 @@ async function _abrirAccesos(){
   try{
     const snap=await window._db.collection('alumnos').get();
     const items=[];
-    snap.forEach(doc=>{ const id=doc.id; if(id.indexOf('zz_')===0) return; const d=doc.data()||{}; items.push({ nombre:(d.perfil&&d.perfil.nombre)||'Alumno', at:d.ultimoAccesoApp||'', n:d.accesosApp||0 }); });
+    snap.forEach(doc=>{ const id=doc.id; if(id.indexOf('zz_')===0) return; const d=doc.data()||{}; items.push({ nombre:(d.perfil&&d.perfil.nombre)||'Alumno', at:d.ultimoAccesoApp||'', n:d.accesosApp||0, dias:Array.isArray(d.accesosDias)?d.accesosDias:[] }); });
     items.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
     const body=document.querySelector('#accesos-overlay .stc-body'); if(!body) return;
     if(!items.length){ body.innerHTML='<div class="stc-empty">Sin datos de acceso todavía</div>'; return; }
-    const hoyN=items.filter(x=>x.at && new Date(x.at).toDateString()===new Date().toDateString()).length;
+    // Últimos 7 días (de hoy hacia atrás)
+    const _DL=['D','L','M','M','J','V','S'];
+    const ultimos7=[]; for(let i=6;i>=0;i--){ const dd=new Date(); dd.setDate(dd.getDate()-i); ultimos7.push({ iso:dd.toISOString().slice(0,10), letra:_DL[dd.getDay()] }); }
+    const hoyISO=new Date().toISOString().slice(0,10);
+    const hoyN=items.filter(x=>x.dias.indexOf(hoyISO)>=0).length;
+    const semN=items.filter(x=>ultimos7.some(u=>x.dias.indexOf(u.iso)>=0)).length;
     const rows=items.map(x=>{
-      const rel=_accesoRel(x.at);
-      const nunca=!x.at;
-      return '<div class="stc-hrow" style="align-items:center;'+(nunca?'opacity:.55;':'')+'"><div style="text-align:left;flex:1;"><div style="font-size:13px;color:#eaf0fb;font-weight:700;">'+x.nombre+'</div><div style="font-size:10.5px;color:#6b7c9e;margin-top:2px;">'+(nunca?'Nunca entró':(rel+(x.n?' · '+x.n+' accesos':'')))+'</div></div>'+(x.at && new Date(x.at).toDateString()===new Date().toDateString()?'<span style="font-size:9px;font-weight:800;color:#7fe0a0;background:rgba(37,211,102,.12);border-radius:20px;padding:2px 8px;">HOY</span>':'')+'</div>';
+      const rel=_accesoRel(x.at); const nunca=!x.at;
+      const dots=ultimos7.map(u=>{ const on=x.dias.indexOf(u.iso)>=0; const es=u.iso===hoyISO;
+        return '<div style="text-align:center;"><div style="font-size:8px;color:#5b6b8a;margin-bottom:2px;">'+u.letra+'</div><div style="width:12px;height:12px;border-radius:50%;margin:0 auto;background:'+(on?'#25D366':'transparent')+';border:1px solid '+(on?'#25D366':(es?'#8fb7e6':'#2a3550'))+';"></div></div>'; }).join('');
+      const cnt7=ultimos7.filter(u=>x.dias.indexOf(u.iso)>=0).length;
+      return '<div class="stc-hrow" style="align-items:center;flex-direction:column;'+(nunca?'opacity:.55;':'')+'">'
+        +'<div style="display:flex;align-items:center;width:100%;gap:8px;"><div style="text-align:left;flex:1;"><div style="font-size:13px;color:#eaf0fb;font-weight:700;">'+x.nombre+'</div><div style="font-size:10.5px;color:#6b7c9e;margin-top:2px;">'+(nunca?'Nunca entró':rel)+'</div></div><span style="font-size:10px;font-weight:800;color:'+(cnt7?'#7fe0a0':'#6b7c9e')+';white-space:nowrap;">'+cnt7+'/7 días</span></div>'
+        +'<div style="display:flex;gap:8px;justify-content:flex-start;width:100%;margin-top:8px;">'+dots+'</div>'
+      +'</div>';
     }).join('');
-    body.innerHTML='<div style="font-size:11px;color:#8fb7e6;margin:0 0 10px;font-weight:700;">'+hoyN+' entraron hoy · '+items.length+' alumnos</div><div class="stc-hist">'+rows+'</div><div class="stc-note">Se registra cada vez que el alumno abre la app. Ordenado del acceso más reciente al más viejo.</div>';
+    body.innerHTML='<div style="font-size:11px;color:#8fb7e6;margin:0 0 10px;font-weight:700;">'+hoyN+' entraron hoy · '+semN+' en los últimos 7 días · '+items.length+' alumnos</div><div class="stc-hist">'+rows+'</div><div class="stc-note">Cada punto verde 🟢 es un día que el alumno abrió la app (últimos 7 días, de izquierda a derecha). El registro por día empieza desde la versión nueva.</div>';
   }catch(e){ console.warn('accesos:', e); }
 }
 let _coachAudioEl=null;

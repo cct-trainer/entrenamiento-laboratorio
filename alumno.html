@@ -883,8 +883,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260819135014 por un timestamp en cada deploy
-const _APP_VERSION = '20260819135014';
+// deploy.bat reemplaza 20260819135546 por un timestamp en cada deploy
+const _APP_VERSION = '20260819135546';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -995,9 +995,11 @@ const TIPOS_RUN = {
     // Registrar acceso a la app (para que el coach vea quién entró y cuándo)
     try {
       const _accTs = new Date().toISOString();
+      const _hoyD = _accTs.slice(0,10);   // YYYY-MM-DD (un registro por día)
       db.collection('alumnos').doc(id).set({
         ultimoAccesoApp: _accTs,
-        accesosApp: firebase.firestore.FieldValue.increment(1)
+        accesosApp: firebase.firestore.FieldValue.increment(1),
+        accesosDias: firebase.firestore.FieldValue.arrayUnion(_hoyD)
       }, { merge: true });
       _data.ultimoAccesoApp = _accTs;
     } catch(e) {}
