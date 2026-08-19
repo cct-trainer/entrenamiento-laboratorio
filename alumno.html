@@ -883,8 +883,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260819121933 por un timestamp en cada deploy
-const _APP_VERSION = '20260819121933';
+// deploy.bat reemplaza 20260819134508 por un timestamp en cada deploy
+const _APP_VERSION = '20260819134508';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2083,16 +2083,15 @@ function _ejCard(ej, uid) {
                      'padding:2px 0;-webkit-appearance:none;';
     const _manc = _esMancuernaEj(ej);   // ejercicio con dos mancuernas → peso por mano
     const _cuHtml = _manc ? '<div style="font-size:8.5px;font-weight:800;color:#2f9e5e;margin-top:1px;line-height:1;">c/u</div>' : '';
+    const _uni = _esUnilateralEj(ej);   // unilateral → las reps son de cada lado
     const head = '<tr>'+
       '<th style="'+thStyle+'">SERIE</th>'+
-      '<th style="'+thStyle+'">REPS</th>'+
+      '<th style="'+thStyle+'">'+(_uni?'REPS POR LADO':'REPS')+'</th>'+
       (hasPeso  ? '<th style="'+thStyle+'">'+(_manc?'PESO POR MANO (KG)':'PESO (KG)')+'</th>' : '')+
       (hasRir   ? '<th style="'+thStyle+'">RIR</th>'  : '')+
       (hasPausa ? '<th style="'+thStyle+'">PAUSA</th>': '')+
       '<th style="'+thStyle+'width:26px;"></th>'+
     '</tr>';
-    // Ejecución unilateral → cada serie se divide en Derecha e Izquierda
-    const _uni = _esUnilateralEj(ej);
     // keyIdx = índice estable para guardar; labelNum = número visible (S#)
     function _mkRow(s, keyIdx, labelNum, sfx, lado){
       const spBase = savePrefix ? savePrefix+'_'+keyIdx : '';
@@ -2154,7 +2153,7 @@ function _ejCard(ej, uid) {
       if(_tecR.tipo==='iso_hold' && _tecP.seg){ const m=String(_tecP.seg).match(/\d+/); if(m) _isoSec=parseInt(m[0]); }
       return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+(done?' s-done':'')+'" data-pausa="'+(_segDe(s.pausa)||0)+'" data-rest="'+_restSec+'" data-iso="'+_isoSec+'" '+touch+'>'+
         '<td style="'+tdBase+'font-size:11px;font-weight:800;cursor:pointer;" onclick="event.stopPropagation();_serieTap(\''+sp+'\')">'+serieLbl+'</td>'+
-        '<td style="'+tdBase+'">'+repsCel+'</td>'+
+        '<td style="'+tdBase+'">'+repsCel+((_uni && !/\blado\b/i.test(String(repsVal)))?'<div style="font-size:8.5px;font-weight:800;color:#8a63c9;margin-top:1px;line-height:1;">c/lado</div>':'')+'</td>'+
         (hasPeso  ? '<td style="'+tdBase+'">'+pesoCel+_cuHtml+'</td>' : '')+
         (hasRir   ? '<td style="'+tdBase+'">'+rirCel+'</td>' : '')+
         (hasPausa ? '<td style="'+tdBase+'font-size:11px;">'+pausaCel+'</td>' : '')+
@@ -2170,8 +2169,7 @@ function _ejCard(ej, uid) {
     for(let j=0;j<_extra;j++){ const idx=arr.length+j; if(!_delSet.has(idx)) _items.push({s:{reps:'',peso:'',rir:'',pausa:_lastP}, idx:idx}); }
     let _ln=0;
     const rows = _items.map(it=>{ _ln++; const labelNum=offset+_ln;
-      return _uni ? (_mkRow(it.s,it.idx,labelNum,'_d','Der') + _mkRow(it.s,it.idx,labelNum,'_i','Izq'))
-                  : _mkRow(it.s,it.idx,labelNum,'','');
+      return _mkRow(it.s,it.idx,labelNum,'','');   // una sola fila; si es unilateral, las reps van "c/lado"
     }).join('');
     const addBtn = savePrefix ? '<button class="s-add" onclick="_serieAdd(\''+savePrefix+'\')">＋ Agregar serie</button>' : '';
     // Contenedor redondeado y elevado (la tabla "sale" de la pantalla)
