@@ -883,8 +883,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260819134508 por un timestamp en cada deploy
-const _APP_VERSION = '20260819134508';
+// deploy.bat reemplaza 20260819135014 por un timestamp en cada deploy
+const _APP_VERSION = '20260819135014';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -991,6 +991,16 @@ const TIPOS_RUN = {
     const doc = await db.collection('alumnos').doc(id).get();
     if (!doc.exists) return showErr('Todavía no hay datos para este alumno. Pedile a tu coach que sincronice el portal desde su aplicación.');
     _data = doc.data();
+
+    // Registrar acceso a la app (para que el coach vea quién entró y cuándo)
+    try {
+      const _accTs = new Date().toISOString();
+      db.collection('alumnos').doc(id).set({
+        ultimoAccesoApp: _accTs,
+        accesosApp: firebase.firestore.FieldValue.increment(1)
+      }, { merge: true });
+      _data.ultimoAccesoApp = _accTs;
+    } catch(e) {}
 
     // Recuperar ediciones del alumno guardadas en la nube (si el teléfono las perdió)
     try {

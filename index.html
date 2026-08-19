@@ -3209,6 +3209,7 @@ select.toolbox-input option:disabled { color: #888; }
     <button onclick="abrirSuscripciones()" class="pln-btn pln-btn-outline" title="Planes, pagos y vencimientos" style="position:relative;">Suscripciones<span id="venc-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="abrirMetricas()" class="pln-btn pln-btn-outline" title="Métricas del piloto de adquisición">📊 Métricas</button>
     <button onclick="_abrirBandeja()" class="pln-btn pln-btn-outline" title="Bandeja de actividad de tus alumnos" style="position:relative;">📥 Actividad<span id="bandeja-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
+    <button onclick="_abrirAccesos()" class="pln-btn pln-btn-outline" title="Quién entró a la app y cuándo">👁 Accesos</button>
     <button onclick="_abrirBellModif()" class="pln-btn pln-btn-outline" title="Modificaciones de alumnos sin revisar" style="position:relative;">🔔<span id="bell-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="recuperarDesdePortales()" class="pln-btn pln-btn-outline" title="Recuperar tus alumnos leyendo sus documentos en la nube">↻ Recuperar</button>
     <button onclick="_pausas1min()" class="pln-btn pln-btn-outline" title="Poner la pausa de todas las series de todos los planes en 1 minuto">⏱ Pausas 1min</button>
@@ -12053,6 +12054,40 @@ function _pausas1min(){
   savePlanificaciones(planes);
   if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
   toast('✓ Pausa = 1 min en '+n+' series de fuerza');
+}
+// ── ACCESOS A LA APP: quién entró y cuándo ──────────────────────────────────
+function _accesoRel(iso){
+  if(!iso) return '';
+  const d=new Date(iso); if(isNaN(d)) return '';
+  const ahora=new Date();
+  const dif=Math.floor((ahora - d)/86400000);
+  const hoy=ahora.toDateString()===d.toDateString();
+  if(hoy) return 'Hoy · '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  if(dif<=1) return 'Ayer';
+  if(dif<7) return 'Hace '+dif+' días';
+  return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+}
+async function _abrirAccesos(){
+  let ov=document.getElementById('accesos-overlay');
+  if(!ov){ ov=document.createElement('div'); ov.id='accesos-overlay'; ov.className='stc-overlay'; ov.onclick=function(e){ if(e.target===ov) ov.style.display='none'; }; document.body.appendChild(ov); }
+  ov.style.display='flex';
+  ov.innerHTML='<div class="stc-modal" onclick="event.stopPropagation()"><div class="stc-head"><div class="stc-title">👁 Accesos a la app<small>Quién entró y cuándo</small></div><button class="stc-x" onclick="document.getElementById(\'accesos-overlay\').style.display=\'none\'">×</button></div><div class="stc-body"><div class="stc-empty">Cargando…</div></div></div>';
+  if(!window._db) return;
+  try{
+    const snap=await window._db.collection('alumnos').get();
+    const items=[];
+    snap.forEach(doc=>{ const id=doc.id; if(id.indexOf('zz_')===0) return; const d=doc.data()||{}; items.push({ nombre:(d.perfil&&d.perfil.nombre)||'Alumno', at:d.ultimoAccesoApp||'', n:d.accesosApp||0 }); });
+    items.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+    const body=document.querySelector('#accesos-overlay .stc-body'); if(!body) return;
+    if(!items.length){ body.innerHTML='<div class="stc-empty">Sin datos de acceso todavía</div>'; return; }
+    const hoyN=items.filter(x=>x.at && new Date(x.at).toDateString()===new Date().toDateString()).length;
+    const rows=items.map(x=>{
+      const rel=_accesoRel(x.at);
+      const nunca=!x.at;
+      return '<div class="stc-hrow" style="align-items:center;'+(nunca?'opacity:.55;':'')+'"><div style="text-align:left;flex:1;"><div style="font-size:13px;color:#eaf0fb;font-weight:700;">'+x.nombre+'</div><div style="font-size:10.5px;color:#6b7c9e;margin-top:2px;">'+(nunca?'Nunca entró':(rel+(x.n?' · '+x.n+' accesos':'')))+'</div></div>'+(x.at && new Date(x.at).toDateString()===new Date().toDateString()?'<span style="font-size:9px;font-weight:800;color:#7fe0a0;background:rgba(37,211,102,.12);border-radius:20px;padding:2px 8px;">HOY</span>':'')+'</div>';
+    }).join('');
+    body.innerHTML='<div style="font-size:11px;color:#8fb7e6;margin:0 0 10px;font-weight:700;">'+hoyN+' entraron hoy · '+items.length+' alumnos</div><div class="stc-hist">'+rows+'</div><div class="stc-note">Se registra cada vez que el alumno abre la app. Ordenado del acceso más reciente al más viejo.</div>';
+  }catch(e){ console.warn('accesos:', e); }
 }
 let _coachAudioEl=null;
 async function _coachPlayAudio(alumnoId,sem,dia,mod){
