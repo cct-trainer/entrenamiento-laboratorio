@@ -883,8 +883,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260819135546 por un timestamp en cada deploy
-const _APP_VERSION = '20260819135546';
+// deploy.bat reemplaza 20260819153347 por un timestamp en cada deploy
+const _APP_VERSION = '20260819153347';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2089,7 +2089,7 @@ function _ejCard(ej, uid) {
     const _thc    = _wt ? '#8a92a1' : '#8891a5';
     const thStyle  = 'background:'+_thbg+';font-size:8px;font-weight:800;color:'+_thc+';padding:5px 8px;letter-spacing:1px;border:1px solid '+_cellBd+';text-align:center;';
     const tdBase   = cellBg+'text-align:center;padding:4px 6px;border:1px solid '+_cellBd+';vertical-align:middle;color:'+_ctext+';';
-    const inpStyle = 'background:transparent;border:none;border-bottom:1px solid color-mix(in srgb,var(--gold) 35%,transparent);'+
+    const inpStyle = 'background:transparent;border:none;'+
                      'color:'+_ctext+';font-size:13px;font-weight:700;text-align:center;'+
                      'width:100%;min-width:44px;max-width:70px;outline:none;'+
                      'padding:2px 0;-webkit-appearance:none;';
