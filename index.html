@@ -19554,18 +19554,9 @@ function _maybeMigrarDescansos(){
   }catch(e){ console.warn('migración descansos:', e); }
 }
 
-const _PAUSA_DEFAULT = '1:00';
-// Descanso por defecto según el bloque: combinado (biserie/superserie/circuito o 2+ ejercicios) → 0:30; individual → 1:00
-function _pausaDefault(ejId){
-  try{
-    const card = document.getElementById(ejId);
-    const bloque = card ? card.closest('.bloque-wrap') : null;
-    if(!bloque) return _PAUSA_DEFAULT;
-    const st = bloque.querySelector('[id$="-serie-tipo"]')?.value || '';
-    const combinado = /biserie|triserie|superserie|gigante|circuito/i.test(st) || bloque.querySelectorAll('.ej-card').length > 1;
-    return combinado ? '0:30' : '1:00';
-  }catch(e){ return _PAUSA_DEFAULT; }
-}
+const _PAUSA_DEFAULT = '1 min';
+// Descanso por defecto para toda serie nueva → 1 min (elección del coach)
+function _pausaDefault(ejId){ return _PAUSA_DEFAULT; }
 
 function _makeSerieRow(ejId, tbodyId, prefix, num, defaults) {
   // defaults = { reps:'', peso:'', rir:'', pausa:'' }  (todos opcionales)
