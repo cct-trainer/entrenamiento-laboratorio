@@ -3211,6 +3211,7 @@ select.toolbox-input option:disabled { color: #888; }
     <button onclick="_abrirBandeja()" class="pln-btn pln-btn-outline" title="Bandeja de actividad de tus alumnos" style="position:relative;">📥 Actividad<span id="bandeja-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="_abrirBellModif()" class="pln-btn pln-btn-outline" title="Modificaciones de alumnos sin revisar" style="position:relative;">🔔<span id="bell-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="recuperarDesdePortales()" class="pln-btn pln-btn-outline" title="Recuperar tus alumnos leyendo sus documentos en la nube">↻ Recuperar</button>
+    <button onclick="_pausas1min()" class="pln-btn pln-btn-outline" title="Poner la pausa de todas las series de todos los planes en 1 minuto">⏱ Pausas 1min</button>
     <button onclick="exportarBackupCompleto()" class="pln-btn pln-btn-guardar" title="Descargar backup completo de toda la base de datos">Backup</button>
     <button onclick="limpiarStorageEmergencia()" style="background:none;border:1px solid #ddd;color:#bbb;padding:7px 12px;border-radius:5px;font-size:11px;cursor:pointer;" title="Liberar espacio si hay errores de almacenamiento">🗑</button>
   </div>
@@ -12016,6 +12017,36 @@ function _bandejaItemsDeDoc(id, d){
     out.push({ id, nombre, sem:c.sem, dia:c.dia, mod:c.mod, at:c.at||c.fecha||'', fecha:c.fecha||'', sesion:c.nombre||'', comentario:c.comentario||'', audio:tieneAudio, nNo, nSub, revisado:_bandejaRevisado(revis,c) });
   });
   return out;
+}
+// Poner la pausa de TODAS las series de TODOS los planes en "1 min" (acción única, destructiva)
+function _pausas1min(){
+  if(!confirm('¿Poner la pausa de TODAS las series de TODOS los planes en "1 min"?\n\nEsto pisa las pausas actuales (ej. 2 min en pesado, 0:30 en aislamiento) y no se puede deshacer.')) return;
+  const planes = (typeof getPlanificaciones==='function'?getPlanificaciones():[]);
+  let n=0;
+  planes.forEach(p=>{
+    if(p && p.tipoPlan==='running') return; // running desactivado
+    let sems = (p && Array.isArray(p.semanasArray) && p.semanasArray.length) ? p.semanasArray : (p && p.diasData ? [{dias:p.diasData}] : []);
+    sems.forEach(w=>{
+      const dias = (w && w.dias) || {};
+      Object.keys(dias).forEach(k=>{
+        const arr = Array.isArray(dias[k]) ? dias[k] : (dias[k] ? [dias[k]] : []);
+        arr.forEach(ses=>{
+          ((ses && ses.bloques) || []).forEach(b=>{
+            ((b && b.ejercicios) || []).forEach(ej=>{
+              if(ej && ej.ctrl) ej.ctrl.pausa = '1 min';
+              ['series','seriesApro','dropset'].forEach(kk=>{
+                (Array.isArray(ej && ej[kk]) ? ej[kk] : []).forEach(s=>{ if(s){ s.pausa='1 min'; if(kk==='series') n++; } });
+              });
+            });
+          });
+        });
+      });
+    });
+    if(p && Array.isArray(p.semanasArray) && p.semanasArray[0]) p.diasData = p.semanasArray[0].dias;
+  });
+  savePlanificaciones(planes);
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+  toast('✓ Pausa = 1 min en '+n+' series de fuerza');
 }
 let _coachAudioEl=null;
 async function _coachPlayAudio(alumnoId,sem,dia,mod){
