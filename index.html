@@ -11852,10 +11852,15 @@ function _sesionModifs(){
   const ses=(planDiasData[dia]||[])[mod];
   const edits=d.pesoEdits||{};
   const pesos=[]; const noHechas=[];
+  const ejComents=[];
   if(ses && Array.isArray(ses.bloques)){
     ses.bloques.forEach((b,bi)=>{
       (b.ejercicios||[]).forEach((ej,ei)=>{
         const uid='b'+bi+'e'+ei;
+        // Comentario del alumno sobre este ejercicio
+        const kc=sem+'_'+dia+'_'+uid;
+        const cm=edits[kc]&&edits[kc].coment;
+        if(cm && String(cm).trim()) ejComents.push({ej:ej.nombre||'Ejercicio', texto:String(cm).trim()});
         (ej.series||[]).forEach((s,k)=>{
           const key=sem+'_'+dia+'_'+uid+'_efec_'+k;
           const pe=edits[key]&&edits[key].peso;
@@ -11876,7 +11881,7 @@ function _sesionModifs(){
   const rec=(d.completadas||[]).find(c=>c&&String(c.sem)===String(sem)&&String(c.dia)===String(dia)&&String(c.mod)===String(mod));
   if(rec){ comentario=rec.comentario||''; compAt=rec.at||''; }
   audio = !!((d.audios||{})[sem+'_'+dia+'_'+mod]) || (rec&&!!rec.audio);
-  return {pesos, subs, noHechas, comentario, compAt, audio};
+  return {pesos, subs, noHechas, comentario, compAt, audio, ejComents};
 }
 function _avisoSeenKey(){ return 'SOCC_AVISO_'+(_avisoData?_avisoData.id:'')+'_'+planSemEditando+'_'+planDiaAbierto; }
 function _avisoVer(){ const a=_avisoData?String(_avisoData.at||''):'', c=_avisoData?String(_avisoData.compAt||''):''; return c>a?c:a; }
@@ -11884,7 +11889,7 @@ function _renderAvisoAlumno(){
   _quitarBannerAviso();
   if(!_avisoData) return;
   const m=_sesionModifs();
-  if(!m.pesos.length && !m.subs.length && !(m.noHechas&&m.noHechas.length) && !m.comentario && !m.audio) return;
+  if(!m.pesos.length && !m.subs.length && !(m.noHechas&&m.noHechas.length) && !m.comentario && !m.audio && !(m.ejComents&&m.ejComents.length)) return;
   // Si ya lo revisó para este set de cambios, no molestar
   try{ const v=_avisoVer(); if(v && localStorage.getItem(_avisoSeenKey())===String(v)) return; }catch(e){}
   const scroll=document.getElementById('plan-editor-page-scroll');
@@ -11896,10 +11901,11 @@ function _renderAvisoAlumno(){
   const noRows=(m.noHechas||[]).map(n=>'<div style="padding:9px 0;border-bottom:1px solid #f1f3f6;font-size:12.5px;color:#1f2430;">✗ <b>'+n.ej+'</b> · S'+n.serie+' <span style="color:#dc4c4c;font-weight:800;font-size:11px;">— no la hizo</span></div>').join('');
   const devRow=m.comentario?('<div style="padding:11px 0 4px;"><div style="font-size:10.5px;font-weight:800;color:#8a6d1f;letter-spacing:.4px;margin-bottom:5px;">✍️ DEVOLUCIÓN DEL ALUMNO</div><div style="font-size:12.5px;color:#3a3320;background:#fdf7e6;border:1px solid #f0e4c0;border-radius:9px;padding:10px 12px;line-height:1.5;white-space:pre-wrap;">'+String(m.comentario).replace(/</g,'&lt;')+'</div></div>'):'';
   const audioRow=m.audio?('<div style="padding:8px 0 4px;"><button onclick="_coachPlayAudio(\''+_avisoData.id+'\','+planSemEditando+','+planDiaAbierto+','+_editorModTab+')" style="display:inline-flex;align-items:center;gap:8px;background:#2f5bb0;color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:12.5px;font-weight:800;cursor:pointer;">🎙️ ▶ Escuchar devolución en audio</button></div>'):'';
+  const comentRows=(m.ejComents&&m.ejComents.length)?('<div style="padding:9px 0 4px;"><div style="font-size:10.5px;font-weight:800;color:#2f5bb0;letter-spacing:.4px;margin-bottom:6px;">💬 COMENTARIOS POR EJERCICIO</div>'+m.ejComents.map(c=>'<div style="font-size:12.5px;color:#1f2430;background:#eef4ff;border:1px solid #d6e3fb;border-radius:9px;padding:9px 12px;margin-bottom:6px;line-height:1.5;"><b>'+c.ej+':</b> <span style="white-space:pre-wrap;">'+String(c.texto).replace(/</g,'&lt;')+'</span></div>').join('')+'</div>'):'';
   const box=document.createElement('div');
   box.id='aviso-modif-box';
   box.style.cssText='margin:0 0 14px;background:#fff;border:1px solid #e4e7ec;border-left:4px solid #C9A84C;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(30,40,70,.08);';
-  const _hayMods = m.pesos.length || m.subs.length || (m.noHechas&&m.noHechas.length);
+  const _hayMods = m.pesos.length || m.subs.length || (m.noHechas&&m.noHechas.length) || (m.ejComents&&m.ejComents.length);
   const _hayDev = m.comentario || m.audio;
   const _titulo = _hayDev && !_hayMods
     ? _avisoData.nombre+' terminó esta sesión'
@@ -11922,7 +11928,7 @@ function _renderAvisoAlumno(){
       '<div style="flex:1;"><div style="font-size:13px;font-weight:800;color:#1f2430;">'+_titulo+'</div><div style="font-size:11px;color:#8a92a1;font-weight:600;">'+(fecha?fecha+' · ':'')+'desde la app</div></div>'+
       '<button onclick="_descartarAviso()" style="background:none;border:none;color:#9aa2b0;font-size:20px;cursor:pointer;line-height:1;">×</button>'+
     '</div>'+
-    '<div style="padding:4px 15px 6px;">'+pesoRows+subRows+noRows+devRow+audioRow+'</div>'+
+    '<div style="padding:4px 15px 6px;">'+pesoRows+subRows+noRows+comentRows+devRow+audioRow+'</div>'+
     _footer;
   scroll.insertBefore(box, content);
 }

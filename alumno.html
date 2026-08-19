@@ -883,8 +883,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260819001827 por un timestamp en cada deploy
-const _APP_VERSION = '20260819001827';
+// deploy.bat reemplaza 20260819121908 por un timestamp en cada deploy
+const _APP_VERSION = '20260819121908';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2278,7 +2278,7 @@ function _ejCard(ej, uid) {
   const feedbackHTML =
     '<div style="border-top:1px solid rgba(255,255,255,.06);margin-top:10px;padding:10px 0 4px;">'+
       '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin-bottom:5px;text-transform:uppercase;">'+(_LANG==='en'?'Feedback':'Feedback')+'</div>'+
-      '<textarea id="'+uid+'-cm" placeholder="Comentario / corrección del ejercicio..." rows="2" style="width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text);font-size:12px;resize:none;outline:none;font-family:inherit;"></textarea>'+
+      '<textarea id="'+uid+'-cm" placeholder="'+(_LANG==='en'?'Note / correction for your coach…':'Comentario para tu coach sobre este ejercicio…')+'" rows="2" onchange="_guardarEdit(\''+_sp+'\',\'coment\',this.value)" style="width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text);font-size:12px;resize:none;outline:none;font-family:inherit;">'+String(_getEdit(_sp,'coment')||'').replace(/</g,'&lt;')+'</textarea>'+
     '</div>';
 
   // ── SOLAPA INFORMACIÓN TÉCNICA ───────────────────────────────────────────
