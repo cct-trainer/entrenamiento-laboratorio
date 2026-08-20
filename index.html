@@ -12754,7 +12754,8 @@ function guardarEstadoDiaActual() {
       const dropset = _leerTbodyLocal(eId+'-drop-tbody');
       const _tecEj = (typeof _readTecnica==='function' ? _readTecnica(eEl) : null);
       const _uniEj2 = (eEl.querySelector('.ej-uni')?.value === '1');
-      if(eName) ejercicios.push({ nombre:eName, ctrl, video, nota, ficha, series, seriesApro, dropset, tecnica:_tecEj, unilateral:_uniEj2 });
+      const _mancUna = (eEl.querySelector('.ej-manc')?.value === '1');
+      if(eName) ejercicios.push({ nombre:eName, ctrl, video, nota, ficha, series, seriesApro, dropset, tecnica:_tecEj, unilateral:_uniEj2, mancUna:_mancUna });
     });
     // Leer datos cardio si aplica
     let cardioData = null;
@@ -12908,6 +12909,8 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
     if(notaInp && datosPrevios.nota) notaInp.value = datosPrevios.nota;
     // Restaurar Bilateral/Unilateral
     if(datosPrevios.unilateral !== undefined) _setEjExec(ejId, datosPrevios.unilateral ? 1 : 0);
+    if(typeof _setEjManc==='function') _setEjManc(ejId, datosPrevios.mancUna ? 1 : 2);
+    if(typeof _mancSync==='function') _mancSync(ejId);
     // Restaurar técnica avanzada (Etapa 1)
     if(datosPrevios.tecnica && typeof _loadTecnica==='function') _loadTecnica(ejId, datosPrevios.tecnica);
     // Controles
@@ -18921,6 +18924,11 @@ function addEjercicio(bloqueId) {
         <button type="button" id="${ejId}-exec-uni" onclick="_setEjExec('${ejId}',1)" title="Unilateral" style="border:none;background:transparent;color:#888;font-size:11px;padding:5px 10px;border-radius:5px;cursor:pointer;">Uni</button>
       </div>
       <input type="hidden" class="ej-uni" id="${ejId}-uni" value="0">
+      <div id="${ejId}-manc-wrap" style="display:none;background:#f1f3f7;border:1px solid #e0e0e0;border-radius:7px;padding:2px;flex-shrink:0;" title="¿Con una o dos mancuernas?">
+        <button type="button" id="${ejId}-manc-2" onclick="_setEjManc('${ejId}',2)" title="Dos mancuernas (peso por mano · c/u)" style="border:none;background:#fff;color:#1a1a2e;font-size:11px;font-weight:600;padding:5px 9px;border-radius:5px;cursor:pointer;">2 manc</button>
+        <button type="button" id="${ejId}-manc-1" onclick="_setEjManc('${ejId}',1)" title="Una mancuerna (peso total)" style="border:none;background:transparent;color:#888;font-size:11px;padding:5px 9px;border-radius:5px;cursor:pointer;">1 manc</button>
+      </div>
+      <input type="hidden" class="ej-manc" id="${ejId}-manc" value="2">
       <button class="ej-btn-stat" onclick="_abrirStatsCoach('${ejId}')" title="Estadísticas del ejercicio (peso máximo)">📊</button>
       <button class="ej-btn-sep" onclick="separarEjercicio('${ejId}','${bloqueId}')" title="Separar este ejercicio en un bloque nuevo">⇱</button>
       <button class="ej-btn-del" onclick="eliminarEjercicio('${ejId}','${bloqueId}')">🗑</button>
@@ -19197,6 +19205,7 @@ function onEjNombreInput(e, ejId, bloqueId) {
   const val = e.target.value;
   const resultados = buscarEjercicios(val);
   renderDropdown(ejId, bloqueId, resultados, val);
+  if(typeof _mancSync==='function') _mancSync(ejId);
 }
 
 function closeDropdown(ejId) {
@@ -19314,6 +19323,23 @@ function _setEjExec(ejId, val){
     un.style.color      = val ? '#fff' : '#888';
     un.style.fontWeight = val ? '600' : '400';
   }
+}
+// Selector 1 / 2 mancuernas (val = 2 dos · 1 una)
+function _setEjManc(ejId, val){
+  const inp=document.getElementById(ejId+'-manc'); if(inp) inp.value=String(val);
+  const b2=document.getElementById(ejId+'-manc-2'), b1=document.getElementById(ejId+'-manc-1');
+  const dos=(val!=1);
+  if(b2&&b1){
+    b2.style.background=dos?'#C9A84C':'transparent'; b2.style.color=dos?'#fff':'#888'; b2.style.fontWeight=dos?'600':'400';
+    b1.style.background=dos?'transparent':'#C9A84C'; b1.style.color=dos?'#888':'#fff'; b1.style.fontWeight=dos?'400':'600';
+  }
+}
+// Muestra el selector de mancuernas solo si el ejercicio es con mancuernas
+function _mancSync(ejId){
+  const wrap=document.getElementById(ejId+'-manc-wrap'); if(!wrap) return;
+  const nInp=document.querySelector('#'+ejId+' .ej-nombre-input');
+  const nombre=nInp?nInp.value:'';
+  wrap.style.display=/mancuerna/i.test(nombre) ? 'inline-flex' : 'none';
 }
 
 // ══════════ ESTADÍSTICAS DEL EJERCICIO (coach) ══════════
@@ -19476,6 +19502,7 @@ function seleccionarEjercicio(ejId, bloqueId, nombreOIdx) {
   const input = document.querySelector(`#${ejId} .ej-nombre-input`);
   if (input) input.value = ex.nombre;
   closeDropdown(ejId);
+  if(typeof _mancSync==='function') _mancSync(ejId);
   // Prefijar Bilateral/Unilateral según la biblioteca (editable por el coach)
   if (ex.unilateral !== undefined) _setEjExec(ejId, ex.unilateral ? 1 : 0);
   // Nota automática de equipamiento

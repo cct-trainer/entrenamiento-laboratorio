@@ -883,8 +883,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260819153347 por un timestamp en cada deploy
-const _APP_VERSION = '20260819153347';
+// deploy.bat reemplaza 20260819222056 por un timestamp en cada deploy
+const _APP_VERSION = '20260819222056';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1795,7 +1795,7 @@ function _esMancuernaEj(ej){ return /mancuerna/i.test(String(((ej&&ej.equipo)||'
 function _notaEquipo(ej){
   const e = String(((ej&&ej.equipo)||'')+' '+((ej&&ej.nombre)||'')).toLowerCase();
   const en = _LANG==='en';
-  if(/mancuerna/.test(e)) return en ? 'Weight is per dumbbell. E.g. 20 kg = a 20 kg dumbbell in each hand (not 10 and 10).' : 'El peso es por mancuerna. Ej: 10 kg = una mancuerna de 10 kg en cada mano (no 5 y 5).';
+  // La aclaración de mancuerna ahora se resume con "c/u" en la tabla (según elija el coach 1 o 2), sin nota larga.
   if(/banda/.test(e))     return en ? 'Place the resistance band around the knees.' : 'Colocá la banda de resistencia alrededor de las rodillas.';
   if(/barra/.test(e) && !/smith|m[aá]quina/.test(e)) return en ? "Weight is the total of the plates only — don't include the bar. E.g. 60 kg = 60 kg in plates." : 'El peso es solo el total de los discos. No incluye la barra. Ej: 60 kg = 60 kg en discos.';
   if(/m[aá]quina|polea|smith|multipower|cable/.test(e)) return en ? 'Weight is the total load selected or loaded on the machine.' : 'El peso es la carga total seleccionada o cargada en la máquina.';
@@ -2093,13 +2093,14 @@ function _ejCard(ej, uid) {
                      'color:'+_ctext+';font-size:13px;font-weight:700;text-align:center;'+
                      'width:100%;min-width:44px;max-width:70px;outline:none;'+
                      'padding:2px 0;-webkit-appearance:none;';
-    const _manc = _esMancuernaEj(ej);   // ejercicio con dos mancuernas → peso por mano
+    // "c/u" solo si el coach eligió 2 mancuernas (por defecto 2). ej.mancUna===true → 1 mancuerna (peso total)
+    const _manc = _esMancuernaEj(ej) && ej.mancUna!==true;
     const _cuHtml = _manc ? '<div style="font-size:8.5px;font-weight:800;color:#2f9e5e;margin-top:1px;line-height:1;">c/u</div>' : '';
     const _uni = _esUnilateralEj(ej);   // unilateral → las reps son de cada lado
     const head = '<tr>'+
       '<th style="'+thStyle+'">SERIE</th>'+
       '<th style="'+thStyle+'">'+(_uni?'REPS POR LADO':'REPS')+'</th>'+
-      (hasPeso  ? '<th style="'+thStyle+'">'+(_manc?'PESO POR MANO (KG)':'PESO (KG)')+'</th>' : '')+
+      (hasPeso  ? '<th style="'+thStyle+'">PESO (KG)</th>' : '')+
       (hasRir   ? '<th style="'+thStyle+'">RIR</th>'  : '')+
       (hasPausa ? '<th style="'+thStyle+'">PAUSA</th>': '')+
       '<th style="'+thStyle+'width:26px;"></th>'+
