@@ -473,6 +473,7 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
       <div class="pt-plan" id="pt-plan"></div>
     </div>
     <div class="pt-foot">
+      <button onclick="_abrirTutorial()" style="width:100%;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.45);color:#C9A84C;border-radius:14px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:11px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;"><span style="width:20px;height:20px;border-radius:50%;background:#C9A84C;color:#111;display:inline-flex;align-items:center;justify-content:center;font-size:12px;">?</span> Mirá cómo se usa la app en 1 minuto</button>
       <button class="pt-enter" onclick="entrarApp()"><span data-i18n="entrar_app">Entrar a mi entrenamiento</span> <span>›</span></button>
       <div class="pt-date" id="pt-date"></div>
     </div>
@@ -889,8 +890,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260820113912 por un timestamp en cada deploy
-const _APP_VERSION = '20260820113912';
+// deploy.bat reemplaza 20260820124722 por un timestamp en cada deploy
+const _APP_VERSION = '20260820124722';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
