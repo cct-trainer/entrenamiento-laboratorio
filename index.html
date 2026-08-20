@@ -11200,56 +11200,81 @@ function _muscsSesion(s){
   return out.slice(0,4);
 }
 // ── Render vista mensual (semanas apiladas) ───────────────────────────────────
+// Foco de una sesión según sus músculos: 'sup' (tren superior), 'inf' (pierna), 'full', o ''
+function _focoSesion(musc){
+  const s=(musc||[]).join(' ').toLowerCase();
+  const inf=/gl[uú]teo|isquio|cu[aá]driceps|gemelo|femoral|aductor|abductor|pierna|pantorrilla|s[oó]leo/.test(s);
+  const sup=/pecho|pectoral|espalda|dorsal|hombro|deltoide|b[ií]ceps|tr[ií]ceps|trapecio|antebrazo/.test(s);
+  if(inf && sup) return 'full';
+  if(inf) return 'inf';
+  if(sup) return 'sup';
+  return '';
+}
+const _PM_GRID_CSS = '<style id="pm-grid-css">'
+  +'.plan-mes-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:9px;}'
+  +'@media(max-width:900px){.plan-mes-grid{grid-template-columns:repeat(4,1fr);}}'
+  +'@media(max-width:560px){.plan-mes-grid{grid-template-columns:repeat(2,1fr);}}'
+  +'.plan-mes-grid .plan-fila{display:flex!important;flex-direction:column!important;align-items:stretch!important;min-height:150px;padding:0!important;overflow:hidden;gap:0!important;}'
+  +'.pm-strip{height:5px;flex-shrink:0;background:#d7dbe2;}'
+  +'.pm-card.foco-sup .pm-strip{background:#3a6ea5;}.pm-card.foco-inf .pm-strip{background:#2e8b6f;}.pm-card.foco-full .pm-strip{background:#C9A84C;}'
+  +'.pm-top{display:flex;align-items:baseline;justify-content:space-between;padding:9px 10px 6px;border-bottom:1px solid #f0f2f6;}'
+  +'.pm-dow{font-size:11px;font-weight:900;color:#1a1a2e;letter-spacing:.5px;}.pm-num{font-size:10px;color:#9aa0ad;}'
+  +'.pm-body{padding:8px 10px 10px;flex:1;display:flex;flex-direction:column;gap:8px;}'
+  +'.pm-rest{flex:1;display:flex;align-items:center;justify-content:center;color:#b3b8c2;font-size:12px;font-weight:700;}'
+  +'.pm-ses{display:flex;flex-direction:column;gap:6px;}.pm-ses + .pm-ses{border-top:1px dashed #eceef3;padding-top:8px;}'
+  +'.pm-tag{align-self:flex-start;font-size:8.5px;font-weight:900;letter-spacing:.5px;padding:2px 7px;border-radius:20px;text-transform:uppercase;background:#eef0f3;color:#6b7280;}'
+  +'.pm-tag.foco-sup{background:#e6eef7;color:#3a6ea5;}.pm-tag.foco-inf{background:#e3f3ee;color:#2e8b6f;}.pm-tag.foco-full{background:#faf3df;color:#8a6d1f;}'
+  +'.pm-musc{display:flex;flex-wrap:wrap;gap:3px;}.pm-chip{font-size:10px;font-weight:700;color:#4a5160;background:#f1f3f7;border-radius:6px;padding:2px 6px;}'
+  +'.pm-foot{margin-top:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}'
+  +'.pm-bloq{font-size:10px;font-weight:800;color:#8a6d1f;background:#faf3df;border-radius:6px;padding:2px 7px;}.pm-check{color:#1f8a4c;font-weight:900;font-size:12px;}'
+  +'.pm-acc{display:flex;gap:8px;margin-top:2px;}.pm-acc span,.pm-acc button{font-size:11px;color:#b0b5bf;background:none;border:none;cursor:pointer;padding:0;font-family:inherit;}.pm-acc .pm-dup{font-size:9px;font-weight:800;color:#8a909c;}.pm-acc .pm-del:hover{color:#d05050;}'
+  +'</style>';
 function renderPlanMes() {
   _fetchCompletadas(planSemOriginalAlumnoId || currentAlumnoId);
   const container = document.getElementById('plan-mes-container');
   if(!container) return;
-  container.innerHTML = planSemanasArray.map((sem, semIdx) => {
+  container.innerHTML = _PM_GRID_CSS + planSemanasArray.map((sem, semIdx) => {
     const isEd = semIdx === planSemEditando;
     const label = _semFechaLabel(semIdx);
-    // Helper: render a single plan-day card for slot index i
+    // Tarjeta compacta de día (grilla tipo calendario)
     const renderCard = (i) => {
       const diaNom = _diaNombreReal(semIdx, i);
       const sesiones = sem.dias[i] || [];
       const tiene = sesiones.length > 0;
       const fechaStr = _diaFecha(semIdx, i);
-      // Día vacío → fila fina "+ Agregar"
+      const top = '<div class="pm-strip"></div><div class="pm-top"><span class="pm-dow">'+diaNom.sig+'</span><span class="pm-num">'+fechaStr+'</span></div>';
+      // Día vacío → tarjeta "+ Agregar"
       if(!tiene){
-        return '<div class="plan-fila plan-fila--empty" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
-          + '<div class="pf-daycol"><div class="pf-dia">'+diaNom.sig+'</div><div class="pf-fecha">'+fechaStr+'</div></div>'
-          + '<div class="pf-empty-txt">+ Agregar sesión</div>'
+        return '<div class="plan-fila pm-card" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
+          + top + '<div class="pm-body"><div class="pm-rest">+ Agregar sesión</div></div>'
         + '</div>';
       }
-      // Una fila por sesión
-      return sesiones.map((s, sIdx) => {
+      // Foco del día (según todos los músculos de sus sesiones)
+      const muscAll = []; sesiones.forEach(s => { _muscsSesion(s).forEach(m => muscAll.push(m)); });
+      const focoDia = _focoSesion(muscAll);
+      const _TAG = {sup:'Superior', inf:'Pierna', full:'Full body'};
+      const sesHTML = sesiones.map((s, sIdx) => {
         const bc = (s.bloques||[]).length;
-        const primera = s.bloques&&s.bloques[0] ? (s.bloques[0].nombre||s.bloques[0].tipo||'Bloque') : 'Sesión';
         const musc = _muscsSesion(s);
-        let obj = s.objetivo || s.nombre || primera || 'Sesión';
-        if(/^(gym|casa)\b/i.test(obj) && musc.length) obj = musc.join(', ');
-        const muscStr = musc.join(' · ');
+        const f = _focoSesion(musc);
         const done = !!_completadaDe(semIdx, i, sIdx);
         const nd = _nDiffs(semIdx, i, sIdx);
-        const revBadge = nd>0
-          ? '<span class="pf-rev" onclick="event.stopPropagation();_abrirRevision('+semIdx+','+i+','+sIdx+')" title="Revisar lo que hizo el alumno">↺ '+nd+'</span>'
-          : '';
-        return '<div class="plan-fila plan-dia-card tiene-sesion" id="plan-dia-card-'+semIdx+'-'+i+(sIdx?('-'+sIdx):'')+'" data-dia="'+i+'" data-sem="'+semIdx+'" draggable="true" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
-          + '<div class="pf-daycol"><div class="pf-dia">'+diaNom.sig+'</div><div class="pf-fecha">'+fechaStr+'</div></div>'
-          + '<div class="pf-main"><div class="pf-obj">'+obj+'</div>'+(muscStr?'<div class="pf-musc">'+muscStr+'</div>':'')+'</div>'
-          + '<span class="pf-bloques">'+bc+' bloque'+(bc!==1?'s':'')+'</span>'
-          + revBadge
-          + (done ? '<span class="pf-check" title="Completada">✓</span>' : '')
-          + '<div class="pf-acc" onclick="event.stopPropagation()">'
-            + '<span class="pf-drag" title="Arrastrar a otro día">⠿</span>'
-            + '<button class="pf-dup" onclick="event.stopPropagation();abrirModalDuplicarMover('+i+',\'duplicar\','+semIdx+')" title="Duplicar sesión">dup</button>'
-            + '<button class="pf-del" onclick="event.stopPropagation();eliminarSesionDia('+i+','+semIdx+','+sIdx+')" title="Eliminar sesión">✕</button>'
-          + '</div>'
+        const rev = nd>0 ? '<span class="pf-rev" onclick="event.stopPropagation();_abrirRevision('+semIdx+','+i+','+sIdx+')" title="Revisar lo que hizo el alumno">↺ '+nd+'</span>' : '';
+        const chips = musc.slice(0,5).map(m => '<span class="pm-chip">'+m+'</span>').join('');
+        return '<div class="pm-ses">'
+          + '<span class="pm-tag foco-'+f+'">'+(_TAG[f]||'Sesión')+'</span>'
+          + (chips ? '<div class="pm-musc">'+chips+'</div>' : '')
+          + '<div class="pm-foot"><span class="pm-bloq">'+bc+' bloque'+(bc!==1?'s':'')+'</span>'+(done?'<span class="pm-check" title="Completada">✓</span>':'')+rev+'</div>'
+          + '<div class="pm-acc" onclick="event.stopPropagation()"><span class="pm-drag" title="Arrastrar a otro día">⠿</span><button class="pm-dup" onclick="event.stopPropagation();abrirModalDuplicarMover('+i+',\'duplicar\','+semIdx+')" title="Duplicar sesión">dup</button><button class="pm-del" onclick="event.stopPropagation();eliminarSesionDia('+i+','+semIdx+','+sIdx+')" title="Eliminar sesión">✕</button></div>'
         + '</div>';
       }).join('');
+      return '<div class="plan-fila plan-dia-card tiene-sesion pm-card foco-'+focoDia+'" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" draggable="true" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
+        + top + '<div class="pm-body">'+sesHTML+'</div>'
+      + '</div>';
     };
 
-    // Filas anchas: una por día (todas las semanas iguales)
-    const gridHTML = '<div class="plan-fila-list">'
+    // Grilla tipo calendario: 7 días en columnas
+    const gridHTML = '<div class="plan-mes-grid">'
       + Array.from({length:7}, (_,i) => renderCard(i)).join('')
       + '</div>';
 
