@@ -500,6 +500,10 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
   </div>
 </div>
 
+<!-- Cartel primera vez + overlay del tutorial -->
+<div id="tut-banner" style="display:none;"></div>
+<div id="tutorial-overlay" style="display:none;position:fixed;inset:0;z-index:12000;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;"></div>
+
 <div id="app">
   <div class="hdr">
     <div class="hdr-row">
@@ -515,6 +519,8 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
           onmouseover="this.style.background='rgba(201,168,76,.2)'" onmouseout="this.style.background='rgba(201,168,76,.1)'">🏋️</a>
         <button id="btn-modo" onclick="_volverChooser()" title="Cambiar Fuerza / Running"
           style="display:none;background:var(--card);border:1.5px solid var(--border);border-radius:22px;padding:7px 12px;cursor:pointer;font-size:15px;flex-shrink:0;transition:all .2s;color:var(--gold);align-items:center;">⇄</button>
+        <button id="btn-tuto" onclick="_abrirTutorial()" title="Cómo usar la app"
+          style="background:rgba(201,168,76,.12);border:1.5px solid rgba(201,168,76,.5);border-radius:22px;width:36px;height:36px;cursor:pointer;font-size:17px;font-weight:900;flex-shrink:0;transition:all .2s;color:var(--gold);line-height:1;">?</button>
         <button id="theme-btn" onclick="_toggleTheme()" title="Cambiar tema"
           style="background:var(--card);border:1.5px solid var(--border);border-radius:22px;padding:7px 13px;cursor:pointer;font-size:17px;flex-shrink:0;transition:all .2s;color:var(--text);">🌙</button>
       </div>
@@ -883,8 +889,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260820091310 por un timestamp en cada deploy
-const _APP_VERSION = '20260820091310';
+// deploy.bat reemplaza 20260820113912 por un timestamp en cada deploy
+const _APP_VERSION = '20260820113912';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1211,6 +1217,7 @@ function entrarApp() {
   _configNavModo();
   const tab = (f && r) ? 'agenda' : ((r && !f) ? 'running' : 'rutina');
   goTab(tab);
+  try{ _tutBannerMaybe(); }catch(e){}
   window.scrollTo(0,0);
 }
 function _mostrarChooser() {
@@ -1244,6 +1251,154 @@ function _configNavModo() {
   if (bm) bm.style.display = 'none';   // sin selector: el ⇄ ya no se usa
 }
 function _volverChooser() { _mostrarChooser(); }
+
+// ══════════ TUTORIAL EN LA APP ══════════
+function _tutBannerMaybe(){
+  let seen=''; try{ seen=localStorage.getItem('SOCC_TUT_SEEN')||''; }catch(e){}
+  const b=document.getElementById('tut-banner'); if(!b) return;
+  if(seen){ b.style.display='none'; return; }
+  b.style.display='block';
+  b.innerHTML='<div style="margin:12px 12px 0;padding:11px 13px;background:linear-gradient(120deg,rgba(201,168,76,.16),rgba(201,168,76,.05));border:1px solid rgba(201,168,76,.4);border-radius:12px;display:flex;align-items:center;gap:10px;">'
+    +'<div style="font-size:20px;">👋</div>'
+    +'<div style="flex:1;"><div style="color:#f0d488;font-size:12.5px;font-weight:800;">¿Primera vez?</div><div style="color:#c9b98a;font-size:10.5px;margin-top:1px;">Mirá cómo usar la app en 1 minuto.</div></div>'
+    +'<button onclick="_abrirTutorial()" style="font-size:10px;font-weight:800;color:#111;background:#C9A84C;border:none;border-radius:20px;padding:7px 12px;cursor:pointer;white-space:nowrap;">Ver tutorial</button>'
+    +'<button onclick="_tutBannerCerrar()" style="background:none;border:none;color:#8b7a4a;font-size:18px;cursor:pointer;padding:0 2px;line-height:1;">×</button>'
+    +'</div>';
+}
+function _tutBannerCerrar(){ try{ localStorage.setItem('SOCC_TUT_SEEN','1'); }catch(e){} const b=document.getElementById('tut-banner'); if(b) b.style.display='none'; }
+function _abrirTutorial(){
+  try{ localStorage.setItem('SOCC_TUT_SEEN','1'); }catch(e){}
+  const b=document.getElementById('tut-banner'); if(b) b.style.display='none';
+  const ov=document.getElementById('tutorial-overlay'); if(!ov) return;
+  ov.innerHTML=_tutorialHTML();
+  ov.style.display='block'; ov.scrollTop=0;
+  document.body.style.overflow='hidden';
+}
+function _cerrarTutorial(){ const ov=document.getElementById('tutorial-overlay'); if(ov) ov.style.display='none'; document.body.style.overflow=''; }
+function _tutorialHTML(){
+  return `<style>
+  #tutorial-overlay{color:#eef1f5;}
+  #tutorial-overlay .tut-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:16px;background:linear-gradient(160deg,#171820,#0c0d11);border-bottom:1px solid #1c1e22;}
+  #tutorial-overlay .tut-top .t{flex:1;font-size:17px;font-weight:900;color:#fff;}
+  #tutorial-overlay .tut-top .t small{display:block;font-size:11px;color:#C9A84C;font-weight:700;margin-top:1px;}
+  #tutorial-overlay .tut-top .x{background:none;border:none;color:#9aa0ab;font-size:26px;cursor:pointer;line-height:1;}
+  #tutorial-overlay .tut-body{padding:16px 16px 44px;max-width:520px;margin:0 auto;}
+  #tutorial-overlay .tut-intro{font-size:13px;color:#c5cad3;line-height:1.6;}
+  #tutorial-overlay .tut-tabs{display:flex;gap:7px;margin:12px 0 4px;}
+  #tutorial-overlay .tut-tab{flex:1;text-align:center;background:#141519;border:1px solid #23252c;border-radius:9px;padding:9px 4px;font-size:9px;font-weight:800;letter-spacing:.5px;color:#8b93a0;}
+  #tutorial-overlay .tut-tab.on{color:#C9A84C;border-color:rgba(201,168,76,.4);}
+  #tutorial-overlay .tut-step{margin-top:22px;}
+  #tutorial-overlay .tut-sh{display:flex;align-items:center;gap:10px;}
+  #tutorial-overlay .tut-sn{width:26px;height:26px;border-radius:50%;background:#C9A84C;color:#111;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  #tutorial-overlay .tut-st{font-size:15px;font-weight:800;color:#fff;}
+  #tutorial-overlay .tut-sx{font-size:12.5px;color:#b6bcc6;line-height:1.6;margin:8px 0 0;}
+  #tutorial-overlay .tut-sx b{color:#e7ebf1;}
+  #tutorial-overlay .tut-shot{background:#0d0e12;border:1px solid #23252c;border-radius:13px;padding:12px;margin-top:11px;}
+  #tutorial-overlay .tut-nom{font-size:14px;font-weight:900;color:#fff;border-left:3px solid #C9A84C;padding-left:8px;}
+  #tutorial-overlay .tut-musc{font-size:9px;color:#8b93a0;margin:3px 0 0 11px;}
+  #tutorial-overlay .tut-note{margin:8px 0 0;padding:8px 11px;background:rgba(201,168,76,.12);border-left:3px solid #C9A84C;border-radius:0 8px 8px 0;font-size:11px;color:#e7d9ac;line-height:1.45;}
+  #tutorial-overlay .tut-note b{color:#f0d488;} #tutorial-overlay .tg{color:#7fe0a0;font-weight:700;}
+  #tutorial-overlay .wtt{width:100%;border-collapse:collapse;margin-top:9px;background:#fff;border-radius:8px;overflow:hidden;}
+  #tutorial-overlay .wtt th{font-size:8px;font-weight:800;color:#8a92a1;background:#f4f6f8;padding:6px 3px;border:1px solid #eef0f3;}
+  #tutorial-overlay .wtt td{font-size:11px;font-weight:800;color:#20242c;text-align:center;padding:8px 3px;border:1px solid #eef0f3;}
+  #tutorial-overlay .wtt tr.d td{background:#e3f7ea;} #tutorial-overlay .wtt tr.m td{background:#fdecec;color:#c0392b;text-decoration:line-through;}
+  #tutorial-overlay .snn{display:inline-block;font-size:10px;font-weight:800;border:1px solid #cbd0d8;border-radius:20px;padding:2px 9px;color:#5b636f;background:#f5f6f8;}
+  #tutorial-overlay .snn.on{background:#25D366;color:#08260f;border-color:#25D366;}
+  #tutorial-overlay .cuu{display:block;font-size:7.5px;color:#2f9e5e;font-weight:800;}
+  #tutorial-overlay .vbtn2{display:inline-block;background:#FF0000;color:#fff;font-size:9px;font-weight:800;padding:4px 9px;border-radius:5px;}
+  #tutorial-overlay .vthumb2{margin-top:9px;height:64px;border-radius:9px;background:#15171d;border:1px solid #23252c;position:relative;}
+  #tutorial-overlay .vplay2{position:absolute;left:50%;top:50%;margin:-12px 0 0 -7px;width:0;height:0;border-left:18px solid #fff;border-top:12px solid transparent;border-bottom:12px solid transparent;}
+  #tutorial-overlay .tut-cap{font-size:9px;color:#71767f;margin-top:7px;}
+  #tutorial-overlay .tkv{display:flex;gap:9px;margin:6px 0;font-size:12px;} #tutorial-overlay .tkv .k{flex:0 0 82px;font-weight:800;color:#C9A84C;} #tutorial-overlay .tkv .v{flex:1;color:#c2c8d2;line-height:1.5;}
+  #tutorial-overlay .ttag{display:inline-block;font-size:9px;font-weight:800;padding:1px 7px;border-radius:20px;background:#e9eff9;color:#3a5bb0;}
+  #tutorial-overlay .tut-btn{margin-top:9px;text-align:center;background:#C9A84C;color:#111;font-weight:800;font-size:12px;border-radius:10px;padding:11px;}
+  #tutorial-overlay .tut-res{background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:12px 14px;margin-top:24px;font-size:12.5px;color:#d9cfa8;line-height:1.6;}
+  #tutorial-overlay .tut-res b{color:#f0d488;}
+  #tutorial-overlay .tut-close2{width:100%;margin-top:16px;background:#141519;border:1px solid #23252c;color:#eef1f5;border-radius:12px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;}
+</style>
+<div class="tut-top"><div class="t">Cómo usar la app<small>Guía del alumno</small></div><button class="x" onclick="_cerrarTutorial()">×</button></div>
+<div class="tut-body">
+  <div class="tut-intro">Acá tenés todo tu entrenamiento. Abajo de la pantalla hay 3 pestañas:</div>
+  <div class="tut-tabs"><div class="tut-tab on">R. FUERZA</div><div class="tut-tab">DATOS</div><div class="tut-tab">COMPLEMENTOS</div></div>
+  <div class="tut-sx" style="margin-top:6px;"><b>R. Fuerza</b>: tu rutina (donde vas a estar casi siempre). <b>Datos</b>: tus medidas y referencias. <b>Complementos</b>: material extra.</div>
+
+  <div class="tut-step">
+    <div class="tut-sh"><span class="tut-sn">1</span><span class="tut-st">Elegí la semana y el día</span></div>
+    <div class="tut-sx">La <b>semana actual</b> aparece resaltada; las que pasaron y las que vienen se ven distintas. Tocá el <b>día</b> que te toca. El día de hoy dice "HOY".</div>
+    <div class="tut-shot">
+      <div style="font-size:8px;font-weight:800;color:#C9A84C;letter-spacing:1px;">SEMANAS</div>
+      <div style="display:flex;gap:5px;margin:6px 0 12px;">
+        <div style="flex:1;text-align:center;border:1px solid #e0554e;border-radius:9px;padding:6px 2px;font-size:8px;color:#e0554e;font-weight:800;">Sem 1</div>
+        <div style="flex:1;text-align:center;border:1px solid #C9A84C;background:rgba(201,168,76,.12);border-radius:9px;padding:6px 2px;font-size:8px;color:#C9A84C;font-weight:900;">Sem 2</div>
+        <div style="flex:1;text-align:center;border:1px solid #3a3a2a;border-radius:9px;padding:6px 2px;font-size:8px;color:#c99a2e;font-weight:800;">Sem 3</div>
+      </div>
+      <div style="background:#141519;border-radius:9px;padding:9px 11px;font-size:11px;font-weight:800;">LUN · Tren superior <span style="float:right;color:#C9A84C;">HOY</span></div>
+    </div>
+  </div>
+
+  <div class="tut-step">
+    <div class="tut-sh"><span class="tut-sn">2</span><span class="tut-st">Mirá el video y "Cómo hacerlo"</span></div>
+    <div class="tut-sx"><b>Todos los ejercicios tienen video.</b> Tocás el botón rojo <b>VIDEO</b> y ves la técnica (se reproduce ahí o se abre en YouTube). Debajo del nombre está mi aclaración: <b>leela siempre</b>.</div>
+    <div class="tut-shot">
+      <div style="display:flex;align-items:flex-start;gap:8px;"><div class="tut-nom" style="flex:1;">Prensa 45°</div><span class="vbtn2">&#9654; VIDEO</span></div>
+      <div class="tut-musc">Cuádriceps · Glúteos</div>
+      <div class="vthumb2"><div class="vplay2"></div></div>
+      <div class="tut-note"><b>Cómo hacerlo:</b> pies altos y puntas hacia afuera. <span class="tg">Objetivo: glúteo mayor, extensión de cadera.</span></div>
+    </div>
+  </div>
+
+  <div class="tut-step">
+    <div class="tut-sh"><span class="tut-sn">3</span><span class="tut-st">Leé la tabla de series</span></div>
+    <div class="tut-sx">Cada fila es una serie. Las columnas:</div>
+    <div class="tkv"><div class="k">SERIE</div><div class="v">El número (S1, S2…).</div></div>
+    <div class="tkv"><div class="k">REPS</div><div class="v">Las repeticiones. Si dice <span class="ttag">c/lado</span> es de cada lado (unilateral).</div></div>
+    <div class="tkv"><div class="k">PESO (KG)</div><div class="v">El peso. Si viene vacío, lo cargás vos. Si dice <span class="ttag">c/u</span>, es por cada mancuerna (una en cada mano).</div></div>
+    <div class="tkv"><div class="k">RIR</div><div class="v">Repeticiones en reserva: cuántas te sobran al terminar. RIR 2 = podrías hacer 2 más.</div></div>
+    <div class="tkv"><div class="k">PAUSA</div><div class="v">El descanso entre series.</div></div>
+    <div class="tut-shot">
+      <table class="wtt"><tr><th>SERIE</th><th>REPS</th><th>PESO (KG)</th><th>RIR</th><th>PAUSA</th></tr>
+        <tr><td><span class="snn">S1</span></td><td>8-10</td><td>10<span class="cuu">c/u</span></td><td>2</td><td>1 min</td></tr></table>
+    </div>
+  </div>
+
+  <div class="tut-step">
+    <div class="tut-sh"><span class="tut-sn">4</span><span class="tut-st">Registrá mientras entrenás</span></div>
+    <div class="tut-sx"><b>Tocá el número</b> de la serie → queda <span class="tg">verde</span> (hecha) y arranca solo el descanso. La <b style="color:#e07a7a;">✕</b> = "no la hice". <b>Cargá tu peso</b> en la celda: se guarda solo y me llega. Abajo tenés <b>Estadísticas</b>, <b>Cambiar</b> ejercicio y un <b>comentario</b> para dejarme.</div>
+    <div class="tut-shot">
+      <table class="wtt"><tr><th>SERIE</th><th>REPS</th><th>PESO</th><th>RIR</th><th></th></tr>
+        <tr class="d"><td><span class="snn on">S1</span></td><td>8-10</td><td>60</td><td>2</td><td style="color:#8a9a90;">✕</td></tr>
+        <tr class="m"><td><span class="snn">S2</span></td><td>8-10</td><td>60</td><td>1</td><td style="color:#d84a4a;">✕</td></tr></table>
+      <div class="tut-cap">Fila verde = hecha · Fila roja tachada = no la hice.</div>
+      <div style="margin-top:9px;background:#141519;border:1px solid #23252c;border-radius:8px;padding:8px 10px;font-size:9px;color:#8b93a0;">Comentario para tu coach sobre este ejercicio…</div>
+    </div>
+  </div>
+
+  <div class="tut-step">
+    <div class="tut-sh"><span class="tut-sn">5</span><span class="tut-st">Terminá y dejame tu devolución</span></div>
+    <div class="tut-sx">Al final, contame cómo te fue: podés <b>escribir</b> o <b>grabar un audio</b>. Después tocá <b>"Terminé mi entrenamiento"</b>. Cuando lo revise, te va a aparecer <b>"Tu coach vio tu entrenamiento"</b>.</div>
+    <div class="tut-shot">
+      <div style="font-size:8px;font-weight:800;color:#8b93a0;">DEVOLUCIÓN FINAL (OPCIONAL)</div>
+      <div style="background:#141519;border:1px solid #23252c;border-radius:9px;padding:9px;margin-top:5px;font-size:9px;color:#8b93a0;height:30px;">Contame cómo te sentiste…</div>
+      <div style="border:1px dashed rgba(201,168,76,.5);border-radius:9px;padding:8px;text-align:center;color:#C9A84C;font-size:9px;font-weight:800;margin-top:7px;">&#9654; Grabar audio en vez de escribir</div>
+      <div class="tut-btn">Terminé mi entrenamiento</div>
+    </div>
+  </div>
+
+  <div class="tut-step">
+    <div class="tut-sh"><span class="tut-sn">6</span><span class="tut-st">La pestaña DATOS</span></div>
+    <div class="tut-sx">Cargás una vez tu <b>altura</b> y <b>talle</b>, y la app te arma tu tabla de <b>posición de pies</b> para sentadillas (cuántos pasos y cm entre talones). También cargás tus medidas corporales.</div>
+    <div class="tut-shot">
+      <div style="font-size:8px;font-weight:800;color:#C9A84C;">MIS REFERENCIAS · PIERNAS</div>
+      <table class="wtt" style="margin-top:6px;"><tr><th>Ejercicio</th><th>Pasos</th><th>Distancia</th></tr>
+        <tr><td style="text-align:left;">Sentadilla</td><td>2 pasos</td><td>≈48 cm</td></tr>
+        <tr><td style="text-align:left;">Sentadilla sumo</td><td>3 pasos</td><td>≈69 cm</td></tr></table>
+    </div>
+  </div>
+
+  <div class="tut-res"><b>En resumen:</b> abrí el día → mirá el video y "Cómo hacerlo" → hacé las series y tocá el número (verde) → cargá tu peso → al final, tu devolución + "Terminé". Con eso ajusto tu plan a tu progreso. ¡A entrenar!</div>
+  <button class="tut-close2" onclick="_cerrarTutorial()">Entendido, cerrar</button>
+</div>`;
+}
 
 function goTab(t) {
   ['rutina','running','agenda','cargas','stats','medidas','coach','charlas'].forEach(x => {
