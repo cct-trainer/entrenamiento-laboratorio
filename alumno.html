@@ -883,8 +883,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260819225848 por un timestamp en cada deploy
-const _APP_VERSION = '20260819225848';
+// deploy.bat reemplaza 20260820091310 por un timestamp en cada deploy
+const _APP_VERSION = '20260820091310';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2365,10 +2365,21 @@ function _ejCard(ej, uid) {
     '<div style="padding:12px 14px 12px;">'+
       '<div style="font-size:17px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#25D366':'var(--gold)')+';padding-left:9px;">'+_nomShow+'</div>'+
       (ej.musculos ? '<div style="font-size:10px;color:var(--muted);margin:3px 0 0 12px;">'+_tc(ej.musculos)+'</div>' : '')+
+      (ej.nota ? (()=>{
+        const _esc = s => String(s).replace(/</g,'&lt;');
+        const raw = String(ej.nota);
+        const idx = raw.toLowerCase().indexOf('objetivo');
+        let inner;
+        if(idx>=0){
+          const pre = raw.slice(0,idx).replace(/[\s\-·|:]+$/,'').trim();
+          const obj = raw.slice(idx).trim();
+          inner = (pre?_esc(pre)+' ':'')+'<span style="color:#7fe0a0;font-weight:800;">🎯 '+_esc(obj)+'</span>';
+        } else { inner = _esc(raw); }
+        return '<div style="margin:8px 0 0;padding:9px 12px;background:rgba(201,168,76,.08);border-left:3px solid var(--gold);border-radius:0 9px 9px 0;font-size:12.5px;color:#e7d9ac;line-height:1.5;"><b style="color:#f0d488;">📝 '+(_LANG==='en'?'How to do it:':'Cómo hacerlo:')+'</b> '+inner+'</div>';
+      })() : '')+
       _sustNote+
       (ej.unilateral ? '<div style="font-size:10px;color:var(--muted);margin:4px 0 0 12px;">'+(_LANG==='en'?'Unilateral · do each set on both sides':'Unilateral · cada serie se hace de los dos lados')+'</div>' : '')+
       (()=>{ const nq=_notaEquipo(ej); return nq ? '<div style="font-size:10px;color:var(--muted);margin:3px 0 0 12px;line-height:1.45;">💡 '+nq+'</div>' : ''; })()+
-      (ej.nota ? '<div style="font-size:12.5px;font-weight:600;color:var(--gold);margin:7px 0 0 0;padding:6px 10px 6px 12px;background:rgba(201,168,76,.08);border-radius:7px;font-style:italic;line-height:1.45;">📝 '+ej.nota+'</div>' : '')+
       videoHTML+
       _maxLine+
       _ultLine+
