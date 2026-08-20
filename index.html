@@ -11228,14 +11228,30 @@ const _PM_GRID_CSS = '<style id="pm-grid-css">'
   +'.pm-foot{margin-top:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}'
   +'.pm-bloq{font-size:10px;font-weight:800;color:#8a6d1f;background:#faf3df;border-radius:6px;padding:2px 7px;}.pm-check{color:#1f8a4c;font-weight:900;font-size:12px;}'
   +'.pm-acc{display:flex;gap:8px;margin-top:2px;}.pm-acc span,.pm-acc button{font-size:11px;color:#b0b5bf;background:none;border:none;cursor:pointer;padding:0;font-family:inherit;}.pm-acc .pm-dup{font-size:9px;font-weight:800;color:#8a909c;}.pm-acc .pm-del:hover{color:#d05050;}'
+  // Estado temporal de la semana: en curso (verde) · pasada (rojo) · próxima (ámbar)
+  +'.mes-semana-bloque.sem-actual .mes-semana-header{background:#eaf7ef;border-left:4px solid #1f8a4c;}'
+  +'.mes-semana-bloque.sem-actual .mes-semana-titulo-txt{color:#1f8a4c;}'
+  +'.mes-semana-bloque.sem-pasada .mes-semana-header{background:#fdecec;border-left:4px solid #d05656;}'
+  +'.mes-semana-bloque.sem-pasada .mes-semana-titulo-txt{color:#c23b3b;}.mes-semana-bloque.sem-pasada{opacity:.9;}'
+  +'.mes-semana-bloque.sem-futura .mes-semana-header{background:#fef7e6;border-left:4px solid #d9a53a;}'
+  +'.mes-semana-bloque.sem-futura .mes-semana-titulo-txt{color:#a67b1e;}'
+  +'.sem-badge{font-size:9px;font-weight:900;letter-spacing:.5px;padding:2px 9px;border-radius:20px;text-transform:uppercase;margin-left:10px;vertical-align:middle;}'
+  +'.sem-badge.a{background:#1f8a4c;color:#fff;}.sem-badge.p{background:#f3d4d4;color:#c23b3b;}.sem-badge.f{background:#f6e6c0;color:#a67b1e;}'
   +'</style>';
 function renderPlanMes() {
   _fetchCompletadas(planSemOriginalAlumnoId || currentAlumnoId);
   const container = document.getElementById('plan-mes-container');
   if(!container) return;
+  const _hoyPM = new Date().toISOString().slice(0,10);
   container.innerHTML = _PM_GRID_CSS + planSemanasArray.map((sem, semIdx) => {
     const isEd = semIdx === planSemEditando;
     const label = _semFechaLabel(semIdx);
+    // Estado temporal de la semana (por fecha): pasada · actual (en curso) · futura
+    const _fi = sem.fechaInicio || '';
+    let _est = '';
+    if(_fi){ const _fd = new Date(_fi+'T12:00:00'); _fd.setDate(_fd.getDate()+6); const _fin = _fd.toISOString().slice(0,10); _est = _hoyPM<_fi ? 'futura' : (_hoyPM>_fin ? 'pasada' : 'actual'); }
+    const _estCls = _est ? (' sem-'+_est) : '';
+    const _estBadge = _est==='actual' ? '<span class="sem-badge a">En curso</span>' : _est==='pasada' ? '<span class="sem-badge p">Pasada</span>' : _est==='futura' ? '<span class="sem-badge f">Próxima</span>' : '';
     // Tarjeta compacta de día (grilla tipo calendario)
     const renderCard = (i) => {
       const diaNom = _diaNombreReal(semIdx, i);
@@ -11278,9 +11294,9 @@ function renderPlanMes() {
       + Array.from({length:7}, (_,i) => renderCard(i)).join('')
       + '</div>';
 
-    return '<div class="mes-semana-bloque'+(isEd?' mes-semana-editando':'')+'" id="mes-sem-bloque-'+semIdx+'">'
+    return '<div class="mes-semana-bloque'+(isEd?' mes-semana-editando':'')+_estCls+'" id="mes-sem-bloque-'+semIdx+'">'
       + '<div class="mes-semana-header">'
-        + '<div class="mes-semana-titulo-txt">SEMANA '+sem.semana+(label ? ' &nbsp;&middot;&nbsp; '+label : '')+'</div>'
+        + '<div class="mes-semana-titulo-txt">SEMANA '+sem.semana+(label ? ' &nbsp;&middot;&nbsp; '+label : '')+_estBadge+'</div>'
         + '<div class="mes-semana-acciones">'
           + '<button class="mes-btn-accion" onclick="copiarSemana('+semIdx+')">Copiar semana ↓</button>'
           + (planSemanasArray.length > 1 ? '<button class="mes-btn-accion mes-btn-danger" onclick="eliminarSemana('+semIdx+')">Eliminar</button>' : '')
