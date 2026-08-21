@@ -11240,23 +11240,28 @@ const _PM_GRID_CSS = '<style id="pm-grid-css">'
   +'.mes-semana-bloque.sem-pasada .mes-semana-titulo-txt{color:#9a8686;}'
   +'.mes-semana-bloque.sem-futura .mes-semana-header{background:repeating-linear-gradient(45deg,#fdf6e5,#fdf6e5 10px,#fbf1d8 10px,#fbf1d8 20px);}'
   +'.mes-semana-bloque.sem-futura .mes-semana-titulo-txt{color:#9a7118;}'
+  +'.mes-semana-bloque.sem-prev{opacity:.97;}'
+  +'.mes-semana-bloque.sem-prev .mes-semana-header{background:#eef1f4;border-left:4px solid #b9c0cb;}'
+  +'.mes-semana-bloque.sem-prev .mes-semana-titulo-txt{color:#5a6472;}'
   +'.sem-badge{font-size:9px;font-weight:900;letter-spacing:.6px;padding:3px 11px;border-radius:20px;text-transform:uppercase;margin-left:10px;vertical-align:middle;}'
-  +'.sem-badge.a{background:#fff;color:#0f7a40;}.sem-badge.p{background:#d9c4c4;color:#8a4a4a;}.sem-badge.f{background:#d29a2a;color:#fff;}'
+  +'.sem-badge.a{background:#fff;color:#0f7a40;}.sem-badge.p{background:#d9c4c4;color:#8a4a4a;}.sem-badge.f{background:#d29a2a;color:#fff;}.sem-badge.pr{background:#e2e5ea;color:#5a6472;}'
   +'</style>';
 function renderPlanMes() {
   _fetchCompletadas(planSemOriginalAlumnoId || currentAlumnoId);
   const container = document.getElementById('plan-mes-container');
   if(!container) return;
   const _hoyPM = new Date().toISOString().slice(0,10);
-  container.innerHTML = _PM_GRID_CSS + planSemanasArray.map((sem, semIdx) => {
+  // Índice de la semana EN CURSO (por fecha). Si ninguna está en curso, la última ya empezada; si no, la 0.
+  let _actualIdx = -1;
+  planSemanasArray.forEach((s,i)=>{ const fi=s.fechaInicio||''; if(fi){ const fd=new Date(fi+'T12:00:00'); fd.setDate(fd.getDate()+6); const fin=fd.toISOString().slice(0,10); if(_hoyPM>=fi && _hoyPM<=fin) _actualIdx=i; } });
+  if(_actualIdx<0){ let _last=-1; planSemanasArray.forEach((s,i)=>{ if(s.fechaInicio && s.fechaInicio<=_hoyPM) _last=i; }); _actualIdx = _last>=0?_last:0; }
+  const _blocks = planSemanasArray.map((sem, semIdx) => {
     const isEd = semIdx === planSemEditando;
     const label = _semFechaLabel(semIdx);
-    // Estado temporal de la semana (por fecha): pasada · actual (en curso) · futura
-    const _fi = sem.fechaInicio || '';
-    let _est = '';
-    if(_fi){ const _fd = new Date(_fi+'T12:00:00'); _fd.setDate(_fd.getDate()+6); const _fin = _fd.toISOString().slice(0,10); _est = _hoyPM<_fi ? 'futura' : (_hoyPM>_fin ? 'pasada' : 'actual'); }
-    const _estCls = _est ? (' sem-'+_est) : '';
-    const _estBadge = _est==='actual' ? '<span class="sem-badge a">En curso</span>' : _est==='pasada' ? '<span class="sem-badge p">Pasada</span>' : _est==='futura' ? '<span class="sem-badge f">Próxima</span>' : '';
+    // Rol temporal: actual (en curso) · prev (anterior inmediata) · old (más vieja) · fut (próxima)
+    const _rol = semIdx===_actualIdx ? 'actual' : semIdx===_actualIdx-1 ? 'prev' : semIdx<_actualIdx ? 'old' : 'fut';
+    const _estCls = _rol==='actual' ? ' sem-actual' : _rol==='prev' ? ' sem-prev' : _rol==='old' ? ' sem-pasada' : ' sem-futura';
+    const _estBadge = _rol==='actual' ? '<span class="sem-badge a">En curso</span>' : _rol==='prev' ? '<span class="sem-badge pr">Semana anterior</span>' : _rol==='old' ? '<span class="sem-badge p">Pasada</span>' : '<span class="sem-badge f">Próxima</span>';
     // Tarjeta compacta de día (grilla tipo calendario)
     const renderCard = (i) => {
       const diaNom = _diaNombreReal(semIdx, i);
@@ -11309,9 +11314,26 @@ function renderPlanMes() {
       + '</div>'
       + gridHTML
     + '</div>';
-  }).join('')
-  + '<div class="mes-agregar-zona"><button class="mes-btn-agregar" onclick="agregarSemana()">&#65291; Agregar semana</button></div>';
+  });
+  // Orden: EN CURSO arriba · anterior inmediata debajo · próximas · (más viejas tras botón)
+  const _ordered = [];
+  if(_blocks[_actualIdx]) _ordered.push(_blocks[_actualIdx]);
+  if(_actualIdx-1>=0 && _blocks[_actualIdx-1]) _ordered.push(_blocks[_actualIdx-1]);
+  const _older = []; for(let i=0;i<=_actualIdx-2;i++){ if(_blocks[i]) _older.push(_blocks[i]); }
+  if(_older.length){
+    _ordered.push('<div style="margin:2px 0 14px;"><button onclick="_pmToggleOlder()" id="pm-older-btn" class="mes-btn-accion" style="background:#fff;border:1px solid #e6cccc;color:#a15656;">&#8249; Ver semanas más viejas ('+_older.length+')</button></div>');
+    _ordered.push('<div id="pm-older-wrap" style="display:none;">'+_older.join('')+'</div>');
+  }
+  for(let i=_actualIdx+1;i<_blocks.length;i++){ if(_blocks[i]) _ordered.push(_blocks[i]); }
+  container.innerHTML = _PM_GRID_CSS + _ordered.join('')
+    + '<div class="mes-agregar-zona"><button class="mes-btn-agregar" onclick="agregarSemana()">&#65291; Agregar semana</button></div>';
   actualizarSemanaFinder();
+}
+function _pmToggleOlder(){
+  const w=document.getElementById('pm-older-wrap'), b=document.getElementById('pm-older-btn'); if(!w) return;
+  const open = w.style.display!=='none';
+  w.style.display = open ? 'none' : 'block';
+  if(b) b.innerHTML = (open?'‹ Ver':'› Ocultar')+' semanas más viejas ('+w.children.length+')';
 }
 
 // ── Pestaña Progresión de Cargas ─────────────────────────────────────────────
