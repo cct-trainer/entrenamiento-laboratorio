@@ -11214,20 +11214,22 @@ const _PM_GRID_CSS = '<style id="pm-grid-css">'
   +'.plan-mes-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:9px;}'
   +'@media(max-width:900px){.plan-mes-grid{grid-template-columns:repeat(4,1fr);}}'
   +'@media(max-width:560px){.plan-mes-grid{grid-template-columns:repeat(2,1fr);}}'
-  +'.plan-mes-grid .plan-fila{display:flex!important;flex-direction:column!important;align-items:stretch!important;min-height:150px;padding:0!important;overflow:hidden;gap:0!important;}'
-  +'.pm-strip{height:5px;flex-shrink:0;background:#d7dbe2;}'
-  +'.pm-card.foco-sup .pm-strip{background:#3a6ea5;}.pm-card.foco-inf .pm-strip{background:#2e8b6f;}.pm-card.foco-full .pm-strip{background:#C9A84C;}'
-  +'.pm-top{display:flex;align-items:baseline;justify-content:space-between;padding:9px 10px 6px;border-bottom:1px solid #f0f2f6;}'
-  +'.pm-dow{font-size:11px;font-weight:900;color:#1a1a2e;letter-spacing:.5px;}.pm-num{font-size:10px;color:#9aa0ad;}'
-  +'.pm-body{padding:8px 10px 10px;flex:1;display:flex;flex-direction:column;gap:8px;}'
-  +'.pm-rest{flex:1;display:flex;align-items:center;justify-content:center;color:#b3b8c2;font-size:12px;font-weight:700;}'
-  +'.pm-ses{display:flex;flex-direction:column;gap:6px;}.pm-ses + .pm-ses{border-top:1px dashed #eceef3;padding-top:8px;}'
-  +'.pm-tag{align-self:flex-start;font-size:8.5px;font-weight:900;letter-spacing:.5px;padding:2px 7px;border-radius:20px;text-transform:uppercase;background:#eef0f3;color:#6b7280;}'
-  +'.pm-tag.foco-sup{background:#e6eef7;color:#3a6ea5;}.pm-tag.foco-inf{background:#e3f3ee;color:#2e8b6f;}.pm-tag.foco-full{background:#faf3df;color:#8a6d1f;}'
-  +'.pm-musc{display:flex;flex-wrap:wrap;gap:3px;}.pm-chip{font-size:10px;font-weight:700;color:#4a5160;background:#f1f3f7;border-radius:6px;padding:2px 6px;}'
-  +'.pm-foot{margin-top:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}'
-  +'.pm-bloq{font-size:10px;font-weight:800;color:#8a6d1f;background:#faf3df;border-radius:6px;padding:2px 7px;}.pm-check{color:#1f8a4c;font-weight:900;font-size:12px;}'
-  +'.pm-acc{display:flex;gap:8px;margin-top:2px;}.pm-acc span,.pm-acc button{font-size:11px;color:#b0b5bf;background:none;border:none;cursor:pointer;padding:0;font-family:inherit;}.pm-acc .pm-dup{font-size:9px;font-weight:800;color:#8a909c;}.pm-acc .pm-del:hover{color:#d05050;}'
+  +'.plan-mes-grid .plan-fila{display:flex!important;flex-direction:column!important;align-items:stretch!important;min-height:118px;padding:13px!important;overflow:hidden;gap:0!important;border:1px solid #e7e9ef;border-radius:13px;background:#fff;transition:transform .12s,box-shadow .12s;}'
+  +'.plan-mes-grid .plan-fila:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(30,40,70,.10);}'
+  +'.plan-mes-grid .plan-fila.pm-empty{background:#fafbfc;border-style:dashed;}'
+  +'.pm-top{display:flex;align-items:center;gap:9px;}'
+  +'.pm-num{font-size:22px;font-weight:900;line-height:1;color:#1a1a2e;}'
+  +'.pm-dwrap{line-height:1.05;}.pm-dw{font-size:11px;font-weight:900;color:#1a1a2e;letter-spacing:.3px;}.pm-mo{font-size:9px;color:#a3a8b2;font-weight:600;}'
+  +'.pm-dotf{width:9px;height:9px;border-radius:50%;margin-left:auto;background:#d7dbe2;flex-shrink:0;}'
+  +'.pm-dotf.foco-full{background:#C9A84C;}.pm-dotf.foco-sup{background:#3a6ea5;}.pm-dotf.foco-inf{background:#2e8b6f;}'
+  +'.pm-empty .pm-num,.pm-empty .pm-dw{color:#c4c8d0;}'
+  +'.pm-add{margin-top:auto;font-size:11px;font-weight:800;color:#c0c5cd;text-align:right;}'
+  +'.pm-acc{display:flex;gap:2px;justify-content:flex-end;align-items:center;margin-top:auto;}'
+  +'.pm-accL{margin-right:auto;display:flex;gap:5px;align-items:center;}'
+  +'.pm-abtn{width:27px;height:27px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#9aa0ab;background:transparent;border:none;padding:0;}'
+  +'.pm-abtn:hover{background:#f1f2f5;}.pm-abtn.pm-cp:hover{color:#a9812a;background:#faf3df;}.pm-abtn.pm-del:hover{color:#c23b3b;background:#fdecec;}.pm-abtn.pm-mv{cursor:grab;}'
+  +'.pm-abtn svg{width:15px;height:15px;pointer-events:none;}'
+  +'.pm-check{color:#1f8a4c;font-weight:900;font-size:13px;}.pm-rev{font-size:9px;font-weight:800;color:#a15656;background:#f7e7e7;border-radius:20px;padding:1px 7px;cursor:pointer;}.pm-nses{font-size:9px;font-weight:800;color:#8a909c;background:#eef0f3;border-radius:20px;padding:1px 7px;}'
   // Estado temporal (Opción 3): en curso DOMINA (glow) · pasada apagada · próxima fantasma
   +'.mes-semana-bloque.sem-actual,.mes-semana-bloque.sem-pasada,.mes-semana-bloque.sem-futura{border-radius:14px;overflow:hidden;transition:box-shadow .15s;}'
   +'.mes-semana-bloque.sem-actual{box-shadow:0 0 0 2px #159a52,0 14px 34px rgba(21,154,82,.26);}'
@@ -11246,6 +11248,11 @@ const _PM_GRID_CSS = '<style id="pm-grid-css">'
   +'.sem-badge{font-size:9px;font-weight:900;letter-spacing:.6px;padding:3px 11px;border-radius:20px;text-transform:uppercase;margin-left:10px;vertical-align:middle;}'
   +'.sem-badge.a{background:#fff;color:#0f7a40;}.sem-badge.p{background:#d9c4c4;color:#8a4a4a;}.sem-badge.f{background:#d29a2a;color:#fff;}.sem-badge.pr{background:#e2e5ea;color:#5a6472;}'
   +'</style>';
+const _PMIC = {
+  mv:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="7" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="9" cy="17" r="1.4"/><circle cx="15" cy="7" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="15" cy="17" r="1.4"/></svg>',
+  cp:'<svg viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2"/></svg>',
+  del:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m1 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+};
 function renderPlanMes() {
   _fetchCompletadas(planSemOriginalAlumnoId || currentAlumnoId);
   const container = document.getElementById('plan-mes-container');
@@ -11262,40 +11269,46 @@ function renderPlanMes() {
     const _rol = semIdx===_actualIdx ? 'actual' : semIdx===_actualIdx-1 ? 'prev' : semIdx<_actualIdx ? 'old' : 'fut';
     const _estCls = _rol==='actual' ? ' sem-actual' : _rol==='prev' ? ' sem-prev' : _rol==='old' ? ' sem-pasada' : ' sem-futura';
     const _estBadge = _rol==='actual' ? '<span class="sem-badge a">En curso</span>' : _rol==='prev' ? '<span class="sem-badge pr">Semana anterior</span>' : _rol==='old' ? '<span class="sem-badge p">Pasada</span>' : '<span class="sem-badge f">Próxima</span>';
-    // Tarjeta compacta de día (grilla tipo calendario)
+    // Tarjeta compacta de día (grilla tipo calendario · Opción C)
     const renderCard = (i) => {
       const diaNom = _diaNombreReal(semIdx, i);
       const sesiones = sem.dias[i] || [];
       const tiene = sesiones.length > 0;
       const fechaStr = _diaFecha(semIdx, i);
-      const top = '<div class="pm-strip"></div><div class="pm-top"><span class="pm-dow">'+diaNom.sig+'</span><span class="pm-num">'+fechaStr+'</span></div>';
-      // Día vacío → tarjeta "+ Agregar"
+      const _fp = (fechaStr||'').split(' ');
+      const _dnum = _fp[0] || '';
+      const _dmo = _fp[1] || '';
+      const topHead = _dnum
+        ? '<span class="pm-num">'+_dnum+'</span><div class="pm-dwrap"><div class="pm-dw">'+diaNom.sig+'</div>'+(_dmo?'<div class="pm-mo">'+_dmo+'</div>':'')+'</div>'
+        : '<div class="pm-dwrap"><div class="pm-dw" style="font-size:14px;">'+diaNom.sig+'</div></div>';
+      // Día vacío → tarjeta punteada con "+ Agregar"
       if(!tiene){
-        return '<div class="plan-fila pm-card" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
-          + top + '<div class="pm-body"><div class="pm-rest">+ Agregar sesión</div></div>'
+        return '<div class="plan-fila pm-empty" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
+          + '<div class="pm-top">'+topHead+'</div>'
+          + '<div class="pm-add">+ Agregar</div>'
         + '</div>';
       }
-      // Foco del día (según todos los músculos de sus sesiones)
+      // Foco combinado del día (color del punto)
       const muscAll = []; sesiones.forEach(s => { _muscsSesion(s).forEach(m => muscAll.push(m)); });
-      const focoDia = _focoSesion(muscAll);
-      const _TAG = {sup:'Superior', inf:'Pierna', full:'Full body'};
-      const sesHTML = sesiones.map((s, sIdx) => {
-        const bc = (s.bloques||[]).length;
-        const musc = _muscsSesion(s);
-        const f = _focoSesion(musc);
-        const done = !!_completadaDe(semIdx, i, sIdx);
-        const nd = _nDiffs(semIdx, i, sIdx);
-        const rev = nd>0 ? '<span class="pf-rev" onclick="event.stopPropagation();_abrirRevision('+semIdx+','+i+','+sIdx+')" title="Revisar lo que hizo el alumno">↺ '+nd+'</span>' : '';
-        const chips = musc.slice(0,5).map(m => '<span class="pm-chip">'+m+'</span>').join('');
-        return '<div class="pm-ses">'
-          + '<span class="pm-tag foco-'+f+'">'+(_TAG[f]||'Sesión')+'</span>'
-          + (chips ? '<div class="pm-musc">'+chips+'</div>' : '')
-          + '<div class="pm-foot"><span class="pm-bloq">'+bc+' bloque'+(bc!==1?'s':'')+'</span>'+(done?'<span class="pm-check" title="Completada">✓</span>':'')+rev+'</div>'
-          + '<div class="pm-acc" onclick="event.stopPropagation()"><span class="pm-drag" title="Arrastrar a otro día">⠿</span><button class="pm-dup" onclick="event.stopPropagation();abrirModalDuplicarMover('+i+',\'duplicar\','+semIdx+')" title="Duplicar sesión">dup</button><button class="pm-del" onclick="event.stopPropagation();eliminarSesionDia('+i+','+semIdx+','+sIdx+')" title="Eliminar sesión">✕</button></div>'
-        + '</div>';
-      }).join('');
-      return '<div class="plan-fila plan-dia-card tiene-sesion pm-card foco-'+focoDia+'" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" draggable="true" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
-        + top + '<div class="pm-body">'+sesHTML+'</div>'
+      const f = _focoSesion(muscAll);
+      // Estado (completada / revisión) agregando todas las sesiones del día
+      let doneAll = true, ndTot = 0, anyDone = false;
+      sesiones.forEach((s, sIdx) => { const d = !!_completadaDe(semIdx, i, sIdx); if(d) anyDone = true; else doneAll = false; ndTot += _nDiffs(semIdx, i, sIdx); });
+      const multi = sesiones.length > 1;
+      const chk = (anyDone && doneAll) ? '<span class="pm-check" title="Completada">✓</span>' : '';
+      const rev = ndTot>0 ? '<span class="pm-rev" onclick="event.stopPropagation();_abrirRevision('+semIdx+','+i+',0)" title="Revisar lo que hizo el alumno">↺ '+ndTot+'</span>' : '';
+      const nses = multi ? '<span class="pm-nses" title="'+sesiones.length+' sesiones">×'+sesiones.length+'</span>' : '';
+      const leftMark = (chk||rev||nses) ? '<div class="pm-accL">'+chk+rev+nses+'</div>' : '';
+      const delAction = multi ? 'abrirPlanDiaEditor('+i+','+semIdx+')' : 'eliminarSesionDia('+i+','+semIdx+',0)';
+      const acc = '<div class="pm-acc" onclick="event.stopPropagation()">'
+        + leftMark
+        + '<span class="pm-abtn pm-mv" title="Desplazar">'+_PMIC.mv+'</span>'
+        + '<button class="pm-abtn pm-cp" onclick="event.stopPropagation();abrirModalDuplicarMover('+i+',\'duplicar\','+semIdx+')" title="Copiar">'+_PMIC.cp+'</button>'
+        + '<button class="pm-abtn pm-del" onclick="event.stopPropagation();'+delAction+'" title="Eliminar">'+_PMIC.del+'</button>'
+      + '</div>';
+      return '<div class="plan-fila plan-dia-card tiene-sesion pm-card" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" draggable="true" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
+        + '<div class="pm-top">'+topHead+'<span class="pm-dotf foco-'+f+'"></span></div>'
+        + acc
       + '</div>';
     };
 
