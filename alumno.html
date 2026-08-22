@@ -895,8 +895,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260822123432 por un timestamp en cada deploy
-const _APP_VERSION = '20260822123432';
+// deploy.bat reemplaza 20260822134717 por un timestamp en cada deploy
+const _APP_VERSION = '20260822134717';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2455,25 +2455,25 @@ function _ejCard(ej, uid) {
     const single = pa.items.length === 1;
     const rows = pa.items.map((it, ix) => {
       const yt = _ytId(it.video||'');
-      const thumb = '<div style="width:44px;height:33px;border-radius:7px;flex-shrink:0;position:relative;background:#153a70;border:1px solid #5386c4;">'+
+      const thumb = '<div style="width:44px;height:33px;border-radius:7px;flex-shrink:0;position:relative;background:#2e2612;border:1px solid #a9812a;">'+
           '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div>'+
         '</div>';
       const lbl = single ? (_LANG==='en'?'All':'Todas') : ('S'+(ix+1));
       const clk = yt ? ' onclick="_playPausa(\''+yt+'\')"' : '';
       const cur = yt ? 'cursor:pointer;' : '';
-      const border = ix < pa.items.length-1 ? 'border-bottom:1px solid rgba(180,210,250,.30);' : '';
+      const border = ix < pa.items.length-1 ? 'border-bottom:1px solid rgba(201,168,76,.16);' : '';
       return '<div'+clk+' style="'+cur+'display:flex;align-items:center;gap:12px;padding:11px 13px;'+border+'">'+
-        '<span style="font-size:10px;font-weight:600;color:#d0e4ff;min-width:18px;letter-spacing:.5px;flex-shrink:0;">'+lbl+'</span>'+
+        '<span style="font-size:10px;font-weight:600;color:#e6c979;min-width:18px;letter-spacing:.5px;flex-shrink:0;">'+lbl+'</span>'+
         thumb+
-        '<span style="flex:1;font-size:13px;font-weight:600;color:#ffffff;line-height:1.25;">'+String(it.nombre||'').replace(/</g,'&lt;')+'</span>'+
-        (it.dur ? '<span style="font-size:12px;font-weight:600;color:#dcebfd;white-space:nowrap;">'+String(it.dur).replace(/</g,'&lt;')+'</span>' : '')+
+        '<span style="flex:1;font-size:13px;font-weight:600;color:#f4f1e9;line-height:1.25;">'+String(it.nombre||'').replace(/</g,'&lt;')+'</span>'+
+        (it.dur ? '<span style="font-size:12px;font-weight:600;color:#ddd0a8;white-space:nowrap;">'+String(it.dur).replace(/</g,'&lt;')+'</span>' : '')+
       '</div>';
     }).join('');
     const _paLight = document.documentElement.classList.contains('light');
-    const _paSh = _paLight ? '0 10px 26px rgba(0,0,0,.7)' : '0 10px 26px rgba(0,0,0,.6)';
+    const _paSh = (_paLight ? '0 10px 26px rgba(0,0,0,.7)' : '0 10px 26px rgba(0,0,0,.6)') + ', 0 0 0 1px rgba(201,168,76,.22)';
     return '<div style="margin-top:12px;margin-bottom:16px;">'+
-      '<div style="font-size:9px;font-weight:800;letter-spacing:1.2px;color:#d6e9ff;margin-bottom:7px;display:flex;align-items:center;gap:6px;">⏸ '+(_LANG==='en'?'DURING EACH REST':'EN LA PAUSA DE CADA SERIE')+'</div>'+
-      '<div style="background:linear-gradient(160deg,#1f56a0,#173f75);border:1px solid #5f9be0;border-radius:12px;overflow:hidden;box-shadow:'+_paSh+';">'+rows+'</div>'+
+      '<div style="font-size:9px;font-weight:800;letter-spacing:1.2px;color:#f0d488;margin-bottom:7px;display:flex;align-items:center;gap:6px;">⏸ '+(_LANG==='en'?'DURING EACH REST':'EN LA PAUSA DE CADA SERIE')+'</div>'+
+      '<div style="background:linear-gradient(160deg,#16181d,#101115);border:1px solid #b08a34;border-radius:12px;overflow:hidden;box-shadow:'+_paSh+';">'+rows+'</div>'+
     '</div>';
   })();
 
