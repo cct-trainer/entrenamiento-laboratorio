@@ -12836,7 +12836,18 @@ function guardarEstadoDiaActual() {
       const _tecEj = (typeof _readTecnica==='function' ? _readTecnica(eEl) : null);
       const _uniEj2 = (eEl.querySelector('.ej-uni')?.value === '1');
       const _mancUna = (eEl.querySelector('.ej-manc')?.value === '1');
-      if(eName) ejercicios.push({ nombre:eName, ctrl, video, nota, ficha, series, seriesApro, dropset, tecnica:_tecEj, unilateral:_uniEj2, mancUna:_mancUna });
+      // Ejercicio en la pausa (descanso activo) — una fila por serie
+      const _pausaItems = [];
+      const _ptb = document.getElementById(eId+'-pausa-tbody');
+      if(_ptb){ _ptb.querySelectorAll('tr').forEach(row => {
+        const txts = row.querySelectorAll('input[type="text"]');
+        const nombre = txts[0]?.value.trim() || '';
+        const dur    = txts[1]?.value.trim() || '';
+        const vid    = row.querySelector('.pausa-video')?.value.trim() || '';
+        if(nombre) _pausaItems.push({ nombre, dur, video: vid });
+      }); }
+      const _pausaActiva = { activo: _pausaItems.length>0, items: _pausaItems };
+      if(eName) ejercicios.push({ nombre:eName, ctrl, video, nota, ficha, series, seriesApro, dropset, tecnica:_tecEj, unilateral:_uniEj2, mancUna:_mancUna, pausaActiva:_pausaActiva });
     });
     // Leer datos cardio si aplica
     let cardioData = null;
@@ -13020,6 +13031,12 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
     _fillTbody(ejId+'-efec-tbody', datosPrevios.series, 'Serie');
     _fillTbody(ejId+'-apro-tbody', datosPrevios.seriesApro, 'Apro');
     _fillTbody(ejId+'-drop-tbody', datosPrevios.dropset, 'DS');
+    // Restaurar ejercicio en la pausa (descanso activo)
+    if(datosPrevios.pausaActiva && Array.isArray(datosPrevios.pausaActiva.items) && datosPrevios.pausaActiva.items.length){
+      if(typeof _ensurePausaDatalist==='function') _ensurePausaDatalist();
+      const ptb = document.getElementById(ejId+'-pausa-tbody');
+      if(ptb){ ptb.innerHTML=''; datosPrevios.pausaActiva.items.forEach((it,ix)=> ptb.appendChild(_makePausaRow(ejId, ix+1, it))); toggleSeriesSec(ejId,'pausa'); }
+    }
     // Legacy: también poblar el -tbody viejo si existe
     _fillTbody(ejId+'-tbody', datosPrevios.series, 'Serie');
     // Auto-abrir las secciones que tienen datos
@@ -19064,6 +19081,24 @@ function addEjercicio(bloqueId) {
         </div>
       </div>` : ''}
 
+      ${mostrarDropset ? `<!-- EJERCICIO EN LA PAUSA (series con pausa múltiples combinadas) -->
+      <div class="series-section" id="${ejId}-pausa-section">
+        <div class="series-sec-header" onclick="toggleSeriesSec('${ejId}','pausa')" style="color:#2b6f83;">
+          <span class="series-sec-icon" id="${ejId}-pausa-icon">▸</span>
+          ⏸ EJERCICIO EN LA PAUSA
+        </div>
+        <div class="series-sec-body" id="${ejId}-pausa-body">
+          <div style="font-size:11px;color:#2b6f83;background:#eaf5f8;border:1px solid #cfe6ee;border-radius:8px;padding:8px 11px;margin:8px 0;line-height:1.5;">Descanso activo: qué hace el alumno durante la pausa. Agregá una fila por serie (S1, S2…) o una sola si es igual en todas.</div>
+          <table class="series-table">
+            <thead><tr><th>Serie</th><th>Ejercicio</th><th>Dur / Reps</th><th></th></tr></thead>
+            <tbody id="${ejId}-pausa-tbody"></tbody>
+          </table>
+        </div>
+        <div class="series-sec-footer" id="${ejId}-pausa-footer" style="display:none;">
+          <span class="series-agregar-link" onclick="addPausa('${ejId}')">＋ Agregar pausa</span>
+        </div>
+      </div>` : ''}
+
     </div>
 
     <div id="${ejId}-ficha-toggle-wrap" style="display:none;">
@@ -19768,6 +19803,45 @@ function addDropset(ejId) {
   const num = tbody.querySelectorAll('tr').length + 1;
   const prev = _prevRepsYPeso(tbody);
   tbody.appendChild(_makeSerieRow(ejId, tbodyId, 'DS', num, { reps: prev.reps, peso: prev.peso }));
+}
+// ── EJERCICIO EN LA PAUSA (descanso activo · series con pausa combinadas) ──
+function _ensurePausaDatalist(){
+  if(document.getElementById('pausa-ej-datalist')) return;
+  const dl = document.createElement('datalist');
+  dl.id = 'pausa-ej-datalist';
+  try{
+    const lib = (typeof getEjerciciosCompletos==='function') ? getEjerciciosCompletos() : [];
+    dl.innerHTML = lib.map(e=>'<option value="'+String(e.nombre||'').replace(/"/g,'&quot;')+'">').join('');
+  }catch(e){}
+  document.body.appendChild(dl);
+}
+function _pausaLookupVideo(inp){
+  try{
+    const row = inp.closest('tr'); if(!row) return;
+    const vid = row.querySelector('.pausa-video'); if(!vid) return;
+    const lib = (typeof getEjerciciosCompletos==='function') ? getEjerciciosCompletos() : [];
+    const found = lib.find(e => String(e.nombre||'').toLowerCase() === String(inp.value||'').toLowerCase());
+    if(found && found.video) vid.value = found.video;
+  }catch(e){}
+}
+function _makePausaRow(ejId, num, d){
+  d = d || {};
+  const esc = s => String(s||'').replace(/"/g,'&quot;');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="serie-num-cell">S ${num}</td>
+    <td><input type="text" list="pausa-ej-datalist" placeholder="Ej: Plancha frontal" value="${esc(d.nombre)}" onchange="_pausaLookupVideo(this)"><input type="hidden" class="pausa-video" value="${esc(d.video)}"></td>
+    <td><input type="text" placeholder="30 seg / 20 rep" value="${esc(d.dur)}"></td>
+    <td><button class="btn-del-row" onclick="this.closest('tr').remove();_renumRows('${ejId}-pausa-tbody','S')">×</button></td>`;
+  return tr;
+}
+function addPausa(ejId){
+  _ensurePausaDatalist();
+  const tbodyId = ejId+'-pausa-tbody';
+  const tb = document.getElementById(tbodyId);
+  if(!tb) return;
+  const num = tb.querySelectorAll('tr').length + 1;
+  tb.appendChild(_makePausaRow(ejId, num, {}));
 }
 // Backward compat
 function addSerie(ejId) { addSerieEfec(ejId); }

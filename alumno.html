@@ -890,8 +890,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260821152715 por un timestamp en cada deploy
-const _APP_VERSION = '20260821152715';
+// deploy.bat reemplaza 20260822111540 por un timestamp en cada deploy
+const _APP_VERSION = '20260822111540';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1833,6 +1833,25 @@ function _playYt(uid, ytId) {
   player.innerHTML = '<iframe src="https://www.youtube.com/embed/'+ytId+'?autoplay=1&playsinline=1&rel=0&modestbranding=1" width="100%" height="220" style="border:none;display:block;" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>';
 }
 
+// Reproduce el video del ejercicio de la pausa en un modal
+function _playPausa(ytId){
+  if(!ytId) return;
+  let ov = document.getElementById('pausa-video-ov');
+  if(!ov){
+    ov = document.createElement('div');
+    ov.id = 'pausa-video-ov';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px;';
+    ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = '<div style="width:100%;max-width:640px;">'+
+    '<div style="position:relative;padding-bottom:56.25%;height:0;border-radius:12px;overflow:hidden;background:#000;">'+
+      '<iframe src="https://www.youtube.com/embed/'+ytId+'?autoplay=1&playsinline=1&rel=0&modestbranding=1" style="position:absolute;inset:0;width:100%;height:100%;border:none;" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>'+
+    '</div>'+
+    '<div style="text-align:center;margin-top:12px;"><button onclick="var o=document.getElementById(\'pausa-video-ov\');if(o)o.remove();" style="background:#fff;color:#111;border:none;border-radius:20px;padding:8px 22px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">'+(_LANG==='en'?'Close':'Cerrar')+'</button></div>'+
+  '</div>';
+}
+
 function _toggleStatus(uid, state) {
   const ok = document.getElementById(uid+'-ok');
   const no = document.getElementById(uid+'-no');
@@ -2424,6 +2443,31 @@ function _ejCard(ej, uid) {
 
   const seriesTable = aproSection + efecSection + dropSection + progBadge;
 
+  // ── EJERCICIO EN LA PAUSA (descanso activo · series con pausa combinadas) ──
+  const _pausaHTML = (() => {
+    const pa = ej.pausaActiva;
+    if(!pa || !pa.activo || !Array.isArray(pa.items) || !pa.items.length) return '';
+    const single = pa.items.length === 1;
+    const rows = pa.items.map((it, ix) => {
+      const yt = _ytId(it.video||'');
+      const thumb = yt
+        ? '<div style="width:46px;height:34px;border-radius:8px;overflow:hidden;flex-shrink:0;position:relative;background:#15171d;"><img src="https://img.youtube.com/vi/'+yt+'/hqdefault.jpg" style="width:100%;height:100%;object-fit:cover;display:block;"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25);"><svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div></div>'
+        : '<div style="width:46px;height:34px;border-radius:8px;flex-shrink:0;background:linear-gradient(135deg,#243b42,#12181b);"></div>';
+      const lbl = single ? (_LANG==='en'?'All':'Todas') : ('S'+(ix+1));
+      const clk = yt ? ' onclick="_playPausa(\''+yt+'\')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;background:#0e181c;border:1px solid #17262b;margin-bottom:7px;"' : ' style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;background:#0e181c;border:1px solid #17262b;margin-bottom:7px;"';
+      return '<div'+clk+'>'+
+        '<span style="font-size:9px;font-weight:900;color:#57b4cc;background:rgba(87,180,204,.14);border:1px solid rgba(87,180,204,.3);border-radius:7px;min-width:30px;height:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0 5px;">'+lbl+'</span>'+
+        thumb+
+        '<span style="flex:1;font-size:12.5px;font-weight:800;color:#e2f0f4;line-height:1.25;">'+String(it.nombre||'').replace(/</g,'&lt;')+'</span>'+
+        (it.dur ? '<span style="font-size:10.5px;font-weight:800;color:#8fb6c1;white-space:nowrap;">'+String(it.dur).replace(/</g,'&lt;')+'</span>' : '')+
+      '</div>';
+    }).join('');
+    return '<div style="margin-top:12px;background:#0b1417;border:1px solid #1c3138;border-radius:14px;padding:11px;">'+
+      '<div style="font-size:9px;font-weight:900;letter-spacing:1.2px;color:#57b4cc;margin-bottom:9px;display:flex;align-items:center;gap:6px;">⏸ '+(_LANG==='en'?'DURING EACH REST':'EN LA PAUSA DE CADA SERIE')+'</div>'+
+      rows+
+    '</div>';
+  })();
+
   // Video inline (thumbnail → iframe al hacer clic)
   const ytId = _ytId(ej.video||'');
   const videoHTML = ytId ? (
@@ -2543,6 +2587,7 @@ function _ejCard(ej, uid) {
       (sEfec ? '' : ctrlGrid)+
       pesoRef+
       seriesTable+
+      _pausaHTML+
       _tecApp+
       _footer+
       fichaHTML+
