@@ -895,8 +895,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260822123214 por un timestamp en cada deploy
-const _APP_VERSION = '20260822123214';
+// deploy.bat reemplaza 20260822123432 por un timestamp en cada deploy
+const _APP_VERSION = '20260822123432';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2469,9 +2469,11 @@ function _ejCard(ej, uid) {
         (it.dur ? '<span style="font-size:12px;font-weight:600;color:#dcebfd;white-space:nowrap;">'+String(it.dur).replace(/</g,'&lt;')+'</span>' : '')+
       '</div>';
     }).join('');
-    return '<div style="margin-top:12px;">'+
+    const _paLight = document.documentElement.classList.contains('light');
+    const _paSh = _paLight ? '0 10px 26px rgba(0,0,0,.7)' : '0 10px 26px rgba(0,0,0,.6)';
+    return '<div style="margin-top:12px;margin-bottom:16px;">'+
       '<div style="font-size:9px;font-weight:800;letter-spacing:1.2px;color:#d6e9ff;margin-bottom:7px;display:flex;align-items:center;gap:6px;">⏸ '+(_LANG==='en'?'DURING EACH REST':'EN LA PAUSA DE CADA SERIE')+'</div>'+
-      '<div style="background:linear-gradient(160deg,#1f56a0,#173f75);border:1px solid #5f9be0;border-radius:12px;overflow:hidden;">'+rows+'</div>'+
+      '<div style="background:linear-gradient(160deg,#1f56a0,#173f75);border:1px solid #5f9be0;border-radius:12px;overflow:hidden;box-shadow:'+_paSh+';">'+rows+'</div>'+
     '</div>';
   })();
 
