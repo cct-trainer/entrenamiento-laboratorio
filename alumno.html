@@ -262,11 +262,11 @@ html.light .blk-n{color:var(--text);text-transform:none;font-size:11px;font-weig
 html.light .blk-t{color:var(--muted);}
 html.light .blk-arr{color:var(--muted);}
 html.light .blk-body{padding:0 2px 4px;}
-/* Bloque con PAUSA ACTIVA → fondo azul suave · Bloque CIRCUITO → borde azul */
-.blk.pa-blue{background:linear-gradient(160deg,#14202e,#0c141d);border-color:#294863;}
-.blk.circ-blue{border:1.5px solid #4a86c4;}
-html.light .blk.pa-blue{background:#eef4fb;border:1px solid #cadcf0;border-radius:12px;padding:8px 8px 2px;}
-html.light .blk.circ-blue{border:1.5px solid #6ba3da;border-radius:12px;padding:8px 8px 2px;}
+/* Borde de bloque: 1 ejercicio → dorado · 2+ ejercicios → azul · pausa activa → gris (default) con su zona azul */
+.blk.solo-gold{border:1.5px solid #a98a3f;}
+.blk.combo-blue{border:1.5px solid #4a86c4;}
+html.light .blk.solo-gold{border:1.5px solid var(--gold);border-radius:12px;padding:8px 8px 2px;}
+html.light .blk.combo-blue{border:1.5px solid #6ba3da;border-radius:12px;padding:8px 8px 2px;}
 
 .ejrow{display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border-radius:7px;}
 .ejrow:nth-child(odd){background:var(--row-odd);}
@@ -895,8 +895,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260822120027 por un timestamp en cada deploy
-const _APP_VERSION = '20260822120027';
+// deploy.bat reemplaza 20260822121418 por un timestamp en cada deploy
+const _APP_VERSION = '20260822121418';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2461,17 +2461,17 @@ function _ejCard(ej, uid) {
       const lbl = single ? (_LANG==='en'?'All':'Todas') : ('S'+(ix+1));
       const clk = yt ? ' onclick="_playPausa(\''+yt+'\')"' : '';
       const cur = yt ? 'cursor:pointer;' : '';
-      const border = ix < pa.items.length-1 ? 'border-bottom:1px solid #191a1f;' : '';
+      const border = ix < pa.items.length-1 ? 'border-bottom:1px solid rgba(120,170,220,.16);' : '';
       return '<div'+clk+' style="'+cur+'display:flex;align-items:center;gap:12px;padding:11px 13px;'+border+'">'+
-        '<span style="font-size:10px;font-weight:600;color:#7c828c;min-width:18px;letter-spacing:.5px;flex-shrink:0;">'+lbl+'</span>'+
+        '<span style="font-size:10px;font-weight:600;color:#8fb6dd;min-width:18px;letter-spacing:.5px;flex-shrink:0;">'+lbl+'</span>'+
         thumb+
-        '<span style="flex:1;font-size:13px;font-weight:600;color:#e9ebef;line-height:1.25;">'+String(it.nombre||'').replace(/</g,'&lt;')+'</span>'+
-        (it.dur ? '<span style="font-size:12px;font-weight:600;color:#a0a6af;white-space:nowrap;">'+String(it.dur).replace(/</g,'&lt;')+'</span>' : '')+
+        '<span style="flex:1;font-size:13px;font-weight:600;color:#eaf1f8;line-height:1.25;">'+String(it.nombre||'').replace(/</g,'&lt;')+'</span>'+
+        (it.dur ? '<span style="font-size:12px;font-weight:600;color:#a9c3de;white-space:nowrap;">'+String(it.dur).replace(/</g,'&lt;')+'</span>' : '')+
       '</div>';
     }).join('');
     return '<div style="margin-top:12px;">'+
-      '<div style="font-size:9px;font-weight:800;letter-spacing:1.2px;color:#C9A84C;margin-bottom:7px;display:flex;align-items:center;gap:6px;">⏸ '+(_LANG==='en'?'DURING EACH REST':'EN LA PAUSA DE CADA SERIE')+'</div>'+
-      '<div style="background:#101114;border:1px solid #1f2127;border-radius:12px;overflow:hidden;">'+rows+'</div>'+
+      '<div style="font-size:9px;font-weight:800;letter-spacing:1.2px;color:#6ea8dc;margin-bottom:7px;display:flex;align-items:center;gap:6px;">⏸ '+(_LANG==='en'?'DURING EACH REST':'EN LA PAUSA DE CADA SERIE')+'</div>'+
+      '<div style="background:linear-gradient(160deg,#14202e,#0d1620);border:1px solid #2b4a68;border-radius:12px;overflow:hidden;">'+rows+'</div>'+
     '</div>';
   })();
 
@@ -3278,9 +3278,10 @@ function renderSesion() {
     ses.bloques.map((b,bi) => {
       const letra='ABCDEFGHIJ'[bi]||(bi+1);
       const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>_ejCard(ej,'b'+bi+'e'+ei)).join('');
+      // Borde según composición: pausa activa → gris (neutro) · 2+ ejercicios → azul · 1 ejercicio → dorado
       const _hasPausa = (b.ejercicios||[]).some(e => e && e.pausaActiva && e.pausaActiva.activo && Array.isArray(e.pausaActiva.items) && e.pausaActiva.items.length);
-      const _esCirc = /circuito/i.test(b.serieTipo||'');
-      const _blkCls = 'blk'+(_hasPausa?' pa-blue':'')+(_esCirc?' circ-blue':'');
+      const _nEj = (b.ejercicios||[]).length;
+      const _blkCls = 'blk' + (_hasPausa ? '' : (_nEj>=2 ? ' combo-blue' : (_nEj===1 ? ' solo-gold' : '')));
       return '<div class="'+_blkCls+'" style="margin-bottom:14px;">'+
         '<div class="blk-hdr open" onclick="this.classList.toggle(\'open\');var nx=this.nextElementSibling;nx.style.display=this.classList.contains(\'open\')?\'block\':\'none\'">'+
           '<div class="blk-letra">'+letra+'</div>'+
