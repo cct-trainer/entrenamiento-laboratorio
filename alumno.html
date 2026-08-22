@@ -890,8 +890,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260822113642 por un timestamp en cada deploy
-const _APP_VERSION = '20260822113642';
+// deploy.bat reemplaza 20260822114334 por un timestamp en cada deploy
+const _APP_VERSION = '20260822114334';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2443,7 +2443,7 @@ function _ejCard(ej, uid) {
 
   const seriesTable = aproSection + efecSection + dropSection + progBadge;
 
-  // ── EJERCICIO EN LA PAUSA (descanso activo · series con pausa combinadas) — Modelo 3 (tabla) ──
+  // ── EJERCICIO EN LA PAUSA (descanso activo · series con pausa combinadas) — Pro B (tarjeta oscura) ──
   const _pausaHTML = (() => {
     const pa = ej.pausaActiva;
     if(!pa || !pa.activo || !Array.isArray(pa.items) || !pa.items.length) return '';
@@ -2451,26 +2451,21 @@ function _ejCard(ej, uid) {
     const rows = pa.items.map((it, ix) => {
       const yt = _ytId(it.video||'');
       const thumb = yt
-        ? '<div style="width:40px;height:30px;border-radius:7px;overflow:hidden;flex-shrink:0;position:relative;background:#e9ecf1;border:1px solid #dfe3ea;"><img src="https://img.youtube.com/vi/'+yt+'/hqdefault.jpg" style="width:100%;height:100%;object-fit:cover;display:block;"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.18);"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div></div>'
-        : '<div style="width:40px;height:30px;border-radius:7px;flex-shrink:0;background:#e9ecf1;border:1px solid #dfe3ea;"></div>';
+        ? '<div style="width:44px;height:33px;border-radius:7px;overflow:hidden;flex-shrink:0;position:relative;background:#15171d;border:1px solid #25272e;"><img src="https://img.youtube.com/vi/'+yt+'/hqdefault.jpg" style="width:100%;height:100%;object-fit:cover;display:block;"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.22);"><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff" style="filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));"><path d="M8 5v14l11-7z"/></svg></div></div>'
+        : '<div style="width:44px;height:33px;border-radius:7px;flex-shrink:0;background:#15171d;border:1px solid #25272e;"></div>';
       const lbl = single ? (_LANG==='en'?'All':'Todas') : ('S'+(ix+1));
       const clk = yt ? ' onclick="_playPausa(\''+yt+'\')" style="cursor:pointer;"' : '';
-      return '<tr'+clk+'>'+
-        '<td style="font-size:12px;font-weight:800;color:#20242c;padding:7px 6px;border:1px solid #eef0f3;text-align:center;"><span style="display:inline-block;font-size:9px;font-weight:800;border:1px solid #cbd0d8;border-radius:20px;padding:2px 7px;color:#5b636f;background:#f5f6f8;">'+lbl+'</span></td>'+
-        '<td style="padding:7px 6px;border:1px solid #eef0f3;"><div style="display:flex;align-items:center;gap:8px;">'+thumb+'<span style="font-size:12px;font-weight:800;color:#20242c;line-height:1.15;">'+String(it.nombre||'').replace(/</g,'&lt;')+'</span></div></td>'+
-        '<td style="font-size:12px;font-weight:800;color:#6b7280;padding:7px 6px;border:1px solid #eef0f3;text-align:right;white-space:nowrap;">'+(it.dur?String(it.dur).replace(/</g,'&lt;'):'')+'</td>'+
-      '</tr>';
+      const border = ix < pa.items.length-1 ? 'border-bottom:1px solid #191a1f;' : '';
+      return '<div'+clk+' style="display:flex;align-items:center;gap:12px;padding:11px 13px;'+border+'">'+
+        '<span style="font-size:10px;font-weight:600;color:#7c828c;min-width:18px;letter-spacing:.5px;flex-shrink:0;">'+lbl+'</span>'+
+        thumb+
+        '<span style="flex:1;font-size:13px;font-weight:600;color:#e9ebef;line-height:1.25;">'+String(it.nombre||'').replace(/</g,'&lt;')+'</span>'+
+        (it.dur ? '<span style="font-size:12px;font-weight:600;color:#a0a6af;white-space:nowrap;">'+String(it.dur).replace(/</g,'&lt;')+'</span>' : '')+
+      '</div>';
     }).join('');
     return '<div style="margin-top:12px;">'+
-      '<div style="font-size:9px;font-weight:900;letter-spacing:1.2px;color:#C9A84C;margin-bottom:6px;display:flex;align-items:center;gap:6px;">⏸ '+(_LANG==='en'?'DURING EACH REST':'EN LA PAUSA DE CADA SERIE')+'</div>'+
-      '<table style="width:100%;border-collapse:collapse;background:#fff;border-radius:9px;overflow:hidden;">'+
-        '<thead><tr>'+
-          '<th style="width:44px;font-size:8px;font-weight:800;color:#8a92a1;background:#f4f6f8;padding:6px;border:1px solid #eef0f3;text-transform:uppercase;letter-spacing:.4px;">'+(_LANG==='en'?'Set':'Serie')+'</th>'+
-          '<th style="font-size:8px;font-weight:800;color:#8a92a1;background:#f4f6f8;padding:6px;border:1px solid #eef0f3;text-transform:uppercase;letter-spacing:.4px;text-align:left;">'+(_LANG==='en'?'Exercise':'Ejercicio')+'</th>'+
-          '<th style="width:74px;font-size:8px;font-weight:800;color:#8a92a1;background:#f4f6f8;padding:6px;border:1px solid #eef0f3;text-transform:uppercase;letter-spacing:.4px;text-align:right;">'+(_LANG==='en'?'Dur':'Dur')+'</th>'+
-        '</tr></thead>'+
-        '<tbody>'+rows+'</tbody>'+
-      '</table>'+
+      '<div style="font-size:9px;font-weight:800;letter-spacing:1.2px;color:#C9A84C;margin-bottom:7px;display:flex;align-items:center;gap:6px;">⏸ '+(_LANG==='en'?'DURING EACH REST':'EN LA PAUSA DE CADA SERIE')+'</div>'+
+      '<div style="background:#101114;border:1px solid #1f2127;border-radius:12px;overflow:hidden;">'+rows+'</div>'+
     '</div>';
   })();
 
