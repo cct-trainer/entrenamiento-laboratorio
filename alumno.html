@@ -895,8 +895,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260822122348 por un timestamp en cada deploy
-const _APP_VERSION = '20260822122348';
+// deploy.bat reemplaza 20260822123214 por un timestamp en cada deploy
+const _APP_VERSION = '20260822123214';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2477,8 +2477,10 @@ function _ejCard(ej, uid) {
 
   // Video inline (thumbnail → iframe al hacer clic)
   const ytId = _ytId(ej.video||'');
+  const _vidLight = document.documentElement.classList.contains('light');
+  const _vidSh = _vidLight ? '0 10px 26px rgba(0,0,0,.7)' : '0 10px 26px rgba(0,0,0,.6)';
   const videoHTML = ytId ? (
-    '<div style="margin:10px 0;border-radius:10px;overflow:hidden;position:relative;">'+
+    '<div style="margin:10px 0 16px;border-radius:10px;overflow:hidden;position:relative;box-shadow:'+_vidSh+';">'+
       '<div id="yt-thumb-'+uid+'" style="cursor:pointer;position:relative;" onclick="_playYt(\''+uid+'\',\''+ytId+'\')">'+
         '<img src="https://img.youtube.com/vi/'+ytId+'/hqdefault.jpg" alt="Video" style="width:100%;display:block;aspect-ratio:16/9;object-fit:cover;">'+
         '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);">'+
