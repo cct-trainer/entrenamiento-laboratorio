@@ -11253,6 +11253,7 @@ const _PMIC = {
   cp:'<svg viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2"/></svg>',
   del:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m1 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
 };
+function _setObjetivoSemana(idx, val){ if(planSemanasArray[idx]) planSemanasArray[idx].objetivo = val; }
 function renderPlanMes() {
   _fetchCompletadas(planSemOriginalAlumnoId || currentAlumnoId);
   const container = document.getElementById('plan-mes-container');
@@ -11317,12 +11318,19 @@ function renderPlanMes() {
       + Array.from({length:7}, (_,i) => renderCard(i)).join('')
       + '</div>';
 
+    const _objVal = String(sem.objetivo||'').replace(/"/g,'&quot;');
     return '<div class="mes-semana-bloque'+(isEd?' mes-semana-editando':'')+_estCls+'" id="mes-sem-bloque-'+semIdx+'">'
       + '<div class="mes-semana-header">'
         + '<div class="mes-semana-titulo-txt">SEMANA '+sem.semana+(label ? ' &nbsp;&middot;&nbsp; '+label : '')+_estBadge+'</div>'
         + '<div class="mes-semana-acciones">'
           + '<button class="mes-btn-accion" onclick="copiarSemana('+semIdx+')">Copiar semana ↓</button>'
           + (planSemanasArray.length > 1 ? '<button class="mes-btn-accion mes-btn-danger" onclick="eliminarSemana('+semIdx+')">Eliminar</button>' : '')
+        + '</div>'
+      + '</div>'
+      + '<div style="padding:10px 14px 2px;">'
+        + '<div style="display:flex;align-items:center;gap:9px;background:#f6f7f9;border:1px solid #e6e8ee;border-radius:9px;padding:7px 11px;">'
+          + '<span style="font-size:10px;font-weight:900;letter-spacing:.6px;color:#8a8f9c;text-transform:uppercase;white-space:nowrap;">🎯 Objetivo</span>'
+          + '<input type="text" value="'+_objVal+'" placeholder="Nombre u objetivo de la semana (opcional)…" oninput="_setObjetivoSemana('+semIdx+',this.value)" style="flex:1;min-width:0;border:none;background:transparent;outline:none;font-size:13px;font-weight:600;color:#2b3140;font-family:inherit;">'
         + '</div>'
       + '</div>'
       + gridHTML
