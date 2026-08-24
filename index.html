@@ -18970,33 +18970,37 @@ function onSerieTipoChange(bloqueId) {
   refreshLetras(bloqueId);
 }
 
-function getLetraEjercicio(serieTipo, idx) {
-  // Serie Simple → sin letra
-  if (serieTipo === 'Serie Simple') return '';
-  // Biserie → A1, A2
-  if (serieTipo === 'Biserie') return ['A1','A2'][idx] || ('A'+(idx+1));
-  // Triserie → A1, A2, A3
-  if (serieTipo === 'Triserie') return ['A1','A2','A3'][idx] || ('A'+(idx+1));
-  // Superserie → A1, A2
-  if (serieTipo === 'Superserie') return ['A1','A2'][idx] || ('A'+(idx+1));
-  // Serie Gigante → A1..A5
-  if (serieTipo === 'Serie Gigante') return ['A1','A2','A3','A4','A5'][idx] || ('A'+(idx+1));
-  // Circuito → A1, B1, C1...
-  const letras = ['A','B','C','D','E','F','G','H'];
-  return (letras[idx] || idx) + '1';
+// Letra del bloque según su posición entre los bloques del día (A, B, C…)
+function _bloqueLetra(bloqueId) {
+  const all = Array.from(document.querySelectorAll('#plan-editor-page-content .bloque-wrap'));
+  const idx = all.findIndex(b => b.id === bloqueId);
+  return 'ABCDEFGHIJ'[idx>=0?idx:0] || String((idx>=0?idx:0)+1);
+}
+function getLetraEjercicio(serieTipo, idx, blockLetter) {
+  const L = blockLetter || 'A';
+  // Serie Simple (un ejercicio) → solo la letra del bloque
+  if (serieTipo === 'Serie Simple') return L;
+  // Combinados / circuito → letra del bloque + número: A1, A2, A3…
+  return L + (idx+1);
 }
 
 function refreshLetras(bloqueId) {
   const tipo = document.getElementById(bloqueId+'-serie-tipo').value;
+  const L = _bloqueLetra(bloqueId);
   const ejes = document.getElementById(bloqueId+'-body').querySelectorAll('.ej-card');
+  const _combo = tipo !== 'Serie Simple' || ejes.length >= 2;
   ejes.forEach((el, i) => {
-    const letra = getLetraEjercicio(tipo, i);
+    const letra = _combo ? getLetraEjercicio(tipo, i, L) : L;
     const letraEl = el.querySelector('.ej-letra');
     if (letraEl) {
       letraEl.textContent = letra;
       letraEl.style.display = letra ? 'inline-block' : 'none';
     }
   });
+}
+// Recalcular letras de TODOS los bloques (por si cambió el orden/cantidad de bloques)
+function refreshLetrasTodos() {
+  document.querySelectorAll('#plan-editor-page-content .bloque-wrap').forEach(b => { if(b.id) refreshLetras(b.id); });
 }
 
 function addEjercicio(bloqueId) {
@@ -19005,7 +19009,7 @@ function addEjercicio(bloqueId) {
   const body = document.getElementById(bloqueId + '-body');
   const tipo = document.getElementById(bloqueId+'-serie-tipo').value;
   const idx = body.querySelectorAll('.ej-card').length;
-  const letra = getLetraEjercicio(tipo, idx);
+  const letra = getLetraEjercicio(tipo, idx, _bloqueLetra(bloqueId));
   const bloqueTipo = document.getElementById(bloqueId+'-tipo')?.value || '';
   const mostrarDropset = !['Movilidad','Activación'].includes(bloqueTipo);
 
@@ -19119,6 +19123,7 @@ function addEjercicio(bloqueId) {
     <div class="ej-ficha" id="${ejId}-ficha"></div>
 `;
   body.appendChild(div);
+  refreshLetras(bloqueId);   // renumerar el bloque (1 ejercicio → letra sola; 2+ → A1, A2…)
 }
 
 function toggleFichaEj(ejId) {

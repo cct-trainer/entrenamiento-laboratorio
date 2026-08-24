@@ -895,8 +895,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260824144603 por un timestamp en cada deploy
-const _APP_VERSION = '20260824144603';
+// deploy.bat reemplaza 20260824153403 por un timestamp en cada deploy
+const _APP_VERSION = '20260824153403';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2235,7 +2235,8 @@ function _tecAppHTML(ej){
   }
   return '<div class="tec"><div class="tec-h"><span class="ic">'+icon+'</span><span class="t">'+title+'</span>'+badge+'</div>'+condHTML+tbl+extra+'</div>';
 }
-function _ejCard(ej, uid) {
+function _ejCard(ej, uid, ejLabel) {
+  ejLabel = ejLabel || '';   // etiqueta del ejercicio en bloques combinados (A1, B2…)
   _ejStore[uid] = ej; // guardar para re-render posterior
 
   // Usar series vivas (modificadas por menú contextual) si existen
@@ -2574,7 +2575,7 @@ function _ejCard(ej, uid) {
 
   return '<div id="'+uid+'-card" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .2s;">'+
     '<div style="padding:12px 14px 12px;">'+
-      '<div style="font-size:17px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#25D366':'var(--gold)')+';padding-left:9px;">'+_nomShow+'</div>'+
+      '<div style="font-size:17px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#25D366':'var(--gold)')+';padding-left:9px;">'+(ejLabel?'<span style="font-size:11px;font-weight:900;color:#9cc6ef;background:rgba(74,134,196,.16);border:1px solid rgba(74,134,196,.35);border-radius:6px;padding:1px 7px;margin-right:8px;vertical-align:middle;">'+ejLabel+'</span>':'')+_nomShow+'</div>'+
       (ej.musculos ? '<div style="font-size:10px;color:var(--muted);margin:3px 0 0 12px;">'+_tc(ej.musculos)+'</div>' : '')+
       (ej.nota ? (()=>{
         const _esc = s => String(s).replace(/</g,'&lt;');
@@ -3289,7 +3290,9 @@ function renderSesion() {
     '</div>'+
     ses.bloques.map((b,bi) => {
       const letra='ABCDEFGHIJ'[bi]||(bi+1);
-      const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>_ejCard(ej,'b'+bi+'e'+ei)).join('');
+      // Bloque combinado (circuito/superserie/etc. o 2+ ejercicios) → cada ejercicio lleva la letra del bloque + número (A1, A2…)
+      const _combo = /biserie|superserie|triserie|gigante|circuito/i.test(b.serieTipo||'') || (b.ejercicios||[]).length>=2;
+      const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>_ejCard(ej,'b'+bi+'e'+ei, _combo ? (letra+(ei+1)) : '')).join('');
       // Borde según composición: pausa activa → gris (neutro) · 2+ ejercicios → azul · 1 ejercicio → dorado
       const _hasPausa = (b.ejercicios||[]).some(e => e && e.pausaActiva && e.pausaActiva.activo && Array.isArray(e.pausaActiva.items) && e.pausaActiva.items.length);
       const _nEj = (b.ejercicios||[]).length;
