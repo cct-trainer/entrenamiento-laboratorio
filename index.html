@@ -14933,37 +14933,37 @@ function renderSidebarAlumno(id) {
       Portal del alumno
     </button>
     <button onclick="openModalEditarAlumno('${id}')"
-      style="width:100%;background:transparent;border:0.5px solid #3a4d73;border-radius:9px;
-             color:#dbe1ec;font-size:11px;font-weight:600;padding:9px 12px;cursor:pointer;
+      style="width:100%;background:#eef4fb;border:1px solid #dbe6f3;border-radius:9px;
+             color:#274c73;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
              letter-spacing:0.3px;font-family:inherit;margin-bottom:8px;transition:background .15s;"
-      onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+      onmouseover="this.style.background='#ffffff'" onmouseout="this.style.background='#eef4fb'">
       ✏️ Editar perfil
     </button>
     <button onclick="copiarLinkActualizacion('${id}')"
-      style="width:100%;background:transparent;border:0.5px solid #3a4d73;border-radius:9px;
-             color:#dbe1ec;font-size:11px;font-weight:600;padding:9px 12px;cursor:pointer;
+      style="width:100%;background:#eef4fb;border:1px solid #dbe6f3;border-radius:9px;
+             color:#274c73;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
              letter-spacing:0.3px;font-family:inherit;transition:background .15s;"
-      onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+      onmouseover="this.style.background='#ffffff'" onmouseout="this.style.background='#eef4fb'">
       🔄 Link de actualización
     </button>
     <button onclick="copiarLinkFormulario('${id}')"
-      style="width:100%;margin-top:8px;background:transparent;border:0.5px solid #3a4d73;border-radius:9px;
-             color:#dbe1ec;font-size:11px;font-weight:600;padding:9px 12px;cursor:pointer;
+      style="width:100%;margin-top:8px;background:#eef4fb;border:1px solid #dbe6f3;border-radius:9px;
+             color:#274c73;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
              letter-spacing:0.3px;font-family:inherit;transition:background .15s;"
-      onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+      onmouseover="this.style.background='#ffffff'" onmouseout="this.style.background='#eef4fb'">
       🏋️ Formulario de pesos y preferencias
     </button>
     <button onclick="_verSustituciones('${id}')"
-      style="width:100%;margin-top:8px;background:transparent;border:0.5px solid #3a4d73;border-radius:9px;
-             color:#dbe1ec;font-size:11px;font-weight:600;padding:9px 12px;cursor:pointer;
+      style="width:100%;margin-top:8px;background:#eef4fb;border:1px solid #dbe6f3;border-radius:9px;
+             color:#274c73;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
              letter-spacing:0.3px;font-family:inherit;transition:background .15s;"
-      onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+      onmouseover="this.style.background='#ffffff'" onmouseout="this.style.background='#eef4fb'">
       ⇄ Sustituciones de ejercicios
     </button>
     ${(a.checkins&&a.checkins.length)?`<button onclick="verHistorialCheckins('${id}')"
-      style="width:100%;margin-top:8px;background:transparent;border:0.5px solid #3a4d73;border-radius:9px;
-             color:#dbe1ec;font-size:11px;font-weight:600;padding:9px 12px;cursor:pointer;font-family:inherit;transition:background .15s;"
-      onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+      style="width:100%;margin-top:8px;background:#eef4fb;border:1px solid #dbe6f3;border-radius:9px;
+             color:#274c73;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;font-family:inherit;transition:background .15s;"
+      onmouseover="this.style.background='#ffffff'" onmouseout="this.style.background='#eef4fb'">
       📋 Ver actualizaciones (${a.checkins.length})
     </button>`:''}
 
@@ -14980,8 +14980,8 @@ function renderSidebarAlumno(id) {
       <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;">
         <div style="font-size:10px;color:${color};font-weight:800;letter-spacing:.5px;margin-bottom:8px;">${label}</div>
         <div style="display:flex;gap:6px;">
-          <button onclick="_renovarAcceso('${id}',30)" style="flex:1;background:transparent;border:0.5px solid #3a4d73;border-radius:7px;color:#b9c3d6;font-size:10px;font-weight:700;padding:7px 4px;cursor:pointer;">+30 días</button>
-          <button onclick="_renovarAcceso('${id}',90)" style="flex:1;background:transparent;border:0.5px solid #3a4d73;border-radius:7px;color:#b9c3d6;font-size:10px;font-weight:700;padding:7px 4px;cursor:pointer;">+90 días</button>
+          <button onclick="_renovarAcceso('${id}',30)" style="flex:1;background:#eef4fb;border:1px solid #dbe6f3;border-radius:7px;color:#274c73;font-size:10px;font-weight:800;padding:7px 4px;cursor:pointer;">+30 días</button>
+          <button onclick="_renovarAcceso('${id}',90)" style="flex:1;background:#eef4fb;border:1px solid #dbe6f3;border-radius:7px;color:#274c73;font-size:10px;font-weight:800;padding:7px 4px;cursor:pointer;">+90 días</button>
           ${vencido ? `<button onclick="_renovarAcceso('${id}',0)" style="flex:1;background:transparent;border:0.5px solid #6a2020;border-radius:7px;color:#e88;font-size:10px;font-weight:700;padding:7px 4px;cursor:pointer;">Revocar</button>` : ''}
         </div>
       </div>`;
