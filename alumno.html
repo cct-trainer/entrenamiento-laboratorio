@@ -899,8 +899,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260825114148 por un timestamp en cada deploy
-const _APP_VERSION = '20260825114148';
+// deploy.bat reemplaza 20260825120112 por un timestamp en cada deploy
+const _APP_VERSION = '20260825120112';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2674,6 +2674,28 @@ function _ensureStatsUI(){
     '.stx-backbig{width:100%;margin-top:18px;background:linear-gradient(135deg,#C9A84C,#a8862f);color:#241d07;border:none;border-radius:11px;padding:14px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;}';
   document.head.appendChild(st);
 }
+// 1RM Epley (reps 1 = peso real), redondeo a 0,5 · protocolo fijo de 7 series
+let _stxState = null;
+function _stxEpley(peso, reps){ const p=parseFloat(String(peso).replace(',','.')); if(isNaN(p)||p<=0) return null; let r=parseInt(reps); if(isNaN(r)||r<1) r=1; const rm=r<=1?p:p*(1+r/30); return Math.round(rm*2)/2; }
+function _stxR25(v){ return Math.round((v||0)/2.5)*2.5; }
+function _stxFmt(v){ return String(Math.round(v*10)/10).replace('.',','); }
+function _stxProto(rm){ const ef=_stxR25(rm*0.80); return [
+  {ty:'Calentamiento',prep:1,kg:_stxR25(rm*0.22),rp:'15'},
+  {ty:'Aprox. 1',prep:1,kg:_stxR25(rm*0.45),rp:'8'},
+  {ty:'Aprox. 2',prep:1,kg:_stxR25(rm*0.60),rp:'5'},
+  {ty:'Feeder',prep:1,kg:_stxR25(rm*0.72),rp:'2–3'},
+  {ty:'Efectiva 1',efec:1,kg:ef,rp:'6–8'},
+  {ty:'Efectiva 2',efec:1,kg:ef,rp:'6–8'},
+  {ty:'Efectiva 3',efec:1,kg:ef,rp:'6–8'}
+]; }
+function _stxCalcular(){
+  const p=document.getElementById('stx-in-peso'); const r=document.getElementById('stx-in-reps');
+  const pv=parseFloat(String(p&&p.value||'').replace(',','.'));
+  if(isNaN(pv)||pv<=0){ if(p) p.focus(); return; }
+  let rv=parseInt(r&&r.value||''); if(isNaN(rv)||rv<1) rv=1;
+  _stxState.peso=pv; _stxState.reps=rv; _stxState.rm=_stxEpley(pv,rv);
+  _abrirStats(_stxState.uid);
+}
 function _abrirStats(uid){
   const ej = _ejStore[uid]; if(!ej) return;
   _ensureStatsUI();
@@ -2681,27 +2703,55 @@ function _abrirStats(uid){
   const uni = (_data && _data.perfil && _data.perfil.unidadPeso==='lb') ? 'lb' : 'kg';
   const nombre = _nomEj(ej)||'';
   const st = _statsDe(ej.nombre||nombre);
-  const musc = ej.musculos ? _tc(ej.musculos) : '';
+  // estado: si cambió de ejercicio, reset y prefill del máximo guardado
+  if(!_stxState || _stxState.uid!==uid){ _stxState={ uid, peso:(st&&st.max!=null?st.max:''), reps:(st&&st.maxReps?st.maxReps:''), rm:null }; }
+  const pesoVal=_stxState.peso, repsVal=_stxState.reps;
+  const rm=(_stxState.rm!=null)?_stxState.rm:((pesoVal!=='')?_stxEpley(pesoVal,repsVal||1):null);
+  const _e=s=>String(s==null?'':s).replace(/</g,'&lt;');
+  const rmHTML=(rm!=null)
+    ? '<span style="font-size:26px;font-weight:900;color:#8a6d1f;line-height:1;">'+_stxFmt(rm)+'<small style="font-size:13px;"> '+uni+'</small></span>'
+    : '<span style="font-size:13px;font-weight:800;color:#b39a55;">'+(en?'Enter weight & reps →':'Ingresá peso y reps →')+'</span>';
+  let filas='';
+  if(rm!=null){ _stxProto(rm).forEach(function(s){ filas+='<div class="sxp-tr'+(s.efec?' sxp-efec':'')+'"><span class="sxp-ty">'+s.ty+'</span><span class="sxp-ld">'+_stxFmt(s.kg)+' '+uni+'</span><span class="sxp-rp">'+s.rp+'</span></div>'; }); }
+  else { filas='<div style="padding:24px 12px;text-align:center;color:#9aa4b0;font-size:12.5px;">'+(en?'Calculate 1RM to see the protocol.':'Calculá el 1RM para ver el protocolo.')+'</div>'; }
+  const footHTML=(rm!=null)?'<div class="sxp-foot"><div class="sxp-fchip"><span class="fk">RIR</span><span class="fv">1–2</span></div><div class="sxp-fchip"><span class="fk">'+(en?'Rest':'Descanso')+'</span><span class="fv">3:00</span></div></div>':'';
   let ov = document.getElementById('stats-overlay');
   if(!ov){ ov=document.createElement('div'); ov.id='stats-overlay'; ov.className='stats-overlay'; document.body.appendChild(ov); }
-  let body;
-  if(st && (st.max || (st.hist && st.hist.length))){
-    const hist = (st.hist||[]).slice().sort((a,b)=> String(b.fecha).localeCompare(String(a.fecha)));
-    const maxW = st.max || (hist[0]?hist[0].peso:'');
-    const maxF = st.fecha || (hist[0]?hist[0].fecha:'');
-    const histHTML = hist.length ? hist.map((h,i)=>
-      '<div class="stx-row"><span class="d">'+_fmtFechaStx(h.fecha)+'</span><span><span class="'+(i===0?'w':'w2')+'">'+h.peso+' '+uni+'</span>'+(i===0?' <span class="pr">'+(en?'MAX':'MÁX')+'</span>':'')+'</span></div>'
-    ).join('') : '<div class="stx-empty">—</div>';
-    body = '<div class="stx-hero"><div class="lbl">🏆 '+(en?'Max weight':'Peso máximo')+'</div><div class="big">'+maxW+' <small>'+uni+'</small></div><div class="date">'+_fmtFechaStx(maxF)+'</div></div>'
-         + '<div class="stx-sec">'+(en?'History':'Historial')+'</div><div class="stx-hist">'+histHTML+'</div>';
-  } else {
-    body = '<div class="stx-empty2">📊<br>'+(en?'No max weight recorded yet for this exercise.':'Todavía no hay un peso máximo cargado para este ejercicio.')+'</div>';
-  }
   ov.innerHTML =
-    '<div class="stx-top"><button class="stx-back" onclick="_cerrarStats()">‹ '+(en?'Back to routine':'Volver a la rutina')+'</button></div>'+
-    '<div class="stx-body"><div class="stx-title">'+nombre+'</div>'+(musc?'<div class="stx-sub">'+musc+'</div>':'')+
-    body+
-    '<button class="stx-backbig" onclick="_cerrarStats()">← '+(en?'Back to routine':'Volver a la rutina')+'</button></div>';
+    '<style>'+
+      '.sxp-tbl{border:1px solid #e4e8ef;border-radius:12px;overflow:hidden;background:#fff;}'+
+      '.sxp-th{display:grid;grid-template-columns:1.4fr 1fr .8fr;background:#eef1f6;}'+
+      '.sxp-th span{font-size:8.5px;font-weight:900;letter-spacing:.6px;color:#8a93a3;text-transform:uppercase;padding:8px 12px;}'+
+      '.sxp-th span:nth-child(2),.sxp-th span:nth-child(3){text-align:center;}'+
+      '.sxp-tr{display:grid;grid-template-columns:1.4fr 1fr .8fr;align-items:center;border-top:1px solid #f0f3f8;}'+
+      '.sxp-ty{font-size:11px;font-weight:900;color:#9aa4b0;padding:11px 12px;letter-spacing:.3px;}'+
+      '.sxp-ld{font-size:15px;font-weight:900;color:#1a2a4a;text-align:center;}'+
+      '.sxp-rp{font-size:14px;font-weight:800;color:#5a6472;text-align:center;}'+
+      '.sxp-efec{background:#eafaf0;}.sxp-efec .sxp-ty{color:#0f7a40;}.sxp-efec .sxp-ld{color:#0f7a40;}.sxp-efec .sxp-rp{color:#2f6b48;}.sxp-efec:first-of-type{border-top:2px solid #159a4a;}'+
+      '.sxp-foot{display:flex;gap:10px;margin-top:12px;}.sxp-fchip{flex:1;background:#fff;border:1px solid #e4e8ef;border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;}'+
+      '.sxp-fchip .fk{font-size:9px;font-weight:900;letter-spacing:.6px;color:#9aa3b2;text-transform:uppercase;}.sxp-fchip .fv{font-size:16px;font-weight:900;color:#1a2a4a;}'+
+    '</style>'+
+    '<div style="min-height:100%;padding:14px;">'+
+      '<button onclick="_cerrarStats()" style="background:none;border:none;color:#9fb0cf;font-size:13px;font-weight:700;cursor:pointer;padding:6px 2px;margin-bottom:8px;">‹ '+(en?'Back to routine':'Volver a la rutina')+'</button>'+
+      '<div style="max-width:440px;margin:0 auto;width:100%;background:#f7f9fc;border-radius:16px;overflow:hidden;box-shadow:0 14px 34px rgba(0,0,0,.4);color:#1a1a2e;font-family:inherit;">'+
+        '<div style="background:#1a2a4a;color:#fff;padding:14px 16px;font-size:15px;font-weight:900;line-height:1.2;">'+_e(nombre)+'</div>'+
+        '<div style="padding:14px 16px 16px;">'+
+          '<div style="background:#fff;border:1px solid #e4e8ef;border-radius:12px;padding:11px 12px;margin-bottom:12px;">'+
+            '<div style="font-size:9px;font-weight:900;letter-spacing:.8px;color:#9aa3b2;text-transform:uppercase;margin-bottom:8px;">'+(en?'Calculate 1RM':'Calcular 1RM')+'</div>'+
+            '<div style="display:flex;gap:8px;align-items:flex-end;">'+
+              '<div style="flex:1;"><div style="font-size:8.5px;font-weight:800;color:#9aa3b2;letter-spacing:.4px;margin-bottom:4px;">'+(en?'WEIGHT':'PESO')+' ('+uni+')</div><input id="stx-in-peso" type="number" inputmode="decimal" step="0.5" value="'+(pesoVal!==''?pesoVal:'')+'" placeholder="90" style="width:100%;border:1px solid #d5deea;border-radius:8px;padding:10px 8px;font-size:16px;font-weight:800;text-align:center;color:#1a2a4a;font-family:inherit;background:#fff;"></div>'+
+              '<div style="width:66px;"><div style="font-size:8.5px;font-weight:800;color:#9aa3b2;letter-spacing:.4px;margin-bottom:4px;">REPS</div><input id="stx-in-reps" type="number" inputmode="numeric" step="1" min="1" value="'+(repsVal!==''?repsVal:'')+'" placeholder="2" style="width:100%;border:1px solid #d5deea;border-radius:8px;padding:10px 8px;font-size:16px;font-weight:800;text-align:center;color:#1a2a4a;font-family:inherit;background:#fff;"></div>'+
+              '<button onclick="_stxCalcular()" style="background:#1a2a4a;color:#fff;border:none;border-radius:9px;padding:12px 14px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">'+(en?'Calc':'Calcular')+'</button>'+
+            '</div>'+
+          '</div>'+
+          '<div style="display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#fbf3dc,#f6ead0);border:1px solid #e6d29a;border-radius:12px;padding:11px 14px;margin-bottom:13px;">'+
+            '<span style="font-size:9px;font-weight:900;letter-spacing:1px;color:#8a6d1f;text-transform:uppercase;">'+(en?'Est. 1RM':'1RM estimado')+'</span><span style="margin-left:auto;">'+rmHTML+'</span>'+
+          '</div>'+
+          '<div class="sxp-tbl"><div class="sxp-th"><span>'+(en?'Type':'Tipo')+'</span><span>'+(en?'Load':'Carga')+'</span><span>Reps</span></div>'+filas+'</div>'+
+          footHTML+
+        '</div>'+
+      '</div>'+
+    '</div>';
   ov.style.display='block'; ov.scrollTop=0;
   document.body.style.overflow='hidden';
 }
