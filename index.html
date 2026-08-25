@@ -1504,6 +1504,19 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 }
 .series-table input:focus { outline: none; background: #f0f9ff; border-radius: 3px; }
 .series-table .comments-input { text-align: left; }
+/* Tipo de serie · filo de color a la izquierda (opción B) */
+.serie-tipo-sel{ border:none;background:transparent;font-size:11px;font-weight:800;font-family:inherit;cursor:pointer;color:#6b7280;padding:2px;outline:none;text-align:center; }
+.series-table tr[data-tipo] td:first-child{ position:relative; }
+.series-table tr[data-tipo="cal"]  td:first-child{ box-shadow:inset 4px 0 0 #3A6EA5; }
+.series-table tr[data-tipo="apr"]  td:first-child{ box-shadow:inset 4px 0 0 #2f5f90; }
+.series-table tr[data-tipo="fee"]  td:first-child{ box-shadow:inset 4px 0 0 #D6B45A; }
+.series-table tr[data-tipo="efec"] td:first-child{ box-shadow:inset 4px 0 0 #8bbf9a; }
+.series-table tr[data-tipo="test"] td:first-child{ box-shadow:inset 4px 0 0 #7a4fb0; }
+.series-table tr[data-tipo="cal"]  .serie-tipo-sel{ color:#3A6EA5; }
+.series-table tr[data-tipo="apr"]  .serie-tipo-sel{ color:#2f5f90; }
+.series-table tr[data-tipo="fee"]  .serie-tipo-sel{ color:#a67c1e; }
+.series-table tr[data-tipo="efec"] .serie-tipo-sel{ color:#3f7a55; }
+.series-table tr[data-tipo="test"] .serie-tipo-sel{ color:#7a4fb0; }
 .btn-del-row {
   background: none; border: none; color: #ddd; cursor: pointer;
   font-size: 14px; padding: 2px 6px;
@@ -12845,7 +12858,8 @@ function guardarEstadoDiaActual() {
         if (!tb) return result;
         tb.querySelectorAll('tr').forEach(row => {
           const inputs = row.querySelectorAll('input');
-          if (inputs.length >= 4) result.push({ reps: inputs[0]?.value||'', peso: inputs[1]?.value||'', rir: inputs[2]?.value||'', pausa: inputs[3]?.value||'', comentarios: '' });
+          const tipoSel = row.querySelector('.serie-tipo-sel');
+          if (inputs.length >= 4) result.push({ reps: inputs[0]?.value||'', peso: inputs[1]?.value||'', rir: inputs[2]?.value||'', pausa: inputs[3]?.value||'', tipo: (tipoSel ? tipoSel.value : 'efec'), comentarios: '' });
         });
         return result;
       }
@@ -13040,7 +13054,9 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
       tb.innerHTML = '';
       seriesArr.forEach((s,si) => {
         const tr = document.createElement('tr');
+        const tipo = s.tipo || 'efec'; tr.dataset.tipo = tipo;
         tr.innerHTML = `<td class="serie-num-cell">${prefix} ${si+1}</td>
+          <td class="serie-tipo-cell"><select class="serie-tipo-sel" onchange="_serieTipoSel(this)">${_serieTipoOptions(tipo)}</select></td>
           <td><input type="text" value="${s.reps||''}"></td>
           <td><input type="text" value="${s.peso||''}"></td>
           <td><input type="text" value="${s.rir||''}"></td>
@@ -19240,7 +19256,7 @@ function addEjercicio(bloqueId) {
         <div class="series-sec-body" id="${ejId}-efec-body">
           <table class="series-table">
             <thead><tr>
-              <th>Serie</th><th>Reps</th><th onclick="event.stopPropagation();_togglePesoUnit()" style="cursor:pointer;" title="Cambiar entre kg y lb">Peso (<span class="peso-unit">${_pesoUnit()}</span>)</th><th>RIR</th><th>Pausa</th><th></th>
+              <th>Serie</th><th>Tipo</th><th>Reps</th><th onclick="event.stopPropagation();_togglePesoUnit()" style="cursor:pointer;" title="Cambiar entre kg y lb">Peso (<span class="peso-unit">${_pesoUnit()}</span>)</th><th>RIR</th><th>Pausa</th><th></th>
             </tr></thead>
             <tbody id="${ejId}-efec-tbody"></tbody>
           </table>
@@ -19263,7 +19279,7 @@ function addEjercicio(bloqueId) {
           </div>
           <table class="series-table">
             <thead><tr>
-              <th>#</th><th>Reps</th><th onclick="event.stopPropagation();_togglePesoUnit()" style="cursor:pointer;" title="Cambiar entre kg y lb">Peso (<span class="peso-unit">${_pesoUnit()}</span>)</th><th>RIR</th><th>Pausa</th><th></th>
+              <th>#</th><th>Tipo</th><th>Reps</th><th onclick="event.stopPropagation();_togglePesoUnit()" style="cursor:pointer;" title="Cambiar entre kg y lb">Peso (<span class="peso-unit">${_pesoUnit()}</span>)</th><th>RIR</th><th>Pausa</th><th></th>
             </tr></thead>
             <tbody id="${ejId}-drop-tbody"></tbody>
           </table>
@@ -19990,12 +20006,19 @@ const _PAUSA_DEFAULT = '1 min';
 // Descanso por defecto para toda serie nueva → 1 min (elección del coach)
 function _pausaDefault(ejId){ return _PAUSA_DEFAULT; }
 
+// Tipo de serie (color por función): calentamiento / aproximación / feeder / efectiva / test
+const _SERIE_TIPOS = [['cal','Calent.'],['apr','Aprox.'],['fee','Feeder'],['efec','Efectiva'],['test','Test']];
+function _serieTipoOptions(sel){ return _SERIE_TIPOS.map(t=>'<option value="'+t[0]+'"'+((sel||'efec')===t[0]?' selected':'')+'>'+t[1]+'</option>').join(''); }
+function _serieTipoSel(el){ const tr=el.closest('tr'); if(tr) tr.dataset.tipo=el.value; }
 function _makeSerieRow(ejId, tbodyId, prefix, num, defaults) {
-  // defaults = { reps:'', peso:'', rir:'', pausa:'' }  (todos opcionales)
+  // defaults = { reps:'', peso:'', rir:'', pausa:'', tipo:'' }  (todos opcionales)
   const d = defaults || {};
+  const tipo = d.tipo || 'efec';
   const tr = document.createElement('tr');
+  tr.dataset.tipo = tipo;
   tr.innerHTML = `
     <td class="serie-num-cell">${prefix} ${num}</td>
+    <td class="serie-tipo-cell"><select class="serie-tipo-sel" onchange="_serieTipoSel(this)">${_serieTipoOptions(tipo)}</select></td>
     <td><input type="text" placeholder="Reps" value="${d.reps||''}"></td>
     <td><input type="text" placeholder="Kg"   value="${d.peso||''}"></td>
     <td><input type="text" placeholder="RIR"  value="${d.rir||''}"></td>
