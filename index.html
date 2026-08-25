@@ -19699,13 +19699,13 @@ function _fmtKgStc(v){ return String(Math.round(v*10)/10).replace('.',','); }
 function _protoSesion(rm){
   const ef=_r25(rm*0.80);
   return [
-    {ty:'Calentamiento', prep:true, kg:_r25(rm*0.22), rp:'15'},
-    {ty:'Aprox. 1',      prep:true, kg:_r25(rm*0.45), rp:'8'},
-    {ty:'Aprox. 2',      prep:true, kg:_r25(rm*0.60), rp:'5'},
-    {ty:'Feeder',        prep:true, kg:_r25(rm*0.72), rp:'2–3'},
-    {ty:'Efectiva 1',    efec:true, kg:ef, rp:'6–8'},
-    {ty:'Efectiva 2',    efec:true, kg:ef, rp:'6–8'},
-    {ty:'Efectiva 3',    efec:true, kg:ef, rp:'6–8'}
+    {ty:'Calentamiento', cl:'cal',  kg:_r25(rm*0.22), rp:'15'},
+    {ty:'Aprox. 1',      cl:'apr',  kg:_r25(rm*0.45), rp:'8'},
+    {ty:'Aprox. 2',      cl:'apr',  kg:_r25(rm*0.60), rp:'5'},
+    {ty:'Feeder',        cl:'fee',  kg:_r25(rm*0.72), rp:'2–3'},
+    {ty:'Efectiva 1',    cl:'efec', kg:ef, rp:'6–8'},
+    {ty:'Efectiva 2',    cl:'efec', kg:ef, rp:'6–8'},
+    {ty:'Efectiva 3',    cl:'efec', kg:ef, rp:'6–8'}
   ];
 }
 function _calcular1RM(){
@@ -19732,8 +19732,7 @@ function _renderStatsCoach(){
   let filas='';
   if(rm!=null){
     _protoSesion(rm).forEach(function(s){
-      const cls = s.efec ? 'stc-tr stc-efec' : 'stc-tr';
-      filas += '<div class="'+cls+'"><span class="stc-ty">'+s.ty+'</span><span class="stc-ld">'+_fmtKgStc(s.kg)+' '+uni+'</span><span class="stc-rp">'+s.rp+'</span></div>';
+      filas += '<div class="stc-tr stc-'+s.cl+'"><span class="stc-ty">'+s.ty+'</span><span class="stc-ld">'+_fmtKgStc(s.kg)+' '+uni+'</span><span class="stc-rp">'+s.rp+'</span></div>';
     });
   } else {
     filas = '<div style="padding:26px 12px;text-align:center;color:#9aa4b0;font-size:12.5px;">Calculá el 1RM para ver el protocolo.</div>';
@@ -19743,16 +19742,23 @@ function _renderStatsCoach(){
     : '';
   ov.innerHTML =
     '<style id="stc-proto-css">'+
-      '.stc-tbl{border:1px solid #e4e8ef;border-radius:12px;overflow:hidden;background:#fff;}'+
-      '.stc-th{display:grid;grid-template-columns:1.4fr 1fr .8fr;background:#eef1f6;}'+
+      '.stc-tbl{border:1px solid #dfe3ea;border-radius:12px;overflow:hidden;background:#fff;}'+
+      '.stc-th{display:grid;grid-template-columns:1.4fr 1fr .8fr;background:#ECEFF4;}'+
       '.stc-th span{font-size:8.5px;font-weight:900;letter-spacing:.6px;color:#8a93a3;text-transform:uppercase;padding:8px 12px;}'+
       '.stc-th span:nth-child(2),.stc-th span:nth-child(3){text-align:center;}'+
-      '.stc-tr{display:grid;grid-template-columns:1.4fr 1fr .8fr;align-items:center;border-top:1px solid #f0f3f8;}'+
-      '.stc-ty{font-size:11px;font-weight:900;color:#9aa4b0;padding:11px 12px;letter-spacing:.3px;}'+
-      '.stc-ld{font-size:15px;font-weight:900;color:#1a2a4a;text-align:center;}'+
-      '.stc-rp{font-size:14px;font-weight:800;color:#5a6472;text-align:center;}'+
-      '.stc-efec{background:#eafaf0;}.stc-efec .stc-ty{color:#0f7a40;}.stc-efec .stc-ld{color:#0f7a40;}.stc-efec .stc-rp{color:#2f6b48;}'+
-      '.stc-efec:first-of-type{border-top:2px solid #159a4a;}'+
+      '.stc-tr{display:grid;grid-template-columns:1.4fr 1fr .8fr;align-items:center;border-top:1px solid rgba(0,0,0,.06);}'+
+      '.stc-ty{font-size:11px;font-weight:900;padding:11px 12px;letter-spacing:.3px;}'+
+      '.stc-ld{font-size:15px;font-weight:900;text-align:center;}'+
+      '.stc-rp{font-size:14px;font-weight:800;text-align:center;}'+
+      /* Calentamiento · celeste */
+      '.stc-cal{background:#DCEAF2;}.stc-cal .stc-ty{color:#4b6f88;}.stc-cal .stc-ld{color:#1a2a4a;}.stc-cal .stc-rp{color:#4b6f88;}'+
+      /* Aproximación · azul */
+      '.stc-apr{background:#3A6EA5;}.stc-apr .stc-ty{color:#d3e2f2;}.stc-apr .stc-ld{color:#fff;}.stc-apr .stc-rp{color:#cfe0f2;}'+
+      /* Feeder · dorado */
+      '.stc-fee{background:#D6B45A;}.stc-fee .stc-ty{color:#5f4c19;}.stc-fee .stc-ld{color:#3d2f0e;}.stc-fee .stc-rp{color:#5f4c19;}'+
+      /* Efectivas · verde */
+      '.stc-efec{background:#ABC5B0;}.stc-efec .stc-ty{color:#2c4f39;}.stc-efec .stc-ld{color:#1e3f2b;}.stc-efec .stc-rp{color:#2c4f39;}'+
+      '.stc-efec:first-of-type{border-top:2px solid #7fa98c;}'+
       '.stc-foot{display:flex;gap:10px;margin-top:12px;}'+
       '.stc-fchip{flex:1;background:#fff;border:1px solid #e4e8ef;border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;}'+
       '.stc-fchip .fk{font-size:9px;font-weight:900;letter-spacing:.6px;color:#9aa3b2;text-transform:uppercase;}.stc-fchip .fv{font-size:16px;font-weight:900;color:#1a2a4a;}'+
