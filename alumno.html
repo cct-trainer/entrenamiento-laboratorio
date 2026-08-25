@@ -881,6 +881,10 @@ function _faseDePlan(plan){
   return { idx: Math.min(3, Math.floor(Math.max(0,pos)/3)) };
 }
 function _mesNombreDe(plan, i){
+  // Si el coach le puso un nombre propio al ciclo/mes, ese manda (así se distinguen varios "Agosto")
+  const t = plan && (plan.titulo || plan.nombre);
+  const generico = /^(plan(\s+de)?\s+fuerza|plan\s+activo|plan|mes\s*\d*)$/i;
+  if (t && String(t).trim() && !generico.test(String(t).trim())) return String(t).trim();
   const fx = _planFecha(plan);
   if (fx){ const d=new Date(fx+'T12:00:00'); if(!isNaN(d)){ const M=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']; return M[d.getMonth()]; } }
   return (plan && plan.nombre) || ('Mes '+((i||0)+1));
@@ -895,8 +899,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260824153403 por un timestamp en cada deploy
-const _APP_VERSION = '20260824153403';
+// deploy.bat reemplaza 20260824215648 por un timestamp en cada deploy
+const _APP_VERSION = '20260824215648';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1695,9 +1699,10 @@ function renderRutina() {
     const activoTag = esActivo
       ? '<div style="font-size:9px;font-weight:900;letter-spacing:1.2px;color:var(--gold);margin-top:3px;">'+(_LANG==='en'?'CURRENT MONTH':'MES ACTUAL')+'</div>'
       : '';
+    const _mnSize = mesNom.length>16 ? '14px' : (mesNom.length>11 ? '17px' : '20px');
     mesNavEl.innerHTML = '<div class="mes-nav">'
       + (varios ? '<button class="mes-nav-btn"'+(prevDis?' disabled':'')+' onclick="_switchPlan('+(_planIdx-1)+')">&#8249;</button>' : '<span style="width:38px;"></span>')
-      + '<div class="mes-nav-info"><div class="mes-nav-title">'+mesNom+'</div>'+(fxLabel?'<div class="mes-nav-sub" style="text-transform:capitalize;">'+fxLabel+'</div>':'')+activoTag+'</div>'
+      + '<div class="mes-nav-info"><div class="mes-nav-title" style="font-size:'+_mnSize+';">'+mesNom+'</div>'+(fxLabel?'<div class="mes-nav-sub" style="text-transform:capitalize;">'+fxLabel+'</div>':'')+activoTag+'</div>'
       + (varios ? '<button class="mes-nav-btn"'+(nextDis?' disabled':'')+' onclick="_switchPlan('+(_planIdx+1)+')">&#8250;</button>' : '<span style="width:38px;"></span>')
       + '</div>';
   }
