@@ -11230,6 +11230,13 @@ const _PM_GRID_CSS = '<style id="pm-grid-css">'
   +'.pm-abtn:hover{background:#f1f2f5;}.pm-abtn.pm-cp:hover{color:#a9812a;background:#faf3df;}.pm-abtn.pm-del:hover{color:#c23b3b;background:#fdecec;}.pm-abtn.pm-mv{cursor:grab;}'
   +'.pm-abtn svg{width:15px;height:15px;pointer-events:none;}'
   +'.pm-check{color:#1f8a4c;font-weight:900;font-size:13px;}.pm-rev{font-size:9px;font-weight:800;color:#a15656;background:#f7e7e7;border-radius:20px;padding:1px 7px;cursor:pointer;}.pm-nses{font-size:9px;font-weight:800;color:#8a909c;background:#eef0f3;border-radius:20px;padding:1px 7px;}'
+  // Día CON trabajo → card pintada del color del foco (Opción D)
+  +'.plan-fila.pm-fill{color:#fff;border-color:transparent;}'
+  +'.plan-fila.pm-fill.foco-full{background:#C9A84C;}.plan-fila.pm-fill.foco-sup{background:#3a6ea5;}.plan-fila.pm-fill.foco-inf{background:#2e8b6f;}.plan-fila.pm-fill.foco-none{background:#7a828e;}'
+  +'.pm-fill .pm-num,.pm-fill .pm-dw{color:#fff;}.pm-fill .pm-mo{color:rgba(255,255,255,.78);}'
+  +'.pm-fill .pm-dotf{background:rgba(255,255,255,.9);}'
+  +'.pm-fill .pm-abtn{color:rgba(255,255,255,.85);}.pm-fill .pm-abtn:hover{background:rgba(255,255,255,.18);color:#fff;}.pm-fill .pm-abtn.pm-cp:hover,.pm-fill .pm-abtn.pm-del:hover{background:rgba(255,255,255,.22);color:#fff;}'
+  +'.pm-fill .pm-check{color:#fff;}.pm-fill .pm-rev{color:#fff;background:rgba(255,255,255,.22);}.pm-fill .pm-nses{color:#fff;background:rgba(255,255,255,.2);}'
   // Estado temporal (Opción 3): en curso DOMINA (glow) · pasada apagada · próxima fantasma
   +'.mes-semana-bloque.sem-actual,.mes-semana-bloque.sem-pasada,.mes-semana-bloque.sem-futura{border-radius:14px;overflow:hidden;transition:box-shadow .15s;}'
   +'.mes-semana-bloque.sem-actual{box-shadow:0 0 0 2px #159a52,0 14px 34px rgba(21,154,82,.26);}'
@@ -11307,7 +11314,8 @@ function renderPlanMes() {
         + '<button class="pm-abtn pm-cp" onclick="event.stopPropagation();abrirModalDuplicarMover('+i+',\'duplicar\','+semIdx+')" title="Copiar">'+_PMIC.cp+'</button>'
         + '<button class="pm-abtn pm-del" onclick="event.stopPropagation();'+delAction+'" title="Eliminar">'+_PMIC.del+'</button>'
       + '</div>';
-      return '<div class="plan-fila plan-dia-card tiene-sesion pm-card" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" draggable="true" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
+      const fCls = f || 'none';
+      return '<div class="plan-fila plan-dia-card tiene-sesion pm-card pm-fill foco-'+fCls+'" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" draggable="true" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
         + '<div class="pm-top">'+topHead+'<span class="pm-dotf foco-'+f+'"></span></div>'
         + acc
       + '</div>';
