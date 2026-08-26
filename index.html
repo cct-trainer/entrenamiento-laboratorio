@@ -10,7 +10,7 @@
 
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
-  background-color: #3a6ea5;
+  background-color: #F7F8FA;
   min-height: 100vh;
 }
 
@@ -27,7 +27,7 @@ header {
 .header-left .lab-name { font-size: 10px; color: #C9A84C; letter-spacing: 3px; text-transform: uppercase; margin-top: 2px; font-weight: 600; }
 
 nav {
-  background: #111; display: flex; align-items: center;
+  background: #183153; display: flex; align-items: center;
   padding: 0 24px; min-height: 48px; position: relative; z-index: 300;
 }
 /* ── Token compartido para todos los botones de nav ── */
@@ -48,7 +48,7 @@ nav > .nav-btn:hover,
 .nav-dropdown-trigger:hover,
 .perfil-nav-btn:hover,
 .perfil-nav-plan-trigger:hover {
-  background: #242a37; color: #fff;
+  background: #244067; color: #fff;
 }
 /* Activo — texto blanco con subrayado dorado (más limpio que el recuadro) */
 nav > .nav-btn.active,
@@ -58,9 +58,9 @@ nav > .nav-btn.active,
 .perfil-nav-plan-trigger.active,
 .perfil-nav-plan-trigger.open {
   background: transparent; color: #fff; font-weight: 700;
-  box-shadow: inset 0 -2px 0 #C9A84C; border-radius: 7px 7px 0 0;
+  box-shadow: inset 0 -2px 0 #D6B45A; border-radius: 7px 7px 0 0;
 }
-.nav-sep { width: 1px; height: 18px; background: #2e2e2e; margin: 0 6px; align-self: center; }
+.nav-sep { width: 1px; height: 18px; background: rgba(255,255,255,.18); margin: 0 6px; align-self: center; }
 
 /* Nav dropdown */
 .nav-dropdown-wrap { position: relative; display: flex; align-items: center; }
@@ -94,10 +94,10 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 
 /* SECTION TITLE */
 .section-title {
-  font-size: 12px; font-weight: 700; color: #fff;
+  font-size: 12px; font-weight: 700; color: #183153;
   letter-spacing: 2px; text-transform: uppercase;
   margin-bottom: 20px; padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
+  border-bottom: 1px solid #E6EAF0;
 }
 
 /* GRID ALUMNOS */
@@ -118,12 +118,12 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 /* ═══ Escritorio de alumnos — lista densa (CRM) ═══ */
 .alumnos-grid.crm { display: block; }
 .alu-toolbar { display: flex; gap: 10px; margin-bottom: 16px; }
-.alu-search { width: 100%; background: #eef4fb; border: 1px solid #dbe6f3; border-radius: 10px; padding: 11px 14px 11px 38px; color: #274c73; font-size: 13px; font-weight: 600; font-family: inherit; outline: none; }
-.alu-search::placeholder { color: #8aa0bd; }
-.alu-search:focus { border-color: #C9A84C; }
-.alu-nuevo { background: #C9A84C; color: #2a2008; border: none; border-radius: 9px; padding: 10px 18px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: background .15s; }
-.alu-nuevo:hover { background: #d8ba63; }
-.alu-count { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #dbe8f7; text-transform: uppercase; margin-bottom: 10px; }
+.alu-search { width: 100%; background: #fff; border: 1px solid #E6EAF0; border-radius: 12px; padding: 13px 14px 13px 42px; color: #183153; font-size: 14px; font-weight: 500; font-family: inherit; outline: none; }
+.alu-search::placeholder { color: #9fb0c6; }
+.alu-search:focus { border-color: #D6B45A; }
+.alu-nuevo { background: #D6B45A; color: #3d2f0e; border: none; border-radius: 12px; padding: 12px 20px; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; transition: filter .15s; }
+.alu-nuevo:hover { filter: brightness(1.05); }
+.alu-count { font-size: 11px; font-weight: 800; letter-spacing: 1px; color: #6B7A90; text-transform: uppercase; margin: 4px 0 12px; }
 .alu-list { display: flex; flex-direction: column; }
 .alu-row { display: flex; align-items: center; gap: 13px; padding: 10px; border-bottom: 0.5px solid #24365a; cursor: pointer; transition: background .12s; }
 .alu-row:hover { background: #1c2c4a; }
@@ -133,10 +133,13 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .alu-chip { font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 6px; white-space: nowrap; }
 .alu-chev { color: #5f6f8c; font-size: 20px; font-style: normal; line-height: 1; flex-shrink: 0; }
 .alu-empty { text-align: center; color: #8f9bb3; font-size: 13px; padding: 30px 0; }
-.alu-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(255px, 1fr)); gap: 14px; }
-.alu-card { position: relative; overflow: hidden; background: #f4f8fd; border: 1px solid #e2ebf5; border-radius: 14px; padding: 16px; cursor: pointer; transition: border-color .16s, transform .12s, box-shadow .16s; }
-.alu-card:hover { border-color: #C9A84C; transform: translateY(-3px); box-shadow: 0 10px 24px rgba(20,40,70,.22); }
-.alu-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:#C9A84C; opacity:0; transition:.16s; }
+.alu-cards { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 14px; }
+@media(max-width:1400px){ .alu-cards{ grid-template-columns: repeat(4, minmax(0,1fr)); } }
+@media(max-width:1100px){ .alu-cards{ grid-template-columns: repeat(3, minmax(0,1fr)); } }
+@media(max-width:760px){ .alu-cards{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+.alu-card { position: relative; overflow: hidden; background: #fff; border: 1px solid #E6EAF0; border-radius: 14px; padding: 15px; cursor: pointer; box-shadow: 0 1px 3px rgba(24,49,83,.04); transition: border-color .16s, transform .12s, box-shadow .16s; }
+.alu-card:hover { border-color: #D6B45A; transform: translateY(-2px); box-shadow: 0 10px 22px rgba(24,49,83,.10); }
+.alu-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:#D6B45A; opacity:0; transition:.16s; }
 .alu-card:hover::before { opacity:1; }
 .ac-top { display: flex; align-items: center; gap: 13px; }
 .alu-card-av { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: #e2e8f2; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #7d93b5; box-shadow: 0 0 0 2px #d5deea; }
@@ -152,11 +155,11 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .ac-next b { color:#1c2a3f; font-weight:800; }
 .ac-next-off { color:#a9b2c0; font-weight:600; font-style:italic; }
 .alu-search-wrap { position: relative; flex: 1; }
-.alu-search-ico { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #8aa0bd; font-size: 14px; pointer-events: none; }
-.alu-filters { display: flex; gap: 7px; margin: 0 0 16px; flex-wrap: wrap; }
-.fchip { font-size: 11.5px; font-weight: 800; padding: 6px 12px; border-radius: 20px; border: 1px solid #dbe6f3; color: #274c73; background: #eef4fb; cursor: pointer; transition: .15s; font-family: inherit; }
-.fchip:hover { border-color: #C9A84C; color: #274c73; }
-.fchip.on { background: #C9A84C; border-color: #C9A84C; color: #241d07; }
+.alu-search-ico { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #9fb0c6; font-size: 14px; pointer-events: none; }
+.alu-filters { display: flex; gap: 9px; margin: 0 0 6px; flex-wrap: wrap; }
+.fchip { font-size: 12.5px; font-weight: 700; padding: 8px 16px; border-radius: 22px; border: 1px solid transparent; color: #6B7A90; background: #EEF1F5; cursor: pointer; transition: .15s; font-family: inherit; }
+.fchip:hover { background: #e4e8ee; color: #183153; }
+.fchip.on { background: #F6EDD6; border-color: #ecdcb4; color: #7a5f1e; }
 
 .btn-add-alumno { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; }
 .btn-add-alumno:hover { transform: translateY(-3px); }
@@ -3544,11 +3547,11 @@ select.toolbox-input option:disabled { color: #888; }
   </div>
 
   <div id="view-inicio" class="view active">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:8px;border-bottom:1px solid #e0e0e0;">
-      <div class="section-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">ALUMNOS</div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-ghost" onclick="abrirComplementos()" style="display:flex;align-items:center;gap:6px;font-size:12px;">🧩 Complementos</button>
-        <button class="btn btn-ghost" onclick="abrirBibliotecaEditor()" style="display:flex;align-items:center;gap:6px;font-size:12px;">📚 Biblioteca de ejercicios</button>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;gap:16px;">
+      <div><div style="font-size:26px;font-weight:900;color:#183153;letter-spacing:.2px;line-height:1.1;">ALUMNOS</div><div style="font-size:13px;color:#6B7A90;margin-top:4px;">Gestioná y da seguimiento a tus alumnos</div></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="abrirComplementos()" style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#183153;background:#fff;border:1px solid #E6EAF0;border-radius:10px;padding:9px 14px;cursor:pointer;">🧩 Complementos</button>
+        <button onclick="abrirBibliotecaEditor()" style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#183153;background:#fff;border:1px solid #E6EAF0;border-radius:10px;padding:9px 14px;cursor:pointer;">📚 Biblioteca de ejercicios</button>
       </div>
     </div>
     <div class="alumnos-grid" id="alumnos-grid"></div>
