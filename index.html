@@ -10,7 +10,7 @@
 
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
-  background-color: #D6B45A;
+  background-color: #F7F8FA;
   min-height: 100vh;
 }
 
@@ -27,7 +27,7 @@ header {
 .header-left .lab-name { font-size: 10px; color: #C9A84C; letter-spacing: 3px; text-transform: uppercase; margin-top: 2px; font-weight: 600; }
 
 nav {
-  background: #183153; display: flex; align-items: center;
+  background: #171C26; display: flex; align-items: center;
   padding: 0 24px; min-height: 48px; position: relative; z-index: 300;
 }
 /* ── Token compartido para todos los botones de nav ── */
@@ -48,7 +48,7 @@ nav > .nav-btn:hover,
 .nav-dropdown-trigger:hover,
 .perfil-nav-btn:hover,
 .perfil-nav-plan-trigger:hover {
-  background: #244067; color: #fff;
+  background: #222B3A; color: #fff;
 }
 /* Activo — texto blanco con subrayado dorado (más limpio que el recuadro) */
 nav > .nav-btn.active,
@@ -246,7 +246,7 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .perfil-tabs { display: flex; border-bottom: 2px solid #e0e0e0; margin-bottom: 24px; }
 /* ── PERFIL NUEVO LAYOUT ─────────────────────────────────────────── */
 .perfil-layout { display:flex; gap:0; min-height:calc(100vh - 140px); }
-.perfil-sidebar { width:260px; flex-shrink:0; background:#3a6ea5 !important; color:#fff; padding:20px 16px; border-radius:0; position:sticky; top:0; height:fit-content; }
+.perfil-sidebar { width:260px; flex-shrink:0; background:#171C26 !important; color:#F2F4F7; padding:20px 16px; border-radius:0; position:sticky; top:0; height:fit-content; }
 .perfil-main { flex:1; min-width:0; background:#f8f9fb; border-radius:0 12px 12px 0; overflow:hidden; }
 /* ── NAV ALUMNO ITEMS — extensión horizontal inline ────────────────────────── */
 #nav-alumno-items {
@@ -1604,8 +1604,8 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
 .plan-sidebar {
   width: 256px;
   flex-shrink: 0;
-  background: #3a6ea5 !important;
-  color: #fff;
+  background: #171C26 !important;
+  color: #F2F4F7;
   border-radius: 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -1624,14 +1624,14 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
   padding: 6px 10px; margin-bottom: 16px; transition: all 0.18s;
   letter-spacing: 0.5px; width: 100%;
 }
-.plan-sidebar-back:hover { border-color: #C9A84C; color: #C9A84C; }
+.plan-sidebar-back:hover { border-color: #D6B45A; color: #D6B45A; }
 .plan-sidebar-name {
-  font-size: 13px; font-weight: 800; color: #fff;
+  font-size: 13px; font-weight: 800; color: #F2F4F7;
   text-transform: uppercase; letter-spacing: 1px;
   margin-bottom: 2px; text-align: center;
 }
 .plan-sidebar-sub {
-  font-size: 10px; color: #C9A84C; text-align: center;
+  font-size: 10px; color: #8FA1BD; text-align: center;
   letter-spacing: 0.5px; margin-bottom: 0;
 }
 .plan-sidebar-divider { height: 1px; background: #ffffff15; margin: 12px 0; }
@@ -15076,8 +15076,8 @@ function renderSidebarAlumno(id) {
   const a = getAlumnos().find(x => x.id === id) || {};
   const edad = calcularEdad(a.nacimiento);
   const fotoHTML = a.foto
-    ? `<img src="${a.foto}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #C9A84C;display:block;margin:0 auto 10px;">`
-    : `<div style="width:72px;height:72px;border-radius:50%;background:#1a1a2e;border:3px solid #C9A84C;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 10px;">👤</div>`;
+    ? `<img src="${a.foto}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #D6B45A;display:block;margin:0 auto 10px;">`
+    : `<div style="width:72px;height:72px;border-radius:50%;background:#222B3A;border:3px solid #D6B45A;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 10px;">👤</div>`;
 
   // Last medicion
   const meds = (a.historialMediciones||[]).slice().sort((x,y)=>(y.fecha||'').localeCompare(x.fecha||''));
@@ -15113,49 +15113,49 @@ function renderSidebarAlumno(id) {
   sb.innerHTML = `
     ${fotoHTML}
     <div style="text-align:center;margin-bottom:12px;">
-      <div style="font-size:14px;font-weight:800;color:#fff;letter-spacing:0.5px;">${a.nombre||'—'}</div>
-      ${edad ? `<div style="font-size:11px;color:#aaa;margin-top:3px;">${edad} años · ${a.nivel||'Sin nivel'}</div>` : ''}
-      ${a.dias ? `<div style="font-size:10px;color:#888;margin-top:2px;">${a.dias} días/semana</div>` : ''}
+      <div style="font-size:14px;font-weight:800;color:#F2F4F7;letter-spacing:0.5px;">${a.nombre||'—'}</div>
+      ${edad ? `<div style="font-size:11px;color:#8FA1BD;margin-top:3px;">${edad} años · ${a.nivel||'Sin nivel'}</div>` : ''}
+      ${a.dias ? `<div style="font-size:10px;color:#8FA1BD;margin-top:2px;">${a.dias} días/semana</div>` : ''}
     </div>
     <button onclick="_copiarLinkPortal('${id}')"
-      style="width:100%;background:#C9A84C;border:none;border-radius:9px;
-             color:#2a2008;font-size:12px;font-weight:700;padding:10px 12px;cursor:pointer;
-             letter-spacing:0.3px;font-family:inherit;margin-bottom:8px;transition:background .15s;"
-      onmouseover="this.style.background='#d8ba63'" onmouseout="this.style.background='#C9A84C'">
+      style="width:100%;background:#D6B45A;border:none;border-radius:9px;
+             color:#171C26;font-size:12px;font-weight:800;padding:11px 12px;cursor:pointer;
+             letter-spacing:0.3px;font-family:inherit;margin-bottom:8px;transition:filter .15s;"
+      onmouseover="this.style.filter='brightness(1.06)'" onmouseout="this.style.filter='none'">
       Portal del alumno
     </button>
     <button onclick="openModalEditarAlumno('${id}')"
-      style="width:100%;background:#eef4fb;border:1px solid #dbe6f3;border-radius:9px;
-             color:#274c73;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
+      style="width:100%;background:#222B3A;border:1px solid #283142;border-radius:9px;
+             color:#F2F4F7;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
              letter-spacing:0.3px;font-family:inherit;margin-bottom:8px;transition:background .15s;"
-      onmouseover="this.style.background='#ffffff'" onmouseout="this.style.background='#eef4fb'">
+      onmouseover="this.style.background='#2b3547'" onmouseout="this.style.background='#222B3A'">
       ✏️ Editar perfil
     </button>
     <button onclick="copiarLinkActualizacion('${id}')"
-      style="width:100%;background:#eef4fb;border:1px solid #dbe6f3;border-radius:9px;
-             color:#274c73;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
+      style="width:100%;background:#222B3A;border:1px solid #283142;border-radius:9px;
+             color:#F2F4F7;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
              letter-spacing:0.3px;font-family:inherit;transition:background .15s;"
-      onmouseover="this.style.background='#ffffff'" onmouseout="this.style.background='#eef4fb'">
+      onmouseover="this.style.background='#2b3547'" onmouseout="this.style.background='#222B3A'">
       🔄 Link de actualización
     </button>
     <button onclick="copiarLinkFormulario('${id}')"
-      style="width:100%;margin-top:8px;background:#eef4fb;border:1px solid #dbe6f3;border-radius:9px;
-             color:#274c73;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
+      style="width:100%;margin-top:8px;background:#222B3A;border:1px solid #283142;border-radius:9px;
+             color:#F2F4F7;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
              letter-spacing:0.3px;font-family:inherit;transition:background .15s;"
-      onmouseover="this.style.background='#ffffff'" onmouseout="this.style.background='#eef4fb'">
+      onmouseover="this.style.background='#2b3547'" onmouseout="this.style.background='#222B3A'">
       🏋️ Formulario de pesos y preferencias
     </button>
     <button onclick="_verSustituciones('${id}')"
-      style="width:100%;margin-top:8px;background:#eef4fb;border:1px solid #dbe6f3;border-radius:9px;
-             color:#274c73;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
+      style="width:100%;margin-top:8px;background:#222B3A;border:1px solid #283142;border-radius:9px;
+             color:#F2F4F7;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
              letter-spacing:0.3px;font-family:inherit;transition:background .15s;"
-      onmouseover="this.style.background='#ffffff'" onmouseout="this.style.background='#eef4fb'">
+      onmouseover="this.style.background='#2b3547'" onmouseout="this.style.background='#222B3A'">
       ⇄ Sustituciones de ejercicios
     </button>
     ${(a.checkins&&a.checkins.length)?`<button onclick="verHistorialCheckins('${id}')"
-      style="width:100%;margin-top:8px;background:#eef4fb;border:1px solid #dbe6f3;border-radius:9px;
-             color:#274c73;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;font-family:inherit;transition:background .15s;"
-      onmouseover="this.style.background='#ffffff'" onmouseout="this.style.background='#eef4fb'">
+      style="width:100%;margin-top:8px;background:#222B3A;border:1px solid #283142;border-radius:9px;
+             color:#F2F4F7;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;font-family:inherit;transition:background .15s;"
+      onmouseover="this.style.background='#2b3547'" onmouseout="this.style.background='#222B3A'">
       📋 Ver actualizaciones (${a.checkins.length})
     </button>`:''}
 
@@ -15172,8 +15172,8 @@ function renderSidebarAlumno(id) {
       <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;">
         <div style="font-size:10px;color:${color};font-weight:800;letter-spacing:.5px;margin-bottom:8px;">${label}</div>
         <div style="display:flex;gap:6px;">
-          <button onclick="_renovarAcceso('${id}',30)" style="flex:1;background:#eef4fb;border:1px solid #dbe6f3;border-radius:7px;color:#274c73;font-size:10px;font-weight:800;padding:7px 4px;cursor:pointer;">+30 días</button>
-          <button onclick="_renovarAcceso('${id}',90)" style="flex:1;background:#eef4fb;border:1px solid #dbe6f3;border-radius:7px;color:#274c73;font-size:10px;font-weight:800;padding:7px 4px;cursor:pointer;">+90 días</button>
+          <button onclick="_renovarAcceso('${id}',30)" style="flex:1;background:#222B3A;border:1px solid #283142;border-radius:7px;color:#F2F4F7;font-size:10px;font-weight:800;padding:7px 4px;cursor:pointer;">+30 días</button>
+          <button onclick="_renovarAcceso('${id}',90)" style="flex:1;background:#222B3A;border:1px solid #283142;border-radius:7px;color:#F2F4F7;font-size:10px;font-weight:800;padding:7px 4px;cursor:pointer;">+90 días</button>
           ${vencido ? `<button onclick="_renovarAcceso('${id}',0)" style="flex:1;background:transparent;border:0.5px solid #6a2020;border-radius:7px;color:#e88;font-size:10px;font-weight:700;padding:7px 4px;cursor:pointer;">Revocar</button>` : ''}
         </div>
       </div>`;
