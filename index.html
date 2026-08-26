@@ -2337,7 +2337,7 @@ select.toolbox-input option:disabled { color: #888; }
 .pf-check { width:20px; height:20px; border-radius:50%; border:1.5px solid #C9A84C; color:#9A7A28; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; flex-shrink:0; }
 .pf-rev { background:#FDF6E3; border:1px solid #C9A84C; color:#9A7A28; font-size:9px; font-weight:800; padding:2px 8px; border-radius:10px; cursor:pointer; white-space:nowrap; }
 @media(max-width:600px){ .pf-obj,.pf-musc{white-space:normal;} .pf-daycol{min-width:52px;} }
-.mes-semana-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px; }
+.mes-semana-header { display:flex; align-items:center; justify-content:space-between; margin:-12px -12px 12px; padding:11px 16px; flex-wrap:wrap; gap:8px; }
 .mes-semana-titulo-txt { font-size:11px; font-weight:800; color:#9A7A28; text-transform:uppercase; letter-spacing:1px; }
 .mes-semana-acciones { display:flex; gap:6px; }
 .mes-btn-accion { background:#FDF6E3; color:#9A7A28; border:1px solid #90caf9; border-radius:7px; padding:5px 11px; font-size:11px; font-weight:700; cursor:pointer; transition:background 0.15s; }
@@ -11260,7 +11260,7 @@ const _PM_GRID_CSS = '<style id="pm-grid-css">'
   +'.pm-fill .pm-check{color:#fff;}.pm-fill .pm-rev{color:#fff;background:rgba(255,255,255,.22);}.pm-fill .pm-nses{color:#fff;background:rgba(255,255,255,.2);}'
   // Estado temporal (Opción 3): en curso DOMINA (glow) · pasada apagada · próxima fantasma
   +'.mes-semana-bloque.sem-actual,.mes-semana-bloque.sem-pasada,.mes-semana-bloque.sem-futura{border-radius:14px;overflow:hidden;transition:box-shadow .15s;}'
-  +'.mes-semana-bloque.sem-actual{box-shadow:0 10px 28px rgba(23,28,38,.16);}'
+  +'.mes-semana-bloque.sem-actual{background:#D6B45A;box-shadow:0 10px 28px rgba(23,28,38,.16);}'
   +'.mes-semana-bloque.sem-actual .mes-semana-header{background:#171C26;}'
   +'.mes-semana-bloque.sem-actual .mes-semana-titulo-txt{color:#fff;}'
   +'.mes-semana-bloque.sem-actual .mes-semana-titulo-txt::before{content:"\\25CF ";color:#D6B45A;}'
