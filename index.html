@@ -1596,7 +1596,9 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
   display: flex;
   gap: 0;
   height: calc(100vh - 92px);
-  margin: -28px -32px;
+  margin: -28px 0 -28px 0;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
   border-radius: 0;
   overflow: hidden;
   box-shadow: none;
@@ -1612,7 +1614,6 @@ main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
   height: 100%;
   scrollbar-width: thin;
   scrollbar-color: #C9A84C #1a1a2e;
-  box-shadow: -600px 0 0 #171C26;   /* extiende el navy hasta el borde izquierdo */
 }
 .plan-sidebar::-webkit-scrollbar { width: 4px; }
 .plan-sidebar::-webkit-scrollbar-track { background: #152238; }
