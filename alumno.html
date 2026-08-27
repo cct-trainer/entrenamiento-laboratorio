@@ -136,9 +136,12 @@ html.light .hdr{box-shadow:0 6px 18px -12px rgba(0,0,0,.18);}
 .wk-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px;scrollbar-width:none;-ms-overflow-style:none;}
 .wk-row::-webkit-scrollbar{display:none;}
 .wk-chip{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:9px 14px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;transition:all .15s;min-width:104px;}
-.wk-chip.on{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 10%,var(--card));}
+.wk-chip.on{border-color:#fff;background:#fff;}
+.wk-chip.on .wk-d{color:#5a6472;}
+html.light .wk-chip.on{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 12%,var(--card));}
 .wk-n{font-size:12px;font-weight:800;color:var(--text);}
-.wk-chip.on .wk-n{color:var(--gold);}
+.wk-chip.on .wk-n{color:#171C26;}
+html.light .wk-chip.on .wk-n{color:var(--gold);}
 .wk-d{font-size:9px;color:var(--muted);}
 /* Timeline de semanas: actual (dorado), anteriores (rojo), siguientes (amarillo inactivas) */
 .wk-chip.wk-current{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 10%,var(--card));}
@@ -219,12 +222,12 @@ html.light .hdr{box-shadow:0 6px 18px -12px rgba(0,0,0,.18);}
 .dayrow.today{border-color:var(--green);}
 .dayrow.today::before{background:var(--green);}
 .dr-date{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:44px;}
-.dr-dow{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--gold);margin-bottom:1px;}
+.dr-dow{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--muted);margin-bottom:1px;}
 .dayrow.today .dr-dow{color:var(--green);}
 .dr-num{font-size:29px;font-weight:900;line-height:.88;color:var(--text);font-variant-numeric:tabular-nums;}
 .dr-sep{width:1px;align-self:stretch;background:var(--border);margin:3px 0;}
 .dr-body{flex:1;min-width:0;}
-.dr-title{font-size:14px;font-weight:800;color:var(--gold);letter-spacing:.3px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;}
+.dr-title{font-size:14px;font-weight:800;color:var(--text);letter-spacing:.3px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;}
 .dr-sub{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dr-tags{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;}
 .dr-tag{font-size:8.5px;font-weight:800;letter-spacing:.5px;padding:2px 8px;border-radius:20px;background:rgba(201,168,76,.12);color:var(--gold);border:1px solid rgba(201,168,76,.25);}
@@ -899,8 +902,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260826170900 por un timestamp en cada deploy
-const _APP_VERSION = '20260826170900';
+// deploy.bat reemplaza 20260827084836 por un timestamp en cada deploy
+const _APP_VERSION = '20260827084836';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1712,10 +1715,11 @@ function renderRutina() {
   if (mesoEl) {
     const fi = _faseDePlan(_plan).idx;
     const f = FASES_MACRO[fi] || FASES_MACRO[0];
+    const fcol = '#3A6EA5';   // diseño 3: fase en azul (acento)
     const chips = (f.par||'').split('·').map(s=>s.trim()).filter(Boolean)
-      .map(c=>'<span class="meso-chip" style="background:'+f.color+'22;color:'+f.color+';">'+c+'</span>').join('');
-    mesoEl.innerHTML = '<div class="meso-block" style="border-left:3px solid '+f.color+';">'
-      + '<div class="meso-top"><span class="meso-badge" style="background:'+f.color+';">FASE '+(fi+1)+'/4</span><span class="meso-name" style="color:'+f.color+';">'+f.n+'</span></div>'
+      .map(c=>'<span class="meso-chip" style="background:'+fcol+'22;color:#bcd6f0;">'+c+'</span>').join('');
+    mesoEl.innerHTML = '<div class="meso-block" style="border-left:3px solid '+fcol+';">'
+      + '<div class="meso-top"><span class="meso-badge" style="background:'+fcol+';">FASE '+(fi+1)+'/4</span><span class="meso-name" style="color:#fff;">'+f.n+'</span></div>'
       + '<div class="meso-obj">'+f.obj+'</div>'
       + '<div class="meso-chips">'+chips+'</div>'
       + '</div>';
