@@ -902,8 +902,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827085718 por un timestamp en cada deploy
-const _APP_VERSION = '20260827085718';
+// deploy.bat reemplaza 20260827091725 por un timestamp en cada deploy
+const _APP_VERSION = '20260827091725';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1847,6 +1847,14 @@ function _playYt(uid, ytId) {
   player.innerHTML = '<iframe src="https://www.youtube.com/embed/'+ytId+'?autoplay=1&playsinline=1&rel=0&modestbranding=1" width="100%" height="220" style="border:none;display:block;" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>';
 }
 
+// Abre/cierra el video inline del ejercicio (entre el nombre y la banda SERIES)
+function _toggleEjVid(uid){
+  const w = document.getElementById('ejvidwrap-'+uid);
+  if(!w) return;
+  const abrir = (w.style.display==='none' || !w.style.display);
+  w.style.display = abrir ? 'block' : 'none';
+  if(abrir){ try{ w.scrollIntoView({behavior:'smooth',block:'nearest'}); }catch(e){} }
+}
 // Reproduce el video del ejercicio de la pausa en un modal
 function _playPausa(ytId){
   if(!ytId) return;
@@ -2434,9 +2442,10 @@ function _ejCard(ej, uid, ejLabel) {
 
   // Sección de series (tabla detallada)
   const efecSection = sEfec ? (
-    '<div style="font-size:13px;font-weight:800;color:#9cc6ef;margin:16px 0 3px;letter-spacing:.2px;">'+_nomShow+'</div>'+
-    '<div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:1px;margin:0 0 5px;">'+_t('series_lbl')+'</div>'+
-    _seriesTable(sEfec, 'S', _sp+'_efec', uid, nApro)
+    '<div style="margin-top:16px;border-radius:12px;overflow:hidden;">'+
+      '<div style="font-size:10px;font-weight:900;letter-spacing:1.8px;color:#fff;background:#3A6EA5;padding:9px 13px;">'+_t('series_lbl')+'</div>'+
+      _seriesTable(sEfec, 'S', _sp+'_efec', uid, nApro)+
+    '</div>'
   ) : '';
 
   // Sección de dropsets
@@ -2585,8 +2594,11 @@ function _ejCard(ej, uid, ejLabel) {
 
   return '<div id="'+uid+'-card" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .2s;">'+
     '<div style="padding:12px 14px 12px;">'+
-      '<div style="font-size:17px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#25D366':'var(--gold)')+';padding-left:9px;">'+(ejLabel?'<span style="font-size:11px;font-weight:900;color:#9cc6ef;background:rgba(74,134,196,.16);border:1px solid rgba(74,134,196,.35);border-radius:6px;padding:1px 7px;margin-right:8px;vertical-align:middle;">'+ejLabel+'</span>':'')+_nomShow+'</div>'+
-      (ej.musculos ? '<div style="font-size:10px;color:var(--muted);margin:3px 0 0 12px;">'+_tc(ej.musculos)+'</div>' : '')+
+      '<div style="display:flex;align-items:center;gap:10px;">'+
+        '<div style="flex:1;min-width:0;font-size:17px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#3A6EA5':'var(--gold)')+';padding-left:9px;">'+(ejLabel?'<span style="font-size:11px;font-weight:900;color:#9cc6ef;background:rgba(74,134,196,.16);border:1px solid rgba(74,134,196,.35);border-radius:6px;padding:1px 7px;margin-right:8px;vertical-align:middle;">'+ejLabel+'</span>':'')+_nomShow+'</div>'+
+        (ytId ? '<button onclick="_toggleEjVid(\''+uid+'\')" title="Ver video" style="width:42px;height:42px;border-radius:10px;flex-shrink:0;background:#0e1a2c;border:1px solid #2a4368;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;"><span style="width:0;height:0;border-left:12px solid #3A6EA5;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:2px;display:inline-block;"></span></button>' : '')+
+      '</div>'+
+      (ej.musculos ? '<div style="font-size:10px;color:var(--muted);margin:4px 0 0 12px;">'+_tc(ej.musculos)+'</div>' : '')+
       (ej.nota ? (()=>{
         const _esc = s => String(s).replace(/</g,'&lt;');
         const raw = String(ej.nota);
@@ -2602,12 +2614,12 @@ function _ejCard(ej, uid, ejLabel) {
       _sustNote+
       (ej.unilateral ? '<div style="font-size:10px;color:var(--muted);margin:4px 0 0 12px;">'+(_LANG==='en'?'Unilateral · do each set on both sides':'Unilateral · cada serie se hace de los dos lados')+'</div>' : '')+
       (()=>{ const nq=_notaEquipo(ej); return nq ? '<div style="font-size:10px;color:var(--muted);margin:3px 0 0 12px;line-height:1.45;">💡 '+nq+'</div>' : ''; })()+
-      videoHTML+
       _maxLine+
       _ultLine+
       _hintLine+
       (sEfec ? '' : ctrlGrid)+
       pesoRef+
+      (ytId ? '<div id="ejvidwrap-'+uid+'" style="display:none;">'+videoHTML+'</div>' : '')+
       seriesTable+
       _pausaHTML+
       _tecApp+
