@@ -158,8 +158,8 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .wk-s .ws-n{font-size:12px;font-weight:800;color:#d6e3f4;white-space:nowrap;}
 .wk-s .ws-d{font-size:8.5px;font-weight:600;color:#a9c6e6;white-space:nowrap;}
 .wk-s.done .ws-n::after{content:" ✓";color:#fff;font-size:10px;}
-.wk-s.now{background:#fff;box-shadow:0 4px 14px -4px rgba(0,0,0,.5);}
-.wk-s.now .ws-n{color:#141821;} .wk-s.now .ws-d{color:#3A6EA5;font-weight:800;}
+.wk-s.now{background:#23262e;box-shadow:0 4px 14px -4px rgba(0,0,0,.55);}
+.wk-s.now .ws-n{color:#fff;} .wk-s.now .ws-d{color:#c4cedd;font-weight:700;}
 .wk-s.next{opacity:.62;}
 .wk-s:disabled{cursor:default;}
 .wk-s:not(.now):not(:disabled):hover{background:rgba(255,255,255,.12);}
@@ -922,8 +922,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827180918 por un timestamp en cada deploy
-const _APP_VERSION = '20260827180918';
+// deploy.bat reemplaza 20260827181343 por un timestamp en cada deploy
+const _APP_VERSION = '20260827181343';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
