@@ -910,8 +910,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827170106 por un timestamp en cada deploy
-const _APP_VERSION = '20260827170106';
+// deploy.bat reemplaza 20260827170122 por un timestamp en cada deploy
+const _APP_VERSION = '20260827170122';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
