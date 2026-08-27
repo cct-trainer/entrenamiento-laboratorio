@@ -903,8 +903,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827124611 por un timestamp en cada deploy
-const _APP_VERSION = '20260827124611';
+// deploy.bat reemplaza 20260827125455 por un timestamp en cada deploy
+const _APP_VERSION = '20260827125455';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2455,7 +2455,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
     : _stRaw.toUpperCase();
   const efecSection = sEfec ? (
     '<div style="margin:16px 0 0;border-radius:12px;overflow:hidden;box-shadow:0 6px 16px rgba(0,0,0,.30);">'+
-      '<div style="position:relative;z-index:2;font-size:10px;font-weight:900;letter-spacing:1.8px;color:#1a1508;background:linear-gradient(180deg,#e6cb83,#D6B45A);padding:9px 13px;box-shadow:0 5px 11px rgba(120,90,20,.45);">'+_bandaTxt+'</div>'+
+      '<div style="position:relative;z-index:2;font-size:10px;font-weight:900;letter-spacing:1.8px;color:#fff;background:linear-gradient(180deg,#4179b0,#3A6EA5);padding:9px 13px;box-shadow:0 5px 11px rgba(20,40,80,.55);">'+_bandaTxt+'</div>'+
       _seriesTable(sEfec, 'S', _sp+'_efec', uid, nApro, true)+
     '</div>'
   ) : '';
@@ -2608,8 +2608,8 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
       : (ej.musculos ? String(ej.musculos).split(/[,·|/]/)[0] : (grupo||'')));
   const _grupoTxt = _tc(String(_musPrin).trim());
   const _grupoBadge = _grupoTxt ? (
-    '<div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(160deg,#e2c477,#c9a548);color:#2a2109;font-size:8px;font-weight:900;letter-spacing:.8px;padding:4px 9px;border-radius:8px;margin:0 0 11px;box-shadow:0 3px 8px rgba(201,168,76,.35),inset 0 1px 0 rgba(255,255,255,.45);text-transform:uppercase;">'+
-      '<span style="display:inline-flex;gap:1.5px;align-items:center;"><span style="width:2px;height:8px;background:#2a2109;border-radius:2px;"></span><span style="width:2px;height:8px;background:#2a2109;border-radius:2px;opacity:.7;"></span><span style="width:2px;height:8px;background:#2a2109;border-radius:2px;"></span></span>'+
+    '<div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(160deg,#4d89c6,#2f5f95);color:#fff;font-size:8px;font-weight:900;letter-spacing:.8px;padding:4px 9px;border-radius:8px;margin:0 0 11px;box-shadow:0 3px 8px rgba(58,110,165,.4),inset 0 1px 0 rgba(255,255,255,.28);text-transform:uppercase;">'+
+      '<span style="display:inline-flex;gap:1.5px;align-items:center;"><span style="width:2px;height:8px;background:#fff;border-radius:2px;"></span><span style="width:2px;height:8px;background:#fff;border-radius:2px;opacity:.7;"></span><span style="width:2px;height:8px;background:#fff;border-radius:2px;"></span></span>'+
       _grupoTxt.replace(/</g,'&lt;')+
     '</div>'
   ) : '';
