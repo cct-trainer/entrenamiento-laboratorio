@@ -211,7 +211,8 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .mc-btn{position:relative;margin-top:13px;align-self:flex-start;background:#fff;color:#111;font-size:12px;font-weight:900;padding:8px 22px;border-radius:22px;letter-spacing:.3px;}
 
 .slabel{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--muted);margin-bottom:8px;}
-#dias-slabel{font-size:29px;font-weight:900;letter-spacing:.2px;line-height:1.05;color:var(--text);margin:4px 0 14px;}
+#dias-slabel{display:flex;align-items:center;gap:11px;font-size:20px;font-weight:900;letter-spacing:.3px;line-height:1.1;color:var(--text);text-transform:uppercase;margin:6px 0 14px;}
+#dias-slabel::before{content:'';width:4px;height:22px;border-radius:3px;background:#3A6EA5;flex-shrink:0;}
 .dgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px;}
 .dchip{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;background:var(--card);border:1.5px solid var(--border);cursor:pointer;transition:all .15s;position:relative;user-select:none;}
 .dchip.has{border-color:rgba(201,168,76,.4);}
@@ -923,8 +924,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827182616 por un timestamp en cada deploy
-const _APP_VERSION = '20260827182616';
+// deploy.bat reemplaza 20260827183349 por un timestamp en cada deploy
+const _APP_VERSION = '20260827183349';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2397,7 +2398,12 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
     const rows = _items.map(it=>{ _ln++; const labelNum=offset+_ln;
       return _mkRow(it.s,it.idx,labelNum,'','');   // una sola fila; si es unilateral, las reps van "c/lado"
     }).join('');
-    const addBtn = savePrefix ? '<button class="s-add" onclick="_serieAdd(\''+savePrefix+'\')">＋ Agregar serie</button>' : '';
+    const _fbg = _wt ? '#ffffff' : '#050506';
+    const _ftx = _wt ? '#20242c' : '#eef1f5';
+    const _fbd = _wt ? '#eef0f3' : '#1c1e22';
+    const addBtn = savePrefix ? (flush
+      ? '<div onclick="_serieAdd(\''+savePrefix+'\')" style="display:flex;align-items:center;justify-content:center;gap:9px;background:'+_fbg+';padding:11px 13px;cursor:pointer;border-top:1px solid '+_fbd+';color:'+_ftx+';font-size:13px;font-weight:800;font-family:inherit;"><span style="width:22px;height:22px;border-radius:50%;background:#3A6EA5;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;line-height:1;flex-shrink:0;">＋</span>'+(_LANG==='en'?'Add set':'Agregar serie')+'</div>'
+      : '<button class="s-add" onclick="_serieAdd(\''+savePrefix+'\')">＋ '+(_LANG==='en'?'Add set':'Agregar serie')+'</button>') : '';
     // Contenedor redondeado y elevado (la tabla "sale" de la pantalla)
     const _wrapBd = _wt ? '#d7dbe3' : '#24272d';
     const _wrapSh = _wt ? '0 10px 26px rgba(0,0,0,.6), 0 2px 0 rgba(255,255,255,.5) inset' : '0 10px 26px rgba(0,0,0,.7)';
