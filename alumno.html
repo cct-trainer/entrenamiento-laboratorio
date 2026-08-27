@@ -903,8 +903,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827123620 por un timestamp en cada deploy
-const _APP_VERSION = '20260827123620';
+// deploy.bat reemplaza 20260827124611 por un timestamp en cada deploy
+const _APP_VERSION = '20260827124611';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2454,8 +2454,8 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
     ? (_t('series_lbl')+' '+(_LANG==='en'?'STRAIGHT':'SIMPLE'))
     : _stRaw.toUpperCase();
   const efecSection = sEfec ? (
-    '<div style="margin:16px -11px 0;">'+
-      '<div style="position:relative;z-index:2;font-size:10px;font-weight:900;letter-spacing:1.8px;color:#fff;background:linear-gradient(180deg,#4179b0,#3A6EA5);padding:9px 13px;box-shadow:0 5px 11px rgba(20,40,80,.55);">'+_bandaTxt+'</div>'+
+    '<div style="margin:16px 0 0;border-radius:12px;overflow:hidden;box-shadow:0 6px 16px rgba(0,0,0,.30);">'+
+      '<div style="position:relative;z-index:2;font-size:10px;font-weight:900;letter-spacing:1.8px;color:#1a1508;background:linear-gradient(180deg,#e6cb83,#D6B45A);padding:9px 13px;box-shadow:0 5px 11px rgba(120,90,20,.45);">'+_bandaTxt+'</div>'+
       _seriesTable(sEfec, 'S', _sp+'_efec', uid, nApro, true)+
     '</div>'
   ) : '';
