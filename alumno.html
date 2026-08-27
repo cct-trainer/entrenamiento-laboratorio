@@ -219,11 +219,18 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .dayrow:hover{border-color:rgba(201,168,76,.45);transform:translateX(2px);}
 .dayrow.on{background:color-mix(in srgb,var(--gold) 8%,var(--card));border-color:var(--gold);box-shadow:0 4px 18px -8px rgba(201,168,76,.5);}
 .dayrow.on::before{width:5px;background:var(--gold);}
-.dayrow.today{border-color:var(--green);}
-.dayrow.today::before{background:var(--green);}
+.dayrow.today{border-color:#4a86c4;background:#3A6EA5;box-shadow:0 6px 22px -8px rgba(58,110,165,.7);}
+.dayrow.today::before{width:0;background:#3A6EA5;}
+.dayrow.today .dr-num{color:#fff;}
+.dayrow.today .dr-title{color:#fff;}
+.dayrow.today .dr-sub{color:#d6e4f5;}
+.dayrow.today .dr-sep{background:rgba(255,255,255,.25);}
+.dayrow.today .dr-arr{color:#eaf1fb;}
+.dayrow.today.on{background:#3A6EA5;border-color:#6aa0dc;box-shadow:0 6px 24px -6px rgba(58,110,165,.8);}
+.dayrow.today.on::before{width:0;}
 .dr-date{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:44px;}
 .dr-dow{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--muted);margin-bottom:1px;}
-.dayrow.today .dr-dow{color:var(--green);}
+.dayrow.today .dr-dow{color:#fff;}
 .dr-num{font-size:29px;font-weight:900;line-height:.88;color:var(--text);font-variant-numeric:tabular-nums;}
 .dr-sep{width:1px;align-self:stretch;background:var(--border);margin:3px 0;}
 .dr-body{flex:1;min-width:0;}
@@ -231,7 +238,7 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .dr-sub{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dr-tags{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;}
 .dr-tag{font-size:8.5px;font-weight:800;letter-spacing:.5px;padding:2px 8px;border-radius:20px;background:rgba(201,168,76,.12);color:var(--gold);border:1px solid rgba(201,168,76,.25);}
-.dr-tag.today{background:rgba(58,110,165,.14);color:var(--green);border-color:rgba(58,110,165,.35);}
+.dayrow.today .dr-tag{background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.4);}
 .dr-arr{font-size:11px;color:var(--muted);transition:transform .2s,color .2s;flex-shrink:0;}
 .dayrow.on .dr-arr{transform:rotate(180deg);color:var(--gold);}
 .dr-empty{padding:26px 16px;text-align:center;color:var(--muted);font-size:12px;background:var(--card);border:1px dashed var(--border);border-radius:14px;margin-bottom:16px;}
@@ -903,8 +910,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827162640 por un timestamp en cada deploy
-const _APP_VERSION = '20260827162640';
+// deploy.bat reemplaza 20260827163530 por un timestamp en cada deploy
+const _APP_VERSION = '20260827163530';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
