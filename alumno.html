@@ -248,7 +248,8 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .scard{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;}
 .scard-name{font-size:13px;font-weight:900;color:var(--gold);margin-bottom:12px;letter-spacing:.3px;}
 /* Bloque · panel negro con borde 3D (tema oscuro) */
-.blk{margin-bottom:16px;border-radius:16px;padding:12px 12px 4px;background:linear-gradient(160deg,#141519,#08090b);border-top:1.5px solid #34383f;border-left:1.5px solid #2a2d33;border-right:1.5px solid #050506;border-bottom:1.5px solid #000;box-shadow:0 12px 26px rgba(0,0,0,.85);}
+.blk{margin-bottom:14px;border-radius:14px;padding:5px;background:transparent;border:1.5px solid #33373f;box-shadow:none;}
+.blk-body>div:last-child{margin-bottom:0;}
 .blk-hdr{display:flex;align-items:center;gap:10px;padding:2px 2px 10px;background:transparent;border-radius:0;margin-bottom:2px;cursor:pointer;}
 .blk-letra{width:28px;height:28px;background:linear-gradient(160deg,#2c2f35,#141518);box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 2px 6px rgba(0,0,0,.7);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;}
 .blk-txt{flex:1;}
@@ -902,8 +903,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827120202 por un timestamp en cada deploy
-const _APP_VERSION = '20260827120202';
+// deploy.bat reemplaza 20260827122153 por un timestamp en cada deploy
+const _APP_VERSION = '20260827122153';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2252,8 +2253,10 @@ function _tecAppHTML(ej){
   }
   return '<div class="tec"><div class="tec-h"><span class="ic">'+icon+'</span><span class="t">'+title+'</span>'+badge+'</div>'+condHTML+tbl+extra+'</div>';
 }
-function _ejCard(ej, uid, ejLabel) {
-  ejLabel = ejLabel || '';   // etiqueta del ejercicio en bloques combinados (A1, B2…)
+function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
+  ejLabel = ejLabel || '';   // etiqueta del ejercicio (A1, B2…)
+  grupo   = grupo || '';     // grupo muscular / nombre del bloque → badge dorado superior
+  serieLbl = serieLbl || (_LANG==='en'?'Straight set':'Serie simple');  // tipo de serie → banda azul
   _ejStore[uid] = ej; // guardar para re-render posterior
 
   // Usar series vivas (modificadas por menú contextual) si existen
@@ -2443,16 +2446,21 @@ function _ejCard(ej, uid, ejLabel) {
     _seriesTable(sApro, 'S', _sp+'_apro', uid, 0)
   ) : '';
 
-  // Sección de series (tabla detallada)
+  // Sistema / técnica de la serie → banda azul (prioridad: técnica del ejercicio, luego sistema del bloque, luego "simple")
+  const _sisTipo = (ej.tecnica && ej.tecnica.tipo) ? ej.tecnica.tipo : ((ej.tecnica && (ej.tecnica.tecnica||ej.tecnica.familia)) ? _tecNorm(ej.tecnica).tipo : '');
+  const _tecLbl  = (_sisTipo && _TEC_APP[_sisTipo]) ? _TEC_APP[_sisTipo].lbl : '';
+  const _stRaw   = _tecLbl || String(serieLbl).trim();
+  const _bandaTxt = (!_stRaw || /simple|straight/i.test(_stRaw))
+    ? (_t('series_lbl')+' '+(_LANG==='en'?'STRAIGHT':'SIMPLE'))
+    : _stRaw.toUpperCase();
   const efecSection = sEfec ? (
     '<div style="margin:16px -11px 0;overflow:hidden;">'+
-      '<div style="font-size:10px;font-weight:900;letter-spacing:1.8px;color:#fff;background:#3A6EA5;padding:9px 13px;">'+_t('series_lbl')+'</div>'+
+      '<div style="font-size:10px;font-weight:900;letter-spacing:1.8px;color:#fff;background:#3A6EA5;padding:9px 13px;">'+_bandaTxt+'</div>'+
       _seriesTable(sEfec, 'S', _sp+'_efec', uid, nApro, true)+
     '</div>'
   ) : '';
 
   // Sección de dropsets
-  const _sisTipo = (ej.tecnica && ej.tecnica.tipo) ? ej.tecnica.tipo : ((ej.tecnica && (ej.tecnica.tecnica||ej.tecnica.familia)) ? _tecNorm(ej.tecnica).tipo : '');
   const _sisLbl = (_sisTipo && _TEC_APP[_sisTipo]) ? ('⚙ '+_TEC_APP[_sisTipo].ic+' '+_TEC_APP[_sisTipo].lbl.toUpperCase()) : _t('series_drop');
   let _dropTbl = sDrop ? _seriesTable(sDrop, 'S', _sp+'_drop', uid, nApro + nEfec) : '';
   if(_dropTbl && _sisTipo){ const _dr=_tecDescRows(_sisTipo); if(_dr){ const _i=_dropTbl.lastIndexOf('</tbody>'); if(_i>-1) _dropTbl=_dropTbl.slice(0,_i)+_dr+_dropTbl.slice(_i); } }
@@ -2595,8 +2603,19 @@ function _ejCard(ej, uid, ejLabel) {
       (_hasFicha ? '<span onclick="_toggleFicha(\''+uid+'\')" style="color:#9fb0cf;cursor:pointer;">ⓘ '+(_LANG==='en'?'Info':'Info técnica')+'</span>' : '')+
     '</div>';
 
+  const _musPrin = (Array.isArray(ej.principales) && ej.principales.length) ? String(ej.principales[0])
+    : (Array.isArray(ej.musculos) ? String(ej.musculos[0]||'')
+      : (ej.musculos ? String(ej.musculos).split(/[,·|/]/)[0] : (grupo||'')));
+  const _grupoTxt = _tc(String(_musPrin).trim());
+  const _grupoBadge = _grupoTxt ? (
+    '<div style="display:inline-flex;align-items:center;gap:7px;background:linear-gradient(160deg,#e2c477,#c9a548);color:#2a2109;font-size:11px;font-weight:900;letter-spacing:1.2px;padding:6px 13px;border-radius:10px;margin:0 0 12px;box-shadow:0 4px 11px rgba(201,168,76,.35),inset 0 1px 0 rgba(255,255,255,.45);text-transform:uppercase;">'+
+      '<span style="display:inline-flex;gap:2px;align-items:center;"><span style="width:2.5px;height:11px;background:#2a2109;border-radius:2px;"></span><span style="width:2.5px;height:11px;background:#2a2109;border-radius:2px;opacity:.7;"></span><span style="width:2.5px;height:11px;background:#2a2109;border-radius:2px;"></span></span>'+
+      _grupoTxt.replace(/</g,'&lt;')+
+    '</div>'
+  ) : '';
   return '<div id="'+uid+'-card" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .2s;">'+
     '<div style="padding:12px 11px 12px;">'+
+      _grupoBadge+
       '<div style="display:flex;align-items:center;gap:10px;">'+
         '<div style="flex:1;min-width:0;font-size:17px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#3A6EA5':'var(--gold)')+';padding-left:9px;">'+(ejLabel?'<span style="font-size:11px;font-weight:900;color:#9cc6ef;background:rgba(74,134,196,.16);border:1px solid rgba(74,134,196,.35);border-radius:6px;padding:1px 7px;margin-right:8px;vertical-align:middle;">'+ejLabel+'</span>':'')+_nomShow+'</div>'+
         (ytId ? '<button onclick="_toggleEjVid(\''+uid+'\')" title="Ver video" style="width:54px;height:54px;border-radius:14px;flex-shrink:0;background:linear-gradient(160deg,#4d89c6,#2f5f95);border:1px solid #5a95d0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;box-shadow:0 7px 16px rgba(58,110,165,.45),inset 0 1px 0 rgba(255,255,255,.28);transition:transform .12s,box-shadow .12s;" ontouchstart="" onmousedown="this.style.transform=\'translateY(2px)\';this.style.boxShadow=\'0 3px 8px rgba(58,110,165,.4)\';" onmouseup="this.style.transform=\'\';this.style.boxShadow=\'0 7px 16px rgba(58,110,165,.45),inset 0 1px 0 rgba(255,255,255,.28)\';"><span style="width:0;height:0;border-left:16px solid #fff;border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:3px;display:inline-block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));"></span></button>' : '')+
@@ -3368,20 +3387,15 @@ function renderSesion() {
     '</div>'+
     ses.bloques.map((b,bi) => {
       const letra='ABCDEFGHIJ'[bi]||(bi+1);
-      // Bloque combinado (circuito/superserie/etc. o 2+ ejercicios) → cada ejercicio lleva la letra del bloque + número (A1, A2…)
-      const _combo = /biserie|superserie|triserie|gigante|circuito/i.test(b.serieTipo||'') || (b.ejercicios||[]).length>=2;
-      const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>_ejCard(ej,'b'+bi+'e'+ei, _combo ? (letra+(ei+1)) : '')).join('');
+      const _grupo   = _tc(b.nombre||b.tipo||'');        // grupo muscular / nombre del bloque → badge dorado
+      const _serieLbl= _tc(b.serieTipo||'');             // tipo de serie → banda azul
+      const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>_ejCard(ej,'b'+bi+'e'+ei, letra+(ei+1), _grupo, _serieLbl)).join('');
       // Borde según composición: pausa activa → gris (neutro) · 2+ ejercicios → azul · 1 ejercicio → dorado
       const _hasPausa = (b.ejercicios||[]).some(e => e && e.pausaActiva && e.pausaActiva.activo && Array.isArray(e.pausaActiva.items) && e.pausaActiva.items.length);
       const _nEj = (b.ejercicios||[]).length;
       const _blkCls = 'blk' + (_hasPausa ? '' : (_nEj>=2 ? ' combo-blue' : (_nEj===1 ? ' solo-gold' : '')));
       return '<div class="'+_blkCls+'" style="margin-bottom:14px;">'+
-        '<div class="blk-hdr open" onclick="this.classList.toggle(\'open\');var nx=this.nextElementSibling;nx.style.display=this.classList.contains(\'open\')?\'block\':\'none\'">'+
-          '<div class="blk-letra">'+letra+'</div>'+
-          '<div class="blk-txt"><div class="blk-n">'+_tc(b.nombre||b.tipo||_t('bloque'))+'</div><div class="blk-t">'+_tc(b.serieTipo||'')+'</div></div>'+
-          '<div class="blk-arr">&#9660;</div>'+
-        '</div>'+
-        '<div class="blk-body" style="padding:8px 4px 4px;">'+ejesHTML+'</div>'+
+        '<div class="blk-body" style="padding:2px 0 0;">'+ejesHTML+'</div>'+
       '</div>';
     }).join('');
 
