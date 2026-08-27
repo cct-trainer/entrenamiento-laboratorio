@@ -902,8 +902,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827114155 por un timestamp en cada deploy
-const _APP_VERSION = '20260827114155';
+// deploy.bat reemplaza 20260827114723 por un timestamp en cada deploy
+const _APP_VERSION = '20260827114723';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2599,7 +2599,7 @@ function _ejCard(ej, uid, ejLabel) {
     '<div style="padding:12px 11px 12px;">'+
       '<div style="display:flex;align-items:center;gap:10px;">'+
         '<div style="flex:1;min-width:0;font-size:17px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#3A6EA5':'var(--gold)')+';padding-left:9px;">'+(ejLabel?'<span style="font-size:11px;font-weight:900;color:#9cc6ef;background:rgba(74,134,196,.16);border:1px solid rgba(74,134,196,.35);border-radius:6px;padding:1px 7px;margin-right:8px;vertical-align:middle;">'+ejLabel+'</span>':'')+_nomShow+'</div>'+
-        (ytId ? '<button onclick="_toggleEjVid(\''+uid+'\')" title="Ver video" style="width:42px;height:42px;border-radius:10px;flex-shrink:0;background:#0e1a2c;border:1px solid #2a4368;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;"><span style="width:0;height:0;border-left:12px solid #3A6EA5;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:2px;display:inline-block;"></span></button>' : '')+
+        (ytId ? '<button onclick="_toggleEjVid(\''+uid+'\')" title="Ver video" style="width:54px;height:54px;border-radius:14px;flex-shrink:0;background:linear-gradient(160deg,#4d89c6,#2f5f95);border:1px solid #5a95d0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;box-shadow:0 7px 16px rgba(58,110,165,.45),inset 0 1px 0 rgba(255,255,255,.28);transition:transform .12s,box-shadow .12s;" ontouchstart="" onmousedown="this.style.transform=\'translateY(2px)\';this.style.boxShadow=\'0 3px 8px rgba(58,110,165,.4)\';" onmouseup="this.style.transform=\'\';this.style.boxShadow=\'0 7px 16px rgba(58,110,165,.45),inset 0 1px 0 rgba(255,255,255,.28)\';"><span style="width:0;height:0;border-left:16px solid #fff;border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:3px;display:inline-block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));"></span></button>' : '')+
       '</div>'+
       (ej.musculos ? '<div style="font-size:10px;color:var(--muted);margin:4px 0 0 12px;">'+_tc(ej.musculos)+'</div>' : '')+
       (ej.nota ? (()=>{
