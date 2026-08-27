@@ -902,8 +902,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827091725 por un timestamp en cada deploy
-const _APP_VERSION = '20260827091725';
+// deploy.bat reemplaza 20260827110915 por un timestamp en cada deploy
+const _APP_VERSION = '20260827110915';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2271,7 +2271,7 @@ function _ejCard(ej, uid, ejLabel) {
   const hasCtrl = cs || cr || cpa || ci;
 
   // Helper: tabla de series con prefijo de etiqueta
-  function _seriesTable(arr, prefijoLabel, savePrefix, uid, offset) {
+  function _seriesTable(arr, prefijoLabel, savePrefix, uid, offset, flush) {
     offset = offset || 0;
     if (!arr || !arr.length) return '';
     const hasPeso  = true;   // el peso SIEMPRE se muestra (aunque venga vacío) para que el alumno lo cargue en el gym
@@ -2387,7 +2387,10 @@ function _ejCard(ej, uid, ejLabel) {
     const _wrapBd = _wt ? '#d7dbe3' : '#24272d';
     const _wrapSh = _wt ? '0 10px 26px rgba(0,0,0,.6), 0 2px 0 rgba(255,255,255,.5) inset' : '0 10px 26px rgba(0,0,0,.7)';
     const _wrapBg = _wt ? '#ffffff' : '#050506';
-    return '<div style="overflow:hidden;border-radius:14px;border:1px solid '+_wrapBd+';background:'+_wrapBg+';box-shadow:'+_wrapSh+';margin:2px 0 2px;"><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div></div>'+addBtn;
+    const _wrapStyle = flush
+      ? 'overflow:hidden;border:none;border-radius:0;background:'+_wrapBg+';box-shadow:none;margin:0;'
+      : 'overflow:hidden;border-radius:14px;border:1px solid '+_wrapBd+';background:'+_wrapBg+';box-shadow:'+_wrapSh+';margin:2px 0 2px;';
+    return '<div style="'+_wrapStyle+'"><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div></div>'+addBtn;
   }
 
   // Grid SERIES / REPS / PAUSA / RIR  (resumen de series efectivas)
@@ -2442,9 +2445,9 @@ function _ejCard(ej, uid, ejLabel) {
 
   // Sección de series (tabla detallada)
   const efecSection = sEfec ? (
-    '<div style="margin-top:16px;border-radius:12px;overflow:hidden;">'+
+    '<div style="margin:16px -11px 0;overflow:hidden;">'+
       '<div style="font-size:10px;font-weight:900;letter-spacing:1.8px;color:#fff;background:#3A6EA5;padding:9px 13px;">'+_t('series_lbl')+'</div>'+
-      _seriesTable(sEfec, 'S', _sp+'_efec', uid, nApro)+
+      _seriesTable(sEfec, 'S', _sp+'_efec', uid, nApro, true)+
     '</div>'
   ) : '';
 
@@ -2593,7 +2596,7 @@ function _ejCard(ej, uid, ejLabel) {
     '</div>';
 
   return '<div id="'+uid+'-card" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .2s;">'+
-    '<div style="padding:12px 14px 12px;">'+
+    '<div style="padding:12px 11px 12px;">'+
       '<div style="display:flex;align-items:center;gap:10px;">'+
         '<div style="flex:1;min-width:0;font-size:17px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#3A6EA5':'var(--gold)')+';padding-left:9px;">'+(ejLabel?'<span style="font-size:11px;font-weight:900;color:#9cc6ef;background:rgba(74,134,196,.16);border:1px solid rgba(74,134,196,.35);border-radius:6px;padding:1px 7px;margin-right:8px;vertical-align:middle;">'+ejLabel+'</span>':'')+_nomShow+'</div>'+
         (ytId ? '<button onclick="_toggleEjVid(\''+uid+'\')" title="Ver video" style="width:42px;height:42px;border-radius:10px;flex-shrink:0;background:#0e1a2c;border:1px solid #2a4368;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;"><span style="width:0;height:0;border-left:12px solid #3A6EA5;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:2px;display:inline-block;"></span></button>' : '')+
