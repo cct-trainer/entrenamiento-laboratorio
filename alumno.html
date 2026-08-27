@@ -81,7 +81,7 @@ html.light .pt-av{border-color:rgba(29,78,216,.3);box-shadow:0 12px 42px -12px r
 html.light .pt-plan{background:rgba(29,78,216,.08);border-color:rgba(29,78,216,.25);}
 .pt-foot{display:flex;flex-direction:column;align-items:center;gap:15px;width:100%;}
 .pt-coach{font-size:12px;color:var(--muted);letter-spacing:.2px;}
-.pt-enter{width:100%;max-width:350px;padding:17px;border:none;border-radius:16px;background:linear-gradient(135deg,var(--gold),var(--gold-d));color:var(--letra-text);font-size:15px;font-weight:900;letter-spacing:.3px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 12px 34px -12px rgba(201,168,76,.6);transition:transform .12s,box-shadow .12s;}
+.pt-enter{width:100%;max-width:350px;padding:17px;border:none;border-radius:16px;background:#3A6EA5;color:#fff;font-size:15px;font-weight:900;letter-spacing:.3px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 12px 34px -12px rgba(58,110,165,.55);transition:transform .12s,box-shadow .12s;}
 html.light .pt-enter{box-shadow:0 12px 34px -12px rgba(29,78,216,.5);}
 .pt-enter:active{transform:scale(.98);}
 .pt-enter span{font-size:21px;line-height:1;margin-top:-2px;}
@@ -89,7 +89,7 @@ html.light .pt-enter{box-shadow:0 12px 34px -12px rgba(29,78,216,.5);}
 /* Selector de idioma */
 .lang-sel{display:inline-flex;align-items:center;gap:0;background:var(--card);border:1px solid var(--border);border-radius:22px;padding:3px;}
 .lang-opt{border:none;background:transparent;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.6px;padding:7px 15px;border-radius:19px;cursor:pointer;transition:all .15s;font-family:inherit;}
-.lang-opt.on{background:var(--gold);color:var(--letra-text);}
+.lang-opt.on{background:#3A6EA5;color:#fff;}
 .lang-lbl{font-size:10px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:7px;}
 .tmr{transition:color .15s,opacity .15s;}
 
@@ -119,7 +119,7 @@ html.light .hdr{box-shadow:0 6px 18px -12px rgba(0,0,0,.18);}
 
 /* ── Navegación por MES DE TRABAJO ── */
 .mes-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:11px 12px;margin-bottom:12px;}
-.mes-nav-btn{width:38px;height:38px;border-radius:50%;background:var(--bg);border:1px solid var(--border);color:var(--gold);font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.mes-nav-btn{width:38px;height:38px;border-radius:50%;background:var(--bg);border:1px solid var(--border);color:#3A6EA5;font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .mes-nav-btn:disabled{opacity:.22;cursor:default;}
 .mes-nav-info{text-align:center;flex:1;min-width:0;}
 .mes-nav-title{font-size:20px;font-weight:900;color:var(--text);letter-spacing:1.5px;line-height:1.05;}
@@ -154,7 +154,7 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 /* Agenda unificada fuerza + running */
 .ag-filtro{display:flex;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:14px;}
 .ag-filtro button{flex:1;padding:9px 6px;border:none;border-radius:9px;font-size:11.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;}
-.ag-filtro button.on{background:var(--gold);color:#111;}
+.ag-filtro button.on{background:#3A6EA5;color:#fff;}
 .ag-filtro button.on.rn{background:#4fb0c6;color:#04252c;}
 .ag-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
 .ag-wknav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
@@ -237,8 +237,8 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .dr-empty{padding:26px 16px;text-align:center;color:var(--muted);font-size:12px;background:var(--card);border:1px dashed var(--border);border-radius:14px;margin-bottom:16px;}
 /* Encabezado de la vista de sesión (con botón volver) */
 .ses-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
-.ses-back{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:11px;background:var(--card);border:1px solid var(--border);color:var(--gold);font-size:12px;font-weight:800;letter-spacing:.3px;cursor:pointer;transition:all .15s;}
-.ses-back:hover{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 8%,var(--card));}
+.ses-back{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:11px;background:var(--card);border:1px solid var(--border);color:#3A6EA5;font-size:12px;font-weight:800;letter-spacing:.3px;cursor:pointer;transition:all .15s;}
+.ses-back:hover{border-color:#3A6EA5;background:color-mix(in srgb,#3A6EA5 8%,var(--card));}
 .ses-back i{font-style:normal;font-size:18px;line-height:1;margin-top:-1px;}
 .ses-head-day{display:flex;align-items:baseline;gap:6px;}
 .ses-head-dow{font-size:10px;font-weight:800;letter-spacing:1px;color:var(--gold);}
@@ -336,7 +336,7 @@ html.light .blk.combo-blue{border:1.5px solid #4a86c4;border-radius:12px;padding
 html.light .serie-row.s-omitida td{background:rgba(239,68,68,.14)!important;color:#f0a3a3!important;}
 html.light .s-num{border-color:#2a2d33;color:#c8cdd6;background:#14161a;}
 html.light .s-del{color:#71767f;}
-.s-add{width:100%;margin-top:6px;background:transparent;border:1px dashed color-mix(in srgb,var(--gold) 45%,transparent);color:var(--gold);border-radius:9px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.s-add{width:100%;margin-top:6px;background:transparent;border:1px dashed color-mix(in srgb,#3A6EA5 55%,transparent);color:#5b93cf;border-radius:9px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
 /* Técnica avanzada · tabla azul claro (visible para el alumno) */
 .tec{margin-top:11px;background:#eaf1fe;border:1px solid #bcd3f5;border-radius:12px;overflow:hidden;box-shadow:0 8px 20px rgba(20,40,90,.35);}
 .tec-h{display:flex;align-items:center;gap:8px;background:#dbe8fc;border-bottom:1px solid #c3d6f4;padding:9px 12px;}
@@ -363,7 +363,7 @@ html.light .s-del{color:#71767f;}
 .tser .exp-row td{text-align:left;background:#eef4ff;color:#33507f;font-size:11.5px;font-weight:600;padding:9px 12px;border-top:1px solid #cfe0f7;line-height:1.5;}
 .tser .exp-row b{color:#1e3a8a;}
 .tser .tag2{display:inline-block;font-size:9px;font-weight:800;color:#fff;background:#2f5bb0;border-radius:20px;padding:2px 8px;white-space:nowrap;}
-.s-add:active{background:color-mix(in srgb,var(--gold) 8%,transparent);}
+.s-add:active{background:color-mix(in srgb,#3A6EA5 10%,transparent);}
 
 /* ── PROGRESIÓN BADGE ─────────────────────────────────────────────── */
 .prog-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(58,110,165,.07);border:1px solid rgba(58,110,165,.22);border-radius:8px;padding:5px 10px;font-size:10px;font-weight:700;color:#9cc6ef;margin:8px 0 0;}
@@ -377,19 +377,19 @@ html.light .s-del{color:#71767f;}
 .fb-ttl{font-size:9px;font-weight:900;color:var(--gold);letter-spacing:1.5px;margin-bottom:10px;}
 .fb-opts{display:flex;flex-wrap:wrap;gap:7px;}
 .fb-opt{padding:8px 14px;border-radius:20px;border:1.5px solid var(--input-border);background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
-.fb-opt.sel{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 12%,transparent);color:var(--gold);}
+.fb-opt.sel{border-color:#3A6EA5;background:color-mix(in srgb,#3A6EA5 14%,transparent);color:#7fb0e6;}
 .fb-scale{display:flex;gap:5px;flex-wrap:wrap;}
 .fb-num{width:36px;height:36px;border-radius:9px;border:1.5px solid var(--input-border);background:transparent;color:var(--muted);font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
-.fb-num.sel{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 15%,transparent);color:var(--gold);}
+.fb-num.sel{border-color:#3A6EA5;background:color-mix(in srgb,#3A6EA5 16%,transparent);color:#7fb0e6;}
 .fb-input{width:100%;background:var(--input-bg);border:1.5px solid var(--input-border);border-radius:10px;color:var(--text);font-size:13px;padding:10px 12px;outline:none;font-family:inherit;}
-.fb-input:focus{border-color:color-mix(in srgb,var(--gold) 50%,transparent);}
+.fb-input:focus{border-color:color-mix(in srgb,#3A6EA5 55%,transparent);}
 .fb-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 
 /* ── MODALIDADES ─────────────────────────────────────────────────── */
 .mod-bar{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none;-ms-overflow-style:none;}
 .mod-bar::-webkit-scrollbar{display:none;}
 .mod-tab{flex-shrink:0;padding:7px 16px;border-radius:22px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.4px;cursor:pointer;transition:all .15s;white-space:nowrap;}
-.mod-tab.on{background:color-mix(in srgb,var(--gold) 15%,transparent);border-color:var(--gold);color:var(--gold);}
+.mod-tab.on{background:color-mix(in srgb,#3A6EA5 16%,transparent);border-color:#3A6EA5;color:#7fb0e6;}
 
 /* ── AJUSTES EXTRA MODO CLARO ─────────────────────────────────────── */
 html.light .scard { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
@@ -482,7 +482,7 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
       <div class="pt-plan" id="pt-plan"></div>
     </div>
     <div class="pt-foot">
-      <button onclick="_abrirTutorial()" style="width:100%;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.45);color:#C9A84C;border-radius:14px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:11px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;"><span style="width:20px;height:20px;border-radius:50%;background:#C9A84C;color:#111;display:inline-flex;align-items:center;justify-content:center;font-size:12px;">?</span> Mirá cómo se usa la app en 1 minuto</button>
+      <button onclick="_abrirTutorial()" style="width:100%;background:rgba(58,110,165,.14);border:1px solid rgba(58,110,165,.45);color:#5b93cf;border-radius:14px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:11px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;"><span style="width:20px;height:20px;border-radius:50%;background:#3A6EA5;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;">?</span> Mirá cómo se usa la app en 1 minuto</button>
       <button class="pt-enter" onclick="entrarApp()"><span data-i18n="entrar_app">Entrar a mi entrenamiento</span> <span>›</span></button>
       <div class="pt-date" id="pt-date"></div>
     </div>
@@ -528,9 +528,9 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
           style="display:none;background:rgba(201,168,76,.1);border:1.5px solid rgba(201,168,76,.3);border-radius:22px;padding:7px 11px;font-size:15px;text-decoration:none;align-items:center;transition:all .2s;"
           onmouseover="this.style.background='rgba(201,168,76,.2)'" onmouseout="this.style.background='rgba(201,168,76,.1)'">🏋️</a>
         <button id="btn-modo" onclick="_volverChooser()" title="Cambiar Fuerza / Running"
-          style="display:none;background:var(--card);border:1.5px solid var(--border);border-radius:22px;padding:7px 12px;cursor:pointer;font-size:15px;flex-shrink:0;transition:all .2s;color:var(--gold);align-items:center;">⇄</button>
+          style="display:none;background:var(--card);border:1.5px solid var(--border);border-radius:22px;padding:7px 12px;cursor:pointer;font-size:15px;flex-shrink:0;transition:all .2s;color:#5b93cf;align-items:center;">⇄</button>
         <button id="btn-tuto" onclick="_abrirTutorial()" title="Cómo usar la app"
-          style="background:rgba(201,168,76,.12);border:1.5px solid rgba(201,168,76,.5);border-radius:22px;width:36px;height:36px;cursor:pointer;font-size:17px;font-weight:900;flex-shrink:0;transition:all .2s;color:var(--gold);line-height:1;">?</button>
+          style="background:rgba(58,110,165,.14);border:1.5px solid rgba(58,110,165,.5);border-radius:22px;width:36px;height:36px;cursor:pointer;font-size:17px;font-weight:900;flex-shrink:0;transition:all .2s;color:#5b93cf;line-height:1;">?</button>
         <button id="theme-btn" onclick="_toggleTheme()" title="Cambiar tema"
           style="background:var(--card);border:1.5px solid var(--border);border-radius:22px;padding:7px 13px;cursor:pointer;font-size:17px;flex-shrink:0;transition:all .2s;color:var(--text);">🌙</button>
       </div>
@@ -903,8 +903,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827125455 por un timestamp en cada deploy
-const _APP_VERSION = '20260827125455';
+// deploy.bat reemplaza 20260827162613 por un timestamp en cada deploy
+const _APP_VERSION = '20260827162613';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1275,7 +1275,7 @@ function _tutBannerMaybe(){
   b.innerHTML='<div style="margin:12px 12px 0;padding:11px 13px;background:linear-gradient(120deg,rgba(201,168,76,.16),rgba(201,168,76,.05));border:1px solid rgba(201,168,76,.4);border-radius:12px;display:flex;align-items:center;gap:10px;">'
     +'<div style="font-size:20px;">👋</div>'
     +'<div style="flex:1;"><div style="color:#f0d488;font-size:12.5px;font-weight:800;">¿Primera vez?</div><div style="color:#c9b98a;font-size:10.5px;margin-top:1px;">Mirá cómo usar la app en 1 minuto.</div></div>'
-    +'<button onclick="_abrirTutorial()" style="font-size:10px;font-weight:800;color:#111;background:#C9A84C;border:none;border-radius:20px;padding:7px 12px;cursor:pointer;white-space:nowrap;">Ver tutorial</button>'
+    +'<button onclick="_abrirTutorial()" style="font-size:10px;font-weight:800;color:#fff;background:#3A6EA5;border:none;border-radius:20px;padding:7px 12px;cursor:pointer;white-space:nowrap;">Ver tutorial</button>'
     +'<button onclick="_tutBannerCerrar()" style="background:none;border:none;color:#8b7a4a;font-size:18px;cursor:pointer;padding:0 2px;line-height:1;">×</button>'
     +'</div>';
 }
@@ -1502,7 +1502,7 @@ function _novRender(){
     '<div style="display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--gold);border-radius:14px;padding:12px 14px;margin:0 0 14px;">'+
       '<div style="font-size:20px;">✨</div>'+
       '<div style="flex:1;font-size:12.5px;color:var(--text);line-height:1.4;"><b style="color:var(--gold);">Novedades</b> · '+partes.join(' · ')+'</div>'+
-      '<button onclick="goTab(\''+irA+'\')" style="background:var(--gold);color:#0d0d1a;border:none;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap;">Ver</button>'+
+      '<button onclick="goTab(\''+irA+'\')" style="background:#3A6EA5;color:#fff;border:none;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap;">Ver</button>'+
       '<button onclick="_novDismiss()" aria-label="Cerrar" style="background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;padding:2px 4px;">×</button>'+
     '</div>';
 }
@@ -2618,7 +2618,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
       _grupoBadge+
       '<div style="display:flex;align-items:center;gap:10px;">'+
         '<div style="flex:1;min-width:0;font-size:17px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#3A6EA5':'var(--gold)')+';padding-left:9px;">'+(ejLabel?'<span style="font-size:11px;font-weight:900;color:#9cc6ef;background:rgba(74,134,196,.16);border:1px solid rgba(74,134,196,.35);border-radius:6px;padding:1px 7px;margin-right:8px;vertical-align:middle;">'+ejLabel+'</span>':'')+_nomShow+'</div>'+
-        (ytId ? '<button onclick="_toggleEjVid(\''+uid+'\')" title="Ver video" style="width:54px;height:54px;border-radius:14px;flex-shrink:0;background:linear-gradient(160deg,#4d89c6,#2f5f95);border:1px solid #5a95d0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;box-shadow:0 7px 16px rgba(58,110,165,.45),inset 0 1px 0 rgba(255,255,255,.28);transition:transform .12s,box-shadow .12s;" ontouchstart="" onmousedown="this.style.transform=\'translateY(2px)\';this.style.boxShadow=\'0 3px 8px rgba(58,110,165,.4)\';" onmouseup="this.style.transform=\'\';this.style.boxShadow=\'0 7px 16px rgba(58,110,165,.45),inset 0 1px 0 rgba(255,255,255,.28)\';"><span style="width:0;height:0;border-left:16px solid #fff;border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:3px;display:inline-block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));"></span></button>' : '')+
+        (ytId ? '<button onclick="_toggleEjVid(\''+uid+'\')" title="Ver video" style="width:54px;height:54px;border-radius:14px;flex-shrink:0;background:#3A6EA5;border:1px solid #4a86c4;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;box-shadow:0 7px 16px rgba(58,110,165,.45),inset 0 1px 0 rgba(255,255,255,.28);transition:transform .12s,box-shadow .12s;" ontouchstart="" onmousedown="this.style.transform=\'translateY(2px)\';this.style.boxShadow=\'0 3px 8px rgba(58,110,165,.4)\';" onmouseup="this.style.transform=\'\';this.style.boxShadow=\'0 7px 16px rgba(58,110,165,.45),inset 0 1px 0 rgba(255,255,255,.28)\';"><span style="width:0;height:0;border-left:16px solid #fff;border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:3px;display:inline-block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));"></span></button>' : '')+
       '</div>'+
       (ej.musculos ? '<div style="font-size:11px;font-weight:600;color:var(--gold);margin:5px 0 0 12px;line-height:1.4;">'+_tc(ej.musculos)+'</div>' : '')+
       (ej.nota ? (()=>{
@@ -3055,19 +3055,19 @@ function _devAudioUI(){
   }
   if(a.dataUrl){
     return '<div style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid rgba(128,128,128,.25);border-radius:12px;padding:8px 10px;">'
-      +'<button onclick="_devMicPlay()" style="background:var(--gold);color:#111;border:none;border-radius:10px;width:38px;height:38px;font-size:15px;cursor:pointer;flex-shrink:0;">▶</button>'
+      +'<button onclick="_devMicPlay()" style="background:#3A6EA5;color:#fff;border:none;border-radius:10px;width:38px;height:38px;font-size:15px;cursor:pointer;flex-shrink:0;">▶</button>'
       +'<span style="flex:1;font-size:12.5px;font-weight:700;color:var(--text);">🎙️ '+(en?'Audio ready':'Audio listo')+(a.dur?' · '+_fmtDur(a.dur):'')+'</span>'
       +'<button onclick="_devMicDelete()" title="'+(en?'Delete':'Borrar')+'" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;flex-shrink:0;">🗑</button>'
       +'</div>';
   }
   if(a.existing){
     return '<div style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid rgba(128,128,128,.25);border-radius:12px;padding:8px 10px;">'
-      +'<button onclick="_devPlaySaved()" style="background:var(--gold);color:#111;border:none;border-radius:10px;width:38px;height:38px;font-size:15px;cursor:pointer;flex-shrink:0;">▶</button>'
+      +'<button onclick="_devPlaySaved()" style="background:#3A6EA5;color:#fff;border:none;border-radius:10px;width:38px;height:38px;font-size:15px;cursor:pointer;flex-shrink:0;">▶</button>'
       +'<span style="flex:1;font-size:12.5px;font-weight:700;color:var(--text);">🎙️ '+(en?'Audio sent':'Audio enviado')+'</span>'
       +'<button onclick="_devMicStart()" style="background:none;border:1px solid rgba(128,128,128,.3);color:var(--muted);border-radius:10px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">'+(en?'Re-record':'Regrabar')+'</button>'
       +'</div>';
   }
-  return '<button onclick="_devMicStart()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--card);border:1px dashed rgba(201,168,76,.5);color:var(--gold);border-radius:12px;padding:11px;font-size:13px;font-weight:800;cursor:pointer;">🎙️ '+(en?'Record audio instead of typing':'Grabar audio en vez de escribir')+'</button>';
+  return '<button onclick="_devMicStart()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--card);border:1px dashed rgba(58,110,165,.55);color:#5b93cf;border-radius:12px;padding:11px;font-size:13px;font-weight:800;cursor:pointer;">🎙️ '+(en?'Record audio instead of typing':'Grabar audio en vez de escribir')+'</button>';
 }
 async function _devMicStart(){
   try{
@@ -3414,9 +3414,9 @@ function renderSesion() {
   const _finBtn = _yaComp
     ? '<div style="display:flex;gap:8px;margin-top:18px;align-items:stretch;">'
         +'<div style="flex:1;padding:14px;border-radius:14px;border:1px solid color-mix(in srgb,var(--green) 45%,transparent);background:color-mix(in srgb,var(--green) 10%,transparent);color:var(--green);font-size:14px;font-weight:800;text-align:center;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;">✓ '+_t('completado')+'</div>'
-        +'<button onclick="_reabrirEntrenamiento()" title="'+(_LANG==='en'?'Edit / reopen':'Editar / reabrir')+'" style="width:56px;border:1px solid color-mix(in srgb,var(--gold) 50%,transparent);background:color-mix(in srgb,var(--gold) 12%,transparent);color:var(--gold);border-radius:14px;font-size:19px;cursor:pointer;">✏️</button>'
+        +'<button onclick="_reabrirEntrenamiento()" title="'+(_LANG==='en'?'Edit / reopen':'Editar / reabrir')+'" style="width:56px;border:1px solid color-mix(in srgb,#3A6EA5 50%,transparent);background:color-mix(in srgb,#3A6EA5 14%,transparent);color:#5b93cf;border-radius:14px;font-size:19px;cursor:pointer;">✏️</button>'
       +'</div>'
-    : '<button onclick="_terminarEntrenamiento()" style="margin-top:18px;width:100%;padding:16px;border:none;border-radius:14px;background:var(--gold);color:var(--letra-text);font-size:15px;font-weight:800;letter-spacing:.3px;cursor:pointer;">✓ '+_t('terminar')+'</button>';
+    : '<button onclick="_terminarEntrenamiento()" style="margin-top:18px;width:100%;padding:16px;border:none;border-radius:14px;background:#3A6EA5;color:#fff;font-size:15px;font-weight:800;letter-spacing:.3px;cursor:pointer;">✓ '+_t('terminar')+'</button>';
   // Círculo cerrado: el coach ya revisó esta sesión
   const _sesRev = _yaComp && (_data.sesionesRevisadas||[]).some(r=>r && String(r.sem)===String(_semIdx) && String(r.dia)===String(_diaIdx) && String(r.mod)===String(_diaModTab) && String(r.at||'')>=String((_compRec&&_compRec.at)||''));
   const _revBadge = _sesRev
@@ -3434,7 +3434,7 @@ function renderSesion() {
       _bloquesHTML + _devBox + _finBtn + _revBadge +
       // Check-in estructurado (energía/RPE/sueño/dolor) — alimenta el dashboard del coach
       '<div style="margin-top:12px;">'+
-        '<button onclick="_abrirFeedback()" style="width:100%;background:linear-gradient(135deg,#C9A84C,#9A7A28);color:#fff;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">📋 '+(_LANG==='en'?'Session check-in':'Check-in de la sesión')+'</button>'+
+        '<button onclick="_abrirFeedback()" style="width:100%;background:#3A6EA5;color:#fff;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">📋 '+(_LANG==='en'?'Session check-in':'Check-in de la sesión')+'</button>'+
       '</div>'+
     '</div>';
   _updProgreso();
@@ -3567,7 +3567,7 @@ function renderRunning() {
       '<div class="mes-nav-info"><div class="mes-nav-title" style="font-size:17px;">'+_compEsc(mesTitulo).toUpperCase()+'</div>'+
       (_planRun.objetivo?'<div class="mes-nav-sub">'+_compEsc(_planRun.objetivo)+'</div>':'')+'</div>'+
       '<span style="width:38px;"></span></div>'+
-    '<button onclick="_exportarRunReloj()" style="width:100%;margin-bottom:14px;padding:12px;border-radius:12px;border:1px solid rgba(201,168,76,.4);background:color-mix(in srgb,var(--gold) 8%,var(--card));color:var(--gold);font-size:12px;font-weight:800;letter-spacing:.3px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">'+_t('exportar_reloj')+'</button>';
+    '<button onclick="_exportarRunReloj()" style="width:100%;margin-bottom:14px;padding:12px;border-radius:12px;border:1px solid rgba(58,110,165,.4);background:color-mix(in srgb,#3A6EA5 9%,var(--card));color:#5b93cf;font-size:12px;font-weight:800;letter-spacing:.3px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">'+_t('exportar_reloj')+'</button>';
 
   // Selector de semanas (el mes completo)
   if (_runSemanas.length > 1) {
@@ -4131,7 +4131,7 @@ function _renderComplementos(ctn) {
     '<div style="margin:2px 0 10px;display:flex;gap:9px;align-items:center;">'+
       '<input id="comp-search" type="search" placeholder="'+_t('buscar')+'" oninput="_compAplicar()" autocomplete="off" '+
         'style="flex:1;min-width:0;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;outline:none;box-sizing:border-box;">'+
-      '<button onclick="_compToggleFiltros()" style="display:inline-flex;align-items:center;gap:6px;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--gold);font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;">⚙ '+_t('filtros')+'</button>'+
+      '<button onclick="_compToggleFiltros()" style="display:inline-flex;align-items:center;gap:6px;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:#5b93cf;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;">⚙ '+_t('filtros')+'</button>'+
     '</div>'+
     '<div id="comp-filtros" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 13px;margin-bottom:12px;"></div>'+
     '<div id="comp-secciones"></div>';
@@ -4446,7 +4446,7 @@ function _antroRenderRegistro() {
         + '<input id="antro-f-cicloobs" type="text" placeholder="Opcional..." style="width:100%;background:var(--bg);border:1px solid rgba(128,128,128,.25);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--text);box-sizing:border-box;"></div>'
         + '</div></div>';
     }
-    h += '<button onclick="_antroGuardar()" id="antro-btn-guardar" style="width:100%;margin-top:12px;padding:12px;background:var(--gold);color:#111;border:none;border-radius:10px;font-size:13px;font-weight:900;letter-spacing:.5px;cursor:pointer;">GUARDAR MEDICIÓN</button>'
+    h += '<button onclick="_antroGuardar()" id="antro-btn-guardar" style="width:100%;margin-top:12px;padding:12px;background:#3A6EA5;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:900;letter-spacing:.5px;cursor:pointer;">GUARDAR MEDICIÓN</button>'
       + '</div>';
   }
 
@@ -4576,7 +4576,7 @@ function _setDatosSub(s){ _datosSub=s; renderMedidas(); }
 function _datosSegBtn(id,label){
   const on=_datosSub===id;
   return '<button onclick="_setDatosSub(\''+id+'\')" style="flex:1;padding:9px 6px;border:none;border-radius:9px;font-size:11px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;'
-    +(on?'background:var(--gold);color:#111;':'background:transparent;color:var(--muted);')+'">'+label+'</button>';
+    +(on?'background:#3A6EA5;color:#fff;':'background:transparent;color:var(--muted);')+'">'+label+'</button>';
 }
 function renderMedidas() {
   const ctn=document.getElementById('medidas-ctn');
@@ -4721,7 +4721,7 @@ function _renderMedidasTecnicas(ctn){
         +'<div><label style="'+lbl+'">'+(en?'Shoe size':'Talle de calzado')+'</label><input id="tm-talle" type="text" value="'+(tm.shoe_size||'')+'" placeholder="ej: 38/39" oninput="_tmPreview()" style="'+inp+'"></div>'
         +'<div style="grid-column:1 / -1;"><label style="'+lbl+'">'+(en?'Real foot length (cm)':'Longitud real del pie (cm)')+'</label><input id="tm-real" type="number" step="0.1" value="'+(tm.foot_length_real||'')+'" placeholder="'+(en?'optional':'opcional')+'" oninput="_tmPreview()" style="'+inp+'"></div>'
         +'<div style="grid-column:1 / -1;font-size:10.5px;color:var(--muted);line-height:1.5;background:rgba(255,255,255,.03);border:1px solid #1c1e22;border-radius:8px;padding:8px 10px;">'+(en?'If you know your real foot length, enter it for a better reference. Otherwise we estimate it from your shoe size.':'Si conocés la <b>longitud real</b> de tu pie, cargala para mejorar la referencia. Si no, usamos una estimación según tu talle.')+'</div>'
-        +'<button onclick="_tmGuardar()" id="tm-btn" style="grid-column:1 / -1;margin-top:2px;padding:12px;background:var(--gold);color:#111;border:none;border-radius:10px;font-size:13px;font-weight:900;letter-spacing:.5px;cursor:pointer;">'+(en?'SAVE MY DATA':'GUARDAR MIS DATOS')+'</button>'
+        +'<button onclick="_tmGuardar()" id="tm-btn" style="grid-column:1 / -1;margin-top:2px;padding:12px;background:#3A6EA5;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:900;letter-spacing:.5px;cursor:pointer;">'+(en?'SAVE MY DATA':'GUARDAR MIS DATOS')+'</button>'
       +'</div>'
     +'</div>';
   const datos='<div style="font-size:10px;font-weight:900;color:var(--gold);letter-spacing:1px;margin:16px 0 8px;">'+(en?'YOUR ESTIMATES':'TUS DATOS ESTIMADOS')+'</div>'
@@ -4977,7 +4977,7 @@ function _buildFeedbackHTML(sesNombre) {
   h += '<div class="fb-section" style="margin-top:-8px;"><input class="fb-input" placeholder="¿En qué ejercicio? (opcional)" oninput="_fbVal(\'molestiaDonde\',this.value)"></div>';
   h += _fbSecOpts('cierre');
   h += '<div style="font-size:11px;color:var(--muted);line-height:1.5;margin:2px 2px 10px;">'+(_LANG==='en'?'For a written note to your coach, use the "Final feedback" box at the end of the session.':'Para dejarle un mensaje escrito a tu coach, usá la caja de "Devolución final" al terminar la sesión.')+'</div>';
-  h += '<button onclick="_guardarFeedback()" style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-d));color:#0d0d1a;border:none;border-radius:14px;padding:16px;font-size:15px;font-weight:900;cursor:pointer;margin-top:4px;">💾 Enviar feedback</button>'+
+  h += '<button onclick="_guardarFeedback()" style="width:100%;background:#3A6EA5;color:#fff;border:none;border-radius:14px;padding:16px;font-size:15px;font-weight:900;cursor:pointer;margin-top:4px;">💾 Enviar feedback</button>'+
        '<button onclick="_cerrarFeedback()" style="width:100%;background:transparent;border:1.5px solid rgba(255,255,255,.1);color:var(--muted);border-radius:14px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;">Cancelar</button>';
   return h;
 }
