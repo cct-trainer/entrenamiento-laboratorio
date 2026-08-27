@@ -69,16 +69,16 @@ html.light #portada::before{background:radial-gradient(circle,rgba(29,78,216,.12
 .pt-logo{width:96px;height:96px;border-radius:22px;object-fit:contain;box-shadow:0 14px 44px -12px rgba(201,168,76,.5);}
 html.light .pt-logo{box-shadow:0 14px 44px -12px rgba(29,78,216,.4);}
 .pt-brand-name{margin-top:12px;font-size:16px;font-weight:900;letter-spacing:3px;color:var(--text);}
-.pt-brand-sub{font-size:9px;font-weight:800;letter-spacing:5px;color:var(--gold);margin-top:1px;}
+.pt-brand-sub{font-size:9px;font-weight:800;letter-spacing:5px;color:#fff;margin-top:1px;}
 .pt-hero{display:flex;flex-direction:column;align-items:center;flex:1;justify-content:center;gap:5px;}
 .pt-av{width:96px;height:96px;border-radius:50%;background:var(--avatar-grad);display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:900;color:#fff;overflow:hidden;border:3px solid rgba(201,168,76,.35);box-shadow:0 12px 42px -12px rgba(201,168,76,.55);margin-bottom:14px;}
 html.light .pt-av{border-color:rgba(29,78,216,.3);box-shadow:0 12px 42px -12px rgba(29,78,216,.45);}
 .pt-av img{width:100%;height:100%;object-fit:cover;}
 .pt-hello{font-size:15px;color:var(--muted);font-weight:600;letter-spacing:.3px;}
 .pt-name{font-size:30px;font-weight:900;color:var(--text);line-height:1.05;letter-spacing:-.5px;}
-.pt-frase{margin-top:10px;font-size:14px;font-weight:700;font-style:italic;color:var(--gold);line-height:1.4;max-width:270px;}
-.pt-plan{margin-top:14px;font-size:10.5px;font-weight:800;letter-spacing:1.2px;color:var(--gold);background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.28);padding:7px 16px;border-radius:22px;}
-html.light .pt-plan{background:rgba(29,78,216,.08);border-color:rgba(29,78,216,.25);}
+.pt-frase{margin-top:10px;font-size:14px;font-weight:700;font-style:italic;color:#fff;line-height:1.4;max-width:270px;}
+.pt-plan{margin-top:14px;font-size:10.5px;font-weight:800;letter-spacing:1.2px;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.28);padding:7px 16px;border-radius:22px;}
+html.light .pt-plan{background:rgba(58,110,165,.1);border-color:rgba(58,110,165,.3);color:#3A6EA5;}
 .pt-foot{display:flex;flex-direction:column;align-items:center;gap:15px;width:100%;}
 .pt-coach{font-size:12px;color:var(--muted);letter-spacing:.2px;}
 .pt-enter{width:100%;max-width:350px;padding:17px;border:none;border-radius:16px;background:#3A6EA5;color:#fff;font-size:15px;font-weight:900;letter-spacing:.3px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 12px 34px -12px rgba(58,110,165,.55);transition:transform .12s,box-shadow .12s;}
@@ -910,8 +910,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827170122 por un timestamp en cada deploy
-const _APP_VERSION = '20260827170122';
+// deploy.bat reemplaza 20260827171737 por un timestamp en cada deploy
+const _APP_VERSION = '20260827171737';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
