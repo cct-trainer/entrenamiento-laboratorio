@@ -152,6 +152,17 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .wk-chip.wk-future{border-color:#d9b13a;background:color-mix(in srgb,#d9b13a 8%,var(--card));opacity:.5;cursor:default;}
 .wk-chip.wk-future .wk-n{color:#c99a2e;}
 .wk-chip.wk-future .wk-d{color:#c99a2e;opacity:.8;}
+/* Selector de semanas · control segmentado (barra azul, semana en curso en blanco) */
+.wk-seg{display:flex;background:#3A6EA5;border:1px solid #4a86c4;border-radius:14px;padding:4px;gap:3px;overflow-x:auto;box-shadow:0 6px 18px -8px rgba(58,110,165,.6);}
+.wk-s{flex:1 1 0;min-width:56px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 6px;border-radius:11px;border:none;background:transparent;cursor:pointer;font-family:inherit;transition:.15s;}
+.wk-s .ws-n{font-size:12px;font-weight:800;color:#d6e3f4;white-space:nowrap;}
+.wk-s .ws-d{font-size:8.5px;font-weight:600;color:#a9c6e6;white-space:nowrap;}
+.wk-s.done .ws-n::after{content:" ✓";color:#fff;font-size:10px;}
+.wk-s.now{background:#fff;box-shadow:0 4px 14px -4px rgba(0,0,0,.5);}
+.wk-s.now .ws-n{color:#141821;} .wk-s.now .ws-d{color:#3A6EA5;font-weight:800;}
+.wk-s.next{opacity:.62;}
+.wk-s:disabled{cursor:default;}
+.wk-s:not(.now):not(:disabled):hover{background:rgba(255,255,255,.12);}
 /* Agenda unificada fuerza + running */
 .ag-filtro{display:flex;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:14px;}
 .ag-filtro button{flex:1;padding:9px 6px;border:none;border-radius:9px;font-size:11.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;}
@@ -911,8 +922,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827174627 por un timestamp en cada deploy
-const _APP_VERSION = '20260827174627';
+// deploy.bat reemplaza 20260827180252 por un timestamp en cada deploy
+const _APP_VERSION = '20260827180252';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1741,15 +1752,18 @@ function renderRutina() {
     const _hoyW = new Date().toISOString().slice(0,10);
     let _semReal = 0, _anyDate = false;
     sems.forEach((s,i)=>{ if(s.fechaInicio){ _anyDate=true; if(s.fechaInicio<=_hoyW) _semReal=i; } });
-    weekEl.innerHTML = '<div class="slabel" style="margin-bottom:7px;">SEMANAS</div><div class="wk-row">'
+    weekEl.innerHTML = '<div class="slabel" style="margin-bottom:7px;">SEMANAS</div><div class="wk-seg">'
       + sems.map((s,i)=>{
           const on = i===_semIdx;
           const rel = _anyDate ? (i<_semReal?'past':(i>_semReal?'future':'current')) : 'current';
           let rango='';
-          if (s.fechaInicio){ const l=new Date(s.fechaInicio+'T12:00:00'); const d=new Date(l); d.setDate(d.getDate()+6); const f=x=>x.toLocaleDateString('es-AR',{day:'numeric',month:'short'}); rango=f(l)+' — '+f(d); }
-          const cls = 'wk-chip'+(on?' on':'')+(rel==='past'?' wk-past':rel==='future'?' wk-future':rel==='current'?' wk-current':'');
+          if (s.fechaInicio){ const l=new Date(s.fechaInicio+'T12:00:00'); const d=new Date(l); d.setDate(d.getDate()+6);
+            const dd=x=>x.getDate(), mm=x=>x.toLocaleDateString('es-AR',{month:'short'}).replace('.','');
+            rango = mm(l)===mm(d) ? (dd(l)+' – '+dd(d)+' '+mm(l)) : (dd(l)+' '+mm(l)+' – '+dd(d)+' '+mm(d)); }
+          const st = on ? ' now' : (rel==='past'?' done':(rel==='future'?' next':''));
           const attrs = rel==='future' ? ' disabled title="Semana futura — todavía no disponible"' : ' onclick="_selSemana('+i+')"';
-          return '<button class="'+cls+'"'+attrs+'><span class="wk-n">Semana '+(i+1)+'</span>'+(rango?'<span class="wk-d">'+rango+'</span>':'')+'</button>';
+          const nlbl = on ? ('Semana '+(i+1)) : ('S'+(i+1));
+          return '<button class="wk-s'+st+'"'+attrs+'><span class="ws-n">'+nlbl+'</span>'+(rango?'<span class="ws-d">'+rango+'</span>':'')+'</button>';
         }).join('')
       + '</div>';
   }
