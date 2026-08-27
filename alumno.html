@@ -327,8 +327,8 @@ html.light .blk.combo-blue{border:1.5px solid #4a86c4;border-radius:12px;padding
 .s-del.on{color:#fff;background:#ef4444;border-radius:6px;}
 /* Serie completada: el propio número S# es el botón */
 .s-num{display:inline-block;min-width:26px;padding:4px 9px;border-radius:20px;border:1.5px solid #cbd0d8;color:#5b636f;background:#f5f6f8;font-weight:800;font-size:12px;line-height:1;transition:all .12s;}
-.s-num.on{background:#25D366;border-color:#25D366;color:#08260f;}
-.serie-row.s-done td{background:rgba(37,211,102,.14)!important;}
+.s-num.on{background:#3A6EA5;border-color:#3A6EA5;color:#fff;}
+.serie-row.s-done td{background:rgba(58,110,165,.12)!important;}
 .s-del{background:transparent;border:none;color:#9aa2ae;font-size:14px;font-weight:900;cursor:pointer;line-height:1;padding:2px 4px;}
 .s-del:hover,.s-del:active{color:#e05656;}
 /* Tema CLARO → tabla NEGRA: invierte los estilos de arriba */
@@ -902,8 +902,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827084836 por un timestamp en cada deploy
-const _APP_VERSION = '20260827084836';
+// deploy.bat reemplaza 20260827085718 por un timestamp en cada deploy
+const _APP_VERSION = '20260827085718';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2434,7 +2434,8 @@ function _ejCard(ej, uid, ejLabel) {
 
   // Sección de series (tabla detallada)
   const efecSection = sEfec ? (
-    '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">'+_t('series_lbl')+'</div>'+
+    '<div style="font-size:13px;font-weight:800;color:#9cc6ef;margin:16px 0 3px;letter-spacing:.2px;">'+_nomShow+'</div>'+
+    '<div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:1px;margin:0 0 5px;">'+_t('series_lbl')+'</div>'+
     _seriesTable(sEfec, 'S', _sp+'_efec', uid, nApro)
   ) : '';
 
@@ -2571,7 +2572,7 @@ function _ejCard(ej, uid, ejLabel) {
   // Renglón de ayuda (verde = hecha · ✕ = no la hice)
   const _hintLine = sEfec
     ? '<div style="font-size:10.5px;color:#6b7c9e;margin:9px 0 2px;display:flex;gap:14px;flex-wrap:wrap;">'+
-        '<span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#25D366;margin-right:4px;vertical-align:-1px;"></span>'+(_LANG==='en'?'Tap the number = done':'Tocá el número = hecha')+'</span>'+
+        '<span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#3A6EA5;margin-right:4px;vertical-align:-1px;"></span>'+(_LANG==='en'?'Tap the number = done':'Tocá el número = hecha')+'</span>'+
         '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#ef4444;margin-right:4px;vertical-align:-1px;"></span>✕ = '+(_LANG==='en'?"didn't do it":'no la hice')+'</span>'+
       '</div>'
     : '';
