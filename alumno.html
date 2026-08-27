@@ -211,6 +211,7 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .mc-btn{position:relative;margin-top:13px;align-self:flex-start;background:#fff;color:#111;font-size:12px;font-weight:900;padding:8px 22px;border-radius:22px;letter-spacing:.3px;}
 
 .slabel{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--muted);margin-bottom:8px;}
+#dias-slabel{font-size:29px;font-weight:900;letter-spacing:.2px;line-height:1.05;color:var(--text);margin:4px 0 14px;}
 .dgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px;}
 .dchip{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;background:var(--card);border:1.5px solid var(--border);cursor:pointer;transition:all .15s;position:relative;user-select:none;}
 .dchip.has{border-color:rgba(201,168,76,.4);}
@@ -922,8 +923,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827182324 por un timestamp en cada deploy
-const _APP_VERSION = '20260827182324';
+// deploy.bat reemplaza 20260827182616 por un timestamp en cada deploy
+const _APP_VERSION = '20260827182616';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
