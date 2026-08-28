@@ -939,8 +939,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827211533 por un timestamp en cada deploy
-const _APP_VERSION = '20260827211533';
+// deploy.bat reemplaza 20260827212423 por un timestamp en cada deploy
+const _APP_VERSION = '20260827212423';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -963,6 +963,9 @@ function _initEdits(alumnoId) {
   _alumnoId = alumnoId || '';
   try { _pesoEdits = JSON.parse(localStorage.getItem('SOCC_EDITS_'+_alumnoId) || '{}'); } catch(e) { _pesoEdits = {}; }
 }
+// Fecha LOCAL (no UTC) → evita que "hoy" salte de día a la tarde/noche en husos negativos
+function _hoyISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function _dISO(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function _guardarEdit(key, campo, val) {
   if (!_pesoEdits[key]) _pesoEdits[key] = {};
   _pesoEdits[key][campo] = String(val).replace(/kg$/i,'').trim();
@@ -1755,7 +1758,7 @@ function renderRutina() {
   const weekEl = document.getElementById('week-sel');
   if (weekEl) {
     // Semana actual real (por fecha): la última cuya fechaInicio ya empezó
-    const _hoyW = new Date().toISOString().slice(0,10);
+    const _hoyW = _hoyISO();
     let _semReal = 0, _anyDate = false;
     sems.forEach((s,i)=>{ if(s.fechaInicio){ _anyDate=true; if(s.fechaInicio<=_hoyW) _semReal=i; } });
     weekEl.innerHTML = '<div class="slabel" style="margin-bottom:7px;">SEMANAS</div><div class="wk-seg">'
@@ -1774,11 +1777,11 @@ function renderRutina() {
       + '</div>';
   }
 
-  const hoyStr = new Date().toISOString().slice(0,10);
+  const hoyStr = _hoyISO();
   const esHoy = i => {
     if (!sem.fechaInicio) return false;
     const d=new Date(sem.fechaInicio+'T12:00:00'); d.setDate(d.getDate()+i);
-    return d.toISOString().slice(0,10)===hoyStr;
+    return _dISO(d)===hoyStr;
   };
 
   // ── Días con entrenamiento renderizados como renglones ──
@@ -3623,8 +3626,8 @@ function renderRunning() {
   }
 
   const fx = semana.fechaInicio;
-  const hoyStr = new Date().toISOString().slice(0,10);
-  const esHoy = i => { if(!fx) return false; const d=new Date(fx+'T12:00:00'); d.setDate(d.getDate()+i); return d.toISOString().slice(0,10)===hoyStr; };
+  const hoyStr = _hoyISO();
+  const esHoy = i => { if(!fx) return false; const d=new Date(fx+'T12:00:00'); d.setDate(d.getDate()+i); return _dISO(d)===hoyStr; };
 
   const mesTitulo = ((_planRun.titulo||'PLAN DE RUNNING').split('·')[0]).trim();
   let h = '<div class="mes-nav"><span style="width:38px;"></span>'+
@@ -3707,7 +3710,7 @@ function renderAgenda(){
     +'<button onclick="_agNext()"'+(_agSem>=fsems.length-1?' disabled':'')+'>›</button>'
   +'</div>';
   // Días
-  const hoyStr=new Date().toISOString().slice(0,10);
+  const hoyStr=_hoyISO();
   let daysHTML='';
   for(let i=0;i<7;i++){
     const fArr=(fsem.dias&&fsem.dias[i])||[];
@@ -3724,7 +3727,7 @@ function renderAgenda(){
       const resumen=[b0.distancia?(b0.distancia+(b0.unidad||'')):'', b0.duracion||'', b0.ritmo?(b0.ritmo+'/km'):''].filter(Boolean).join(' · ');
       acts.push('<div class="ag-act rn" onclick="_agIrRunning('+rIdx+','+i+')"><div class="tx"><div class="tt">'+((b0.nombre||tipoObj.label||'Running')).toUpperCase()+'</div><div class="ds">'+((resumen||'Running')+(rBloques.length>1?' · '+rBloques.length+(en?' blocks':' bloques'):''))+'</div></div><span class="tag rn">RUNNING</span><span class="go">›</span></div>');
     }
-    const hoy = fx ? (()=>{ const d=new Date(fx+'T12:00:00'); d.setDate(d.getDate()+i); return d.toISOString().slice(0,10)===hoyStr; })() : false;
+    const hoy = fx ? (()=>{ const d=new Date(fx+'T12:00:00'); d.setDate(d.getDate()+i); return _dISO(d)===hoyStr; })() : false;
     const dayNum = fx ? (()=>{ const d=new Date(fx+'T12:00:00'); d.setDate(d.getDate()+i); return d.getDate(); })() : (i+1);
     const doble = fSes && rBloques.length && _agFiltro==='all';
     let badge='';
