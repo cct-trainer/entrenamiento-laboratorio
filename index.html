@@ -141,6 +141,9 @@ main { padding: 28px 32px; max-width: none; margin: 0; }
 .alu-card:hover { border-color: #3A6EA5; transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0,0,0,.32); }
 .alu-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:#3A6EA5; opacity:0; transition:.16s; }
 .alu-card:hover::before { opacity:1; }
+.ac-work { width:100%; margin-top:11px; padding:9px; border:none; border-radius:10px; background:#3A6EA5; color:#fff; font-size:12px; font-weight:800; letter-spacing:.2px; cursor:pointer; box-shadow:0 4px 12px rgba(58,110,165,.3); transition:filter .15s, transform .1s; }
+.ac-work:hover { filter:brightness(1.08); }
+.ac-work:active { transform:scale(.98); }
 .ac-top { display: flex; align-items: center; gap: 13px; }
 .alu-card-av { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: #223247; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #cdd8e8; box-shadow: 0 0 0 2px #3A6EA5; }
 .alu-card-av img { width: 100%; height: 100%; object-fit: cover; }
@@ -14125,6 +14128,7 @@ function renderAlumnosGrid() {
         </div>
       </div>
       ${nextLine}
+      <button class="ac-work" onclick="event.stopPropagation();_veAbrirAlumno('${a.id}')">▶ Ver / trabajar sesión</button>
     </div>`; }).join('');
   grid.innerHTML = `
     <div class="alu-toolbar">
@@ -14177,6 +14181,23 @@ function _veAbrir(semIdx, diaIdx){
   _veRender();
 }
 function _veCerrar(){ const ov=document.getElementById('ve-ov'); if(ov) ov.remove(); _veState=null; }
+// Abrir la Vista Entrenador de un alumno directo desde la lista (carga su plan y busca la sesión de hoy)
+function _veAbrirAlumno(alId){
+  const planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]).filter(p=>p&&p.alumnoId===alId&&(p.tipoPlan==='fuerza'||!p.tipoPlan));
+  if(!planes.length){ toast('Ese alumno no tiene plan de fuerza','error'); return; }
+  const plan= planes.find(p=>p.activo) || planes[planes.length-1];
+  abrirPlanFuerzaExistente(plan.id);
+  const sems=planSemanasArray||[];
+  const _n=new Date(); const hoy=_n.getFullYear()+'-'+String(_n.getMonth()+1).padStart(2,'0')+'-'+String(_n.getDate()).padStart(2,'0');
+  let semIdx=0; sems.forEach((s,i)=>{ if(s&&s.fechaInicio&&s.fechaInicio<=hoy) semIdx=i; });
+  const sem=sems[semIdx]||{};
+  const _hay=(i)=>{ const d=sem&&sem.dias&&sem.dias[i]; const ses=Array.isArray(d)?d[0]:d; return !!(ses&&ses.bloques&&ses.bloques.length); };
+  let diaIdx=-1;
+  if(sem.fechaInicio){ for(let i=0;i<7;i++){ const dd=new Date(sem.fechaInicio+'T12:00:00'); dd.setDate(dd.getDate()+i); const iso=dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0'); if(iso===hoy&&_hay(i)){ diaIdx=i; break; } } }
+  if(diaIdx<0){ for(let i=0;i<7;i++){ if(_hay(i)){ diaIdx=i; break; } } }
+  if(diaIdx<0){ toast('Esa semana no tiene sesiones cargadas','error'); return; }
+  _veAbrir(semIdx, diaIdx);
+}
 function _veRender(){
   const ov=document.getElementById('ve-ov'); const st=_veState; if(!ov||!st) return;
   const DOWF=['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
@@ -14199,7 +14220,8 @@ function _veRender(){
     baseRows.forEach((s,k)=>{
       const key=st.semIdx+'_'+st.diaIdx+'_'+x.uid+'_efec_'+k; const lg=st.log[key]||{};
       const peso=(lg.peso!=null?lg.peso:(s.peso||'')); const reps=(lg.reps!=null?lg.reps:(s.reps||''));
-      rows+='<div class="ve-setrow"><span class="ve-sn">S'+(k+1)+'</span>'
+      const done=lg.done==='1';
+      rows+='<div class="ve-setrow'+(done?' ve-done':'')+'"><span class="ve-chk'+(done?' on':'')+'" onclick="_veTog(\''+key+'\')" title="Marcar serie como completada">'+(done?'✓':'')+'</span><span class="ve-sn">S'+(k+1)+'</span>'
         +'<input value="'+_veEsc(peso)+'" onchange="_veSet(\''+key+'\',\'peso\',this.value)"><span class="ve-u">kg</span>'
         +'<input value="'+_veEsc(reps)+'" onchange="_veSet(\''+key+'\',\'reps\',this.value)"><span class="ve-u">reps</span></div>';
     });
@@ -14218,6 +14240,7 @@ function _veRender(){
       +'<button class="ve-save" onclick="_veTerminar()">✓ Terminar y guardar sesión</button></div></div>';
 }
 function _veSet(key,campo,val){ const st=_veState; if(!st) return; if(!st.log[key]) st.log[key]={}; st.log[key][campo]=String(val).replace(/kg$/i,'').trim(); }
+function _veTog(key){ const st=_veState; if(!st) return; if(!st.log[key]) st.log[key]={}; st.log[key].done = st.log[key].done==='1' ? '' : '1'; _veRender(); }
 function _veChg(uid,val){ if(_veState) _veState.chg[uid]=val; }
 function _veObs(uid,val){ if(_veState) _veState.obs[uid]=val; }
 function _veGenObs(val){ if(_veState) _veState.genObs=val; }
@@ -14226,7 +14249,7 @@ function _veVideo(uid){ const st=_veState; if(!st) return; const x=st.exOrder.fi
 async function _veTerminar(){
   const st=_veState; if(!st) return;
   const resultados={};
-  Object.keys(st.log).forEach(k=>{ const v=st.log[k]||{}; const o={}; if(v.peso!=null&&String(v.peso).trim()!=='') o.peso=String(v.peso).trim(); if(v.reps!=null&&String(v.reps).trim()!=='') o.reps=String(v.reps).trim(); if(Object.keys(o).length) resultados[k]=o; });
+  Object.keys(st.log).forEach(k=>{ const v=st.log[k]||{}; const o={}; if(v.peso!=null&&String(v.peso).trim()!=='') o.peso=String(v.peso).trim(); if(v.reps!=null&&String(v.reps).trim()!=='') o.reps=String(v.reps).trim(); if(v.done==='1') o.done='1'; if(Object.keys(o).length) resultados[k]=o; });
   const cambios={}; Object.keys(st.chg).forEach(u=>{ if(String(st.chg[u]).trim()) cambios[u]=st.chg[u].trim(); });
   const observaciones={}; Object.keys(st.obs).forEach(u=>{ if(String(st.obs[u]).trim()) observaciones[u]=st.obs[u].trim(); });
   const nRes=Object.keys(resultados).length;
@@ -14265,6 +14288,9 @@ function _veCSS(){
   +'.ve-real{margin:11px 0 0 38px;background:#f6faf7;border:1px solid #d7ebdd;border-radius:10px;padding:10px 11px;}'
   +'.ve-real-l{font-size:9px;font-weight:900;letter-spacing:.6px;color:#1f8a4c;text-transform:uppercase;margin-bottom:8px;}'
   +'.ve-setrow{display:flex;align-items:center;gap:8px;margin-bottom:7px;}.ve-sn{font-size:11px;font-weight:800;color:#7a8296;min-width:24px;}'
+  +'.ve-chk{width:23px;height:23px;border-radius:6px;border:1.5px solid #cfd8e6;background:#fff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;cursor:pointer;flex-shrink:0;transition:.12s;}'
+  +'.ve-chk.on{background:#3A6EA5;border-color:#3A6EA5;}'
+  +'.ve-done input{background:rgba(58,110,165,.07);border-color:#9dbbde;}'
   +'.ve-setrow input{flex:1;min-width:0;border:1px solid #cfe0d5;border-radius:7px;padding:8px 6px;font-size:14px;font-weight:700;text-align:center;color:#1a2a4a;background:#fff;font-family:inherit;}'
   +'.ve-u{font-size:10px;color:#9aa4b0;font-weight:700;min-width:28px;}'
   +'.ve-chg{margin-top:9px;}.ve-chg input{width:100%;border:1px dashed #bcd6c6;border-radius:8px;padding:9px 11px;font-size:12.5px;color:#37567e;background:#fff;font-family:inherit;font-style:italic;}'

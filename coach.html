@@ -1130,7 +1130,8 @@ function _veRender(){
       const reps=(lg.reps!=null?lg.reps:(hz.reps!=null&&hz.reps!==''?hz.reps:(s.reps||'')));
       const pChg=_norm(peso)!==''&&_norm(peso)!==_norm(s.peso);
       const rChg=_norm(reps)!==''&&_norm(reps)!==_norm(s.reps);
-      rows+='<div class="ve-setrow"><span class="ve-sn">S'+(k+1)+'</span>'
+      const done=(lg.done!=null)?(lg.done==='1'):(hz.done==='1');
+      rows+='<div class="ve-setrow'+(done?' ve-done':'')+'"><span class="ve-chk'+(done?' on':'')+'" onclick="_veTog(\''+key+'\')" title="Marcar serie como completada">'+(done?'✓':'')+'</span><span class="ve-sn">S'+(k+1)+'</span>'
         +'<input inputmode="decimal" style="'+(pChg?_hl:'')+'" value="'+_veEsc(peso)+'" onchange="_veSet(\''+key+'\',\'peso\',this.value)"><span class="ve-u">kg</span>'
         +'<input inputmode="numeric" style="'+(rChg?_hl:'')+'" value="'+_veEsc(reps)+'" onchange="_veSet(\''+key+'\',\'reps\',this.value)"><span class="ve-u">reps</span></div>';
     });
@@ -1161,6 +1162,7 @@ function _veRender(){
   +'</div>';
 }
 function _veSet(key,campo,val){ const st=_veState; if(!st) return; if(!st.log[key]) st.log[key]={}; st.log[key][campo]=String(val).replace(/kg$/i,'').trim(); }
+function _veTog(key){ const st=_veState; if(!st) return; if(!st.log[key]) st.log[key]={}; st.log[key].done = st.log[key].done==='1' ? '' : '1'; _veRender(); }
 function _veChg(uid,val){ if(_veState) _veState.chg[uid]=val; }
 function _veObs(uid,val){ if(_veState) _veState.obs[uid]=val; }
 function _veGenObs(val){ if(_veState) _veState.genObs=val; }
@@ -1169,7 +1171,7 @@ function _veVideo(uid){ const st=_veState; if(!st) return; const x=st.exOrder.fi
 async function _veTerminar(){
   const st=_veState; if(!st) return;
   const resultados={};
-  Object.keys(st.log).forEach(k=>{ const v=st.log[k]||{}; const o={}; if(v.peso!=null&&String(v.peso).trim()!=='') o.peso=String(v.peso).trim(); if(v.reps!=null&&String(v.reps).trim()!=='') o.reps=String(v.reps).trim(); if(Object.keys(o).length) resultados[k]=o; });
+  Object.keys(st.log).forEach(k=>{ const v=st.log[k]||{}; const o={}; if(v.peso!=null&&String(v.peso).trim()!=='') o.peso=String(v.peso).trim(); if(v.reps!=null&&String(v.reps).trim()!=='') o.reps=String(v.reps).trim(); if(v.done==='1') o.done='1'; if(Object.keys(o).length) resultados[k]=o; });
   const cambios={}; Object.keys(st.chg).forEach(u=>{ if(String(st.chg[u]).trim()) cambios[u]=st.chg[u].trim(); });
   const observaciones={}; Object.keys(st.obs).forEach(u=>{ if(String(st.obs[u]).trim()) observaciones[u]=st.obs[u].trim(); });
   const nRes=Object.keys(resultados).length;
@@ -1210,6 +1212,9 @@ function _veCSS(){
   +'.ve-real{margin:11px 0 0 38px;background:#f5f8fc;border:1px solid #d7e2f0;border-radius:10px;padding:9px 10px;}'
   +'.ve-real-l{font-size:9px;font-weight:900;letter-spacing:.6px;color:#3A6EA5;text-transform:uppercase;margin-bottom:7px;}'
   +'.ve-setrow{display:flex;align-items:center;gap:7px;margin-bottom:6px;}.ve-sn{font-size:10px;font-weight:800;color:#7a8296;min-width:22px;}'
+  +'.ve-chk{width:24px;height:24px;border-radius:6px;border:1.5px solid #cfd8e6;background:#fff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;cursor:pointer;flex-shrink:0;}'
+  +'.ve-chk.on{background:#3A6EA5;border-color:#3A6EA5;}'
+  +'.ve-done input{background:rgba(58,110,165,.07);border-color:#9dbbde;}'
   +'.ve-setrow input{flex:1;min-width:0;border:1px solid #cfd8e6;border-radius:7px;padding:7px 6px;font-size:14px;font-weight:700;text-align:center;color:#1a2a4a;background:#fff;font-family:inherit;}'
   +'.ve-u{font-size:9px;color:#9aa4b0;font-weight:700;min-width:26px;}'
   +'.ve-chg{margin-top:8px;}.ve-chg input{width:100%;border:1px dashed #bcd6c6;border-radius:8px;padding:8px 10px;font-size:12px;color:#37567e;background:#fff;font-family:inherit;font-style:italic;}'
