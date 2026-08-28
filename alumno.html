@@ -214,20 +214,18 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 #dias-slabel{display:flex;align-items:center;gap:11px;font-size:20px;font-weight:900;letter-spacing:.3px;line-height:1.1;color:var(--text);text-transform:uppercase;margin:6px 0 14px;}
 #dias-slabel::before{content:'';width:4px;height:22px;border-radius:3px;background:#3A6EA5;flex-shrink:0;}
 /* Check-in de readiness (antes de entrenar) */
-.rd-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;}
-.rd-h{display:flex;align-items:center;gap:11px;margin:0 0 4px;}
-.rd-bar{width:4px;height:20px;border-radius:3px;background:#3A6EA5;flex-shrink:0;}
-.rd-tx{font-size:15px;font-weight:900;letter-spacing:.2px;color:var(--text);}
-.rd-q{font-size:12.5px;font-weight:800;color:var(--text);margin:15px 0 8px;}
-.rd-opts{display:flex;gap:7px;}
-.rd-opt{flex:1;text-align:center;padding:9px 4px;border-radius:11px;border:1.5px solid var(--border);background:var(--card2);font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;transition:.12s;}
-.rd-opt.sel{border-color:#3A6EA5;background:rgba(58,110,165,.16);color:#cfe0f3;}
-.rd-em{display:block;font-size:16px;margin-bottom:3px;}
-.rd-reco{margin-top:15px;background:rgba(58,110,165,.12);border:1px solid rgba(58,110,165,.4);border-left:4px solid #3A6EA5;border-radius:0 12px 12px 0;padding:11px 13px;}
-.rd-reco-t{font-size:9px;font-weight:900;letter-spacing:1px;color:#6aa0dc;text-transform:uppercase;margin-bottom:4px;}
-.rd-reco-d{font-size:12.5px;font-weight:700;line-height:1.45;color:#dfe7f2;}
-.rd-reco-d b{color:#fff;}
-.rd-hint{margin-top:14px;font-size:11px;color:var(--muted);text-align:center;}
+.rd-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px 14px;margin-bottom:14px;}
+.rd-h{display:flex;align-items:center;gap:9px;margin:0 0 11px;}
+.rd-bar{width:3px;height:15px;border-radius:2px;background:#3A6EA5;flex-shrink:0;}
+.rd-tx{font-size:12.5px;font-weight:900;letter-spacing:.2px;color:var(--text);}
+.rd-row{display:flex;align-items:center;gap:9px;margin-bottom:7px;}
+.rd-lb{font-size:11px;font-weight:800;color:var(--muted);width:64px;flex-shrink:0;}
+.rd-seg{display:flex;flex:1;background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:2px;gap:2px;}
+.rd-sop{flex:1;text-align:center;padding:6px 2px;border-radius:7px;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;transition:.12s;}
+.rd-sop.sel{background:#3A6EA5;color:#fff;}
+.rd-reco{margin-top:11px;font-size:11.5px;font-weight:700;color:#cfe0f3;background:rgba(58,110,165,.12);border-left:3px solid #3A6EA5;border-radius:0 8px 8px 0;padding:7px 10px;line-height:1.4;}
+.rd-reco b{color:#fff;}
+.rd-hint{margin-top:10px;font-size:11px;color:var(--muted);}
 .dgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px;}
 .dchip{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;background:var(--card);border:1.5px solid var(--border);cursor:pointer;transition:all .15s;position:relative;user-select:none;}
 .dchip.has{border-color:rgba(201,168,76,.4);}
@@ -939,8 +937,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827212423 por un timestamp en cada deploy
-const _APP_VERSION = '20260827212423';
+// deploy.bat reemplaza 20260827213303 por un timestamp en cada deploy
+const _APP_VERSION = '20260827213303';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3378,15 +3376,17 @@ function _rdReco(s,d,e){
 function _readinessCard(){
   const k=_rdKeyNow();
   const s=_getEdit(k,'sueno'), d=_getEdit(k,'dolor'), en=_getEdit(k,'energia');
-  const opt=(c,v,em,lbl,cur)=>'<div class="rd-opt'+(cur===v?' sel':'')+'" onclick="_rdSel(\''+c+'\',\''+v+'\')"><span class="rd-em">'+em+'</span>'+lbl+'</div>';
+  const en_=(_LANG==='en');
+  const row=(lbl,campo,arr,cur)=>'<div class="rd-row"><span class="rd-lb">'+lbl+'</span><div class="rd-seg">'
+    +arr.map(o=>'<span class="rd-sop'+(cur===o[0]?' sel':'')+'" onclick="_rdSel(\''+campo+'\',\''+o[0]+'\')">'+o[1]+'</span>').join('')+'</div></div>';
   const reco=_rdReco(s,d,en);
   return '<div id="readiness-card" class="rd-card">'
-    +'<div class="rd-h"><span class="rd-bar"></span><span class="rd-tx">'+(_LANG==='en'?'How are you today?':'¿Cómo llegás hoy?')+'</span></div>'
-    +'<div class="rd-q">'+(_LANG==='en'?'Sleep':'Sueño')+'</div><div class="rd-opts">'+opt('sueno','malo','😴',(_LANG==='en'?'Poor':'Malo'),s)+opt('sueno','normal','😐',(_LANG==='en'?'Ok':'Normal'),s)+opt('sueno','bien','😃',(_LANG==='en'?'Good':'Bien'),s)+'</div>'
-    +'<div class="rd-q">'+(_LANG==='en'?'Muscle soreness':'Dolor muscular')+'</div><div class="rd-opts">'+opt('dolor','poco','🟢',(_LANG==='en'?'Low':'Poco'),d)+opt('dolor','medio','🟡',(_LANG==='en'?'Mid':'Medio'),d)+opt('dolor','alto','🔴',(_LANG==='en'?'High':'Alto'),d)+'</div>'
-    +'<div class="rd-q">'+(_LANG==='en'?'Energy':'Energía')+'</div><div class="rd-opts">'+opt('energia','baja','🔋',(_LANG==='en'?'Low':'Baja'),en)+opt('energia','media','⚡',(_LANG==='en'?'Mid':'Media'),en)+opt('energia','alta','🚀',(_LANG==='en'?'High':'Alta'),en)+'</div>'
-    +(reco?'<div class="rd-reco"><div class="rd-reco-t">'+(_LANG==='en'?'Today’s tip':'Recomendación de hoy')+'</div><div class="rd-reco-d">'+reco+'</div></div>'
-          :'<div class="rd-hint">'+(_LANG==='en'?'Tap one option per row to see the tip.':'Tocá una opción en cada fila para ver la recomendación.')+'</div>')
+    +'<div class="rd-h"><span class="rd-bar"></span><span class="rd-tx">'+(en_?'How are you today?':'¿Cómo llegás hoy?')+'</span></div>'
+    +row((en_?'Sleep':'Sueño'),'sueno',[['malo',en_?'Poor':'Malo'],['normal',en_?'Ok':'Normal'],['bien',en_?'Good':'Bien']],s)
+    +row((en_?'Soreness':'Dolor'),'dolor',[['poco',en_?'Fine':'Estoy bien'],['medio',en_?'Low':'Poco'],['alto',en_?'High':'Alto']],d)
+    +row((en_?'Energy':'Energía'),'energia',[['baja',en_?'Low':'Baja'],['media',en_?'Mid':'Media'],['alta',en_?'High':'Alta']],en)
+    +(reco?'<div class="rd-reco">'+reco+'</div>'
+          :'<div class="rd-hint">'+(en_?'Tap one option per row to see the tip.':'Tocá una opción en cada fila para ver la recomendación.')+'</div>')
     +'</div>';
 }
 function renderSesion() {
