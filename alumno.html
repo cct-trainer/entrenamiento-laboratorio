@@ -937,8 +937,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260827213303 por un timestamp en cada deploy
-const _APP_VERSION = '20260827213303';
+// deploy.bat reemplaza 20260827213854 por un timestamp en cada deploy
+const _APP_VERSION = '20260827213854';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1801,7 +1801,7 @@ function renderRutina() {
       const bloques = ses.bloques || [];
       const nBloques = bloques.length;
       const nEj = bloques.reduce((a,b)=>a+((b.ejercicios||[]).length),0);
-      const title = (ses.nombre || DN[i]).toUpperCase();
+      const title = _nombreSesionShow(ses).toUpperCase();
       const partes = [DN[i]];
       if (nEj) partes.push(nEj+' ejercicio'+(nEj>1?'s':''));
       if (nBloques) partes.push(nBloques+' bloque'+(nBloques>1?'s':''));
@@ -3023,6 +3023,13 @@ function _objetivoSes(ses){
   if(ses.objetivo) return ses.objetivo;
   try{ const fi=_faseDePlan(_plan).idx; const f=FASES_MACRO[fi]; return f ? (f.obj||f.n||'') : ''; }catch(e){ return ''; }
 }
+// Nombre a mostrar de la sesión: si es el genérico auto ("GYM — fecha") o está vacío,
+// mostrar un nombre lindo para todos; si el coach le puso nombre real, respetarlo.
+function _nombreSesionShow(ses){
+  const raw = String((ses && ses.nombre) || '').trim();
+  if (!raw || /^gym\s*[—–\-]/i.test(raw)) return (_LANG==='en' ? 'Training session' : 'Sesión de entrenamiento');
+  return raw;
+}
 // Equipamiento: usa el de la sesión; si no hay, lo junta desde los ejercicios
 function _equipoSes(ses){
   // Si el coach cargó equipo a mano, respetarlo (salvo que diga "sin equipamiento")
@@ -3045,7 +3052,7 @@ function _sesDetalleHTML(ses){
   // Fila estándar: icono + texto
   const row = (ico, txt) => '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);"><span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">'+ico+'</span><span>'+txt+'</span></div>';
   let info = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;position:relative;box-shadow:0 10px 30px -14px rgba(0,0,0,.4);">';
-  info += '<div style="font-size:15px;font-weight:800;color:var(--text);line-height:1.25;">'+((ses.nombre||DN[_diaIdx])).toUpperCase()+'</div>';
+  info += '<div style="font-size:15px;font-weight:800;color:var(--text);line-height:1.25;">'+_nombreSesionShow(ses).toUpperCase()+'</div>';
   info += '<div style="display:flex;flex-direction:column;gap:9px;margin-top:13px;">';
   // Lugar
   info += row('🏋️', _compEsc(_tc(ses.lugar)||(_diaModTab===1?_t('casa'):_t('gym'))));
