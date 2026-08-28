@@ -364,7 +364,7 @@ function _showLoading() {
 if (sessionStorage.getItem('CC_COACH')==='1') _showLoading();
 
 // ══ DATA ═══════════════════════════════════════════════════════════════
-let _alumnos=[], _planes=[], _antro=[], _fbAll={}, _coachEdits={}, _coachNotaGeneral={}, _sesionesCompletadas={};
+let _alumnos=[], _planes=[], _antro=[], _fbAll={}, _coachEdits={}, _coachNotaGeneral={}, _sesionesCompletadas={}, _pesoEditsAll={};
 let _db=null;
 
 // DS: días del plan — ÍNDICES 0=Lun...6=Dom (igual que alumno.html)
@@ -451,6 +451,7 @@ async function _initFirebase() {
           if (sd.coachEdits)              _coachEdits[al.id]           = sd.coachEdits;
           if (sd.coachNotaGeneral)        _coachNotaGeneral[al.id]     = sd.coachNotaGeneral;
           if (sd.sesionesCompletadas)     _sesionesCompletadas[al.id]  = _arr(sd.sesionesCompletadas);
+          if (sd.pesoEdits)               _pesoEditsAll[al.id]         = sd.pesoEdits;   // lo que cargó el alumno
         }
       } catch(e){ console.warn('FB alumno '+al.id, e); }
     }));
@@ -830,7 +831,7 @@ function _buildDetailHTML() {
     const sesTieneEjercicios = !!_daySession(sem, _det.dayIdx);
     if (sesTieneEjercicios) {
       h += `<button onclick="_veAbrir('${_det.alId}',${_det.planIdx},${_det.weekIdx},${_det.dayIdx})"
-        style="width:100%;margin-top:12px;padding:15px;border-radius:14px;font-size:14px;font-weight:900;letter-spacing:.3px;border:none;cursor:pointer;background:linear-gradient(135deg,#25D366,#159a4a);color:#06210f;box-shadow:0 6px 14px rgba(21,154,74,.28);">▶ Trabajar sesión (modo entrenador)</button>`;
+        style="width:100%;margin-top:12px;padding:15px;border-radius:14px;font-size:14px;font-weight:900;letter-spacing:.3px;border:none;cursor:pointer;background:#3A6EA5;color:#fff;box-shadow:0 6px 14px rgba(58,110,165,.32);">▶ Ver / ajustar lo que hizo</button>`;
       const yaCompletada = _sesionYaCompletada(_det.alId, _det.dayIdx);
       h += `<button id="fin-btn" onclick="_finalizarSesion('${_det.alId}')"
         style="width:100%;margin-top:14px;padding:14px;border-radius:14px;font-size:13px;font-weight:900;letter-spacing:.3px;cursor:pointer;transition:all .2s;border:none;
@@ -1090,7 +1091,7 @@ function _veAbrir(alId, planIdx, weekIdx, dayIdx){
   if(!ses||!_arr(ses.bloques).length){ _showToast('Ese día no tiene sesión'); return; }
   const exOrder=[];
   _arr(ses.bloques).forEach((b,bi)=>{ _arr(b.ejercicios).forEach((ej,ei)=>{ exOrder.push({bi,ei,ej,bloque:b,uid:'b'+bi+'e'+ei}); }); });
-  _veState={ alId, alumnoNom:a.nombre||'Alumno', plan, planId:plan.id, planIdx, sems, semIdx:weekIdx, diaIdx:dayIdx, ses, exOrder, log:{}, chg:{}, obs:{}, genObs:'' };
+  _veState={ alId, alumnoNom:a.nombre||'Alumno', plan, planId:plan.id, planIdx, sems, semIdx:weekIdx, diaIdx:dayIdx, ses, exOrder, log:{}, chg:{}, obs:{}, genObs:'', hizo:(_pesoEditsAll[alId]||{}) };
   let ov=document.getElementById('ve-ov'); if(!ov){ ov=document.createElement('div'); ov.id='ve-ov'; document.body.appendChild(ov); }
   ov.style.cssText='position:fixed;inset:0;z-index:100000;background:#eef0f3;overflow-y:auto;-webkit-overflow-scrolling:touch;';
   _veRender();
@@ -1118,19 +1119,30 @@ function _veRender(){
     // filas realizado
     const baseRows = series.length ? series : (nSer? Array.from({length:nSer},()=> (ej.ctrl||{})) : []);
     let rows='';
+    const _norm=v=>String(v==null?'':v).replace(/kg$/i,'').trim();
+    const _hl='background:rgba(58,110,165,.14);border-color:#3A6EA5;color:#3A6EA5;font-weight:900;';
     baseRows.forEach((s,k)=>{
       const key=st.semIdx+'_'+st.diaIdx+'_'+x.uid+'_efec_'+k; const lg=st.log[key]||{};
-      const peso=(lg.peso!=null?lg.peso:(s.peso||'')); const reps=(lg.reps!=null?lg.reps:(s.reps||''));
+      const hz=(st.hizo&&st.hizo[key])||{};                 // lo que cargó el alumno
+      const om = hz.omitida==='1';
+      if(om){ rows+='<div class="ve-setrow"><span class="ve-sn">S'+(k+1)+'</span><span style="flex:1;font-size:11.5px;color:#c0392b;font-weight:800;text-decoration:line-through;">no la hizo</span></div>'; return; }
+      const peso=(lg.peso!=null?lg.peso:(hz.peso!=null&&hz.peso!==''?hz.peso:(s.peso||'')));
+      const reps=(lg.reps!=null?lg.reps:(hz.reps!=null&&hz.reps!==''?hz.reps:(s.reps||'')));
+      const pChg=_norm(peso)!==''&&_norm(peso)!==_norm(s.peso);
+      const rChg=_norm(reps)!==''&&_norm(reps)!==_norm(s.reps);
       rows+='<div class="ve-setrow"><span class="ve-sn">S'+(k+1)+'</span>'
-        +'<input inputmode="decimal" value="'+_veEsc(peso)+'" onchange="_veSet(\''+key+'\',\'peso\',this.value)"><span class="ve-u">kg</span>'
-        +'<input inputmode="numeric" value="'+_veEsc(reps)+'" onchange="_veSet(\''+key+'\',\'reps\',this.value)"><span class="ve-u">reps</span></div>';
+        +'<input inputmode="decimal" style="'+(pChg?_hl:'')+'" value="'+_veEsc(peso)+'" onchange="_veSet(\''+key+'\',\'peso\',this.value)"><span class="ve-u">kg</span>'
+        +'<input inputmode="numeric" style="'+(rChg?_hl:'')+'" value="'+_veEsc(reps)+'" onchange="_veSet(\''+key+'\',\'reps\',this.value)"><span class="ve-u">reps</span></div>';
     });
+    const _sustAl=(st.hizo&&st.hizo[st.semIdx+'_'+st.diaIdx+'_'+x.uid]&&st.hizo[st.semIdx+'_'+st.diaIdx+'_'+x.uid].sust)||'';
+    const sustNote=_sustAl?'<div style="margin:8px 0 0 38px;font-size:11px;font-weight:700;color:#3A6EA5;background:rgba(58,110,165,.1);border:1px solid rgba(58,110,165,.28);border-radius:8px;padding:6px 10px;">🔄 El alumno lo cambió por: <b>'+_veEsc(_sustAl)+'</b></div>':'';
     const chgVal=st.chg[x.uid]||'';
     const obsVal=st.obs[x.uid]||'';
     ex+='<div class="ve-exc">'
       +'<div class="ve-top"><span class="ve-num">'+etq+'</span><span class="ve-nom">'+_veEsc(ej.nombre||'—')+'</span>'+vbtn+'</div>'
       +(chips.length?'<div class="ve-plan">'+chips.join('')+'</div>':'')
-      +'<div class="ve-real"><div class="ve-real-l">✓ Realizado (editá lo que cambió)</div>'
+      +sustNote
+      +'<div class="ve-real"><div class="ve-real-l" style="color:#3A6EA5;">Lo que hizo el alumno (en azul) · editá si querés</div>'
         +(rows||'<div style="font-size:11px;color:#9aa4b0;">Sin series cargadas</div>')
         +'<div class="ve-chg"><input placeholder="Cambio estructural (ej: la pasamos a superserie / serie extra)…" value="'+_veEsc(chgVal)+'" onchange="_veChg(\''+x.uid+'\',this.value)"></div>'
       +'</div>'
@@ -1141,7 +1153,7 @@ function _veRender(){
   ov.innerHTML=_veCSS()+'<div class="ve-wrap">'
     +'<div class="ve-hd"><button class="ve-x" onclick="_veCerrar()">✕</button><div class="ve-who"><div class="ve-n">'+_veEsc(st.alumnoNom)+'</div><div class="ve-s">'+DOWF[st.diaIdx]+' · '+_veEsc(sesNom)+' · Sem '+(st.semIdx+1)+'</div></div></div>'
     +'<div class="ve-body">'
-      +'<div class="ve-hint">Anotá <b>cómo terminó realmente</b> cada ejercicio y tus observaciones. Al guardar queda la <b>referencia</b> (lo planeado) y lo <b>realizado</b>, y se marca como sesión realizada.</div>'
+      +'<div class="ve-hint"><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:rgba(58,110,165,.5);vertical-align:-1px;margin-right:5px;"></span>En <b style="color:#37567e;">azul</b>, lo que el alumno cargó distinto al plan. Podés <b>ajustar</b> cualquier valor y al guardar queda la referencia y lo realizado.</div>'
       +ex
     +'</div>'
     +'<div class="ve-foot"><div class="ve-genobs"><div class="ve-genobs-l">Observación general de la sesión</div><textarea placeholder="Cómo la vimos hoy, qué ajustar la próxima…" onchange="_veGenObs(this.value)">'+_veEsc(st.genObs)+'</textarea></div>'
@@ -1195,10 +1207,10 @@ function _veCSS(){
   +'.ve-vbtn{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;color:#c0392b;background:#fdecec;border:1px solid #f4caca;border-radius:20px;padding:6px 11px;cursor:pointer;flex-shrink:0;}'
   +'.ve-plan{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0 38px;}'
   +'.ve-chip{font-size:10.5px;font-weight:800;color:#5a6472;background:#f1f3f7;border-radius:6px;padding:3px 9px;}.ve-chip b{color:#1a2a4a;}'
-  +'.ve-real{margin:11px 0 0 38px;background:#f6faf7;border:1px solid #d7ebdd;border-radius:10px;padding:9px 10px;}'
-  +'.ve-real-l{font-size:9px;font-weight:900;letter-spacing:.6px;color:#1f8a4c;text-transform:uppercase;margin-bottom:7px;}'
+  +'.ve-real{margin:11px 0 0 38px;background:#f5f8fc;border:1px solid #d7e2f0;border-radius:10px;padding:9px 10px;}'
+  +'.ve-real-l{font-size:9px;font-weight:900;letter-spacing:.6px;color:#3A6EA5;text-transform:uppercase;margin-bottom:7px;}'
   +'.ve-setrow{display:flex;align-items:center;gap:7px;margin-bottom:6px;}.ve-sn{font-size:10px;font-weight:800;color:#7a8296;min-width:22px;}'
-  +'.ve-setrow input{flex:1;min-width:0;border:1px solid #cfe0d5;border-radius:7px;padding:7px 6px;font-size:14px;font-weight:700;text-align:center;color:#1a2a4a;background:#fff;font-family:inherit;}'
+  +'.ve-setrow input{flex:1;min-width:0;border:1px solid #cfd8e6;border-radius:7px;padding:7px 6px;font-size:14px;font-weight:700;text-align:center;color:#1a2a4a;background:#fff;font-family:inherit;}'
   +'.ve-u{font-size:9px;color:#9aa4b0;font-weight:700;min-width:26px;}'
   +'.ve-chg{margin-top:8px;}.ve-chg input{width:100%;border:1px dashed #bcd6c6;border-radius:8px;padding:8px 10px;font-size:12px;color:#37567e;background:#fff;font-family:inherit;font-style:italic;}'
   +'.ve-obst{margin:9px 0 0 38px;font-size:11px;font-weight:800;color:#37567e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}'
@@ -1207,7 +1219,7 @@ function _veCSS(){
   +'.ve-genobs{background:#fff;border:1px solid #e4e8ef;border-radius:12px;padding:12px;margin-bottom:12px;}'
   +'.ve-genobs-l{font-size:10px;font-weight:900;letter-spacing:.6px;color:#8a8f9c;text-transform:uppercase;margin-bottom:7px;}'
   +'.ve-genobs textarea{width:100%;border:1px solid #d5deea;border-radius:9px;padding:9px 10px;font-size:12.5px;min-height:52px;resize:vertical;font-family:inherit;}'
-  +'.ve-save{width:100%;background:linear-gradient(135deg,#25D366,#159a4a);color:#06210f;font-weight:900;font-size:14px;border:none;border-radius:13px;padding:15px;cursor:pointer;box-shadow:0 8px 18px rgba(21,154,74,.28);}'
+  +'.ve-save{width:100%;background:#3A6EA5;color:#fff;font-weight:900;font-size:14px;border:none;border-radius:13px;padding:15px;cursor:pointer;box-shadow:0 8px 18px rgba(58,110,165,.32);}'
   +'@media(min-width:820px){.ve-wrap{max-width:720px;}}'
   +'</style>';
 }
