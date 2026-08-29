@@ -937,8 +937,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260829192415 por un timestamp en cada deploy
-const _APP_VERSION = '20260829192415';
+// deploy.bat reemplaza 20260829193828 por un timestamp en cada deploy
+const _APP_VERSION = '20260829193828';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2678,7 +2678,6 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
       _sustNote+
       (ej.unilateral ? '<div style="font-size:10px;color:var(--muted);margin:4px 0 0 12px;">'+(_LANG==='en'?'Unilateral · do each set on both sides':'Unilateral · cada serie se hace de los dos lados')+'</div>' : '')+
       (()=>{ const nq=_notaEquipo(ej); return nq ? '<div style="font-size:10px;color:var(--muted);margin:3px 0 0 12px;line-height:1.45;">💡 '+nq+'</div>' : ''; })()+
-      _maxLine+
       _hintLine+
       (sEfec ? '' : ctrlGrid)+
       pesoRef+
