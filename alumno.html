@@ -937,8 +937,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260829200836 por un timestamp en cada deploy
-const _APP_VERSION = '20260829200836';
+// deploy.bat reemplaza 20260829201510 por un timestamp en cada deploy
+const _APP_VERSION = '20260829201510';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2425,9 +2425,9 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
           const _clk=_yt?' onclick="_playPausa(\''+_yt+'\')"':'', _cur=_yt?'cursor:pointer;':'';
           r += '<tr><td colspan="'+_ncols+'" style="padding:7px 9px;border:none;background:#fff;">'
             +'<div'+_clk+' style="'+_cur+'display:flex;align-items:center;gap:10px;padding:9px 12px;background:#14161c;border:1px solid #2a2f3a;border-radius:11px;box-shadow:0 6px 16px rgba(0,0,0,.4),0 1px 3px rgba(0,0,0,.3);">'
-              +'<span style="width:28px;height:28px;border-radius:8px;background:#C9A84C;color:#231a06;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;box-shadow:0 2px 6px rgba(201,168,76,.5);">▶</span>'
-              +'<span style="flex:1;font-size:12px;font-weight:800;color:#f2ead6;line-height:1.2;"><small style="display:block;font-size:8.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#C9A84C;margin-bottom:1px;">'+(_LANG==='en'?'On the rest':'En la pausa')+'</small>'+_nm+'</span>'
+              +'<span style="flex:1;min-width:0;font-size:12px;font-weight:800;color:#f2ead6;line-height:1.2;"><small style="display:block;font-size:8.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#C9A84C;margin-bottom:1px;">'+(_LANG==='en'?'On the rest':'En la pausa')+'</small>'+_nm+'</span>'
               +(_du?'<span style="font-size:11.5px;font-weight:800;color:#C9A84C;white-space:nowrap;">'+_du+'</span>':'')
+              +'<span style="width:28px;height:28px;border-radius:8px;background:#C9A84C;color:#231a06;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;box-shadow:0 2px 6px rgba(201,168,76,.5);">▶</span>'
             +'</div></td></tr>';
         }
       }
