@@ -937,8 +937,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260829003221 por un timestamp en cada deploy
-const _APP_VERSION = '20260829003221';
+// deploy.bat reemplaza 20260829190030 por un timestamp en cada deploy
+const _APP_VERSION = '20260829190030';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2516,7 +2516,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
     return '<div class="prog-badge">📈 Próxima sesión: <strong>'+progData.sugerido+' kg</strong>'+(progData.fromHistory?' (historial)':' (estimado)')+'</div>';
   })();
 
-  const seriesTable = aproSection + efecSection + dropSection + progBadge;
+  const seriesTable = aproSection + efecSection + dropSection;   // progBadge (Próxima sesión) movido a Estadísticas
 
   // ── EJERCICIO EN LA PAUSA (descanso activo · series con pausa combinadas) — Pro B (tarjeta oscura) ──
   const _pausaHTML = (() => {
@@ -2646,19 +2646,23 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
     : (_musStr ? String(_musStr).split(/[,·|/]/)[0] : (grupo||''));
   const _grupoTxt = _tc(String(_musPrin).trim());
   const _grupoBadge = _grupoTxt ? (
-    '<div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(160deg,#4d89c6,#2f5f95);color:#fff;font-size:8px;font-weight:900;letter-spacing:.8px;padding:4px 9px;border-radius:8px;margin:0 0 11px;box-shadow:0 3px 8px rgba(58,110,165,.4),inset 0 1px 0 rgba(255,255,255,.28);text-transform:uppercase;">'+
+    '<div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(160deg,#4d89c6,#2f5f95);color:#fff;font-size:8px;font-weight:900;letter-spacing:.8px;padding:4px 9px;border-radius:8px;margin:0;box-shadow:0 3px 8px rgba(58,110,165,.4),inset 0 1px 0 rgba(255,255,255,.28);text-transform:uppercase;">'+
       '<span style="display:inline-flex;gap:1.5px;align-items:center;"><span style="width:2px;height:8px;background:#fff;border-radius:2px;"></span><span style="width:2px;height:8px;background:#fff;border-radius:2px;opacity:.7;"></span><span style="width:2px;height:8px;background:#fff;border-radius:2px;"></span></span>'+
       _grupoTxt.replace(/</g,'&lt;')+
     '</div>'
   ) : '';
   return '<div id="'+uid+'-card" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .2s;">'+
     '<div style="padding:12px 11px 12px;">'+
-      _grupoBadge+
-      '<div style="display:flex;align-items:center;gap:10px;">'+
-        '<div style="flex:1;min-width:0;font-size:17px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#3A6EA5':'var(--gold)')+';padding-left:9px;">'+(ejLabel?'<span style="font-size:11px;font-weight:900;color:#9cc6ef;background:rgba(74,134,196,.16);border:1px solid rgba(74,134,196,.35);border-radius:6px;padding:1px 7px;margin-right:8px;vertical-align:middle;">'+ejLabel+'</span>':'')+_nomShow+'</div>'+
+      '<div style="display:flex;align-items:flex-start;gap:10px;">'+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px;">'+
+            (ejLabel?'<span style="font-size:11px;font-weight:900;color:#9cc6ef;background:rgba(74,134,196,.16);border:1px solid rgba(74,134,196,.35);border-radius:6px;padding:2px 8px;flex-shrink:0;">'+ejLabel+'</span>':'')+
+            _grupoBadge+
+          '</div>'+
+          '<div style="font-size:17px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#3A6EA5':'var(--gold)')+';padding-left:9px;">'+_nomShow+'</div>'+
+        '</div>'+
         (ytId ? '<button onclick="_toggleEjVid(\''+uid+'\')" title="Ver video" style="width:54px;height:54px;border-radius:14px;flex-shrink:0;background:#3A6EA5;border:1px solid #4a86c4;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;box-shadow:0 7px 16px rgba(58,110,165,.45),inset 0 1px 0 rgba(255,255,255,.28);transition:transform .12s,box-shadow .12s;" ontouchstart="" onmousedown="this.style.transform=\'translateY(2px)\';this.style.boxShadow=\'0 3px 8px rgba(58,110,165,.4)\';" onmouseup="this.style.transform=\'\';this.style.boxShadow=\'0 7px 16px rgba(58,110,165,.45),inset 0 1px 0 rgba(255,255,255,.28)\';"><span style="width:0;height:0;border-left:16px solid #fff;border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:3px;display:inline-block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));"></span></button>' : '')+
       '</div>'+
-      (_musStr ? '<div style="font-size:11px;font-weight:600;color:var(--gold);margin:5px 0 0 12px;line-height:1.4;">'+_tc(_musStr)+'</div>' : '')+
       (ej.nota ? (()=>{
         const _esc = s => String(s).replace(/</g,'&lt;');
         const raw = String(ej.nota);
@@ -2792,6 +2796,10 @@ function _abrirStats(uid){
   if(rm!=null){ _stxProto(rm).forEach(function(s){ filas+='<div class="sxp-tr sxp-'+s.cl+'"><span class="sxp-ty">'+s.ty+'</span><span class="sxp-ld">'+_stxFmt(s.kg)+' '+uni+'</span><span class="sxp-rp">'+s.rp+'</span></div>'; }); }
   else { filas='<div style="padding:24px 12px;text-align:center;color:#9aa4b0;font-size:12.5px;">'+(en?'Calculate 1RM to see the protocol.':'Calculá el 1RM para ver el protocolo.')+'</div>'; }
   const footHTML=(rm!=null)?'<div class="sxp-foot"><div class="sxp-fchip"><span class="fk">RIR</span><span class="fv">1–2</span></div><div class="sxp-fchip"><span class="fk">'+(en?'Rest':'Descanso')+'</span><span class="fv">3:00</span></div></div>':'';
+  // Próxima sesión (sugerencia de progresión) — movida acá desde la tarjeta
+  const _spStats=(_semIdx||0)+'_'+(_diaIdx||0)+'_'+uid;
+  const _prog=(typeof _calcProgresion==='function')?_calcProgresion(uid,_spStats):null;
+  const proxHTML=_prog?'<div style="background:rgba(58,110,165,.1);border-bottom:1px solid #dbe4f0;padding:10px 16px;font-size:12.5px;font-weight:800;color:#2f5f95;">📈 '+(en?'Next session':'Próxima sesión')+': <span style="color:#1a2a4a;">'+_prog.sugerido+' '+uni+'</span> <span style="font-weight:600;color:#7a8ba0;">('+(_prog.fromHistory?(en?'from history':'historial'):(en?'estimated':'estimado'))+')</span></div>':'';
   let ov = document.getElementById('stats-overlay');
   if(!ov){ ov=document.createElement('div'); ov.id='stats-overlay'; ov.className='stats-overlay'; document.body.appendChild(ov); }
   ov.innerHTML =
@@ -2815,6 +2823,7 @@ function _abrirStats(uid){
       '<button onclick="_cerrarStats()" style="background:none;border:none;color:#9fb0cf;font-size:13px;font-weight:700;cursor:pointer;padding:6px 2px;margin-bottom:8px;">‹ '+(en?'Back to routine':'Volver a la rutina')+'</button>'+
       '<div style="max-width:440px;margin:0 auto;width:100%;background:#f7f9fc;border-radius:16px;overflow:hidden;box-shadow:0 14px 34px rgba(0,0,0,.4);color:#1a1a2e;font-family:inherit;">'+
         '<div style="background:#1a2a4a;color:#fff;padding:14px 16px;font-size:15px;font-weight:900;line-height:1.2;">'+_e(nombre)+'</div>'+
+        proxHTML+
         '<div style="padding:14px 16px 16px;">'+
           '<div style="background:#fff;border:1px solid #e4e8ef;border-radius:12px;padding:11px 12px;margin-bottom:12px;">'+
             '<div style="font-size:9px;font-weight:900;letter-spacing:.8px;color:#9aa3b2;text-transform:uppercase;margin-bottom:8px;">'+(en?'Calculate 1RM':'Calcular 1RM')+'</div>'+
