@@ -937,8 +937,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260829193828 por un timestamp en cada deploy
-const _APP_VERSION = '20260829193828';
+// deploy.bat reemplaza 20260829195358 por un timestamp en cada deploy
+const _APP_VERSION = '20260829195358';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2410,9 +2410,28 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
     arr.forEach((s,idx)=>{ if(!_delSet.has(idx)) _items.push({s:s,idx:idx}); });
     const _lastP = arr.length ? (arr[arr.length-1].pausa||'') : '';
     for(let j=0;j<_extra;j++){ const idx=arr.length+j; if(!_delSet.has(idx)) _items.push({s:{reps:'',peso:'',rir:'',pausa:_lastP}, idx:idx}); }
+    // Pausa activa intercalada: debajo de cada serie va su ejercicio de pausa (solo en la tabla principal · flush)
+    const _pa = ej.pausaActiva;
+    const _paOn = flush && _pa && _pa.activo && Array.isArray(_pa.items) && _pa.items.length;
+    const _paSingle = _paOn && _pa.items.length===1;
+    const _ncols = 3 + (hasPeso?1:0) + (hasRir?1:0) + (hasPausa?1:0);
     let _ln=0;
     const rows = _items.map(it=>{ _ln++; const labelNum=offset+_ln;
-      return _mkRow(it.s,it.idx,labelNum,'','');   // una sola fila; si es unilateral, las reps van "c/lado"
+      let r = _mkRow(it.s,it.idx,labelNum,'','');   // una sola fila; si es unilateral, las reps van "c/lado"
+      if(_paOn){
+        const _it = _paSingle ? _pa.items[0] : _pa.items[_ln-1];
+        if(_it){
+          const _yt=_ytId(_it.video||''), _nm=String(_it.nombre||'').replace(/</g,'&lt;'), _du=_it.dur?String(_it.dur).replace(/</g,'&lt;'):'';
+          const _clk=_yt?' onclick="_playPausa(\''+_yt+'\')"':'', _cur=_yt?'cursor:pointer;':'';
+          r += '<tr><td colspan="'+_ncols+'" style="padding:0;border:none;">'
+            +'<div'+_clk+' style="'+_cur+'display:flex;align-items:center;gap:10px;padding:8px 12px;background:#171C26;border-top:1px solid #2a2f3a;">'
+              +'<span style="width:27px;height:27px;border-radius:7px;background:#C9A84C;color:#231a06;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">▶</span>'
+              +'<span style="flex:1;font-size:11.5px;font-weight:700;color:#f2ead6;line-height:1.2;"><small style="display:block;font-size:8.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#C9A84C;margin-bottom:1px;">'+(_LANG==='en'?'On the rest':'En la pausa')+'</small>'+_nm+'</span>'
+              +(_du?'<span style="font-size:11px;font-weight:800;color:#C9A84C;white-space:nowrap;">'+_du+'</span>':'')
+            +'</div></td></tr>';
+        }
+      }
+      return r;
     }).join('');
     const _fbg = _wt ? '#ffffff' : '#050506';
     const _ftx = _wt ? '#20242c' : '#eef1f5';
@@ -2683,7 +2702,6 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
       pesoRef+
       (ytId ? '<div id="ejvidwrap-'+uid+'" style="display:none;">'+videoHTML+'</div>' : '')+
       seriesTable+
-      _pausaHTML+
       _tecApp+
       _footer+
       fichaHTML+
