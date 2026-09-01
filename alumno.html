@@ -939,8 +939,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260901120634 por un timestamp en cada deploy
-const _APP_VERSION = '20260901120634';
+// deploy.bat reemplaza 20260901130603 por un timestamp en cada deploy
+const _APP_VERSION = '20260901130603';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1732,8 +1732,8 @@ function _avisoFecha(iso){
 function _avisoBanner(){
   const a=_avisoCoach; if(!a || !a.activo || !a.mensaje) return '';
   if(a.hasta && a.hasta < _hoyISO()) return '';   // ya terminó el período
-  const ic = a.tipo==='ocupada'?'🗓':(a.tipo==='nodisp'?'🚫':'🏖');
-  const tit = a.tipo==='ocupada'?'Semana ocupada':(a.tipo==='nodisp'?'No disponible':'Vacaciones');
+  const _icMap={tramite:'🗓',estudio:'📚',salud:'🩺',evento:'🏅',otro:'📢',vacaciones:'🏖',nodisp:'🚫',ocupada:'🗓'};
+  const ic = _icMap[a.tipo] || '📢';
   const rango = (a.desde&&a.hasta) ? (_avisoFecha(a.desde)+' al '+_avisoFecha(a.hasta)) : (a.desde?('desde el '+_avisoFecha(a.desde)):'');
   const msg = String(a.mensaje).replace(/</g,'&lt;');
   return '<div style="background:linear-gradient(160deg,#2a2410,#191408);border:1px solid #6b5a1f;border-left:4px solid #C9A84C;border-radius:12px;padding:13px 14px;margin-bottom:14px;display:flex;gap:11px;box-shadow:0 8px 20px rgba(0,0,0,.35);">'

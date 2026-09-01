@@ -12302,67 +12302,108 @@ async function _bandejaIr(i){
   openPerfilAlumno(x.id);
 }
 
-// ══════════ AVISOS A ALUMNOS (vacaciones / no disponible) ══════════
-let _avDraft = { tipo:'vacaciones', desde:'', hasta:'', mensaje:'', activo:false };
+// ══════════ AVISOS / DISPONIBILIDAD A ALUMNOS ══════════
+const _AV_MOTIVOS = { tramite:['🗓','Trámite personal'], estudio:['📚','Estudio / consulta médica'], salud:['🩺','Salud / reposo'], evento:['🏅','Evento / competencia'], otro:['📢','Otro motivo'] };
+let _avDraft = { tipo:'tramite', desde:'', hasta:'', mensaje:'', activo:false, preview:'', canalApp:true, canalWA:true };
+let _avRec = null;
 function _avFechaFmt(iso){ if(!iso) return ''; const d=new Date(iso+'T12:00:00'); if(isNaN(d)) return ''; return d.getDate()+' '+d.toLocaleDateString('es-AR',{month:'short'}).replace('.',''); }
-function _avMsgTexto(){
-  const r=(_avDraft.desde&&_avDraft.hasta)?(_avFechaFmt(_avDraft.desde)+' al '+_avFechaFmt(_avDraft.hasta)):(_avDraft.desde?('desde el '+_avFechaFmt(_avDraft.desde)):'');
-  const tit=_avDraft.tipo==='ocupada'?'Semana ocupada':(_avDraft.tipo==='nodisp'?'No voy a estar disponible':'Me voy de vacaciones');
-  return '📢 '+tit+(r?' ('+r+')':'')+'\n\n'+(_avDraft.mensaje||'').trim();
-}
 async function _abrirAvisos(){
   let cur={};
   try{ if(window._db){ const d=await window._db.collection('alumnos').doc('zz_aviso_global').get(); if(d.exists) cur=d.data()||{}; } }catch(e){}
-  _avDraft={ tipo:cur.tipo||'vacaciones', desde:cur.desde||'', hasta:cur.hasta||'', mensaje:cur.mensaje||'', activo:!!cur.activo };
+  _avDraft={ tipo:(cur.tipo&&_AV_MOTIVOS[cur.tipo]?cur.tipo:'tramite'), desde:cur.desde||'', hasta:cur.hasta||'', mensaje:cur.mensaje||'', activo:!!cur.activo, preview:'', canalApp:true, canalWA:true };
   _avRender();
 }
-function _avCerrar(){ const o=document.getElementById('avisos-overlay'); if(o) o.remove(); }
-function _avSetTipo(t){ _avDraft.tipo=t; _avRender(); }
+function _avCerrar(){ try{ if(_avRec) _avRec.stop(); }catch(e){} const o=document.getElementById('avisos-overlay'); if(o) o.remove(); }
+function _avSetCanal(k){ const ta=document.getElementById('av-msg'); if(ta) _avDraft.mensaje=ta.value; _avDraft[k]=!_avDraft[k]; _avRender(); }
+function _avUsarPreview(){ _avDraft.mensaje=_avDraft.preview; _avDraft.preview=''; _avRender(); }
+function _avDescartarPreview(){ _avDraft.preview=''; _avRender(); }
 function _avRender(){
   let ov=document.getElementById('avisos-overlay'); if(ov) ov.remove();
   ov=document.createElement('div'); ov.id='avisos-overlay';
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:6000;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;';
   ov.onclick=e=>{ if(e.target===ov) _avCerrar(); };
-  const chip=(v,l)=>'<button onclick="_avSetTipo(\''+v+'\')" style="font-size:12px;font-weight:600;padding:7px 13px;border-radius:20px;border:1px solid '+(_avDraft.tipo===v?'#3A6EA5':'#dbe0e7')+';background:'+(_avDraft.tipo===v?'#eef4fb':'#fff')+';color:'+(_avDraft.tipo===v?'#3A6EA5':'#5a6472')+';cursor:pointer;font-family:inherit;">'+l+'</button>';
-  ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:460px;width:100%;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.25);" onclick="event.stopPropagation()">'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:17px;font-weight:700;color:#1b2030;">Aviso a tus alumnos</div><button onclick="_avCerrar()" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;line-height:1;">×</button></div>'
-    +'<div style="font-size:12.5px;color:#8a92a0;margin:2px 0 14px;">Se muestra automáticamente en la app de todos tus alumnos.</div>'
-    +(_avDraft.activo?'<div style="font-size:12px;font-weight:600;color:#0f7a3d;background:#e6f4ea;border-radius:8px;padding:8px 11px;margin-bottom:12px;">✓ Hay un aviso activo ahora mismo.</div>':'')
-    +'<div style="font-size:11px;font-weight:700;color:#5a6472;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Tipo</div>'
-    +'<div style="display:flex;gap:7px;flex-wrap:wrap;">'+chip('vacaciones','🏖 Vacaciones')+chip('nodisp','🚫 No disponible')+chip('ocupada','🗓 Semana ocupada')+'</div>'
-    +'<div style="font-size:11px;font-weight:700;color:#5a6472;text-transform:uppercase;letter-spacing:.4px;margin:14px 0 6px;">Fechas</div>'
+  const opt=(v)=>'<option value="'+v+'"'+(_avDraft.tipo===v?' selected':'')+'>'+_AV_MOTIVOS[v][0]+' '+_AV_MOTIVOS[v][1]+'</option>';
+  const lbl=(n,t)=>'<div style="font-size:11px;font-weight:700;color:#5a6472;text-transform:uppercase;letter-spacing:.4px;margin:15px 0 6px;display:flex;align-items:center;gap:6px;"><span style="width:17px;height:17px;border-radius:50%;background:#3A6EA5;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;">'+n+'</span>'+t+'</div>';
+  const chbox=(k,ic,t,s)=>'<div onclick="_avSetCanal(\''+k+'\')" style="flex:1;border:1px solid '+(_avDraft[k]?'#3A6EA5':'#dbe0e7')+';background:'+(_avDraft[k]?'#eef4fb':'#fff')+';border-radius:10px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:10px;"><span style="width:18px;height:18px;border-radius:5px;border:1.5px solid '+(_avDraft[k]?'#3A6EA5':'#cbd3dd')+';background:'+(_avDraft[k]?'#3A6EA5':'#fff')+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">'+(_avDraft[k]?'✓':'')+'</span><div><div style="font-size:13px;font-weight:700;color:#1b2030;">'+ic+' '+t+'</div><div style="font-size:11px;color:#8a92a0;margin-top:1px;">'+s+'</div></div></div>';
+  const preview = _avDraft.preview ? ('<div style="margin-top:14px;border:1px solid #cfe0d5;background:#f5faf7;border-radius:11px;padding:13px 14px;"><div style="font-size:9px;font-weight:900;letter-spacing:.7px;color:#1f8a4c;text-transform:uppercase;margin-bottom:7px;">✓ Vista previa · texto optimizado</div><div style="font-size:13px;color:#20303a;line-height:1.55;">'+_avDraft.preview.replace(/</g,'&lt;')+'</div><div style="display:flex;gap:8px;margin-top:11px;"><button onclick="_avUsarPreview()" style="flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid #3A6EA5;background:#3A6EA5;color:#fff;">Usar este texto</button><button onclick="_avDescartarPreview()" style="flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid #dbe0e7;background:#fff;color:#5a6472;">Descartar</button></div></div>') : '';
+  ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:470px;width:100%;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.25);" onclick="event.stopPropagation()">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:17px;font-weight:700;color:#1b2030;">Aviso / Disponibilidad</div><button onclick="_avCerrar()" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;line-height:1;">×</button></div>'
+    +'<div style="font-size:12.5px;color:#8a92a0;margin:2px 0 6px;">Contales cuándo no vas a estar. Se publica en la app y/o WhatsApp.</div>'
+    +(_avDraft.activo?'<div style="font-size:12px;font-weight:600;color:#0f7a3d;background:#e6f4ea;border-radius:8px;padding:8px 11px;margin-top:10px;">✓ Hay un aviso activo en la app ahora mismo.</div>':'')
+    +lbl('1','Motivo')
+    +'<select onchange="_avDraft.tipo=this.value" style="width:100%;border:1px solid #dbe0e7;border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;color:#1b2030;background:#fff;">'+Object.keys(_AV_MOTIVOS).map(opt).join('')+'</select>'
+    +lbl('2','Fechas')
     +'<div style="display:flex;gap:10px;"><input type="date" value="'+(_avDraft.desde||'')+'" onchange="_avDraft.desde=this.value" style="flex:1;border:1px solid #dbe0e7;border-radius:9px;padding:10px;font-size:13px;font-family:inherit;color:#1b2030;"><input type="date" value="'+(_avDraft.hasta||'')+'" onchange="_avDraft.hasta=this.value" style="flex:1;border:1px solid #dbe0e7;border-radius:9px;padding:10px;font-size:13px;font-family:inherit;color:#1b2030;"></div>'
-    +'<div style="font-size:11px;font-weight:700;color:#5a6472;text-transform:uppercase;letter-spacing:.4px;margin:14px 0 6px;">Mensaje</div>'
-    +'<textarea onchange="_avDraft.mensaje=this.value" placeholder="Ej: Me tomo unos días. Tu plan queda cargado; a la vuelta lo vemos." style="width:100%;min-height:80px;border:1px solid #dbe0e7;border-radius:9px;padding:11px;font-size:13px;font-family:inherit;line-height:1.5;resize:vertical;color:#1b2030;">'+(_avDraft.mensaje||'').replace(/</g,'&lt;')+'</textarea>'
-    +'<div style="display:flex;flex-direction:column;gap:9px;margin-top:16px;">'
-    +'<button onclick="_avPublicar()" style="width:100%;padding:12px;border:none;border-radius:10px;background:#3A6EA5;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;">📢 Publicar en la app</button>'
-    +'<button onclick="_avWhatsAppTodos()" style="width:100%;padding:12px;border:none;border-radius:10px;background:#25D366;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;">💬 WhatsApp a todos</button>'
-    +(_avDraft.activo?'<button onclick="_avQuitar()" style="width:100%;padding:11px;border:1px solid #dbe0e7;border-radius:10px;background:#fff;color:#c23b3b;font-size:13px;font-weight:600;cursor:pointer;">Quitar aviso</button>':'')
-    +'</div></div>';
+    +lbl('3','Mensaje — escribí o dictá 🎙️')
+    +'<div style="position:relative;"><textarea id="av-msg" onchange="_avDraft.mensaje=this.value" placeholder="Ej: me tomo unos días por un tema personal…" style="width:100%;min-height:82px;border:1px solid #dbe0e7;border-radius:9px;padding:11px 46px 11px 11px;font-size:13px;font-family:inherit;line-height:1.5;resize:vertical;color:#1b2030;">'+(_avDraft.mensaje||'').replace(/</g,'&lt;')+'</textarea><button id="av-mic" onclick="_avMic()" title="Dictar por voz" style="position:absolute;right:8px;bottom:8px;width:34px;height:34px;border-radius:9px;border:1px solid #dbe0e7;background:#fff;color:#3A6EA5;font-size:15px;cursor:pointer;">🎙️</button></div>'
+    +'<button id="av-opt" onclick="_avOptimizar()" style="width:100%;margin-top:10px;padding:11px;border:1px solid #3A6EA5;border-radius:10px;background:#eef4fb;color:#3A6EA5;font-size:13px;font-weight:700;cursor:pointer;">✨ Optimizar mensaje (redacción positiva)</button>'
+    +preview
+    +lbl('4','Canales')
+    +'<div style="display:flex;gap:10px;">'+chbox('canalApp','📢','Muro de la app','Banner automático')+chbox('canalWA','💬','WhatsApp','Saludo con nombre')+'</div>'
+    +(_avDraft.canalWA?'<div style="font-size:11px;color:#8a92a0;line-height:1.5;margin-top:9px;background:#f4f6f8;border-radius:8px;padding:9px 11px;">En WhatsApp se personaliza solo: <b style="color:#5a6472;">"Hola, {Nombre}…"</b> para cada alumno.</div>':'')
+    +'<button onclick="_avEnviar()" style="width:100%;margin-top:16px;padding:13px;border:none;border-radius:11px;background:#3A6EA5;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">Publicar / Enviar aviso →</button>'
+    +(_avDraft.activo?'<button onclick="_avQuitar()" style="width:100%;margin-top:9px;padding:10px;border:1px solid #dbe0e7;border-radius:10px;background:#fff;color:#c23b3b;font-size:12.5px;font-weight:600;cursor:pointer;">Quitar aviso de la app</button>':'')
+    +'</div>';
   document.body.appendChild(ov);
 }
-async function _avPublicar(){
+function _avMic(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ toast('Tu navegador no soporta dictado por voz (usá Chrome)','error'); return; }
+  if(_avRec){ try{_avRec.stop();}catch(e){} return; }
+  const ta=document.getElementById('av-msg'); if(ta) _avDraft.mensaje=ta.value;
+  const base=_avDraft.mensaje||'';
+  _avRec=new SR(); _avRec.lang='es-AR'; _avRec.interimResults=true; _avRec.continuous=true;
+  const btn=document.getElementById('av-mic'); if(btn){ btn.style.background='#fdeaea'; btn.style.borderColor='#e6a3a3'; btn.style.color='#c23b3b'; btn.textContent='⏹'; }
+  _avRec.onresult=(ev)=>{ let txt=''; for(let i=ev.resultIndex;i<ev.results.length;i++){ txt+=ev.results[i][0].transcript; } _avDraft.mensaje=(base+(base?' ':'')+txt).replace(/\s+/g,' ').trim(); const t=document.getElementById('av-msg'); if(t) t.value=_avDraft.mensaje; };
+  _avRec.onend=()=>{ _avRec=null; const b=document.getElementById('av-mic'); if(b){ b.style.background='#fff'; b.style.borderColor='#dbe0e7'; b.style.color='#3A6EA5'; b.textContent='🎙️'; } };
+  _avRec.onerror=()=>{ _avRec=null; const b=document.getElementById('av-mic'); if(b){ b.style.background='#fff'; b.style.borderColor='#dbe0e7'; b.style.color='#3A6EA5'; b.textContent='🎙️'; } };
+  try{ _avRec.start(); }catch(e){ _avRec=null; }
+}
+async function _avOptimizarIA(texto, onDone, onError){
+  const apiKey=(typeof soccGetApiKey==='function'?soccGetApiKey():'');
+  if(!apiKey){ onError('Configurá tu API key de IA (Gemini) para usar el optimizador.'); return; }
+  const motivo=(_AV_MOTIVOS[_avDraft.tipo]||['','un motivo personal'])[1];
+  const sys='Sos un asistente de comunicacion para un entrenador personal que escribe a sus alumnos. Reescribi el aviso aplicando: comunicacion 100% en positivo (tecnicas de PNL), lenguaje neutro y natural en espanol rioplatense, SIN marcas de genero, profesional, calido y claro. Reglas estrictas: (1) 2 a 4 oraciones, (2) transmiti que el plan de entrenamiento queda cargado y disponible para seguir entrenando, (3) cerra SIEMPRE invitando a escribir por WhatsApp ante cualquier consulta, (4) NO incluyas el nombre del alumno ni un saludo inicial (se agregan aparte), (5) devolve SOLO el mensaje final, sin comillas ni encabezados.';
+  const prompt='Motivo de la ausencia: '+motivo+'.\nBorrador del entrenador a reescribir:\n'+texto;
+  try{
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+apiKey,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:sys}]},contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.4,maxOutputTokens:400}})});
+    if(!r.ok){ const e=await r.json().catch(()=>({})); onError((e&&e.error&&e.error.message)||('Error '+r.status)); return; }
+    const data=await r.json();
+    onDone(String((((data.candidates||[])[0]||{}).content||{}).parts&&data.candidates[0].content.parts[0].text||'').trim());
+  }catch(e){ onError('Error de red: '+e.message); }
+}
+async function _avOptimizar(){
+  const ta=document.getElementById('av-msg'); if(ta) _avDraft.mensaje=ta.value;
+  const txt=(_avDraft.mensaje||'').trim();
+  if(!txt){ toast('Escribí o dictá un mensaje primero','error'); return; }
+  const btn=document.getElementById('av-opt'); if(btn){ btn.disabled=true; btn.textContent='✨ Optimizando…'; btn.style.opacity='.7'; }
+  _avOptimizarIA(txt, (out)=>{ _avDraft.preview=out||txt; _avRender(); }, (err)=>{ toast(err,'error'); const b=document.getElementById('av-opt'); if(b){ b.disabled=false; b.textContent='✨ Optimizar mensaje (redacción positiva)'; b.style.opacity='1'; } });
+}
+async function _avEnviar(){
+  const ta=document.getElementById('av-msg'); if(ta) _avDraft.mensaje=ta.value;
   if(!(_avDraft.mensaje||'').trim()){ toast('Escribí un mensaje','error'); return; }
-  const data={ activo:true, tipo:_avDraft.tipo, desde:_avDraft.desde||'', hasta:_avDraft.hasta||'', mensaje:_avDraft.mensaje.trim(), at:new Date().toISOString() };
-  try{ await window._db.collection('alumnos').doc('zz_aviso_global').set(data,{merge:true}); _avDraft.activo=true; toast('Aviso publicado en la app ✓'); _avRender(); }catch(e){ toast('Error al publicar','error'); }
+  if(!_avDraft.canalApp && !_avDraft.canalWA){ toast('Elegí al menos un canal','error'); return; }
+  if(_avDraft.canalApp){
+    const data={ activo:true, tipo:_avDraft.tipo, desde:_avDraft.desde||'', hasta:_avDraft.hasta||'', mensaje:_avDraft.mensaje.trim(), at:new Date().toISOString() };
+    try{ await window._db.collection('alumnos').doc('zz_aviso_global').set(data,{merge:true}); _avDraft.activo=true; toast('Aviso publicado en la app ✓'); }catch(e){ toast('Error al publicar','error'); }
+  }
+  if(_avDraft.canalWA){ _avWhatsAppLista(); } else { _avRender(); }
 }
 async function _avQuitar(){
   try{ await window._db.collection('alumnos').doc('zz_aviso_global').set({activo:false},{merge:true}); _avDraft.activo=false; toast('Aviso quitado — ya no se muestra'); _avRender(); }catch(e){ toast('Error','error'); }
 }
-function _avWhatsAppTodos(){
-  if(!(_avDraft.mensaje||'').trim()){ toast('Escribí un mensaje','error'); return; }
-  const msg=_avMsgTexto();
-  try{ if(navigator.clipboard) navigator.clipboard.writeText(msg); }catch(e){}
+function _avWhatsAppLista(){
+  const body=(_avDraft.mensaje||'').trim();
   const als=(typeof getAlumnos==='function'?getAlumnos():[]).filter(a=>a && a.telefono && String(a.telefono).replace(/\D/g,'').length>=8);
-  const enc=encodeURIComponent(msg);
-  const filas = als.map(a=>{ const num=String(a.telefono).replace(/\D/g,''); return '<a href="https://wa.me/'+num+'?text='+enc+'" target="_blank" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid #eceef2;border-radius:9px;text-decoration:none;color:#1b2030;font-size:13px;font-weight:600;margin-bottom:7px;">'+String(a.nombre||'Alumno').replace(/</g,'&lt;')+'<span style="color:#1c9b4b;font-weight:700;">Enviar ›</span></a>'; }).join('') || '<div style="color:#8a92a0;font-size:12px;text-align:center;padding:14px;">No hay alumnos con teléfono cargado.</div>';
+  const filas = als.map(a=>{ const num=String(a.telefono).replace(/\D/g,''); const first=(String(a.nombre||'').trim().split(/\s+/)[0])||''; const msg='Hola, '+first+' 👋\n\n'+body; return '<a href="https://wa.me/'+num+'?text='+encodeURIComponent(msg)+'" target="_blank" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid #eceef2;border-radius:9px;text-decoration:none;color:#1b2030;font-size:13px;font-weight:600;margin-bottom:7px;">'+String(a.nombre||'Alumno').replace(/</g,'&lt;')+'<span style="color:#1c9b4b;font-weight:700;">Enviar ›</span></a>'; }).join('') || '<div style="color:#8a92a0;font-size:12px;text-align:center;padding:14px;">No hay alumnos con teléfono cargado.</div>';
+  try{ if(navigator.clipboard) navigator.clipboard.writeText('Hola 👋\n\n'+body); }catch(e){}
   let ov=document.getElementById('avisos-overlay'); if(ov) ov.remove();
   ov=document.createElement('div'); ov.id='avisos-overlay';
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:6000;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;';
   ov.onclick=e=>{ if(e.target===ov) _avCerrar(); };
   ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:460px;width:100%;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.25);" onclick="event.stopPropagation()">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:16px;font-weight:700;color:#1b2030;">WhatsApp a tus alumnos</div><button onclick="_avRender()" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;line-height:1;">×</button></div>'
-    +'<div style="font-size:12.5px;color:#8a92a0;margin:2px 0 12px;line-height:1.5;">El mensaje ya está <b>copiado</b>: pegalo en una <b>lista de difusión</b> para mandarlo a todos de una. O tocá "Enviar" en cada alumno:</div>'
+    +'<div style="font-size:12.5px;color:#8a92a0;margin:2px 0 12px;line-height:1.5;">Cada mensaje ya arranca con <b>"Hola, {Nombre}"</b>. Tocá "Enviar" en cada alumno, o pegá el genérico (ya copiado) en una lista de difusión.</div>'
     +'<div style="max-height:340px;overflow-y:auto;">'+filas+'</div>'
     +'<button onclick="_avRender()" style="width:100%;margin-top:12px;padding:11px;border:1px solid #dbe0e7;border-radius:10px;background:#fff;color:#5a6472;font-size:13px;font-weight:600;cursor:pointer;">‹ Volver</button>'
     +'</div>';
