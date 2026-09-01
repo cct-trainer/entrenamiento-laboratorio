@@ -3230,6 +3230,7 @@ select.toolbox-input option:disabled { color: #888; }
     <button onclick="abrirSuscripciones()" class="pln-btn pln-btn-outline" title="Planes, pagos y vencimientos" style="position:relative;">Suscripciones<span id="venc-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="abrirMetricas()" class="pln-btn pln-btn-outline" title="Métricas del piloto de adquisición">📊 Métricas</button>
     <button onclick="_abrirBandeja()" class="pln-btn pln-btn-outline" title="Bandeja de actividad de tus alumnos" style="position:relative;">📥 Actividad<span id="bandeja-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
+    <button onclick="_abrirAvisos()" class="pln-btn pln-btn-outline" title="Avisar a tus alumnos cuándo no vas a estar (vacaciones, etc.)">📢 Avisos</button>
     <button onclick="_abrirAccesos()" class="pln-btn pln-btn-outline" title="Quién entró a la app y cuándo">👁 Accesos</button>
     <button onclick="_abrirBellModif()" class="pln-btn pln-btn-outline" title="Modificaciones de alumnos sin revisar" style="position:relative;">🔔<span id="bell-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <button onclick="recuperarDesdePortales()" class="pln-btn pln-btn-outline" title="Recuperar tus alumnos leyendo sus documentos en la nube">↻ Recuperar</button>
@@ -12301,6 +12302,72 @@ async function _bandejaIr(i){
   openPerfilAlumno(x.id);
 }
 
+// ══════════ AVISOS A ALUMNOS (vacaciones / no disponible) ══════════
+let _avDraft = { tipo:'vacaciones', desde:'', hasta:'', mensaje:'', activo:false };
+function _avFechaFmt(iso){ if(!iso) return ''; const d=new Date(iso+'T12:00:00'); if(isNaN(d)) return ''; return d.getDate()+' '+d.toLocaleDateString('es-AR',{month:'short'}).replace('.',''); }
+function _avMsgTexto(){
+  const r=(_avDraft.desde&&_avDraft.hasta)?(_avFechaFmt(_avDraft.desde)+' al '+_avFechaFmt(_avDraft.hasta)):(_avDraft.desde?('desde el '+_avFechaFmt(_avDraft.desde)):'');
+  const tit=_avDraft.tipo==='ocupada'?'Semana ocupada':(_avDraft.tipo==='nodisp'?'No voy a estar disponible':'Me voy de vacaciones');
+  return '📢 '+tit+(r?' ('+r+')':'')+'\n\n'+(_avDraft.mensaje||'').trim();
+}
+async function _abrirAvisos(){
+  let cur={};
+  try{ if(window._db){ const d=await window._db.collection('alumnos').doc('zz_aviso_global').get(); if(d.exists) cur=d.data()||{}; } }catch(e){}
+  _avDraft={ tipo:cur.tipo||'vacaciones', desde:cur.desde||'', hasta:cur.hasta||'', mensaje:cur.mensaje||'', activo:!!cur.activo };
+  _avRender();
+}
+function _avCerrar(){ const o=document.getElementById('avisos-overlay'); if(o) o.remove(); }
+function _avSetTipo(t){ _avDraft.tipo=t; _avRender(); }
+function _avRender(){
+  let ov=document.getElementById('avisos-overlay'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='avisos-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:6000;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;';
+  ov.onclick=e=>{ if(e.target===ov) _avCerrar(); };
+  const chip=(v,l)=>'<button onclick="_avSetTipo(\''+v+'\')" style="font-size:12px;font-weight:600;padding:7px 13px;border-radius:20px;border:1px solid '+(_avDraft.tipo===v?'#3A6EA5':'#dbe0e7')+';background:'+(_avDraft.tipo===v?'#eef4fb':'#fff')+';color:'+(_avDraft.tipo===v?'#3A6EA5':'#5a6472')+';cursor:pointer;font-family:inherit;">'+l+'</button>';
+  ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:460px;width:100%;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.25);" onclick="event.stopPropagation()">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:17px;font-weight:700;color:#1b2030;">Aviso a tus alumnos</div><button onclick="_avCerrar()" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;line-height:1;">×</button></div>'
+    +'<div style="font-size:12.5px;color:#8a92a0;margin:2px 0 14px;">Se muestra automáticamente en la app de todos tus alumnos.</div>'
+    +(_avDraft.activo?'<div style="font-size:12px;font-weight:600;color:#0f7a3d;background:#e6f4ea;border-radius:8px;padding:8px 11px;margin-bottom:12px;">✓ Hay un aviso activo ahora mismo.</div>':'')
+    +'<div style="font-size:11px;font-weight:700;color:#5a6472;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Tipo</div>'
+    +'<div style="display:flex;gap:7px;flex-wrap:wrap;">'+chip('vacaciones','🏖 Vacaciones')+chip('nodisp','🚫 No disponible')+chip('ocupada','🗓 Semana ocupada')+'</div>'
+    +'<div style="font-size:11px;font-weight:700;color:#5a6472;text-transform:uppercase;letter-spacing:.4px;margin:14px 0 6px;">Fechas</div>'
+    +'<div style="display:flex;gap:10px;"><input type="date" value="'+(_avDraft.desde||'')+'" onchange="_avDraft.desde=this.value" style="flex:1;border:1px solid #dbe0e7;border-radius:9px;padding:10px;font-size:13px;font-family:inherit;color:#1b2030;"><input type="date" value="'+(_avDraft.hasta||'')+'" onchange="_avDraft.hasta=this.value" style="flex:1;border:1px solid #dbe0e7;border-radius:9px;padding:10px;font-size:13px;font-family:inherit;color:#1b2030;"></div>'
+    +'<div style="font-size:11px;font-weight:700;color:#5a6472;text-transform:uppercase;letter-spacing:.4px;margin:14px 0 6px;">Mensaje</div>'
+    +'<textarea onchange="_avDraft.mensaje=this.value" placeholder="Ej: Me tomo unos días. Tu plan queda cargado; a la vuelta lo vemos." style="width:100%;min-height:80px;border:1px solid #dbe0e7;border-radius:9px;padding:11px;font-size:13px;font-family:inherit;line-height:1.5;resize:vertical;color:#1b2030;">'+(_avDraft.mensaje||'').replace(/</g,'&lt;')+'</textarea>'
+    +'<div style="display:flex;flex-direction:column;gap:9px;margin-top:16px;">'
+    +'<button onclick="_avPublicar()" style="width:100%;padding:12px;border:none;border-radius:10px;background:#3A6EA5;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;">📢 Publicar en la app</button>'
+    +'<button onclick="_avWhatsAppTodos()" style="width:100%;padding:12px;border:none;border-radius:10px;background:#25D366;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;">💬 WhatsApp a todos</button>'
+    +(_avDraft.activo?'<button onclick="_avQuitar()" style="width:100%;padding:11px;border:1px solid #dbe0e7;border-radius:10px;background:#fff;color:#c23b3b;font-size:13px;font-weight:600;cursor:pointer;">Quitar aviso</button>':'')
+    +'</div></div>';
+  document.body.appendChild(ov);
+}
+async function _avPublicar(){
+  if(!(_avDraft.mensaje||'').trim()){ toast('Escribí un mensaje','error'); return; }
+  const data={ activo:true, tipo:_avDraft.tipo, desde:_avDraft.desde||'', hasta:_avDraft.hasta||'', mensaje:_avDraft.mensaje.trim(), at:new Date().toISOString() };
+  try{ await window._db.collection('alumnos').doc('zz_aviso_global').set(data,{merge:true}); _avDraft.activo=true; toast('Aviso publicado en la app ✓'); _avRender(); }catch(e){ toast('Error al publicar','error'); }
+}
+async function _avQuitar(){
+  try{ await window._db.collection('alumnos').doc('zz_aviso_global').set({activo:false},{merge:true}); _avDraft.activo=false; toast('Aviso quitado — ya no se muestra'); _avRender(); }catch(e){ toast('Error','error'); }
+}
+function _avWhatsAppTodos(){
+  if(!(_avDraft.mensaje||'').trim()){ toast('Escribí un mensaje','error'); return; }
+  const msg=_avMsgTexto();
+  try{ if(navigator.clipboard) navigator.clipboard.writeText(msg); }catch(e){}
+  const als=(typeof getAlumnos==='function'?getAlumnos():[]).filter(a=>a && a.telefono && String(a.telefono).replace(/\D/g,'').length>=8);
+  const enc=encodeURIComponent(msg);
+  const filas = als.map(a=>{ const num=String(a.telefono).replace(/\D/g,''); return '<a href="https://wa.me/'+num+'?text='+enc+'" target="_blank" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid #eceef2;border-radius:9px;text-decoration:none;color:#1b2030;font-size:13px;font-weight:600;margin-bottom:7px;">'+String(a.nombre||'Alumno').replace(/</g,'&lt;')+'<span style="color:#1c9b4b;font-weight:700;">Enviar ›</span></a>'; }).join('') || '<div style="color:#8a92a0;font-size:12px;text-align:center;padding:14px;">No hay alumnos con teléfono cargado.</div>';
+  let ov=document.getElementById('avisos-overlay'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='avisos-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:6000;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;';
+  ov.onclick=e=>{ if(e.target===ov) _avCerrar(); };
+  ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:460px;width:100%;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.25);" onclick="event.stopPropagation()">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:16px;font-weight:700;color:#1b2030;">WhatsApp a tus alumnos</div><button onclick="_avRender()" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;line-height:1;">×</button></div>'
+    +'<div style="font-size:12.5px;color:#8a92a0;margin:2px 0 12px;line-height:1.5;">El mensaje ya está <b>copiado</b>: pegalo en una <b>lista de difusión</b> para mandarlo a todos de una. O tocá "Enviar" en cada alumno:</div>'
+    +'<div style="max-height:340px;overflow-y:auto;">'+filas+'</div>'
+    +'<button onclick="_avRender()" style="width:100%;margin-top:12px;padding:11px;border:1px solid #dbe0e7;border-radius:10px;background:#fff;color:#5a6472;font-size:13px;font-weight:600;cursor:pointer;">‹ Volver</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
 function renderPlanDiaEditor(diaIdx) {
   bloqueCounter=0; ejercicioCounter=0;
   const sesiones = planDiasData[diaIdx] || [{ bloques:[] }];

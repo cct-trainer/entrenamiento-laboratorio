@@ -574,6 +574,7 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
   <div id="novedades-banner" style="display:none;"></div>
 
   <div class="tab on" id="tab-rutina">
+    <div id="aviso-banner"></div>
     <div id="mes-nav"></div>
     <div id="meso-block"></div>
     <div id="week-sel"></div>
@@ -671,6 +672,7 @@ const CFG = {
 };
 let DN = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 let _db = null; // referencia global a Firestore
+let _avisoCoach = null; // aviso global del coach (vacaciones / no disponible)
 
 const SERIE_TIPOS = {
   calentamiento: { icon:'🔥', label:'Calentamiento',    color:'#f97316' },
@@ -937,8 +939,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260901113306 por un timestamp en cada deploy
-const _APP_VERSION = '20260901113306';
+// deploy.bat reemplaza 20260901115412 por un timestamp en cada deploy
+const _APP_VERSION = '20260901115412';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1048,6 +1050,9 @@ const TIPOS_RUN = {
     const doc = await db.collection('alumnos').doc(id).get();
     if (!doc.exists) return showErr('Todavía no hay datos para este alumno. Pedile a tu coach que sincronice el portal desde su aplicación.');
     _data = doc.data();
+
+    // Aviso global del coach (vacaciones / no disponible) → banner en el home
+    try{ const _av = await db.collection('alumnos').doc('zz_aviso_global').get(); _avisoCoach = (_av.exists ? _av.data() : null) || null; }catch(e){ _avisoCoach=null; }
 
     // Registrar acceso a la app (para que el coach vea quién entró y cuándo)
     try {
@@ -1718,7 +1723,26 @@ function _getModLabel(p, i) {
   return p.nombre || 'Plan '+(i+1);
 }
 
+// ── Aviso del coach (vacaciones / no disponible) ──
+function _avisoFecha(iso){
+  if(!iso) return '';
+  const d=new Date(iso+'T12:00:00'); if(isNaN(d)) return '';
+  return d.getDate()+' '+d.toLocaleDateString('es-AR',{month:'short'}).replace('.','');
+}
+function _avisoBanner(){
+  const a=_avisoCoach; if(!a || !a.activo || !a.mensaje) return '';
+  if(a.hasta && a.hasta < _hoyISO()) return '';   // ya terminó el período
+  const ic = a.tipo==='ocupada'?'🗓':(a.tipo==='nodisp'?'🚫':'🏖');
+  const tit = a.tipo==='ocupada'?'Semana ocupada':(a.tipo==='nodisp'?'No disponible':'Vacaciones');
+  const rango = (a.desde&&a.hasta) ? (_avisoFecha(a.desde)+' al '+_avisoFecha(a.hasta)) : (a.desde?('desde el '+_avisoFecha(a.desde)):'');
+  const msg = String(a.mensaje).replace(/</g,'&lt;');
+  return '<div style="background:linear-gradient(160deg,#2a2410,#191408);border:1px solid #6b5a1f;border-left:4px solid #C9A84C;border-radius:12px;padding:13px 14px;margin-bottom:14px;display:flex;gap:11px;box-shadow:0 8px 20px rgba(0,0,0,.35);">'
+    +'<span style="width:30px;height:30px;border-radius:8px;background:rgba(201,168,76,.18);color:#e6c26a;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">'+ic+'</span>'
+    +'<div style="min-width:0;"><div style="font-size:9px;font-weight:900;letter-spacing:.8px;color:#e6c26a;text-transform:uppercase;margin-bottom:3px;">'+(_LANG==='en'?'Notice from your coach':'Aviso de tu coach')+(rango?' · '+rango:'')+'</div>'
+    +'<div style="font-size:13px;font-weight:700;color:#f2ead6;line-height:1.4;">'+msg+'</div></div></div>';
+}
 function renderRutina() {
+  try{ const _ab=document.getElementById('aviso-banner'); if(_ab) _ab.innerHTML=_avisoBanner(); }catch(e){}
   if (_diaIdx===null){ if(typeof _restSkip==='function') _restSkip(); if(typeof _wakeOff==='function') _wakeOff(); }
   if (!_plan||!(_plan.semanasArray||[]).length) {
     ['mes-nav','meso-block','week-sel'].forEach(id=>{const e=document.getElementById(id); if(e) e.innerHTML='';});
