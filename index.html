@@ -121,8 +121,8 @@ main { padding: 28px 32px; max-width: none; margin: 0; }
 .alu-search { width: 100%; background: #fff; border: 1px solid #E6EAF0; border-radius: 12px; padding: 13px 14px 13px 42px; color: #183153; font-size: 14px; font-weight: 500; font-family: inherit; outline: none; }
 .alu-search::placeholder { color: #9fb0c6; }
 .alu-search:focus { border-color: #3A6EA5; }
-.alu-nuevo { background: #3A6EA5; color: #fff; border: none; border-radius: 12px; padding: 12px 20px; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; transition: filter .15s; }
-.alu-nuevo:hover { filter: brightness(1.05); }
+.alu-nuevo { background: #171C26; color: #fff; border: none; border-radius: 9px; padding: 11px 18px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: filter .15s; }
+.alu-nuevo:hover { filter: brightness(1.15); }
 .alu-count { font-size: 11px; font-weight: 800; letter-spacing: 1px; color: #6B7A90; text-transform: uppercase; margin: 4px 0 12px; }
 .alu-list { display: flex; flex-direction: column; }
 .alu-row { display: flex; align-items: center; gap: 13px; padding: 10px; border-bottom: 0.5px solid #24365a; cursor: pointer; transition: background .12s; }
@@ -137,32 +137,31 @@ main { padding: 28px 32px; max-width: none; margin: 0; }
 @media(max-width:1400px){ .alu-cards{ grid-template-columns: repeat(4, minmax(0,1fr)); } }
 @media(max-width:1100px){ .alu-cards{ grid-template-columns: repeat(3, minmax(0,1fr)); } }
 @media(max-width:760px){ .alu-cards{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
-.alu-card { position: relative; overflow: hidden; background: radial-gradient(120% 120% at 0% 0%, #2f5580 0%, #171C26 60%); border: 1px solid rgba(255,255,255,.07); border-radius: 14px; padding: 15px; cursor: pointer; box-shadow: 0 6px 16px rgba(0,0,0,.22); transition: border-color .16s, transform .12s, box-shadow .16s; }
-.alu-card:hover { border-color: #3A6EA5; transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0,0,0,.32); }
-.alu-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:#3A6EA5; opacity:0; transition:.16s; }
-.alu-card:hover::before { opacity:1; }
-.ac-work { width:100%; margin-top:11px; padding:9px; border:none; border-radius:10px; background:#3A6EA5; color:#fff; font-size:12px; font-weight:800; letter-spacing:.2px; cursor:pointer; box-shadow:0 4px 12px rgba(58,110,165,.3); transition:filter .15s, transform .1s; }
-.ac-work:hover { filter:brightness(1.08); }
-.ac-work:active { transform:scale(.98); }
+.alu-card { position: relative; overflow: hidden; background: #fff; border: 1px solid #eceef2; border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: none; transition: border-color .15s, box-shadow .15s; }
+.alu-card:hover { border-color: #dfe3ea; box-shadow: 0 6px 20px -10px rgba(20,30,55,.18); }
+.alu-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:0; background:#3A6EA5; opacity:0; }
+.ac-work { width:100%; margin-top:13px; padding:9px; border:1px solid #dbe0e7; border-radius:9px; background:#fff; color:#3A6EA5; font-size:12.5px; font-weight:600; letter-spacing:.2px; cursor:pointer; box-shadow:none; transition:.12s; }
+.ac-work:hover { background:#f4f8fd; border-color:#3A6EA5; }
+.ac-work:active { background:#eaf2fb; }
 .ac-top { display: flex; align-items: center; gap: 13px; }
-.alu-card-av { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: #223247; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #cdd8e8; box-shadow: 0 0 0 2px #3A6EA5; }
+.alu-card-av { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: #eef1f5; border: 1px solid #e6e9ee; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #8a93a3; box-shadow: none; }
 .alu-card-av img { width: 100%; height: 100%; object-fit: cover; }
 .alu-card-main { min-width: 0; flex: 1; }
-.alu-card-nom { font-size: 14px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alu-card-nom { font-size: 14.5px; font-weight: 600; color: #1b2030; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ac-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 13px; padding-top: 12px; border-top: 1px solid #e6edf5; }
 .ac-goal { font-size: 11px; font-weight: 700; color: #5a6472; display: flex; align-items: center; gap: 6px; min-width: 0; }
 .ac-goal i { width: 8px; height: 8px; border-radius: 2px; background: #C9A84C; display: inline-block; flex-shrink: 0; font-style: normal; }
 .ac-goal span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ac-chev { color: #9aa4b3; font-size: 18px; flex-shrink: 0; }
-.ac-next { display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700; color:rgba(255,255,255,.78); margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,.14); }
-.ac-next b { color:#fff; font-weight:800; }
-.ac-next-off { color:rgba(255,255,255,.58); font-weight:600; font-style:italic; }
+.ac-next { display:flex; align-items:center; gap:7px; font-size:12px; font-weight:500; color:#8a92a0; margin-top:14px; padding-top:13px; border-top:1px solid #eceef2; }
+.ac-next b { color:#5a6472; font-weight:600; }
+.ac-next-off { color:#aab1bd; font-weight:500; }
 .alu-search-wrap { position: relative; flex: 1; }
 .alu-search-ico { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #9fb0c6; font-size: 14px; pointer-events: none; }
-.alu-filters { display: flex; gap: 9px; margin: 0 0 6px; flex-wrap: wrap; }
-.fchip { font-size: 12.5px; font-weight: 700; padding: 8px 16px; border-radius: 22px; border: 1px solid #3A6EA5; color: #fff; background: #3A6EA5; cursor: pointer; transition: .15s; font-family: inherit; }
-.fchip:hover { background: #33608f; border-color: #33608f; }
-.fchip.on { background: #3A6EA5; border-color: #2c5580; color: #fff; box-shadow: 0 4px 0 #274c73, 0 8px 14px rgba(24,49,83,.30); transform: translateY(-1px); }
+.alu-filters { display: flex; gap: 22px; margin: 8px 0 20px; flex-wrap: wrap; border-bottom: 1px solid #eceef2; }
+.fchip { font-size: 13px; font-weight: 600; padding: 9px 0; border: none; border-bottom: 2px solid transparent; color: #8a92a0; background: none; cursor: pointer; transition: .15s; font-family: inherit; margin-bottom: -1px; }
+.fchip:hover { color: #5a6472; }
+.fchip.on { color: #1b2030; border-bottom-color: #3A6EA5; }
 
 .btn-add-alumno { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; }
 .btn-add-alumno:hover { transform: translateY(-3px); }
@@ -14089,12 +14088,12 @@ function _objCat(obj){
 let _aluCat = 'todos', _aluQ = '';
 // Badge de objetivo con color según categoría
 function _objPillHTML(objetivo){
-  if(!objetivo) return '<span style="font-size:11px;color:rgba(255,255,255,.55);font-weight:700;">Sin objetivo</span>';
+  if(!objetivo) return '<span style="font-size:12px;color:#aab1bd;font-weight:500;">Sin objetivo</span>';
   const cat = _objCat(objetivo);
-  // punto de color por objetivo · pastilla translúcida sobre la card oscura
-  const dot = {hipertrofia:'#e0c14e',masa:'#e0c14e',salud:'#6fd39a',recomp:'#8fb7e6',perdida:'#eaa15a',rendimiento:'#b79ae8',otros:'#aab4c2'};
+  // punto de color por objetivo + texto gris (minimalista, sin píldora)
+  const dot = {hipertrofia:'#3A6EA5',masa:'#3A6EA5',salud:'#4b9e6a',recomp:'#0ea5a0',perdida:'#c98a2b',rendimiento:'#8b5cf6',otros:'#8a92a0'};
   const d = dot[cat] || dot.otros;
-  return '<span style="display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;padding:4px 11px;border-radius:20px;background:rgba(255,255,255,.14);color:#fff;"><i style="width:7px;height:7px;border-radius:50%;background:'+d+';flex-shrink:0;"></i>'+String(objetivo).replace(/</g,'&lt;')+'</span>';
+  return '<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:#5a6472;"><i style="width:6px;height:6px;border-radius:50%;background:'+d+';flex-shrink:0;"></i>'+String(objetivo).replace(/</g,'&lt;')+'</span>';
 }
 // Próxima sesión del alumno (día >= hoy con bloques en su plan de fuerza)
 function _proximaSesionAlumno(alId){
