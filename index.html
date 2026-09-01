@@ -4347,6 +4347,7 @@ select.toolbox-input option:disabled { color: #888; }
         <button class="pln-btn pln-btn-outline" onclick="abrirBibliotecaSesiones()">Biblioteca</button>
         <button class="pln-btn pln-btn-outline" onclick="_iaShowImportModal()" style="background:#ecfdf5;color:#059669;border-color:#10b981;">📥 Importar JSON</button>
         <button class="pln-btn pln-btn-outline" onclick="guardarPlantillaSesion()">Guardar plantilla</button>
+        <button class="pln-btn pln-btn-outline" onclick="duplicarMesMismoAlumno()" title="Duplicar este mes/ciclo completo para el mismo alumno">📋 Duplicar mes</button>
         <button class="pln-btn pln-btn-guardar" onclick="abrirModalAsignarSesion()">Asignar a alumno</button>
         <button id="copiloto-toggle-btn" class="copiloto-toggle-btn" onclick="toggleCopiloto()" style="display:none;">Copiloto IA</button>
       </div>
@@ -13128,6 +13129,37 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
 }
 
 // ── GUARDAR semana de fuerza ─────────────────────────────────────────────────
+// Duplicar el mes/ciclo completo para el MISMO alumno (crea un plan nuevo que arranca la semana siguiente)
+function duplicarMesMismoAlumno(){
+  guardarEstadoDiaActual();
+  const alumnoId = (document.getElementById('plan-alumno-select')?.value) || planSemOriginalAlumnoId;
+  if(!alumnoId){ toast('Este mes no tiene alumno asignado','error'); return; }
+  if(!(planSemanasArray && planSemanasArray.length)){ toast('No hay mes para duplicar','error'); return; }
+  const semanasClone = JSON.parse(JSON.stringify(planSemanasArray));
+  // Correr las fechas: la copia arranca la semana siguiente a la última del mes actual
+  let base=null; semanasClone.forEach(s=>{ if(s&&s.fechaInicio && (!base||s.fechaInicio>base)) base=s.fechaInicio; });
+  if(base){
+    const d0=new Date(base+'T12:00:00'); d0.setDate(d0.getDate()+7);
+    semanasClone.forEach((s,i)=>{ const d=new Date(d0); d.setDate(d.getDate()+i*7);
+      s.fechaInicio=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); s.semana=i+1; });
+  }
+  const tituloBase=(document.getElementById('plan-titulo')?.value.trim())||'Plan de fuerza';
+  const nuevo={
+    id: genId(), alumnoId, tipoPlan:'fuerza', tipoPlanEstructura:'semanal',
+    titulo: tituloBase.replace(/\s*\(copia\)\s*$/i,'')+' (copia)',
+    semanaNum: 1,
+    fecha: semanasClone[0]?.fechaInicio || (document.getElementById('plan-fecha')?.value||''),
+    objetivo: document.getElementById('plan-objetivo')?.value || '',
+    nivel: document.getElementById('plan-nivel')?.value || '',
+    diasData: semanasClone[0]?.dias || {},
+    semanasArray: semanasClone,
+    createdAt: new Date().toISOString()
+  };
+  const planes=getPlanificaciones(); planes.push(nuevo); savePlanificaciones(planes);
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+  toast('Mes duplicado ✓ — abrí la copia');
+  abrirPlanFuerzaExistente(nuevo.id);
+}
 function guardarPlanSemanal() {
   guardarEstadoDiaActual();
   const alumnoId = document.getElementById('plan-alumno-select')?.value;
