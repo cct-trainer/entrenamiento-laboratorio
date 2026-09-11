@@ -283,6 +283,23 @@
       <input class="other" id="pedido_otro" placeholder="Otro (opcional)">
     </div>
 
+    <div class="step" data-step="7">
+      <div class="q">17 · Tus datos personales</div>
+      <div class="sub">Confirmá o corregí tus datos para que estén siempre al día.</div>
+      <div class="qs">Nombre y apellido</div>
+      <input id="pd_nombre" placeholder="Nombre y apellido">
+      <div class="qs" style="margin-top:12px;">Fecha de nacimiento</div>
+      <input id="pd_nacimiento" type="date">
+      <div class="qs" style="margin-top:12px;">Email</div>
+      <input id="pd_email" type="email" placeholder="tucorreo@ejemplo.com">
+      <div class="qs" style="margin-top:12px;">Teléfono / WhatsApp</div>
+      <input id="pd_telefono" type="tel" placeholder="+54 9 11 ...">
+      <div class="qs" style="margin-top:12px;">Sexo</div>
+      <div class="pills" data-single="pd_sexo">
+        <div class="pill" data-v="Femenino">Femenino</div><div class="pill" data-v="Masculino">Masculino</div><div class="pill" data-v="Otro">Otro</div>
+      </div>
+    </div>
+
     <div class="err" id="err"></div>
     <div class="nav">
       <button class="btn ghost" id="btn-back" onclick="prevStep()" style="display:none;">← Atrás</button>
@@ -314,7 +331,7 @@ try{ firebase.initializeApp(CFG); _db=firebase.firestore(); }catch(e){ console.w
 
 const ALID=(new URLSearchParams(location.search).get('a')||'').trim();
 const SKEY='SOCC_UPDATE2_'+(ALID||'default');
-const TOTAL=7;
+const TOTAL=8;
 let step=0, _alumno=null;
 const DIAS=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 const EXLIST={
@@ -346,6 +363,17 @@ let _enjoyEx=[], _avoidEx=[];
   if(_db && ALID){ try{ const doc=await _db.collection('alumnos').doc(ALID).get(); if(doc.exists) _alumno=doc.data()||{}; }catch(e){} }
   const nombre=(_alumno&&(_alumno.nombre||(_alumno.perfil&&_alumno.perfil.nombre)))||'';
   document.getElementById('hi').textContent= nombre ? ('Hola '+String(nombre).split(' ')[0]+' 👋 actualicemos tu plan') : 'Actualicemos tu plan';
+  // Precargar datos personales (solo si el campo está vacío, para no pisar un borrador)
+  try{
+    const p=(_alumno&&_alumno.perfil)||{};
+    const setv=(id,v)=>{ const el=document.getElementById(id); if(el && !el.value && v) el.value=v; };
+    setv('pd_nombre', _alumno&&(_alumno.nombre||p.nombre));
+    setv('pd_nacimiento', _alumno&&(_alumno.nacimiento||p.nacimiento));
+    setv('pd_email', _alumno&&(_alumno.email||p.email));
+    setv('pd_telefono', _alumno&&(_alumno.telefono||p.telefono));
+    const sx=_alumno&&(_alumno.sexo||p.sexo);
+    if(sx && !document.querySelector('.pills[data-single="pd_sexo"] .pill.on')){ const el=document.querySelector('.pills[data-single="pd_sexo"] .pill[data-v="'+sx+'"]'); if(el) el.classList.add('on'); }
+  }catch(e){}
 })();
 
 // Interacciones
@@ -377,7 +405,7 @@ function _exRender(which){
 }
 
 const TEXT_IDS=['sentir_otro','objetivos_otro','enjoy_otro','avoid_otro','eventoDetalle','pedido_otro'];
-const SINGLE=['dolor','dolorNivel','recuperacion','energia','diasCambio','horario','evento','evalAnterior'];
+const SINGLE=['dolor','dolorNivel','recuperacion','energia','diasCambio','horario','evento','evalAnterior','pd_sexo'];
 const MULTI=['sentir','objetivos','size','def','fat','shape','importante','estilo','dolorZonas','diasNuevosLista','prioMusculos','prioCapacidades','queCambiaria','pedido'];
 function _single(g){ const el=document.querySelector('.pills[data-single="'+g+'"] .pill.on'); return el?el.getAttribute('data-v'):''; }
 function _multi(g){ return [...document.querySelectorAll('.chips[data-multi="'+g+'"] .chip.on')].map(e=>e.getAttribute('data-v')); }
@@ -388,6 +416,13 @@ function collect(){
   TEXT_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) d[id]=(el.value||'').trim(); });
   d.enjoyEx=_enjoyEx.slice(); d.avoidEx=_avoidEx.slice();
   d.duracionPorDia={}; DIAS.forEach(day=>{ const s=document.getElementById('dur-'+day); if(s&&s.value) d.duracionPorDia[day]=s.value; });
+  d.personales={
+    nombre:(document.getElementById('pd_nombre')?.value||'').trim(),
+    nacimiento:(document.getElementById('pd_nacimiento')?.value||'').trim(),
+    email:(document.getElementById('pd_email')?.value||'').trim(),
+    telefono:(document.getElementById('pd_telefono')?.value||'').trim(),
+    sexo:_single('pd_sexo')
+  };
   return d;
 }
 function saveLocal(){ try{ localStorage.setItem(SKEY, JSON.stringify(collect())); }catch(e){} }
@@ -399,6 +434,7 @@ function restoreLocal(){
   TEXT_IDS.forEach(id=>{ const el=document.getElementById(id); if(el && d[id]!=null) el.value=d[id]; });
   _enjoyEx=Array.isArray(d.enjoyEx)?d.enjoyEx:[]; _avoidEx=Array.isArray(d.avoidEx)?d.avoidEx:[]; _exRender('enjoy'); _exRender('avoid');
   if(d.duracionPorDia){ DIAS.forEach(day=>{ const s=document.getElementById('dur-'+day); if(s&&d.duracionPorDia[day]) s.value=d.duracionPorDia[day]; }); }
+  if(d.personales){ const P=d.personales, s=(id,v)=>{ const el=document.getElementById(id); if(el&&v!=null) el.value=v; }; s('pd_nombre',P.nombre); s('pd_nacimiento',P.nacimiento); s('pd_email',P.email); s('pd_telefono',P.telefono); }
 }
 document.querySelectorAll('input,textarea').forEach(el=> el.addEventListener('change', saveLocal));
 
@@ -451,6 +487,7 @@ function _resumen(n,d){
   if(n.priorizar) p.push('Prioriza: '+n.priorizar);
   if(n.queCambiaria) p.push('Cambiaría: '+n.queCambiaria);
   if(n.pedidoUnico) p.push('Pedido: '+n.pedidoUnico);
+  if(d.personales && (d.personales.nombre||d.personales.nacimiento||d.personales.email||d.personales.telefono)) p.push('📇 Actualizó sus datos personales');
   return p.join(' · ');
 }
 function _buildMasterUpdate(n,d){

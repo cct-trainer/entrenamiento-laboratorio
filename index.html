@@ -27301,6 +27301,15 @@ async function aplicarActualizacion(updId){
   if(!al){ toast('No encontré al alumno de esta actualización'); return; }
   al.fichaPlan=al.fichaPlan||{}; const f=al.fichaPlan;
   const _merge=(a,b)=>[a,b].filter(Boolean).join(', ');
+  // Datos personales que actualizó el alumno en el formulario
+  if(d.personales){ const P=d.personales;
+    if(P.nombre) al.nombre=P.nombre;
+    if(P.nacimiento) al.nacimiento=P.nacimiento;
+    if(P.email) al.email=P.email;
+    if(P.telefono) al.telefono=P.telefono;
+    if(P.sexo) al.sexo=P.sexo;
+    if(al.perfil){ if(P.nombre) al.perfil.nombre=P.nombre; if(P.nacimiento) al.perfil.nacimiento=P.nacimiento; if(P.email) al.perfil.email=P.email; if(P.telefono) al.perfil.telefono=P.telefono; if(P.sexo) al.perfil.sexo=P.sexo; }
+  }
   if(d.objetivoNuevo){ al.objetivo=d.objetivoNuevo; f.objetivos=[d.objetivoNuevo].concat(d.cambiosFisicos||[]); }
   if(d.diasCambio==='Sí' && d.diasNuevos){ al.dias=String(d.diasNuevos); }
   if(d.ejEvitar) f.prohibidos=_merge(f.prohibidos,d.ejEvitar);
