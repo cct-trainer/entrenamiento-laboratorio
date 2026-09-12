@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Laboratorio de Entrenamiento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -133,29 +135,33 @@ main { padding: 28px 32px; max-width: none; margin: 0; }
 .alu-chip { font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 6px; white-space: nowrap; }
 .alu-chev { color: #5f6f8c; font-size: 20px; font-style: normal; line-height: 1; flex-shrink: 0; }
 .alu-empty { text-align: center; color: #8f9bb3; font-size: 13px; padding: 30px 0; }
-.alu-cards { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 14px; }
-@media(max-width:1400px){ .alu-cards{ grid-template-columns: repeat(4, minmax(0,1fr)); } }
-@media(max-width:1100px){ .alu-cards{ grid-template-columns: repeat(3, minmax(0,1fr)); } }
-@media(max-width:760px){ .alu-cards{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
-.alu-card { position: relative; overflow: hidden; background: #fff; border: 1px solid #eceef2; border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: none; transition: border-color .15s, box-shadow .15s; }
-.alu-card:hover { border-color: #dfe3ea; box-shadow: 0 6px 20px -10px rgba(20,30,55,.18); }
-.alu-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:0; background:#3A6EA5; opacity:0; }
-.ac-work { width:100%; margin-top:13px; padding:9px; border:1px solid #dbe0e7; border-radius:9px; background:#fff; color:#3A6EA5; font-size:12.5px; font-weight:600; letter-spacing:.2px; cursor:pointer; box-shadow:none; transition:.12s; }
-.ac-work:hover { background:#f4f8fd; border-color:#3A6EA5; }
-.ac-work:active { background:#eaf2fb; }
-.ac-top { display: flex; align-items: center; gap: 13px; }
-.alu-card-av { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: #eef1f5; border: 1px solid #e6e9ee; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #8a93a3; box-shadow: none; }
-.alu-card-av img { width: 100%; height: 100%; object-fit: cover; }
-.alu-card-main { min-width: 0; flex: 1; }
-.alu-card-nom { font-size: 14.5px; font-weight: 600; color: #1b2030; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ac-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 13px; padding-top: 12px; border-top: 1px solid #e6edf5; }
-.ac-goal { font-size: 11px; font-weight: 700; color: #5a6472; display: flex; align-items: center; gap: 6px; min-width: 0; }
-.ac-goal i { width: 8px; height: 8px; border-radius: 2px; background: #C9A84C; display: inline-block; flex-shrink: 0; font-style: normal; }
-.ac-goal span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ac-chev { color: #9aa4b3; font-size: 18px; flex-shrink: 0; }
-.ac-next { display:flex; align-items:center; gap:7px; font-size:12px; font-weight:500; color:#8a92a0; margin-top:14px; padding-top:13px; border-top:1px solid #eceef2; }
-.ac-next b { color:#5a6472; font-weight:600; }
-.ac-next-off { color:#aab1bd; font-weight:500; }
+.alu-cards { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 22px; }
+@media(max-width:1100px){ .alu-cards{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media(max-width:680px){ .alu-cards{ grid-template-columns: 1fr; } }
+.alu-card { position: relative; overflow: hidden; background: #fff; border: 1px solid #E5EBF3; border-radius: 23px; padding: 22px; cursor: default; box-shadow: 0 10px 30px -14px rgba(20,40,80,.16); transition: box-shadow .18s; }
+.alu-card:hover { box-shadow: 0 16px 40px -16px rgba(20,40,80,.24); }
+.alu-card::before { content:''; display:none; }
+.ac-top { display:flex; align-items:center; gap:17px; }
+.alu-card-av { width:70px; height:70px; border-radius:50%; overflow:hidden; background:#e9edf2; border:3px solid #fff; box-shadow:0 0 0 2px #cfe0f6, 0 4px 12px -4px rgba(20,40,80,.22); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:24px; color:#8a93a3; }
+.alu-card-av img { width:100%; height:100%; object-fit:cover; }
+.alu-card-main { min-width:0; flex:1; }
+.alu-card-nom { font-size:19px; font-weight:700; letter-spacing:-.2px; text-transform:uppercase; color:#0B1739; line-height:1.14; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'Inter',-apple-system,'Segoe UI',sans-serif; }
+.ac-next { display:flex; align-items:center; gap:14px; margin-top:18px; background:#F4F7FB; border-radius:17px; padding:14px 16px; cursor:pointer; transition:background .15s; border:none; }
+.ac-next:hover { background:#eaf1fa; }
+.ac-cal { width:44px; height:44px; border-radius:13px; background:#EAF2FF; color:#1668E8; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.ac-cal svg { width:22px; height:22px; }
+.ac-next-tx { flex:1; min-width:0; font-size:14.5px; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ac-next-tx .k { color:#7B89A5; font-weight:500; }
+.ac-next-tx .v { color:#0B1739; font-weight:700; }
+.ac-next-off { color:#7B89A5; font-weight:500; }
+.ac-chev { color:#9fb0c6; flex-shrink:0; display:flex; }
+.ac-work { width:100%; height:60px; margin-top:16px; border:none; border-radius:17px; background:linear-gradient(135deg,#2F8CFF,#125CE6); color:#fff; cursor:pointer; display:flex; align-items:center; padding:0 8px 0 10px; gap:12px; box-shadow:0 10px 22px -10px rgba(18,92,230,.5); transition:transform .2s, box-shadow .2s, filter .2s; }
+.ac-work:hover { transform:translateY(-2px); filter:brightness(1.04); box-shadow:0 16px 30px -12px rgba(18,92,230,.55); }
+.ac-work:active { transform:scale(.99); }
+.ac-work .pl { width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.ac-work .pl svg { width:15px; height:15px; margin-left:2px; }
+.ac-work .lbl { flex:1; text-align:center; font-size:17px; font-weight:700; letter-spacing:.2px; }
+.ac-work .arr { width:48px; align-self:stretch; display:flex; align-items:center; justify-content:center; border-left:1px solid rgba(255,255,255,.2); flex-shrink:0; }
 .alu-search-wrap { position: relative; flex: 1; }
 .alu-search-ico { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #9fb0c6; font-size: 14px; pointer-events: none; }
 .alu-filters { display: flex; gap: 22px; margin: 8px 0 20px; flex-wrap: wrap; border-bottom: 1px solid #eceef2; }
@@ -14201,7 +14207,7 @@ function _objPillHTML(objetivo){
   // punto de color por objetivo + texto gris (minimalista, sin píldora)
   const dot = {hipertrofia:'#3A6EA5',masa:'#3A6EA5',salud:'#4b9e6a',recomp:'#0ea5a0',perdida:'#c98a2b',rendimiento:'#8b5cf6',otros:'#8a92a0'};
   const d = dot[cat] || dot.otros;
-  return '<span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:#5a6472;background:#fff;border:1px solid #dde1e8;border-radius:20px;padding:4px 11px;box-shadow:0 2px 6px rgba(20,30,55,.12);"><i style="width:6px;height:6px;border-radius:50%;background:'+d+';flex-shrink:0;"></i>'+String(objetivo).replace(/</g,'&lt;')+'</span>';
+  return '<span style="display:inline-flex;align-items:center;gap:9px;max-width:100%;height:32px;padding:0 14px;background:#EAF9F2;color:#31495F;border-radius:999px;font-size:12.5px;font-weight:600;"><i style="width:8px;height:8px;border-radius:50%;background:'+d+';flex-shrink:0;"></i><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+String(objetivo).replace(/</g,'&lt;')+'</span></span>';
 }
 // Próxima sesión del alumno (día >= hoy con bloques en su plan de fuerza)
 function _proximaSesionAlumno(alId){
@@ -14254,20 +14260,26 @@ function renderAlumnosGrid() {
     const cat = _objCat(a.objetivo);
     const prox = _proximaSesionAlumno(a.id);
     const proxTxt = prox ? _proxLabel(prox) : '';
+    const _calSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="17" rx="3"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>';
+    const _chevSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
     const nextLine = proxTxt
-      ? '<div class="ac-next"><span style="opacity:.8;">📅</span> Próxima: <b>'+proxTxt+'</b></div>'
-      : '<div class="ac-next ac-next-off">Sin sesión programada</div>';
+      ? '<div class="ac-next" onclick="event.stopPropagation();openPerfilAlumno(\''+a.id+'\')"><div class="ac-cal">'+_calSvg+'</div><div class="ac-next-tx"><span class="k">Próxima: </span><span class="v">'+proxTxt+'</span></div><div class="ac-chev">'+_chevSvg+'</div></div>'
+      : '<div class="ac-next"><div class="ac-cal">'+_calSvg+'</div><div class="ac-next-tx"><span class="ac-next-off">Sin sesión programada</span></div></div>';
     return `
-    <div class="alu-card" data-nom="${(a.nombre||'').toLowerCase()}" data-obj="${cat}" onclick="openPerfilAlumno('${a.id}')">
-      <div class="ac-top">
+    <div class="alu-card" data-nom="${(a.nombre||'').toLowerCase()}" data-obj="${cat}">
+      <div class="ac-top" style="cursor:pointer;" onclick="openPerfilAlumno('${a.id}')">
         <div class="alu-card-av">${a.foto ? `<img src="${a.foto}">` : '👤'}</div>
         <div class="alu-card-main">
           <div class="alu-card-nom">${a.nombre||''}</div>
-          <div style="margin-top:5px;">${_objPillHTML(a.objetivo)}</div>
+          <div style="margin-top:9px;">${_objPillHTML(a.objetivo)}</div>
         </div>
       </div>
       ${nextLine}
-      <button class="ac-work" onclick="event.stopPropagation();_veAbrirAlumno('${a.id}')">▶ Ver / trabajar sesión</button>
+      <button class="ac-work" onclick="event.stopPropagation();_veAbrirAlumno('${a.id}')">
+        <span class="pl"><svg viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l11-7z"/></svg></span>
+        <span class="lbl">Ver / trabajar sesión</span>
+        <span class="arr"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </button>
     </div>`; }).join('');
   grid.innerHTML = `
     <div class="alu-toolbar">
