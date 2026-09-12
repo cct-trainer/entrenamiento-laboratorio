@@ -14201,7 +14201,7 @@ function _objPillHTML(objetivo){
   // punto de color por objetivo + texto gris (minimalista, sin píldora)
   const dot = {hipertrofia:'#3A6EA5',masa:'#3A6EA5',salud:'#4b9e6a',recomp:'#0ea5a0',perdida:'#c98a2b',rendimiento:'#8b5cf6',otros:'#8a92a0'};
   const d = dot[cat] || dot.otros;
-  return '<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:#5a6472;"><i style="width:6px;height:6px;border-radius:50%;background:'+d+';flex-shrink:0;"></i>'+String(objetivo).replace(/</g,'&lt;')+'</span>';
+  return '<span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:#5a6472;background:#fff;border:1px solid #dde1e8;border-radius:20px;padding:4px 11px;box-shadow:0 2px 6px rgba(20,30,55,.12);"><i style="width:6px;height:6px;border-radius:50%;background:'+d+';flex-shrink:0;"></i>'+String(objetivo).replace(/</g,'&lt;')+'</span>';
 }
 // Próxima sesión del alumno (día >= hoy con bloques en su plan de fuerza)
 function _proximaSesionAlumno(alId){
