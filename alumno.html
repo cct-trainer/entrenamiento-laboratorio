@@ -939,8 +939,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260912100105 por un timestamp en cada deploy
-const _APP_VERSION = '20260912100105';
+// deploy.bat reemplaza 20260916165045 por un timestamp en cada deploy
+const _APP_VERSION = '20260916165045';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -7602,6 +7602,64 @@ async function _devPlaySaved(){
   try{ const key=_semIdx+'_'+_diaIdx+'_'+_diaModTab; const a=(_data.audioDevoluciones||{})[key]; if(a&&a.data){ if(!_devAudioEl) _devAudioEl=new Audio(); _devAudioEl.src=a.data; _devAudioEl.play().catch(()=>{}); } }catch(e){}
 }
 
+// ── Celebración al terminar el entrenamiento (confeti + mensaje positivo) ──
+const _FRASES_FIN = [
+  'Constancia mata a intensidad. Hoy sumaste.',
+  'Una serie más cerca de tu objetivo.',
+  'Bien ahí. El progreso se construye así.',
+  'Disciplina hoy, resultados mañana.',
+  'Lo hiciste. Descansá, te lo ganaste.',
+  'Otro ladrillo en tu progreso.',
+  'Tu constancia es tu mejor ejercicio.',
+  'Gran sesión. Seguí sumando 💪'
+];
+const _FRASES_FIN_EN = [
+  'Consistency beats intensity. You showed up.',
+  'One step closer to your goal.',
+  'Well done. This is how progress is built.',
+  'Discipline today, results tomorrow.',
+  'You did it. Enjoy the rest — you earned it.',
+  'Another brick in your progress.',
+  'Great session. Keep going 💪'
+];
+let _celebraTO=null, _celebraRaf=null;
+function _cerrarCelebra(){ const ov=document.getElementById('celebra-ov'); if(!ov) return; ov.style.opacity='0'; setTimeout(()=>{ const o=document.getElementById('celebra-ov'); if(o) o.remove(); },260); if(_celebraRaf) cancelAnimationFrame(_celebraRaf); _celebraRaf=null; }
+function _celebraConfetti(){
+  const cv=document.getElementById('celebra-cf'); if(!cv) return; const ctx=cv.getContext('2d');
+  cv.width=innerWidth; cv.height=innerHeight;
+  const COL=['#3A6EA5','#6aa0dc','#ffffff','#C9A84C','#8fd39a']; let parts=[];
+  function burst(){ const cx=innerWidth/2, cy=innerHeight*0.42;
+    for(let i=0;i<150;i++){ const a=Math.random()*Math.PI*2, sp=4+Math.random()*9;
+      parts.push({x:cx,y:cy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-3,g:.18+Math.random()*.12,s:5+Math.random()*7,rot:Math.random()*6,vr:(Math.random()-.5)*.4,c:COL[i%COL.length],life:60+Math.random()*40,t:0}); } }
+  burst(); setTimeout(burst,220);
+  function tick(){ ctx.clearRect(0,0,cv.width,cv.height);
+    parts.forEach(p=>{ p.t++; p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.vx*=.99; p.rot+=p.vr; const al=Math.max(0,1-p.t/p.life);
+      ctx.save(); ctx.globalAlpha=al; ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6); ctx.restore(); });
+    parts=parts.filter(p=>p.t<p.life && p.y<cv.height+40);
+    if(parts.length && document.getElementById('celebra-cf')){ _celebraRaf=requestAnimationFrame(tick); } else { _celebraRaf=null; } }
+  tick();
+}
+function _celebrarFin(){
+  const en=_LANG==='en'; const arr=en?_FRASES_FIN_EN:_FRASES_FIN;
+  const frase=arr[Math.floor(Math.random()*arr.length)];
+  if(!document.getElementById('celebra-kf')){ const st=document.createElement('style'); st.id='celebra-kf'; st.textContent='@keyframes celPop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}@keyframes celDraw{to{stroke-dashoffset:0}}'; document.head.appendChild(st); }
+  let ov=document.getElementById('celebra-ov'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='celebra-ov';
+  ov.style.cssText='position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(6,7,10,.55);opacity:0;transition:opacity .25s;';
+  ov.onclick=function(e){ if(e.target===ov) _cerrarCelebra(); };
+  ov.innerHTML='<canvas id="celebra-cf" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>'
+    +'<div style="position:relative;z-index:2;text-align:center;padding:26px;max-width:340px;animation:celPop .5s cubic-bezier(.2,.8,.2,1);">'
+    +'<div style="width:96px;height:96px;border-radius:50%;margin:0 auto;background:radial-gradient(circle,#1f3a5a,#0e1017);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px rgba(58,110,165,.28),0 14px 34px rgba(58,110,165,.45);"><svg viewBox="0 0 24 24" fill="none" stroke="#6aa0dc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;"><path d="M4 12.5l5 5L20 6.5" style="stroke-dasharray:48;stroke-dashoffset:48;animation:celDraw .5s .18s forwards;"></path></svg></div>'
+    +'<div style="font-size:20px;font-weight:900;color:#fff;margin-top:16px;">'+(en?'Workout complete! 🎉':'¡Entrenamiento completado! 🎉')+'</div>'
+    +'<div style="font-size:14px;font-weight:600;color:#bcd0ee;margin-top:8px;line-height:1.5;">'+frase+'</div>'
+    +'<button onclick="_cerrarCelebra()" style="margin-top:18px;background:#3A6EA5;color:#fff;border:none;border-radius:12px;padding:11px 24px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;">'+(en?'Great!':'¡Listo!')+'</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(function(){ ov.style.opacity='1'; });
+  _celebraConfetti();
+  if(navigator.vibrate){ try{ navigator.vibrate([30,40,30]); }catch(e){} }
+  clearTimeout(_celebraTO); _celebraTO=setTimeout(_cerrarCelebra, 5500);
+}
 async function _terminarEntrenamiento(){
   if (!_plan) return;
   if (!confirm(_t('terminar_confirm'))) return;
@@ -7653,7 +7711,7 @@ async function _terminarEntrenamiento(){
   } catch(e){ console.warn('terminar entrenamiento:', e); }
 
   renderSesion();   // pasa a estado "Completado"
-  try { if (typeof toast === 'function') toast(_t('terminar_ok')); else alert(_t('terminar_ok')); } catch(e){ alert(_t('terminar_ok')); }
+  try { _celebrarFin(); } catch(e){ try { if (typeof toast === 'function') toast(_t('terminar_ok')); } catch(_){} }
 }
 
 // Reabrir una sesión ya completada para poder editarla (por si se tocó sin querer)
