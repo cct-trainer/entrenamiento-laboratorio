@@ -940,8 +940,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260916171633 por un timestamp en cada deploy
-const _APP_VERSION = '20260916171633';
+// deploy.bat reemplaza 20260916181351 por un timestamp en cada deploy
+const _APP_VERSION = '20260916181351';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -7607,22 +7607,44 @@ async function _devPlaySaved(){
 // ── Foto de las series (placa para publicar) ──
 function _descargarBlob(url,fname){ const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); setTimeout(function(){ a.remove(); URL.revokeObjectURL(url); },800); try{ if(typeof toast==='function') toast('Imagen guardada 📸'); }catch(e){} }
 function _capturarSerie(uid){
-  const card=document.getElementById(uid+'-card');
-  if(!card){ try{ if(typeof toast==='function') toast('No encontré el ejercicio'); }catch(e){} return; }
+  const ej=(typeof _ejStore!=='undefined')?_ejStore[uid]:null; if(!ej){ return; }
   if(typeof html2canvas==='undefined'){ try{ if(typeof toast==='function') toast('Un segundo, cargando el módulo de imagen…'); }catch(e){} return; }
-  const ej=(typeof _ejStore!=='undefined')?_ejStore[uid]:null;
   const _sp=(_semIdx||0)+'_'+(_diaIdx||0)+'_'+uid;
-  let sust=''; try{ sust=_getEdit(_sp,'sust'); }catch(e){}
-  const nombre=sust || (ej && typeof _nomEj==='function'?_nomEj(ej):'') || 'serie';
+  const g=function(k,f){ try{ return _getEdit(k,f); }catch(e){ return ''; } };
+  const sust=g(_sp,'sust');
+  const subEj=(sust && typeof _bibFind==='function')?_bibFind(sust):null;
+  const nombre=sust || (typeof _nomEj==='function'?_nomEj(ej):'') || 'Ejercicio';
+  const musStr=subEj ? [].concat(subEj.principales||[],subEj.secundarios||[]).filter(Boolean).join(' · ')
+                     : (Array.isArray(ej.musculos)?ej.musculos.join(' · '):(ej.musculos||(Array.isArray(ej.principales)?ej.principales.join(' · '):'')));
+  const series=(Array.isArray(ej.series)&&ej.series.length)?ej.series:[];
+  const esc=function(s){ return String(s==null?'':s).replace(/</g,'&lt;'); };
+  const norm=function(v){ return String(v==null?'':v).replace(/kg$/i,'').trim(); };
+  const rows=series.map(function(s,i){
+    const key=_sp+'_efec_'+i;
+    const reps=g(key,'reps')||s.reps||'—';
+    const peso=g(key,'peso')||norm(s.peso)||'—';
+    const rir=s.rir||'—';
+    const pausa=s.pausa||'—';
+    return '<tr><td><span class="ssn">S'+(i+1)+'</span></td><td>'+esc(reps)+'</td><td>'+esc(peso)+'</td><td>'+esc(rir)+'</td><td>'+esc(pausa)+'</td></tr>';
+  }).join('');
+  if(!rows){ try{ if(typeof toast==='function') toast('Este ejercicio no tiene series para capturar'); }catch(e){} return; }
+  const th='background:#eef1f5;font-size:10px;color:#8a92a1;padding:11px;letter-spacing:.5px;font-weight:800;';
   const fname=String(nombre).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')+'.png';
-  // ocultar el pie (Estadísticas/Cambiar/Info/Foto) y el video para que la foto sea sólo el ejercicio
-  const foot=card.querySelector('.ej-footer'); const vid=document.getElementById('ejvidwrap-'+uid);
-  const pf=foot?foot.style.display:''; if(foot) foot.style.display='none';
-  const pv=vid?vid.style.display:''; if(vid) vid.style.display='none';
-  let bg='#12151d'; try{ const c=getComputedStyle(card).backgroundColor; if(c && c!=='rgba(0, 0, 0, 0)' && c!=='transparent') bg=c; }catch(e){}
-  const _restore=function(){ if(foot) foot.style.display=pf; if(vid) vid.style.display=pv; };
-  html2canvas(card,{scale:2,backgroundColor:bg,useCORS:true,logging:false}).then(function(cv){
-    _restore();
+  let w=document.getElementById('shotwrap'); if(w) w.remove();
+  w=document.createElement('div'); w.id='shotwrap'; w.style.cssText='position:fixed;left:-9999px;top:0;';
+  w.innerHTML='<div id="shotnode" style="width:600px;background:linear-gradient(160deg,#141a24,#0a0d13);padding:34px 30px;color:#fff;">'
+    +'<style>#shotnode td{color:#20242c;font-size:17px;font-weight:800;text-align:center;padding:13px;border-top:1px solid #eef0f3;background:#fff;}#shotnode .ssn{display:inline-block;min-width:30px;padding:5px 11px;border-radius:20px;background:#3A6EA5;color:#fff;font-size:14px;}</style>'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;"><div style="width:34px;height:34px;border-radius:9px;background:#3A6EA5;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#fff;">CC</div><div style="font-size:11px;font-weight:800;letter-spacing:2px;color:#9fb0cf;">CHRISTIAN CATTANEO · ENTRENAMIENTO</div></div>'
+    +'<div style="font-size:30px;font-weight:900;line-height:1.1;text-transform:uppercase;letter-spacing:-.5px;">'+esc(nombre)+'</div>'
+    +(musStr?'<div style="font-size:14px;font-weight:600;color:#C9A84C;margin-top:8px;">'+esc(musStr)+'</div>':'')
+    +'<div style="font-size:12px;font-weight:900;letter-spacing:2px;color:#fff;background:#3A6EA5;padding:11px 16px;border-radius:12px 12px 0 0;margin-top:22px;">'+(_LANG==='en'?'SETS':'SERIES')+'</div>'
+    +'<table style="width:100%;border-collapse:collapse;background:#fff;border-radius:0 0 12px 12px;overflow:hidden;"><tr><th style="'+th+'">SERIE</th><th style="'+th+'">REPS</th><th style="'+th+'">PESO (KG)</th><th style="'+th+'">RIR</th><th style="'+th+'">PAUSA</th></tr>'+rows+'</table>'
+    +'<div style="margin-top:18px;font-size:12px;color:#7b89a5;text-align:center;letter-spacing:1px;">Entrená con seguimiento · @christiancattaneo</div>'
+    +'</div>';
+  document.body.appendChild(w);
+  const node=document.getElementById('shotnode');
+  html2canvas(node,{scale:2,backgroundColor:null,logging:false}).then(function(cv){
+    if(w) w.remove();
     cv.toBlob(function(blob){
       if(!blob){ return; }
       const url=URL.createObjectURL(blob);
@@ -7631,7 +7653,7 @@ function _capturarSerie(uid){
         navigator.share({files:[file],title:nombre}).catch(function(){ _descargarBlob(url,fname); });
       } else { _descargarBlob(url,fname); }
     },'image/png');
-  }).catch(function(e){ _restore(); try{ if(typeof toast==='function') toast('No se pudo generar la imagen'); }catch(_){} });
+  }).catch(function(e){ if(w) w.remove(); try{ if(typeof toast==='function') toast('No se pudo generar la imagen'); }catch(_){} });
 }
 // ── Celebración al terminar el entrenamiento (confeti + mensaje positivo) ──
 const _FRASES_FIN = [
