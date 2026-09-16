@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Mi Portal — Christian Cattaneo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link rel="manifest" id="pwa-manifest">
 <meta name="theme-color" content="#C9A84C" id="meta-theme-color">
 <meta name="mobile-web-app-capable" content="yes">
@@ -939,8 +940,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260916165045 por un timestamp en cada deploy
-const _APP_VERSION = '20260916165045';
+// deploy.bat reemplaza 20260916171633 por un timestamp en cada deploy
+const _APP_VERSION = '20260916171633';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2684,10 +2685,11 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
       '</div>'
     : '';
   // Fila de acciones secundarias al pie
-  const _footer = '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:11px;padding-top:9px;border-top:1px solid rgba(255,255,255,.06);font-size:11px;font-weight:700;">'+
+  const _footer = '<div class="ej-footer" style="display:flex;gap:18px;flex-wrap:wrap;margin-top:11px;padding-top:9px;border-top:1px solid rgba(255,255,255,.06);font-size:11px;font-weight:700;">'+
       '<span onclick="_abrirStats(\''+uid+'\')" style="color:#9fb0cf;cursor:pointer;">📊 '+(_LANG==='en'?'Stats':'Estadísticas')+'</span>'+
       '<span onclick="_abrirCambiar(\''+uid+'\')" style="color:#9fb0cf;cursor:pointer;">⇄ '+(_LANG==='en'?'Change':'Cambiar')+'</span>'+
       (_hasFicha ? '<span onclick="_toggleFicha(\''+uid+'\')" style="color:#9fb0cf;cursor:pointer;">ⓘ '+(_LANG==='en'?'Info':'Info técnica')+'</span>' : '')+
+      '<span onclick="_capturarSerie(\''+uid+'\')" title="Sacar foto de las series para publicar" style="color:#9fb0cf;cursor:pointer;margin-left:auto;display:inline-flex;align-items:center;gap:5px;">📷 '+(_LANG==='en'?'Photo':'Foto')+'</span>'+
     '</div>';
 
   const _musPrin = (Array.isArray(_prinArr) && _prinArr.length) ? String(_prinArr[0])
@@ -7602,6 +7604,35 @@ async function _devPlaySaved(){
   try{ const key=_semIdx+'_'+_diaIdx+'_'+_diaModTab; const a=(_data.audioDevoluciones||{})[key]; if(a&&a.data){ if(!_devAudioEl) _devAudioEl=new Audio(); _devAudioEl.src=a.data; _devAudioEl.play().catch(()=>{}); } }catch(e){}
 }
 
+// ── Foto de las series (placa para publicar) ──
+function _descargarBlob(url,fname){ const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); setTimeout(function(){ a.remove(); URL.revokeObjectURL(url); },800); try{ if(typeof toast==='function') toast('Imagen guardada 📸'); }catch(e){} }
+function _capturarSerie(uid){
+  const card=document.getElementById(uid+'-card');
+  if(!card){ try{ if(typeof toast==='function') toast('No encontré el ejercicio'); }catch(e){} return; }
+  if(typeof html2canvas==='undefined'){ try{ if(typeof toast==='function') toast('Un segundo, cargando el módulo de imagen…'); }catch(e){} return; }
+  const ej=(typeof _ejStore!=='undefined')?_ejStore[uid]:null;
+  const _sp=(_semIdx||0)+'_'+(_diaIdx||0)+'_'+uid;
+  let sust=''; try{ sust=_getEdit(_sp,'sust'); }catch(e){}
+  const nombre=sust || (ej && typeof _nomEj==='function'?_nomEj(ej):'') || 'serie';
+  const fname=String(nombre).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')+'.png';
+  // ocultar el pie (Estadísticas/Cambiar/Info/Foto) y el video para que la foto sea sólo el ejercicio
+  const foot=card.querySelector('.ej-footer'); const vid=document.getElementById('ejvidwrap-'+uid);
+  const pf=foot?foot.style.display:''; if(foot) foot.style.display='none';
+  const pv=vid?vid.style.display:''; if(vid) vid.style.display='none';
+  let bg='#12151d'; try{ const c=getComputedStyle(card).backgroundColor; if(c && c!=='rgba(0, 0, 0, 0)' && c!=='transparent') bg=c; }catch(e){}
+  const _restore=function(){ if(foot) foot.style.display=pf; if(vid) vid.style.display=pv; };
+  html2canvas(card,{scale:2,backgroundColor:bg,useCORS:true,logging:false}).then(function(cv){
+    _restore();
+    cv.toBlob(function(blob){
+      if(!blob){ return; }
+      const url=URL.createObjectURL(blob);
+      let file=null; try{ file=new File([blob],fname,{type:'image/png'}); }catch(e){}
+      if(navigator.share && file && navigator.canShare && navigator.canShare({files:[file]})){
+        navigator.share({files:[file],title:nombre}).catch(function(){ _descargarBlob(url,fname); });
+      } else { _descargarBlob(url,fname); }
+    },'image/png');
+  }).catch(function(e){ _restore(); try{ if(typeof toast==='function') toast('No se pudo generar la imagen'); }catch(_){} });
+}
 // ── Celebración al terminar el entrenamiento (confeti + mensaje positivo) ──
 const _FRASES_FIN = [
   'Constancia mata a intensidad. Hoy sumaste.',
