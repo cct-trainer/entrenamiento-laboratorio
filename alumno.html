@@ -940,8 +940,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260916181351 por un timestamp en cada deploy
-const _APP_VERSION = '20260916181351';
+// deploy.bat reemplaza 20260916225635 por un timestamp en cada deploy
+const _APP_VERSION = '20260916225635';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -7655,6 +7655,107 @@ function _capturarSerie(uid){
     },'image/png');
   }).catch(function(e){ if(w) w.remove(); try{ if(typeof toast==='function') toast('No se pudo generar la imagen'); }catch(_){} });
 }
+// ── Historia de Instagram: resumen del entrenamiento (fiel a la app) ──
+const _IG_HANDLE = '@christiancattaneo';
+function _numPeso(v){ const n=parseFloat(String(v==null?'':v).replace(',','.').replace(/[^0-9.]/g,'')); return isFinite(n)?n:0; }
+function _historiaResumen(){
+  if(typeof html2canvas==='undefined'){ try{ if(typeof toast==='function') toast('Un segundo, cargando el módulo de imagen…'); }catch(e){} return; }
+  if(!_plan){ return; }
+  const sem=_plan.semanasArray && _plan.semanasArray[_semIdx];
+  const ses=sem && sem.dias && sem.dias[_diaIdx] && sem.dias[_diaIdx][_diaModTab];
+  if(!ses || !ses.bloques){ try{ if(typeof toast==='function') toast('No hay sesión para compartir'); }catch(e){} return; }
+  const en=_LANG==='en';
+  const esc=function(s){ return String(s==null?'':s).replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  const g=function(k,f){ try{ return _getEdit(k,f); }catch(e){ return ''; } };
+  // Recolectar ejercicios + series realizadas
+  const items=[]; let totSeries=0; let pr=null; // pr = {nombre, real, plan}
+  (ses.bloques||[]).forEach(function(b,bi){ (b.ejercicios||[]).forEach(function(ej,ei){
+    if(!ej) return;
+    const uid='b'+bi+'e'+ei;
+    const sp=_semIdx+'_'+_diaIdx+'_'+uid;
+    const sust=g(sp,'sust');
+    const subEj=(sust && typeof _bibFind==='function')?_bibFind(sust):null;
+    const nombre=sust || (typeof _nomEj==='function'?_nomEj(ej):(ej.nombre||'')) || 'Ejercicio';
+    const musStr=subEj ? [].concat(subEj.principales||[]).filter(Boolean).join(' · ')
+                       : (Array.isArray(ej.principales)?ej.principales.join(' · '):(Array.isArray(ej.musculos)?ej.musculos.join(' · '):(ej.musculos||'')));
+    const series=(Array.isArray(ej.series)&&ej.series.length)?ej.series:[];
+    if(!series.length) return;
+    let repsRep='', pesoMax=0, superoEste=false, realPr='', planPr='';
+    series.forEach(function(s,i){
+      const key=sp+'_efec_'+i;
+      const reps=g(key,'reps')||s.reps||'';
+      const pesoReal=g(key,'peso')||s.peso||'';
+      if(reps) repsRep=reps;
+      const pn=_numPeso(pesoReal); if(pn>pesoMax) pesoMax=pn;
+      // ¿superó la carga pautada en esta serie?
+      const plan=_numPeso(s.peso);
+      if(plan>0 && pn>plan){ superoEste=true; if(!realPr || pn>_numPeso(realPr)){ realPr=String(pesoReal); planPr=String(s.peso); } }
+    });
+    totSeries+=series.length;
+    items.push({ n:items.length+1, nombre:nombre, mus:musStr, ser:series.length, reps:repsRep, peso:pesoMax, supero:superoEste });
+    if(superoEste){ const delta=_numPeso(realPr)-_numPeso(planPr); if(!pr || delta>pr.delta){ pr={ nombre:nombre, real:realPr, plan:planPr, delta:delta }; } }
+  }); });
+  if(!items.length){ try{ if(typeof toast==='function') toast('Esta sesión no tiene series cargadas'); }catch(e){} return; }
+  // marcar el ejercicio del récord
+  if(pr){ items.forEach(function(it){ it.esPr=(it.nombre===pr.nombre && it.supero); }); let hecho=false; items.forEach(function(it){ if(it.esPr && hecho) it.esPr=false; if(it.esPr) hecho=true; }); }
+  const foco=(ses.nombre)|| (typeof DN!=='undefined'?DN[_diaIdx]:'') || (en?'Workout':'Entrenamiento');
+  const meses=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+  const d=new Date(); const fstr=String(d.getDate()).padStart(2,'0')+' '+meses[d.getMonth()];
+  // Filas de ejercicios (máx 6, resto "+N más")
+  const MAXE=6; const vis=items.slice(0,MAXE); const resto=items.length-vis.length;
+  const rowsHtml=vis.map(function(it){
+    const badgeBg=it.esPr?'#E6C766':'#3A6EA5'; const badgeCol=it.esPr?'#0d1119':'#fff';
+    const serCol=it.esPr?'#E6C766':'#fff';
+    const prTag=it.esPr?'<span style="margin-left:16px;font-size:19px;font-weight:900;color:#0d1119;background:#E6C766;border-radius:999px;padding:6px 15px;vertical-align:middle;letter-spacing:.5px;">★ '+(en?'RECORD':'SUPERÓ')+'</span>':'';
+    const serTxt=it.ser+'×'+esc(it.reps||'')+(it.peso?' <small style="font-size:22px;color:#8fa6c6;font-weight:600;">· '+it.peso+'kg</small>':'');
+    return '<div style="display:flex;align-items:center;gap:26px;padding:28px 4px;border-bottom:2px solid rgba(255,255,255,.1);">'
+      +'<div style="width:60px;height:60px;flex:0 0 auto;border-radius:14px;background:'+badgeBg+';display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:'+badgeCol+';">'+it.n+'</div>'
+      +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-size:35px;font-weight:800;color:#fff;line-height:1.12;">'+esc(it.nombre)+prTag+'</div>'
+        +(it.mus?'<div style="font-size:22px;font-weight:600;color:#9fb4d4;margin-top:7px;">'+esc(it.mus)+'</div>':'')
+      +'</div>'
+      +'<div style="font-size:44px;font-weight:900;color:'+serCol+';white-space:nowrap;">'+serTxt+'</div>'
+    +'</div>';
+  }).join('');
+  const restoHtml=resto>0?'<div style="padding:22px 4px 0;font-size:26px;font-weight:600;color:#9fb4d4;">+ '+resto+' '+(en?'more exercises':'ejercicios más')+'</div>':'';
+  const prLine=pr?'<div style="margin-top:20px;display:inline-flex;align-items:center;gap:14px;font-size:26px;font-weight:800;color:#E6C766;">🏆 '+(en?'New best on ':'Superó su marca en ')+esc(pr.nombre)+' · '+esc(pr.real)+'kg</div>':'';
+  const stat=function(b,s){ return '<div style="text-align:center;"><div style="font-size:58px;font-weight:900;line-height:1;color:#fff;">'+b+'</div><div style="font-size:19px;color:#8fa6c6;font-weight:600;letter-spacing:1.5px;margin-top:6px;">'+s+'</div></div>'; };
+  // Construir nodo oculto 1080x1920
+  let w=document.getElementById('histwrap'); if(w) w.remove();
+  w=document.createElement('div'); w.id='histwrap'; w.style.cssText='position:fixed;left:-9999px;top:0;';
+  w.innerHTML='<div id="histnode" style="width:1080px;height:1920px;position:relative;overflow:hidden;font-family:Inter,-apple-system,Segoe UI,Arial,sans-serif;color:#fff;background:#0c1119 url(\'fondo.png\') center/cover no-repeat;">'
+    +'<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,11,17,.05) 0%,rgba(8,11,17,.15) 34%,rgba(8,11,17,.72) 52%,rgba(7,9,14,.94) 72%,#05070b 100%);"></div>'
+    +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:72px 70px 76px;">'
+      +'<div style="align-self:flex-start;display:inline-flex;align-items:center;gap:14px;background:rgba(10,14,20,.5);border:1.5px solid rgba(95,224,160,.5);color:#7ef0b6;font-size:23px;font-weight:800;letter-spacing:1px;padding:14px 26px;border-radius:999px;">'
+        +'<span style="width:16px;height:16px;border-radius:50%;background:#22C875;box-shadow:0 0 0 5px rgba(34,200,117,.22);"></span>'+(en?'WORKOUT COMPLETE':'ENTRENAMIENTO COMPLETADO')+' · '+fstr+'</div>'
+      +'<div style="margin-top:auto;">'
+        +'<div style="font-size:24px;font-weight:700;letter-spacing:5px;color:#9fb4d4;">'+(en?'TODAY’S SUMMARY':'RESUMEN DE HOY')+'</div>'
+        +'<div style="font-size:104px;font-weight:900;text-transform:uppercase;line-height:.9;letter-spacing:-1px;margin-top:8px;">'+esc(foco)+'</div>'
+        +'<div style="font-size:30px;font-weight:600;letter-spacing:1px;color:#c6d2e6;margin-top:16px;">'+items.length+' '+(en?'exercises':'ejercicios')+' · '+totSeries+' '+(en?'sets':'series')+'</div>'
+        +prLine
+        +'<div style="margin-top:40px;border-top:2px solid rgba(255,255,255,.14);">'+rowsHtml+restoHtml+'</div>'
+        +'<div style="margin-top:42px;display:flex;align-items:flex-end;justify-content:space-between;">'
+          +'<div style="display:flex;gap:52px;">'+stat(items.length,(en?'EXERCISES':'EJERCICIOS'))+stat(totSeries,(en?'SETS':'SERIES'))+'</div>'
+          +'<div style="text-align:right;"><div style="font-size:30px;font-weight:800;color:#fff;">'+_IG_HANDLE+'</div><div style="font-size:20px;color:#E6C766;font-weight:700;margin-top:6px;">'+(en?'Coached training':'Entrená con seguimiento')+'</div></div>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+  +'</div>';
+  document.body.appendChild(w);
+  const node=document.getElementById('histnode');
+  const fname='entrenamiento-'+d.toISOString().slice(0,10)+'.png';
+  html2canvas(node,{scale:1,backgroundColor:'#05070b',useCORS:true,logging:false}).then(function(cv){
+    if(w) w.remove();
+    cv.toBlob(function(blob){
+      if(!blob){ return; }
+      const url=URL.createObjectURL(blob);
+      let file=null; try{ file=new File([blob],fname,{type:'image/png'}); }catch(e){}
+      if(navigator.share && file && navigator.canShare && navigator.canShare({files:[file]})){
+        navigator.share({files:[file],title:(en?'My workout':'Mi entrenamiento')}).catch(function(){ _descargarBlob(url,fname); });
+      } else { _descargarBlob(url,fname); }
+    },'image/png');
+  }).catch(function(e){ if(w) w.remove(); try{ if(typeof toast==='function') toast('No se pudo generar la historia'); }catch(_){} });
+}
 // ── Celebración al terminar el entrenamiento (confeti + mensaje positivo) ──
 const _FRASES_FIN = [
   'Constancia mata a intensidad. Hoy sumaste.',
@@ -7705,13 +7806,16 @@ function _celebrarFin(){
     +'<div style="width:96px;height:96px;border-radius:50%;margin:0 auto;background:radial-gradient(circle,#1f3a5a,#0e1017);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px rgba(58,110,165,.28),0 14px 34px rgba(58,110,165,.45);"><svg viewBox="0 0 24 24" fill="none" stroke="#6aa0dc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;"><path d="M4 12.5l5 5L20 6.5" style="stroke-dasharray:48;stroke-dashoffset:48;animation:celDraw .5s .18s forwards;"></path></svg></div>'
     +'<div style="font-size:20px;font-weight:900;color:#fff;margin-top:16px;">'+(en?'Workout complete! 🎉':'¡Entrenamiento completado! 🎉')+'</div>'
     +'<div style="font-size:14px;font-weight:600;color:#bcd0ee;margin-top:8px;line-height:1.5;">'+frase+'</div>'
-    +'<button onclick="_cerrarCelebra()" style="margin-top:18px;background:#3A6EA5;color:#fff;border:none;border-radius:12px;padding:11px 24px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;">'+(en?'Great!':'¡Listo!')+'</button>'
+    +'<div style="display:flex;flex-direction:column;gap:10px;margin-top:20px;align-items:center;">'
+      +'<button onclick="clearTimeout(_celebraTO); _historiaResumen();" style="background:#3A6EA5;color:#fff;border:none;border-radius:13px;padding:14px 26px;font-size:14.5px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:9px;box-shadow:0 10px 24px -10px rgba(58,110,165,.7);">📲 '+(en?'Share my workout':'Compartir mi entrenamiento')+'</button>'
+      +'<button onclick="_cerrarCelebra()" style="background:transparent;color:#9fb4d4;border:none;padding:6px 14px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;">'+(en?'Close':'Cerrar')+'</button>'
+    +'</div>'
     +'</div>';
   document.body.appendChild(ov);
   requestAnimationFrame(function(){ ov.style.opacity='1'; });
   _celebraConfetti();
   if(navigator.vibrate){ try{ navigator.vibrate([30,40,30]); }catch(e){} }
-  clearTimeout(_celebraTO); _celebraTO=setTimeout(_cerrarCelebra, 5500);
+  clearTimeout(_celebraTO); _celebraTO=setTimeout(_cerrarCelebra, 12000);
 }
 async function _terminarEntrenamiento(){
   if (!_plan) return;
