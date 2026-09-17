@@ -940,8 +940,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260916230131 por un timestamp en cada deploy
-const _APP_VERSION = '20260916230131';
+// deploy.bat reemplaza 20260917133003 por un timestamp en cada deploy
+const _APP_VERSION = '20260917133003';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -970,10 +970,45 @@ function _dISO(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,
 function _guardarEdit(key, campo, val) {
   if (!_pesoEdits[key]) _pesoEdits[key] = {};
   _pesoEdits[key][campo] = String(val).replace(/kg$/i,'').trim();
+  // Sellar la "firma" de la prescripción del coach en este lugar (bloque+ejercicio).
+  // Si el coach cambia el ejercicio de ese lugar, la firma no coincidirá y lo viejo se descarta solo.
+  try {
+    if (campo !== '_sig') {
+      var _m = String(key).match(/^(\d+_\d+_b\d+e\d+)/);
+      if (_m) {
+        var _slot = _m[1];
+        var _um = _slot.match(/^\d+_\d+_(b\d+e\d+)/);
+        var _ejS = _um ? _ejStore[_um[1]] : null;
+        if (_ejS) { if (!_pesoEdits[_slot]) _pesoEdits[_slot] = {}; _pesoEdits[_slot]['_sig'] = _sigOf(_ejS); }
+      }
+    }
+  } catch(e) {}
   try { localStorage.setItem('SOCC_EDITS_'+_alumnoId, JSON.stringify(_pesoEdits)); } catch(e) {}
   _syncEditsFirebase();
 }
 function _getEdit(key, campo) { return (_pesoEdits[key] && _pesoEdits[key][campo]) || ''; }
+// Firma de la prescripción del coach para un lugar (nombre del ejercicio + cantidad de series)
+function _sigOf(ej){ return String((ej&&ej.nombre)||'')+'|'+((ej&&Array.isArray(ej.series))?ej.series.length:0); }
+// Borra TODO lo que el alumno cargó en un lugar (sustitución + series realizadas + drops) y lo sincroniza
+function _purgarSlot(sp){
+  if(!sp) return; var changed=false;
+  Object.keys(_pesoEdits).forEach(function(k){ if(k===sp || k.indexOf(sp+'_')===0){ delete _pesoEdits[k]; changed=true; } });
+  if(changed){ try{ localStorage.setItem('SOCC_EDITS_'+_alumnoId, JSON.stringify(_pesoEdits)); }catch(e){} _syncEditsFirebase(); }
+}
+// ¿Lo que cargó el alumno en este lugar quedó viejo porque el coach cambió el ejercicio?
+function _slotDesactualizado(sp, ej){
+  try{
+    var sg=_getEdit(sp,'_sig');
+    if(sg){ return sg!==_sigOf(ej); }               // firma nueva → comparación directa
+    // Legado (sin firma): usar el registro de sustituciones para conocer el ejercicio original
+    var sv=_getEdit(sp,'sust');
+    if(sv && _data && Array.isArray(_data.sustituciones)){
+      var c=_data.sustituciones.filter(function(s){ return s && String(s.sem)===String(_semIdx) && String(s.dia)===String(_diaIdx) && s.nuevo===sv; });
+      if(c.length){ c.sort(function(a,b){ return String(b.fecha||'').localeCompare(String(a.fecha||'')); }); return String(c[0].original||'')!==String((ej&&ej.nombre)||''); }
+    }
+    return false;
+  }catch(e){ return false; }
+}
 // Respaldo en la nube de las ediciones del alumno (para que no se pierdan y el coach las vea)
 let _editsSyncTimer = null;
 function _syncEditsFirebase(){
@@ -2510,6 +2545,10 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
 
   // Prefijo único por sesión+ejercicio para guardar ediciones del alumno
   const _sp = (_semIdx||0)+'_'+(_diaIdx||0)+'_'+uid;
+
+  // Anti-desfasaje: si el coach cambió el ejercicio de este lugar, lo que había cargado el alumno
+  // (sustitución vieja y valores viejos) quedó obsoleto → se descarta y se muestra la prescripción actual.
+  if (_slotDesactualizado(_sp, ej)) { _purgarSlot(_sp); }
 
   // Sustitución de ejercicio hecha por el alumno (máquina no disponible)
   const _sust = _getEdit(_sp,'sust');
