@@ -2,9 +2,9 @@
 // Service Worker — Portal del Alumno SOCC
 // Estrategia: network-first para HTML (siempre busca la versión nueva),
 // cache-first para estáticos (íconos). Nunca intercepta Firebase/APIs.
-// deploy.bat reemplaza 20260917133003 por el timestamp del build.
+// deploy.bat reemplaza 20260919093304 por el timestamp del build.
 // ═══════════════════════════════════════════════════════════════════════════
-const CACHE = 'alumno-socc-20260917133003';
+const CACHE = 'alumno-socc-20260919093304';
 
 self.addEventListener('install', e => {
   self.skipWaiting();

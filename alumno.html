@@ -940,8 +940,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260917133003 por un timestamp en cada deploy
-const _APP_VERSION = '20260917133003';
+// deploy.bat reemplaza 20260919093304 por un timestamp en cada deploy
+const _APP_VERSION = '20260919093304';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2341,6 +2341,40 @@ function _tecAppHTML(ej){
     tbl='<div class="tser-lbl">'+(_LANG==='en'?'Set to perform':'Serie a realizar')+'</div><div class="tser"><table><tbody>'+tbody+'</tbody></table></div>';
   }
   return '<div class="tec"><div class="tec-h"><span class="ic">'+icon+'</span><span class="t">'+title+'</span>'+badge+'</div>'+condHTML+tbl+extra+'</div>';
+}
+// ── Sistema del bloque: "cómo se hace" + vueltas (lo define el coach) ──
+const _SYS_INFO = {
+  'serie simple':{ic:'',circ:false,desc:''},
+  'biserie':{ic:'🔗',circ:true,desc:'Dos ejercicios seguidos SIN descanso entre ellos. Hacés el primero y pasás directo al segundo; recién ahí descansás. Eso es una vuelta.'},
+  'triserie':{ic:'🔗',circ:true,desc:'Tres ejercicios encadenados sin descanso entre ellos. Descansás al terminar los tres. Eso es una vuelta.'},
+  'superserie':{ic:'⚡',circ:true,desc:'Dos ejercicios seguidos con poco o nada de descanso entre ellos (según lo pautado). Suelen combinarse músculos opuestos o el mismo desde otro ángulo.'},
+  'serie gigante':{ic:'🔥',circ:true,desc:'Cuatro o más ejercicios encadenados sin descanso. Recorrés todos y recién al final descansás.'},
+  'circuito':{ic:'🔁',circ:true,desc:'Recorrés todas las estaciones una tras otra con poco descanso. Al terminar la última, volvés al inicio y repetís el recorrido por la cantidad de vueltas indicada.'}
+};
+function _sysInfo(t){ return _SYS_INFO[String(t||'').toLowerCase().trim()] || null; }
+function _esCircular(t){ return /biserie|triserie|superserie|gigante|circuito/i.test(String(t||'')); }
+function _sysCardHTML(b){
+  try{
+    const st=String((b&&b.serieTipo)||'').trim(); if(!st) return '';
+    const info=_sysInfo(st);
+    const circ=_esCircular(st);
+    let desc=String((b&&b.serieDesc)||'').trim(); if(!desc && info) desc=info.desc;
+    if(!circ && !desc) return '';
+    const ic=(info&&info.ic)||'🔁';
+    const v=parseInt(b&&b.vueltas,10);
+    const esc=function(s){ return String(s==null?'':s).replace(/</g,'&lt;'); };
+    const nombreSis=(typeof _tc==='function')?_tc(st):st;
+    const rounds=(circ && v>0)
+      ? '<span style="display:inline-flex;align-items:center;gap:5px;background:#3A6EA5;color:#fff;font-size:11px;font-weight:900;padding:5px 11px;border-radius:999px;white-space:nowrap;">🔄 '+v+' '+(v>1?(_LANG==='en'?'rounds':'vueltas'):(_LANG==='en'?'round':'vuelta'))+'</span>'
+      : '';
+    return '<div style="background:var(--card);border:1px solid rgba(58,110,165,.30);border-left:4px solid #3A6EA5;border-radius:12px;padding:11px 13px;margin-bottom:11px;">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;'+(desc?'margin-bottom:7px;':'')+'">'
+        +'<div style="font-size:12.5px;font-weight:900;color:#5b93cf;letter-spacing:.3px;">'+ic+' '+esc(nombreSis)+'</div>'
+        +rounds
+      +'</div>'
+      +(desc?'<div style="font-size:12px;line-height:1.5;color:var(--muted);">'+esc(desc)+'</div>':'')
+    +'</div>';
+  }catch(e){ return ''; }
 }
 function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
   ejLabel = ejLabel || '';   // etiqueta del ejercicio (A1, B2…)
@@ -8184,7 +8218,7 @@ function renderSesion() {
       const _nEj = (b.ejercicios||[]).length;
       const _blkCls = 'blk' + (_hasPausa ? '' : (_nEj>=2 ? ' combo-blue' : (_nEj===1 ? ' solo-gold' : '')));
       return '<div class="'+_blkCls+'" style="margin-bottom:14px;">'+
-        '<div class="blk-body" style="padding:2px 0 0;">'+ejesHTML+'</div>'+
+        '<div class="blk-body" style="padding:2px 0 0;">'+_sysCardHTML(b)+ejesHTML+'</div>'+
       '</div>';
     }).join('');
 

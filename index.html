@@ -13042,7 +13042,10 @@ function guardarEstadoDiaActual() {
         };
       }
     }
-    bloques.push({ nombre, tipo, serieTipo:st, ejercicios, cardioData });
+    const serieDesc = document.getElementById(bId+'-sysdesc')?.value.trim() || '';
+    const _vEl = document.getElementById(bId+'-vueltas');
+    const vueltas = _vEl ? (parseInt(_vEl.value,10)||'') : '';
+    bloques.push({ nombre, tipo, serieTipo:st, serieDesc, vueltas, ejercicios, cardioData });
   });
   // planDiasData is a reference to planSemanasArray[planSemEditando].dias — update in place
   if(!planSemanasArray[planSemEditando]) return;
@@ -13141,12 +13144,14 @@ function addBloqueDia(diaIdx, datosPrevios) {
       <div style="flex:1"></div>
       <button class="bloque-btn-eliminar" onclick="eliminarBloqueEnDia('${id}',${diaIdx})">🗑 Eliminar</button>
     </div>
+    <div class="bloque-sysbox" id="${id}-sysbox"></div>
     <div class="bloque-body" id="${id}-body"></div>
     <div class="bloque-footer">
       <button class="bloque-add-ej-btn" onclick="addEjercicioEnDia('${id}',${diaIdx})">＋ AGREGAR EJERCICIO</button>
     </div>`;
   contenedor.appendChild(div);
   actualizarLetrasBloque();
+  _renderSysbox(id, datosPrevios);
 
   // Restaurar ejercicios o cardio
   if(datosPrevios?.tipo === 'Cardio') {
@@ -19366,6 +19371,42 @@ function renderCardioPanel(bloqueId, data) {
 }
 function onSerieTipoChange(bloqueId) {
   refreshLetras(bloqueId);
+  _renderSysbox(bloqueId);
+}
+
+// ── Sistema del bloque: descripción (cómo se ejecuta) + vueltas ──
+const _SYS_DESC = {
+  'Serie Simple':'',
+  'Biserie':'Dos ejercicios seguidos SIN descanso entre ellos. Hacés el primero y pasás directo al segundo; recién ahí descansás. Eso es una vuelta.',
+  'Triserie':'Tres ejercicios encadenados sin descanso entre ellos. Descansás al terminar los tres. Eso es una vuelta.',
+  'Superserie':'Dos ejercicios seguidos con poco o nada de descanso entre ellos (según lo pautado). Suelen combinarse músculos opuestos o el mismo desde otro ángulo.',
+  'Serie Gigante':'Cuatro o más ejercicios encadenados sin descanso. Recorrés todos y recién al final descansás.',
+  'Circuito':'Recorrés todas las estaciones una tras otra con poco descanso. Al terminar la última, volvés al inicio y repetís el recorrido por la cantidad de vueltas indicada.'
+};
+const _SYS_IC = {'Biserie':'🔗','Triserie':'🔗','Superserie':'⚡','Serie Gigante':'🔥','Circuito':'🔁'};
+function _esCircularCoach(t){ return /biserie|triserie|superserie|gigante|circuito/i.test(String(t||'')); }
+function _esDescDefault(txt){ txt=String(txt||'').trim(); if(!txt) return true; for(var k in _SYS_DESC){ if(_SYS_DESC[k] && _SYS_DESC[k]===txt) return true; } return false; }
+function _renderSysbox(bloqueId, prev){
+  var box=document.getElementById(bloqueId+'-sysbox'); if(!box) return;
+  var sel=document.getElementById(bloqueId+'-serie-tipo'); var tipo=sel?sel.value:'Serie Simple';
+  var circ=_esCircularCoach(tipo);
+  var tEl=document.getElementById(bloqueId+'-sysdesc'); var curDesc=tEl?tEl.value:'';
+  var vEl=document.getElementById(bloqueId+'-vueltas'); var curV=vEl?vEl.value:'';
+  var desc = prev ? (prev.serieDesc!=null?prev.serieDesc:(_SYS_DESC[tipo]||''))
+                  : (_esDescDefault(curDesc) ? (_SYS_DESC[tipo]||'') : curDesc);
+  var vueltas = prev ? (prev.vueltas||3) : (curV||3);
+  if(!circ && !desc){ box.innerHTML=''; return; }
+  var ic=_SYS_IC[tipo]||'🔁';
+  var esc=function(s){ return String(s==null?'':s).replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+  box.innerHTML =
+    '<div style="border:1px solid #e3e9f3;border-left:4px solid #3A6EA5;border-radius:10px;background:#f7faff;padding:12px 13px;margin:10px 0 4px;">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">'
+      +'<span style="font-size:13px;font-weight:800;color:#3A6EA5;">'+ic+' '+esc(tipo)+'</span>'
+      +(circ?'<span style="font-size:12px;font-weight:700;color:#0B1739;display:inline-flex;align-items:center;gap:6px;">Vueltas: <input type="number" min="1" max="12" id="'+bloqueId+'-vueltas" value="'+esc(vueltas)+'" style="width:54px;text-align:center;font-size:14px;font-weight:800;color:#0B1739;border:1.5px solid #bcd0ee;border-radius:8px;padding:5px;font-family:inherit;"></span>':'')
+    +'</div>'
+    +'<div style="font-size:10.5px;font-weight:800;letter-spacing:.5px;color:#8a97ac;text-transform:uppercase;margin-bottom:5px;">Cómo se ejecuta (lo verá el alumno)</div>'
+    +'<textarea id="'+bloqueId+'-sysdesc" placeholder="Explicá cómo se hace este bloque…" style="width:100%;font-size:12.5px;line-height:1.5;color:#33415a;border:1px solid #dde5f1;border-radius:8px;padding:9px 10px;background:#fff;resize:vertical;min-height:60px;font-family:inherit;box-sizing:border-box;">'+esc(desc)+'</textarea>'
+    +'</div>';
 }
 
 // Letra del bloque según su posición entre los bloques del día (A, B, C…)
