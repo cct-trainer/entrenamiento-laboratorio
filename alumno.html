@@ -940,8 +940,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260921182855 por un timestamp en cada deploy
-const _APP_VERSION = '20260921182855';
+// deploy.bat reemplaza 20260921183442 por un timestamp en cada deploy
+const _APP_VERSION = '20260921183442';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2376,10 +2376,11 @@ function _sysCardHTML(b){
     +'</div>';
   }catch(e){ return ''; }
 }
-function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
+function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
   ejLabel = ejLabel || '';   // etiqueta del ejercicio (A1, B2…)
   grupo   = grupo || '';     // grupo muscular / nombre del bloque → badge dorado superior
   serieLbl = serieLbl || (_LANG==='en'?'Straight set':'Serie simple');  // tipo de serie → banda azul
+  defPausa = defPausa || 60; // pausa por defecto (seg) cuando el coach no la cargó
   _ejStore[uid] = ej; // guardar para re-render posterior
 
   // Usar series vivas (modificadas por menú contextual) si existen
@@ -2471,7 +2472,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
         ? 'ontouchstart="_lpStart(event,\''+sp+'\',\''+uid_safe+'\')" ontouchend="_lpEnd()" ontouchmove="_lpEnd()" oncontextmenu="_showCtxMenu(event,\''+sp+'\',\''+uid_safe+'\');return false"'
         : '';
       // La pausa se muestra como dato (el descanso lo maneja el timer automático al marcar la serie)
-      const pausaCel = (s.pausa ? _compEsc(s.pausa) : '—');
+      const pausaCel = (s.pausa ? _compEsc(s.pausa) : (defPausa>=60?(Math.round(defPausa/60)+' min'):(defPausa+' seg')));
       const serieLbl = '<span class="s-num'+(done?' on':'')+'">S'+labelNum+'</span>' + (lado ? ' <span style="color:var(--muted);font-weight:600;">'+lado+'</span>' : '') + tipoBadge;
       // Serie agregada por el alumno (extra) → se puede eliminar. Serie del coach → ✕ = "no la hice".
       const _esExtra = (keyIdx >= arr.length);
@@ -2484,11 +2485,11 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
       const _tecR0 = (ej && ej.tecnica) || {};
       const _tecR = _tecR0.tipo ? _tecR0 : ((_tecR0.tecnica||_tecR0.familia) ? _tecNorm(_tecR0) : _tecR0);
       const _tecP = _tecR.params || {};
-      let _restSec = _segDe(s.pausa)||0;
+      let _restSec = _segDe(s.pausa)||defPausa;   // pausa por defecto según tipo de bloque (simple 60s · combo 30s · último 60s)
       if(_tecR.tipo==='fst7' && _tecP.descanso){ const m=String(_tecP.descanso).match(/\d+/); if(m) _restSec=parseInt(m[0]); }
       let _isoSec = 0;
       if(_tecR.tipo==='iso_hold' && _tecP.seg){ const m=String(_tecP.seg).match(/\d+/); if(m) _isoSec=parseInt(m[0]); }
-      return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+(done?' s-done':'')+'" data-pausa="'+(_segDe(s.pausa)||0)+'" data-rest="'+_restSec+'" data-iso="'+_isoSec+'" '+touch+'>'+
+      return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+(done?' s-done':'')+'" data-pausa="'+(_segDe(s.pausa)||defPausa)+'" data-rest="'+_restSec+'" data-iso="'+_isoSec+'" '+touch+'>'+
         '<td style="'+tdBase+'font-size:11px;font-weight:800;cursor:pointer;" onclick="event.stopPropagation();_serieTap(\''+sp+'\')">'+serieLbl+'</td>'+
         '<td style="'+tdBase+'">'+repsCel+((_uni && !/\blado\b/i.test(String(repsVal)))?'<div style="font-size:8.5px;font-weight:800;color:#8a63c9;margin-top:1px;line-height:1;">c/lado</div>':'')+'</td>'+
         (hasPeso  ? '<td style="'+tdBase+'">'+pesoCel+_cuHtml+'</td>' : '')+
@@ -7492,7 +7493,7 @@ function _serieDur(reps){
 }
 // Trabajo (seg) de UNA serie, con tope de 2.5 min (evita duraciones irreales)
 function _serieDurTrab(reps){ return Math.min(Math.max(_serieDur(reps),18),150); }
-function _pausaSerie(s0, combo){ let p=_parseSecs((s0&&s0.pausa)||'')||(combo?25:75); return Math.min(Math.max(p,0),240); }
+function _pausaSerie(s0, combo){ let p=_parseSecs((s0&&s0.pausa)||'')||(combo?30:60); return Math.min(Math.max(p,0),240); }
 function _nSerBase(ej){ return (Array.isArray(ej.series)&&ej.series.length)?ej.series.length:(parseInt(ej&&ej.ctrl&&ej.ctrl.series,10)||1); }
 // Duración (seg) de un bloque. reduceMap opcional {ei:nSeries} para versiones cortas.
 function _durBloqueSec(b, reduceMap){
@@ -8294,8 +8295,11 @@ function renderSesion() {
             +'<button onclick="_verIgual('+bi+')" style="background:transparent;border:1px solid rgba(128,140,170,.4);color:var(--muted);border-radius:8px;padding:6px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">'+(_LANG==='en'?'Show anyway':'Ver igual')+'</button>'
           +'</div></div>';
       }
+      const _combo = /biserie|superserie|triserie|gigante|circuito/i.test(b.serieTipo||'');
+      const _nEjB = (b.ejercicios||[]).length;
       const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>{
-        const _card=_ejCard(ej,'b'+bi+'e'+ei, letra+(ei+1), _grupo, _serieLbl);
+        const _defP = (!_combo) ? 60 : ((ei===_nEjB-1) ? 60 : 30);   // simple 1min · combo intermedio 30s · último 1min
+        const _card=_ejCard(ej,'b'+bi+'e'+ei, letra+(ei+1), _grupo, _serieLbl, _defP);
         const _nr=_st&&_st.reduce[ei];
         const _note=_nr ? '<div style="font-size:11px;font-weight:700;color:#E6C766;background:rgba(214,168,84,.12);border-radius:8px;padding:6px 10px;margin:0 0 7px;">⏱ '+(_LANG==='en'?('Today: '+_nr+' sets (less time)'):('Hoy: hacé '+_nr+' series (menos tiempo)'))+'</div>' : '';
         return _note+_card;
