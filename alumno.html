@@ -940,8 +940,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260921174305 por un timestamp en cada deploy
-const _APP_VERSION = '20260921174305';
+// deploy.bat reemplaza 20260921181218 por un timestamp en cada deploy
+const _APP_VERSION = '20260921181218';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -7490,21 +7490,30 @@ function _serieDur(reps){
   const r = nums ? parseInt(nums[nums.length-1]) : 10;
   return Math.max(18, r*4); // ~4s por rep, mínimo 18s
 }
+// Trabajo (seg) de UNA serie, con tope de 2.5 min (evita duraciones irreales)
+function _serieDurTrab(reps){ return Math.min(Math.max(_serieDur(reps),18),150); }
+function _pausaSerie(s0, combo){ let p=_parseSecs((s0&&s0.pausa)||'')||(combo?25:75); return Math.min(Math.max(p,0),240); }
+function _nSerBase(ej){ return (Array.isArray(ej.series)&&ej.series.length)?ej.series.length:(parseInt(ej&&ej.ctrl&&ej.ctrl.series,10)||1); }
+// Duración (seg) de un bloque. reduceMap opcional {ei:nSeries} para versiones cortas.
+function _durBloqueSec(b, reduceMap){
+  if(!b) return 0;
+  const combo=/biserie|superserie|triserie|gigante|circuito/i.test(b.serieTipo||'');
+  let sec=0;
+  (b.ejercicios||[]).forEach((ej,ei)=>{
+    const base=_nSerBase(ej);
+    const nSer=(reduceMap&&reduceMap[ei])?reduceMap[ei]:base;
+    const s0=(Array.isArray(ej.series)&&ej.series[0])?ej.series[0]:(ej.ctrl||{});
+    sec += nSer*(_serieDurTrab(s0.reps)+_pausaSerie(s0,combo));
+  });
+  sec += 20; // transición del bloque
+  return sec;
+}
+function _durBloqueMin(b, reduceMap){ return b?Math.max(1,Math.round(_durBloqueSec(b,reduceMap)/60)):0; }
+// Duración total estimada de la sesión completa (minutos), con tope de 120
 function _calcDuracionSesion(ses){
   if(!ses || !Array.isArray(ses.bloques)) return 0;
-  let sec=0;
-  ses.bloques.forEach(b=>{
-    const combo=/biserie|superserie|triserie|gigante|circuito/i.test(b.serieTipo||'');
-    (b.ejercicios||[]).forEach(ej=>{
-      const nSer = Array.isArray(ej.series)&&ej.series.length ? ej.series.length : (parseInt(ej.ctrl&&ej.ctrl.series)||1);
-      const s0 = (Array.isArray(ej.series)&&ej.series[0]) ? ej.series[0] : (ej.ctrl||{});
-      const dur = _serieDur(s0.reps);
-      const pausa = _parseSecs(s0.pausa||'') || (combo?25:75);
-      sec += nSer*dur + nSer*pausa;
-    });
-    sec += 25; // transición por bloque
-  });
-  return Math.round(sec/60);
+  let m=0; ses.bloques.forEach(b=>{ m+=_durBloqueMin(b,null); });
+  return Math.min(m, 120);
 }
 // Portada por defecto según el sexo del alumno (el coach puede sobreescribirla por sesión)
 const _SES_IMG_HOMBRE = 'ses-hombre.jpg';
@@ -7582,7 +7591,7 @@ function _equipoSes(ses){
 
 function _sesDetalleHTML(ses){
   if(!ses) return '';
-  const durVal = ses.duracion || (()=>{ const mm=_calcDuracionSesion(ses); return mm ? '~'+mm+' min' : ''; })();
+  const durVal = (()=>{ const mm=_calcDuracionSesion(ses); return mm ? '~'+mm+' min' : (ses.duracion||''); })();
   const dif = _nivelSes(ses);
   const dots = dif ? [1,2,3].map(i=>'<span style="width:9px;height:9px;border-radius:50%;background:'+(i<=dif?'var(--green)':'rgba(255,255,255,.15)')+';display:inline-block;"></span>').join('') : '';
   // Fila estándar: icono + texto
@@ -8147,9 +8156,11 @@ function _readinessCard(){
 }
 // ── Tiempo disponible: adapta la sesión al tiempo del alumno (recorte automático por tipo de bloque) ──
 let _tiempoDispMap = {}, _verIgualSet = {};
-const _T_BUFFER = 8;
 function _tiempoKey(){ return (_semIdx||0)+'_'+(_diaIdx||0)+'_'+(_diaModTab||0); }
-function _tiempoActual(){ const v=_tiempoDispMap[_tiempoKey()]; return v?v:120; }
+// Tope de tiempo que fija el ENTRENADOR para este alumno (por defecto 120). No depende del nombre del coach.
+function _maxTiempoAlumno(){ const m=parseInt((_data&&(_data.tiempoMax!=null?_data.tiempoMax:(_data.perfil&&_data.perfil.tiempoMax))),10); return (m&&m>=30&&m<=120)?m:120; }
+function _opcionesTiempo(){ const mx=_maxTiempoAlumno(); return [120,90,60,45,30].filter(o=>o<=mx); }
+function _tiempoActual(){ const mx=_maxTiempoAlumno(); const v=parseInt(_tiempoDispMap[_tiempoKey()],10); return (v&&v<=mx)?v:mx; }
 function _setTiempo(b){ _tiempoDispMap[_tiempoKey()]=b; renderSesion(); }
 function _verIgual(bi){ _verIgualSet[_tiempoKey()+'_'+bi]=1; renderSesion(); }
 function _prioTipo(t){
@@ -8168,9 +8179,9 @@ function _prioTipo(t){
 }
 function _seriesBase(ej){ return (Array.isArray(ej.series)&&ej.series.length) ? ej.series.length : (parseInt(ej.ctrl&&ej.ctrl.series,10)||3); }
 function _estSes(bloques, state){
-  let t=_T_BUFFER;
-  bloques.forEach((b,i)=>{ if(state[i]&&state[i].removed) return; (b.ejercicios||[]).forEach((ej,ei)=>{ const base=_seriesBase(ej); const ns=(state[i]&&state[i].reduce[ei])||base; t+=ns*2.0+0.8; }); });
-  return t;
+  let m=0;
+  (bloques||[]).forEach((b,i)=>{ if(state[i]&&state[i].removed) return; m+=_durBloqueMin(b, state[i]&&state[i].reduce); });
+  return m;
 }
 function _adaptarSesion(bloques, budget){
   const state=(bloques||[]).map(b=>({removed:false, reduce:{}, prio:_prioTipo(b.tipo)}));
@@ -8192,11 +8203,11 @@ function _adaptarSesion(bloques, budget){
   return state;
 }
 function _tiempoCard(bloques){
-  const cur=_tiempoActual(); const en=(_LANG==='en');
-  const btns=[120,90,60,45].map(o=>'<button onclick="_setTiempo('+o+')" style="flex:1;padding:12px 2px;border-radius:11px;border:1.5px solid '+(cur===o?'#3A6EA5':'rgba(128,140,170,.35)')+';background:'+(cur===o?'#3A6EA5':'transparent')+';color:'+(cur===o?'#fff':'var(--text)')+';font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;">'+o+'<span style="display:block;font-size:8.5px;font-weight:700;letter-spacing:.5px;opacity:.75;">MIN</span></button>').join('');
+  const cur=_tiempoActual(); const en=(_LANG==='en'); const mx=_maxTiempoAlumno();
+  const btns=_opcionesTiempo().map(o=>'<button onclick="_setTiempo('+o+')" style="flex:1;padding:12px 2px;border-radius:11px;border:1.5px solid '+(cur===o?'#3A6EA5':'rgba(128,140,170,.35)')+';background:'+(cur===o?'#3A6EA5':'transparent')+';color:'+(cur===o?'#fff':'var(--text)')+';font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;">'+o+'<span style="display:block;font-size:8.5px;font-weight:700;letter-spacing:.5px;opacity:.75;">MIN</span></button>').join('');
   const state=_adaptarSesion(bloques,cur);
   const est=Math.round(_estSes(bloques,state));
-  const nota = cur>=120 ? (en?'Full session.':'Sesión completa.') : (en?'Optimized version — main work kept.':'Versión optimizada — se conserva el trabajo principal.');
+  const nota = cur>=mx ? (en?('Full version (max '+mx+'′)'):('Versión completa (máx '+mx+'′)')) : (en?'Optimized — main work kept.':'Optimizada — se conserva el trabajo principal.');
   return '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;">'
     +'<div style="font-size:12.5px;font-weight:900;color:var(--text);margin-bottom:3px;">⏱ '+(en?'How much time do you have today?':'¿Cuánto tiempo tenés hoy?')+'</div>'
     +'<div style="font-size:11px;color:var(--muted);margin-bottom:11px;">'+(en?'The app keeps the goal and trims what is secondary.':'La app mantiene el objetivo y ajusta lo secundario.')+'</div>'
@@ -8293,8 +8304,10 @@ function renderSesion() {
       const _hasPausa = (b.ejercicios||[]).some(e => e && e.pausaActiva && e.pausaActiva.activo && Array.isArray(e.pausaActiva.items) && e.pausaActiva.items.length);
       const _nEj = (b.ejercicios||[]).length;
       const _blkCls = 'blk' + (_hasPausa ? '' : (_nEj>=2 ? ' combo-blue' : (_nEj===1 ? ' solo-gold' : '')));
+      const _partMin = _durBloqueMin(b, _st&&_st.reduce);
+      const _partHTML = '<div style="text-align:right;font-size:10.5px;font-weight:700;color:var(--muted);margin-top:1px;padding-right:3px;">≈ '+_partMin+' min</div>';
       return '<div class="'+_blkCls+'" style="margin-bottom:14px;">'+
-        '<div class="blk-body" style="padding:2px 0 0;">'+_sysCardHTML(b)+ejesHTML+'</div>'+
+        '<div class="blk-body" style="padding:2px 0 0;">'+_sysCardHTML(b)+ejesHTML+_partHTML+'</div>'+
       '</div>';
     }).join('');
 

@@ -4890,6 +4890,9 @@ select.toolbox-input option:disabled { color: #888; }
           <div class="field"><label>Días disponibles / semana</label>
             <select id="f-dias"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
           </div>
+          <div class="field"><label>Tiempo máximo de entrenamiento</label>
+            <select id="f-tiempomax"><option value="120">120 min</option><option value="90">90 min</option><option value="60">60 min</option><option value="45">45 min</option><option value="30">30 min</option></select>
+          </div>
           <div class="field"><label>Inicio</label><input type="date" id="f-inicio"></div>
         </div>
         <div>
@@ -14109,6 +14112,7 @@ function openModalNuevoAlumno() {
   document.getElementById('btn-eliminar-alumno').style.display = 'none';
   ['nombre','nacimiento','sexo','telefono','email','pin','objetivo','nivel','dias','inicio','lesiones','enfermedades','observaciones']
     .forEach(id => { const el = document.getElementById('f-'+id); if(el) el.value = ''; });
+  const _tmN=document.getElementById('f-tiempomax'); if(_tmN) _tmN.value='120';
   document.getElementById('foto-preview').innerHTML = '👤';
   document.getElementById('foto-input').value = '';
   document.getElementById('modal-alumno').classList.add('open');
@@ -14121,6 +14125,7 @@ function openModalEditarAlumno(id) {
   document.getElementById('btn-eliminar-alumno').style.display = 'inline-block';
   ['nombre','nacimiento','sexo','telefono','email','objetivo','nivel','dias','inicio','lesiones','enfermedades','observaciones']
     .forEach(id => { const el = document.getElementById('f-'+id); if(el) el.value = a[id] || ''; });
+  const _tmE=document.getElementById('f-tiempomax'); if(_tmE) _tmE.value=String(a.tiempoMax||120);
   document.getElementById('foto-preview').innerHTML = a.foto ? `<img src="${a.foto}">` : '👤';
   document.getElementById('foto-input').value = '';
   document.getElementById('modal-alumno').classList.add('open');
@@ -14141,6 +14146,7 @@ function guardarAlumno() {
     objetivo: document.getElementById('f-objetivo').value,
     nivel: document.getElementById('f-nivel').value,
     dias: document.getElementById('f-dias').value,
+    tiempoMax: parseInt(document.getElementById('f-tiempomax')?.value,10)||120,
     inicio: document.getElementById('f-inicio').value,
     pin: (document.getElementById('f-pin')?.value||''  ).trim(),
     lesiones: document.getElementById('f-lesiones').value,
