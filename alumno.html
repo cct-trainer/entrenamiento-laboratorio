@@ -940,8 +940,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260921181218 por un timestamp en cada deploy
-const _APP_VERSION = '20260921181218';
+// deploy.bat reemplaza 20260921182855 por un timestamp en cada deploy
+const _APP_VERSION = '20260921182855';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2401,8 +2401,8 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl) {
     offset = offset || 0;
     if (!arr || !arr.length) return '';
     const hasPeso  = true;   // el peso SIEMPRE se muestra (aunque venga vacío) para que el alumno lo cargue en el gym
-    const hasRir   = arr.some(s=>s.rir);
-    const hasPausa = arr.some(s=>s.pausa);
+    const hasRir   = true;   // RIR SIEMPRE visible en todos los bloques (aunque venga vacío)
+    const hasPausa = true;   // PAUSA SIEMPRE visible en todos los bloques (aunque venga vacía)
     // Tabla invertida al tema: oscuro → tabla BLANCA · claro → tabla NEGRA
     const _isLight = document.documentElement.classList.contains('light');
     const _wt = !_isLight;
