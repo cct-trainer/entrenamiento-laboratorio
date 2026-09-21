@@ -940,8 +940,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260919093304 por un timestamp en cada deploy
-const _APP_VERSION = '20260919093304';
+// deploy.bat reemplaza 20260921174305 por un timestamp en cada deploy
+const _APP_VERSION = '20260921174305';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -8145,6 +8145,65 @@ function _readinessCard(){
           :'<div class="rd-hint">'+(en_?'Tap one option per row to see the tip.':'Tocá una opción en cada fila para ver la recomendación.')+'</div>')
     +'</div>';
 }
+// ── Tiempo disponible: adapta la sesión al tiempo del alumno (recorte automático por tipo de bloque) ──
+let _tiempoDispMap = {}, _verIgualSet = {};
+const _T_BUFFER = 8;
+function _tiempoKey(){ return (_semIdx||0)+'_'+(_diaIdx||0)+'_'+(_diaModTab||0); }
+function _tiempoActual(){ const v=_tiempoDispMap[_tiempoKey()]; return v?v:120; }
+function _setTiempo(b){ _tiempoDispMap[_tiempoKey()]=b; renderSesion(); }
+function _verIgual(bi){ _verIgualSet[_tiempoKey()+'_'+bi]=1; renderSesion(); }
+function _prioTipo(t){
+  t=String(t||'').toLowerCase();
+  if(/fuerza principal|potencia/.test(t)) return 100;
+  if(/calentamiento espec/.test(t)) return 85;
+  if(/desarrollo|hipertrofia/.test(t)) return 70;
+  if(/pre-?agotamiento/.test(t)) return 60;
+  if(/activaci|core/.test(t)) return 55;
+  if(/movilidad|calentamiento/.test(t)) return 50;
+  if(/zona media/.test(t)) return 40;
+  if(/circuito/.test(t)) return 35;
+  if(/cardio/.test(t)) return 25;
+  if(/enfriamiento/.test(t)) return 15;
+  return 55;
+}
+function _seriesBase(ej){ return (Array.isArray(ej.series)&&ej.series.length) ? ej.series.length : (parseInt(ej.ctrl&&ej.ctrl.series,10)||3); }
+function _estSes(bloques, state){
+  let t=_T_BUFFER;
+  bloques.forEach((b,i)=>{ if(state[i]&&state[i].removed) return; (b.ejercicios||[]).forEach((ej,ei)=>{ const base=_seriesBase(ej); const ns=(state[i]&&state[i].reduce[ei])||base; t+=ns*2.0+0.8; }); });
+  return t;
+}
+function _adaptarSesion(bloques, budget){
+  const state=(bloques||[]).map(b=>({removed:false, reduce:{}, prio:_prioTipo(b.tipo)}));
+  if(!bloques||budget>=120) return state;
+  bloques.map((b,i)=>i).sort((a,b)=>state[a].prio-state[b].prio).forEach(i=>{
+    if(_estSes(bloques,state)<=budget) return;
+    if(state[i].prio>=100) return;
+    if(state[i].prio<=45) state[i].removed=true;
+  });
+  let g=0;
+  while(_estSes(bloques,state)>budget && g<120){ g++;
+    let best=null;
+    bloques.forEach((b,i)=>{ if(state[i].removed||state[i].prio>=100) return; (b.ejercicios||[]).forEach((ej,ei)=>{ const base=_seriesBase(ej); const cur=state[i].reduce[ei]||base; if(cur>2){ if(!best||cur>best.cur) best={i,ei,cur}; } }); });
+    if(best){ state[best.i].reduce[best.ei]=best.cur-1; continue; }
+    let rem=bloques.map((b,i)=>i).filter(i=>!state[i].removed&&state[i].prio<100).sort((a,b)=>state[a].prio-state[b].prio)[0];
+    if(rem!=null){ state[rem].removed=true; continue; }
+    break;
+  }
+  return state;
+}
+function _tiempoCard(bloques){
+  const cur=_tiempoActual(); const en=(_LANG==='en');
+  const btns=[120,90,60,45].map(o=>'<button onclick="_setTiempo('+o+')" style="flex:1;padding:12px 2px;border-radius:11px;border:1.5px solid '+(cur===o?'#3A6EA5':'rgba(128,140,170,.35)')+';background:'+(cur===o?'#3A6EA5':'transparent')+';color:'+(cur===o?'#fff':'var(--text)')+';font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;">'+o+'<span style="display:block;font-size:8.5px;font-weight:700;letter-spacing:.5px;opacity:.75;">MIN</span></button>').join('');
+  const state=_adaptarSesion(bloques,cur);
+  const est=Math.round(_estSes(bloques,state));
+  const nota = cur>=120 ? (en?'Full session.':'Sesión completa.') : (en?'Optimized version — main work kept.':'Versión optimizada — se conserva el trabajo principal.');
+  return '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;">'
+    +'<div style="font-size:12.5px;font-weight:900;color:var(--text);margin-bottom:3px;">⏱ '+(en?'How much time do you have today?':'¿Cuánto tiempo tenés hoy?')+'</div>'
+    +'<div style="font-size:11px;color:var(--muted);margin-bottom:11px;">'+(en?'The app keeps the goal and trims what is secondary.':'La app mantiene el objetivo y ajusta lo secundario.')+'</div>'
+    +'<div style="display:flex;gap:7px;">'+btns+'</div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:11px;font-size:11px;color:var(--muted);"><span>'+nota+'</span><span style="font-weight:800;color:'+(est<=cur?'#5fe0a0':'#E6C766')+';">~'+est+'′</span></div>'
+  +'</div>';
+}
 function renderSesion() {
   const ctn=document.getElementById('sesion-ctn');
   if (_diaIdx===null||!_plan) { ctn.innerHTML=''; return; }
@@ -8203,7 +8262,8 @@ function renderSesion() {
       '<div style="font-size:15px;font-weight:800;color:#eaf5ea;line-height:1.3;">'+_objSem.replace(/</g,'&lt;')+'</div>'+
     '</div>'
   ) : '';
-  const _bloquesHTML = _objCard + _readinessCard() +
+  const _adap = _adaptarSesion(ses.bloques, _tiempoActual());
+  const _bloquesHTML = _objCard + _tiempoCard(ses.bloques) + _readinessCard() +
     '<div id="sesion-progreso" style="margin-bottom:14px;">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:900;letter-spacing:1px;color:var(--text);margin-bottom:7px;"><span>'+_t('tu_entrenamiento')+'</span><span class="sp-txt" style="color:#3A6EA5;letter-spacing:0;font-weight:800;">0/0</span></div>'+
       '<div style="height:7px;background:#1b2540;border-radius:5px;overflow:hidden;"><div class="sp-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#3A6EA5,#6aa0dc);border-radius:5px;transition:width .3s;"></div></div>'+
@@ -8212,7 +8272,23 @@ function renderSesion() {
       const letra='ABCDEFGHIJ'[bi]||(bi+1);
       const _grupo   = _tc(b.nombre||b.tipo||'');        // grupo muscular / nombre del bloque → badge dorado
       const _serieLbl= _tc(b.serieTipo||'');             // tipo de serie → banda azul
-      const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>_ejCard(ej,'b'+bi+'e'+ei, letra+(ei+1), _grupo, _serieLbl)).join('');
+      const _st = _adap[bi];
+      // Bloque sacado en la versión de tiempo elegida → barra compacta (con opción "Ver igual")
+      if(_st && _st.removed && !_verIgualSet[_tiempoKey()+'_'+bi]){
+        return '<div style="background:var(--card);border:1px dashed rgba(128,140,170,.4);border-radius:12px;padding:11px 13px;margin-bottom:11px;opacity:.72;">'
+          +'<div style="display:flex;align-items:center;gap:10px;">'
+            +'<span style="font-size:15px;color:#8891a5;">✕</span>'
+            +'<div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:800;color:var(--text);">'+_grupo+'</div>'
+            +'<div style="font-size:10.5px;color:var(--muted);">'+(_LANG==='en'?('Skipped in the '+_tiempoActual()+'′ version'):('Se saca en la versión '+_tiempoActual()+'′'))+'</div></div>'
+            +'<button onclick="_verIgual('+bi+')" style="background:transparent;border:1px solid rgba(128,140,170,.4);color:var(--muted);border-radius:8px;padding:6px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">'+(_LANG==='en'?'Show anyway':'Ver igual')+'</button>'
+          +'</div></div>';
+      }
+      const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>{
+        const _card=_ejCard(ej,'b'+bi+'e'+ei, letra+(ei+1), _grupo, _serieLbl);
+        const _nr=_st&&_st.reduce[ei];
+        const _note=_nr ? '<div style="font-size:11px;font-weight:700;color:#E6C766;background:rgba(214,168,84,.12);border-radius:8px;padding:6px 10px;margin:0 0 7px;">⏱ '+(_LANG==='en'?('Today: '+_nr+' sets (less time)'):('Hoy: hacé '+_nr+' series (menos tiempo)'))+'</div>' : '';
+        return _note+_card;
+      }).join('');
       // Borde según composición: pausa activa → gris (neutro) · 2+ ejercicios → azul · 1 ejercicio → dorado
       const _hasPausa = (b.ejercicios||[]).some(e => e && e.pausaActiva && e.pausaActiva.activo && Array.isArray(e.pausaActiva.items) && e.pausaActiva.items.length);
       const _nEj = (b.ejercicios||[]).length;
