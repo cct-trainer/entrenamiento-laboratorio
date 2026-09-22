@@ -940,8 +940,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260922121345 por un timestamp en cada deploy
-const _APP_VERSION = '20260922121345';
+// deploy.bat reemplaza 20260922123521 por un timestamp en cada deploy
+const _APP_VERSION = '20260922123521';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -7590,6 +7590,80 @@ function _equipoSes(ses){
   return [...set].map(e=>_tc(e)).join(', ');
 }
 
+// ── Compilado de videos de la sesión (todos los ejercicios juntos) ──
+let _vsFlat=[];
+function _vsThumb(ytid){ return ytid ? '<img src="https://img.youtube.com/vi/'+ytid+'/hqdefault.jpg" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\'">' : ''; }
+function _videosSesion(ses){
+  const out=[];
+  (ses && ses.bloques || []).forEach((b,bi)=>{
+    const letra='ABCDEFGHIJ'[bi]||(bi+1);
+    (b.ejercicios||[]).forEach((ej,ei)=>{
+      if(!ej) return;
+      const uid='b'+bi+'e'+ei; const sp=(_semIdx||0)+'_'+(_diaIdx||0)+'_'+uid;
+      let sust=''; try{ sust=_getEdit(sp,'sust'); }catch(e){}
+      const subEj=(sust&&typeof _bibFind==='function')?_bibFind(sust):null;
+      const nombre=sust||(typeof _nomEj==='function'?_nomEj(ej):(ej.nombre||''))||'';
+      const video=sust?((subEj&&subEj.video)||''):(ej.video||'');
+      if(!video) return;
+      const mus=subEj?[].concat(subEj.principales||[]).filter(Boolean).join(' · ')
+                     :(Array.isArray(ej.principales)?ej.principales.join(' · '):(Array.isArray(ej.musculos)?ej.musculos.join(' · '):(ej.musculos||'')));
+      const ytid=(typeof _ytId==='function')?_ytId(video):'';
+      out.push({badge:letra+(ei+1), nombre, mus, video, ytid, bloque:(b.nombre||b.tipo||('Bloque '+letra)), bi});
+    });
+  });
+  return out;
+}
+function _compiladoVideosHTML(ses){
+  const vids=_videosSesion(ses); _vsFlat=vids;
+  if(!vids.length) return '';
+  const en=(_LANG==='en'); const esc=s=>String(s==null?'':s).replace(/</g,'&lt;');
+  const playSvg='<svg viewBox="0 0 24 24" fill="#fff" style="width:16px;height:16px;margin-left:2px;"><path d="M8 5v14l11-7z"/></svg>';
+  const grupos=[]; vids.forEach((v,idx)=>{ v._i=idx; let g=grupos.find(x=>x.bi===v.bi); if(!g){ g={bi:v.bi,nombre:v.bloque,items:[]}; grupos.push(g); } g.items.push(v); });
+  let panel='<div style="margin-top:12px;background:#0c0f16;border:1px solid #1e2430;border-radius:14px;overflow:hidden;">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid #1a2130;"><div style="font-size:12px;font-weight:900;color:#fff;letter-spacing:.3px;">🎬 '+vids.length+' '+(en?'exercises':'ejercicios')+'</div><button onclick="_vsPlay(0)" style="background:#171e2b;border:1px solid #2c3750;color:#cfe0f6;font-size:11px;font-weight:800;border-radius:8px;padding:7px 11px;cursor:pointer;font-family:inherit;">▶ '+(en?'Play in order':'Ver en orden')+'</button></div>';
+  grupos.forEach(g=>{
+    panel+='<div style="padding:12px 14px 2px;"><div style="font-size:10px;font-weight:900;letter-spacing:1.4px;color:#C9A84C;text-transform:uppercase;margin-bottom:10px;">'+esc((typeof _tc==='function')?_tc(g.nombre):g.nombre)+'</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:6px;">';
+    g.items.forEach(v=>{
+      panel+='<div onclick="_vsPlay('+v._i+')" style="background:#12151d;border:1px solid #232838;border-radius:12px;overflow:hidden;cursor:pointer;">'
+        +'<div style="position:relative;aspect-ratio:16/9;background:linear-gradient(135deg,#1c2740,#0f1626);display:flex;align-items:center;justify-content:center;">'+_vsThumb(v.ytid)
+          +'<span style="position:absolute;top:7px;left:7px;background:#3A6EA5;color:#fff;font-size:10px;font-weight:900;border-radius:6px;padding:2px 7px;z-index:2;">'+esc(v.badge)+'</span>'
+          +'<div style="width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.55);border:1.5px solid rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;z-index:2;position:relative;">'+playSvg+'</div>'
+        +'</div><div style="padding:8px 10px 10px;"><div style="font-size:12px;font-weight:800;color:#e8e8f0;line-height:1.2;">'+esc(v.nombre)+'</div>'+(v.mus?'<div style="font-size:10px;color:#8fa6c6;font-weight:600;margin-top:3px;">'+esc(v.mus)+'</div>':'')+'</div></div>';
+    });
+    panel+='</div></div>';
+  });
+  panel+='</div>';
+  const access='<div id="vs-access" onclick="_toggleVs()" style="display:flex;align-items:center;gap:12px;background:#0f1626;border:1px solid #26304a;border-radius:13px;padding:12px 13px;cursor:pointer;">'
+    +'<div style="width:42px;height:42px;border-radius:11px;background:#3A6EA5;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 8px 18px -8px rgba(58,110,165,.7);">🎬</div>'
+    +'<div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:800;color:#fff;">'+(en?'Session videos':'Videos de la sesión')+'</div><div style="font-size:11px;color:#9fb4d4;margin-top:2px;">'+(en?('Watch the '+vids.length+' exercises before starting'):('Mirá los '+vids.length+' ejercicios antes de empezar'))+'</div></div>'
+    +'<div id="vs-arr" style="color:#7f93b5;font-size:16px;transition:transform .2s;">›</div></div>';
+  return '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">'+access+'<div id="vs-panel-wrap" style="max-height:0;overflow:hidden;transition:max-height .35s ease;">'+panel+'</div></div>';
+}
+function _toggleVs(){
+  const w=document.getElementById('vs-panel-wrap'), a=document.getElementById('vs-arr'); if(!w) return;
+  const open=w.style.maxHeight && w.style.maxHeight!=='0px';
+  w.style.maxHeight = open ? '0px' : (w.scrollHeight+60)+'px';
+  if(a) a.style.transform = open ? '' : 'rotate(90deg)';
+}
+function _vsPlay(i){
+  if(!_vsFlat.length) return; i=(i+_vsFlat.length)%_vsFlat.length;
+  const v=_vsFlat[i]; if(!v) return; const en=(_LANG==='en');
+  let ov=document.getElementById('vs-player'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='vs-player';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(5,7,11,.92);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;';
+  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+  const media = v.ytid
+    ? '<iframe src="https://www.youtube.com/embed/'+v.ytid+'?autoplay=1&rel=0&playsinline=1" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="autoplay;encrypted-media;fullscreen" allowfullscreen></iframe>'
+    : '<a href="'+String(v.video).replace(/"/g,'')+'" target="_blank" rel="noopener" style="color:#8fb7e6;font-weight:800;text-decoration:none;font-size:14px;">▶ '+(en?'Open video':'Abrir video')+'</a>';
+  ov.innerHTML='<div style="max-width:460px;width:100%;">'
+    +'<div style="position:relative;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden;border:1px solid #232838;display:flex;align-items:center;justify-content:center;">'+media+'</div>'
+    +'<div style="font-size:13.5px;font-weight:800;color:#fff;margin-top:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+String(v.badge)+' · '+String(v.nombre).replace(/</g,'&lt;')+'</div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;">'
+      +'<div style="display:flex;gap:8px;"><button onclick="_vsPlay('+(i-1)+')" style="background:#171e2b;border:1px solid #2c3750;color:#cfe0f6;font-size:12px;font-weight:800;border-radius:9px;padding:9px 13px;cursor:pointer;font-family:inherit;">‹ '+(en?'Prev':'Anterior')+'</button><button onclick="_vsPlay('+(i+1)+')" style="background:#171e2b;border:1px solid #2c3750;color:#cfe0f6;font-size:12px;font-weight:800;border-radius:9px;padding:9px 13px;cursor:pointer;font-family:inherit;">'+(en?'Next':'Siguiente')+' ›</button></div>'
+      +'<button onclick="document.getElementById(\'vs-player\').remove()" style="background:transparent;border:none;color:#9fb4d4;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;">'+(en?'Close':'Cerrar')+'</button>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+}
 function _sesDetalleHTML(ses){
   if(!ses) return '';
   const durVal = (()=>{ const mm=_calcDuracionSesion(ses); return mm ? '~'+mm+' min' : (ses.duracion||''); })();
@@ -7606,13 +7680,13 @@ function _sesDetalleHTML(ses){
   if(durVal) info += row('🕐', _compEsc(durVal));
   // Nivel (puntos + texto)
   if(dif) info += '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);"><span style="width:18px;display:flex;gap:3px;justify-content:center;flex-shrink:0;">'+dots+'</span><span>'+_t('nivel')+' '+_t('niv_'+dif)+'</span></div>';
-  // Objetivo (sesión o fase del mes)
-  const _obj = _objetivoSes(ses);
-  if(_obj) info += row('🎯', _compEsc(_obj));
+  // (La fila de "Objetivo" se reemplazó por el compilado de videos, más abajo)
   // Equipamiento (sesión o calculado desde los ejercicios)
   const _eq = _equipoSes(ses);
   if(_eq) info += row('🧰', _compEsc(_eq));
   info += '</div>';
+  // Compilado de videos de la sesión (en el lugar del objetivo)
+  info += _compiladoVideosHTML(ses);
   if(ses.descripcion) info += '<div style="font-size:13px;color:var(--muted);line-height:1.55;margin-top:13px;padding-top:13px;border-top:1px solid var(--border);">'+_compEsc(ses.descripcion)+'</div>';
   info += '</div>';
   return info;
