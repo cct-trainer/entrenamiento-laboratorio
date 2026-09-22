@@ -940,8 +940,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260922141926 por un timestamp en cada deploy
-const _APP_VERSION = '20260922141926';
+// deploy.bat reemplaza 20260922144833 por un timestamp en cada deploy
+const _APP_VERSION = '20260922144833';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2375,6 +2375,29 @@ function _sysCardHTML(b){
       +(desc?'<div style="font-size:12px;line-height:1.5;color:var(--muted);">'+esc(desc)+'</div>':'')
     +'</div>';
   }catch(e){ return ''; }
+}
+// ── "¿Por qué este bloque?" (nota del coach, al pie del bloque) ──
+function _porqueBloqueHTML(b){
+  const txt=String((b&&b.porque)||'').trim(); if(!txt) return '';
+  const esc=s=>String(s==null?'':s).replace(/</g,'&lt;');
+  const en=(_LANG==='en');
+  return '<div class="wb-wrap" style="margin-top:12px;padding-top:11px;border-top:1px dashed #2a3140;">'
+    +'<div onclick="_toggleWb(this)" style="display:flex;align-items:center;gap:8px;cursor:pointer;">'
+      +'<span style="width:24px;height:24px;border-radius:7px;background:rgba(214,168,84,.14);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">💡</span>'
+      +'<span style="flex:1;font-size:12px;font-weight:700;color:#C9A84C;letter-spacing:.2px;">'+(en?'Why this block?':'¿Por qué armé este bloque así?')+'</span>'
+      +'<span class="wb-arr" style="color:#8a7b52;font-size:13px;transition:transform .2s;">›</span>'
+    +'</div>'
+    +'<div class="wb-body" style="max-height:0;overflow:hidden;transition:max-height .3s;">'
+      +'<p style="margin-top:10px;font-size:12.5px;line-height:1.6;color:#d9c79a;background:#15130c;border:1px solid #2b2410;border-left:3px solid #C9A84C;border-radius:9px;padding:11px 13px;">'+esc(txt)+'</p>'
+    +'</div>'
+  +'</div>';
+}
+function _toggleWb(el){
+  const wrap=el.parentElement; if(!wrap) return;
+  const body=wrap.querySelector('.wb-body'); const arr=el.querySelector('.wb-arr'); if(!body) return;
+  const open=body.style.maxHeight && body.style.maxHeight!=='0px';
+  body.style.maxHeight = open ? '0px' : (body.scrollHeight+30)+'px';
+  if(arr) arr.style.transform = open ? '' : 'rotate(90deg)';
 }
 function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
   ejLabel = ejLabel || '';   // etiqueta del ejercicio (A1, B2…)
@@ -8375,7 +8398,7 @@ function renderSesion() {
       const _partMin = _durBloqueMin(b, _st&&_st.reduce);
       const _partHTML = '<div style="text-align:right;font-size:10.5px;font-weight:700;color:var(--muted);margin-top:1px;padding-right:3px;">≈ '+_partMin+' min</div>';
       return '<div class="'+_blkCls+'" style="margin-bottom:14px;">'+
-        '<div class="blk-body" style="padding:2px 0 0;">'+_sysCardHTML(b)+ejesHTML+_partHTML+'</div>'+
+        '<div class="blk-body" style="padding:2px 0 0;">'+_sysCardHTML(b)+ejesHTML+_partHTML+_porqueBloqueHTML(b)+'</div>'+
       '</div>';
     }).join('');
 

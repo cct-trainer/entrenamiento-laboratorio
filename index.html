@@ -13079,7 +13079,8 @@ function guardarEstadoDiaActual() {
     const serieDesc = document.getElementById(bId+'-sysdesc')?.value.trim() || '';
     const _vEl = document.getElementById(bId+'-vueltas');
     const vueltas = _vEl ? (parseInt(_vEl.value,10)||'') : '';
-    bloques.push({ nombre, tipo, serieTipo:st, serieDesc, vueltas, ejercicios, cardioData });
+    const porque = document.getElementById(bId+'-porque')?.value.trim() || '';
+    bloques.push({ nombre, tipo, serieTipo:st, serieDesc, vueltas, porque, ejercicios, cardioData });
   });
   // planDiasData is a reference to planSemanasArray[planSemEditando].dias — update in place
   if(!planSemanasArray[planSemEditando]) return;
@@ -13179,6 +13180,10 @@ function addBloqueDia(diaIdx, datosPrevios) {
       <button class="bloque-btn-eliminar" onclick="eliminarBloqueEnDia('${id}',${diaIdx})">🗑 Eliminar</button>
     </div>
     <div class="bloque-sysbox" id="${id}-sysbox"></div>
+    <div style="padding:2px 2px 6px;">
+      <label style="font-size:10.5px;font-weight:800;letter-spacing:.5px;color:#8a97ac;text-transform:uppercase;display:block;margin:8px 0 5px;">💡 ¿Por qué este bloque? <span style="font-weight:500;text-transform:none;color:#b0b8c4;">(nota para el alumno · opcional)</span></label>
+      <textarea id="${id}-porque" placeholder="Por qué compusiste el bloque así… (lo verá el alumno al pie del bloque)" style="width:100%;font-size:12.5px;line-height:1.5;color:#33415a;border:1px solid #dde5f1;border-radius:8px;padding:9px 10px;background:#fff;resize:vertical;min-height:52px;font-family:inherit;box-sizing:border-box;">${_escHTML(datosPrevios?.porque||'')}</textarea>
+    </div>
     <div class="bloque-body" id="${id}-body"></div>
     <div class="bloque-footer">
       <button class="bloque-add-ej-btn" onclick="addEjercicioEnDia('${id}',${diaIdx})">＋ AGREGAR EJERCICIO</button>
@@ -28231,7 +28236,13 @@ function _iaJSONaPlanificacion(data, alumnoId, opts) {
           rpe: String(b.cardio.rpe || ''), observaciones: String(b.cardio.observaciones || '')
         };
       }
-      return { nombre: String(b.nombre || tipo), tipo, serieTipo, ejercicios, cardioData };
+      return {
+        nombre: String(b.nombre || tipo), tipo, serieTipo,
+        porque: String(b.porque || b.porqueBloque || b.motivo || '').trim(),   // ← "por qué armé este bloque" (viaja a la app)
+        serieDesc: String(b.serieDesc || b.descripcion || '').trim(),
+        vueltas: (parseInt(b.vueltas || b.rondas, 10) || ''),
+        ejercicios, cardioData
+      };
     });
 
     dias[String(idx)] = [{ bloques, nombre: String(d.nombre || ''), lugar: opts.lugar || '' }];
