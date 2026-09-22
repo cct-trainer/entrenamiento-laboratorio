@@ -13428,6 +13428,29 @@ function _migrarTodasLasSemanas(arr) {
 }
 
 // ── Abrir plan semanal existente ─────────────────────────────────────────────
+// Trae a la planilla los pesos que cargó el alumno en su app (lo modificado se actualiza; lo demás queda igual)
+async function _traerPesosAlumno(alumnoId, silencioso){
+  if(!alumnoId || !window._db || !planSemanasArray || !planSemanasArray.length) return 0;
+  let pe={};
+  try{ const d=await window._db.collection('alumnos').doc(alumnoId).get(); if(d.exists) pe=(d.data().pesoEdits)||{}; }catch(e){ return 0; }
+  if(!pe || !Object.keys(pe).length) return 0;
+  let cambio=0;
+  Object.keys(pe).forEach(k=>{
+    const m=k.match(/^(\d+)_(\d+)_b(\d+)e(\d+)_efec_(\d+)$/); if(!m) return;
+    const sem=+m[1], dia=+m[2], bi=+m[3], ei=+m[4], si=+m[5];
+    const peso=pe[k] && pe[k].peso; if(peso==null || String(peso).trim()==='') return;
+    const semObj=planSemanasArray[sem]; if(!semObj || !semObj.dias) return;
+    let dd=(semObj.dias[dia]!=null)?semObj.dias[dia]:semObj.dias[String(dia)]; let ses=Array.isArray(dd)?dd[0]:dd;
+    const ej=ses && ses.bloques && ses.bloques[bi] && ses.bloques[bi].ejercicios && ses.bloques[bi].ejercicios[ei];
+    if(ej && Array.isArray(ej.series) && ej.series[si] && String(ej.series[si].peso||'')!==String(peso).trim()){ ej.series[si].peso=String(peso).trim(); cambio++; }
+  });
+  if(cambio){
+    try{ const planes=getPlanificaciones(); const idx=planes.findIndex(p=>p.id===planSemActualId); if(idx>=0){ planes[idx].semanasArray=JSON.parse(JSON.stringify(planSemanasArray)); savePlanificaciones(planes); } }catch(e){}
+    try{ if(typeof renderPlanMes==='function') renderPlanMes(); }catch(e){}
+    if(!silencioso) toast('Traje '+cambio+' peso'+(cambio>1?'s':'')+' que cargó el alumno ✓');
+  }
+  return cambio;
+}
 function abrirPlanFuerzaExistente(planId) {
   const p = getPlanificaciones().find(x=>x.id===planId);
   if(!p) return;
@@ -13458,6 +13481,8 @@ function abrirPlanFuerzaExistente(planId) {
   renderPlanMes();
   renderPlanSidebar('fuerza');
   toast('Plan cargado para edicion ✓');
+  // Traer automáticamente los pesos que cargó el alumno en su app
+  try{ _traerPesosAlumno(p.alumnoId, true); }catch(e){}
 }
 
 // ── EXPORTAR DÍA / SEMANA ────────────────────────────────────────────────────
@@ -14362,6 +14387,9 @@ function _aplicarFiltroAlumnos(){
 // MODO ENTRENADOR (planificador de escritorio) — referencia vs realizado
 // ══════════════════════════════════════════════════════════════════════
 let _veState = null;
+// Borrador local del modo entrenador: si se cierra la app sin terminar, no se pierden los pesos cargados
+function _veSaveDraft(){ const st=_veState; if(!st) return; try{ localStorage.setItem('SOCC_VE_DRAFT', JSON.stringify({alId:st.alId, planId:st.planId, sem:st.semIdx, dia:st.diaIdx, log:st.log, chg:st.chg, obs:st.obs, genObs:st.genObs, at:Date.now()})); }catch(e){} }
+function _veClearDraft(){ try{ localStorage.removeItem('SOCC_VE_DRAFT'); }catch(e){} }
 function _veYtId(url){ const m=String(url||'').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([^&?/\s]{11})/); return m?m[1]:''; }
 function _veEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
 
@@ -14375,6 +14403,13 @@ function _veAbrir(semIdx, diaIdx){
   const exOrder=[];
   (ses.bloques||[]).forEach((b,bi)=>{ (b.ejercicios||[]).forEach((ej,ei)=>{ exOrder.push({bi,ei,ej,bloque:b,uid:'b'+bi+'e'+ei}); }); });
   _veState={ alId, alumnoNom:(a&&a.nombre)||'Alumno', planId:planSemActualId, semIdx, diaIdx, ses, exOrder, log:{}, chg:{}, obs:{}, genObs:'' };
+  // Restaurar borrador si quedó una sesión a medio cargar de este mismo alumno/día
+  try{ const dr=JSON.parse(localStorage.getItem('SOCC_VE_DRAFT')||'null');
+    if(dr && dr.alId===alId && String(dr.planId)===String(planSemActualId) && dr.sem===semIdx && dr.dia===diaIdx && dr.log && (Date.now()-(dr.at||0) < 3*24*3600*1000)){
+      _veState.log=dr.log||{}; _veState.chg=dr.chg||{}; _veState.obs=dr.obs||{}; _veState.genObs=dr.genObs||'';
+      setTimeout(function(){ try{ toast('Recuperé los pesos que habías cargado 👍'); }catch(e){} }, 300);
+    }
+  }catch(e){}
   let ov=document.getElementById('ve-ov'); if(!ov){ ov=document.createElement('div'); ov.id='ve-ov'; document.body.appendChild(ov); }
   ov.style.cssText='position:fixed;inset:0;z-index:100000;background:#eef0f3;overflow-y:auto;';
   _veRender();
@@ -14438,11 +14473,11 @@ function _veRender(){
     +'<div class="ve-foot"><div class="ve-genobs"><div class="ve-genobs-l">Observación general de la sesión</div><textarea placeholder="Cómo la vimos hoy, qué ajustar la próxima…" onchange="_veGenObs(this.value)">'+_veEsc(st.genObs)+'</textarea></div>'
       +'<button class="ve-save" onclick="_veTerminar()">✓ Terminar y guardar sesión</button></div></div>';
 }
-function _veSet(key,campo,val){ const st=_veState; if(!st) return; if(!st.log[key]) st.log[key]={}; st.log[key][campo]=String(val).replace(/kg$/i,'').trim(); }
-function _veTog(key){ const st=_veState; if(!st) return; if(!st.log[key]) st.log[key]={}; st.log[key].done = st.log[key].done==='1' ? '' : '1'; _veRender(); }
-function _veChg(uid,val){ if(_veState) _veState.chg[uid]=val; }
-function _veObs(uid,val){ if(_veState) _veState.obs[uid]=val; }
-function _veGenObs(val){ if(_veState) _veState.genObs=val; }
+function _veSet(key,campo,val){ const st=_veState; if(!st) return; if(!st.log[key]) st.log[key]={}; st.log[key][campo]=String(val).replace(/kg$/i,'').trim(); _veSaveDraft(); }
+function _veTog(key){ const st=_veState; if(!st) return; if(!st.log[key]) st.log[key]={}; st.log[key].done = st.log[key].done==='1' ? '' : '1'; _veSaveDraft(); _veRender(); }
+function _veChg(uid,val){ if(_veState){ _veState.chg[uid]=val; _veSaveDraft(); } }
+function _veObs(uid,val){ if(_veState){ _veState.obs[uid]=val; _veSaveDraft(); } }
+function _veGenObs(val){ if(_veState){ _veState.genObs=val; _veSaveDraft(); } }
 function _veTogObs(el){ const b=el.nextElementSibling; if(b) b.style.display=(b.style.display==='none'?'block':'none'); }
 function _veVideo(uid){ const st=_veState; if(!st) return; const x=st.exOrder.find(e=>e.uid===uid); if(x && x.ej.video) window.open(x.ej.video,'_blank','noopener'); }
 async function _veTerminar(){
@@ -14465,6 +14500,26 @@ async function _veTerminar(){
       toast('Sesión realizada guardada ✓ ('+nRes+' series)');
     } else { toast('Sin conexión: no se guardó','error'); }
   }catch(e){ console.warn('VE guardar:',e); toast('Error al guardar','error'); }
+  // Volcar los pesos cargados a la PLANILLA: lo que modificaste se actualiza, lo demás queda igual.
+  try{
+    const planes=getPlanificaciones(); const plan=planes.find(p=>p.id===st.planId);
+    if(plan){
+      const dias=plan.semanasArray && plan.semanasArray[st.semIdx] && plan.semanasArray[st.semIdx].dias;
+      let sesP=dias?(dias[st.diaIdx]!=null?dias[st.diaIdx]:dias[String(st.diaIdx)]):null;
+      sesP=Array.isArray(sesP)?sesP[0]:sesP;
+      if(sesP && sesP.bloques){
+        let cambio=false;
+        Object.keys(resultados).forEach(k=>{
+          const m=k.match(/^\d+_\d+_b(\d+)e(\d+)_efec_(\d+)$/); if(!m) return;
+          const bi=+m[1], ei=+m[2], si=+m[3]; const peso=resultados[k].peso;
+          const ej=sesP.bloques[bi] && sesP.bloques[bi].ejercicios && sesP.bloques[bi].ejercicios[ei];
+          if(peso!=null && String(peso).trim()!=='' && ej && Array.isArray(ej.series) && ej.series[si]){ ej.series[si].peso=String(peso).trim(); cambio=true; }
+        });
+        if(cambio){ savePlanificaciones(planes); if(typeof forzarSyncFirebase==='function') forzarSyncFirebase(); }
+      }
+    }
+  }catch(e){ console.warn('volcar pesos a la planilla:',e); }
+  _veClearDraft();
   _veCerrar();
   _completadasFetchAlumno=null; if(typeof renderPlanMes==='function') renderPlanMes();
 }
