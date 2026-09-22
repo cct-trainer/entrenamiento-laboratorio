@@ -269,6 +269,13 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .dayrow.today .dr-tag{background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.4);}
 .dr-arr{font-size:11px;color:var(--muted);transition:transform .2s,color .2s;flex-shrink:0;}
 .dayrow.on .dr-arr{transform:rotate(180deg);color:var(--gold);}
+/* Color de la etiqueta del día elegido por el coach */
+.dayrow.dcol::before{width:0;}
+.dayrow.dcol .dr-num,.dayrow.dcol .dr-title{color:#fff;}
+.dayrow.dcol .dr-dow,.dayrow.dcol .dr-sub{color:rgba(255,255,255,.88);}
+.dayrow.dcol .dr-sep{background:rgba(255,255,255,.28);}
+.dayrow.dcol .dr-arr{color:#eaf1fb;}
+.dayrow.dcol .dr-tag{background:rgba(255,255,255,.22);color:#fff;border-color:rgba(255,255,255,.4);}
 .dr-empty{padding:26px 16px;text-align:center;color:var(--muted);font-size:12px;background:var(--card);border:1px dashed var(--border);border-radius:14px;margin-bottom:16px;}
 /* Encabezado de la vista de sesión (con botón volver) */
 .ses-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
@@ -940,8 +947,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260922195708 por un timestamp en cada deploy
-const _APP_VERSION = '20260922195708';
+// deploy.bat reemplaza 20260922202128 por un timestamp en cada deploy
+const _APP_VERSION = '20260922202128';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -967,6 +974,7 @@ function _initEdits(alumnoId) {
 // Fecha LOCAL (no UTC) → evita que "hoy" salte de día a la tarde/noche en husos negativos
 function _hoyISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function _dISO(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function _darkenHex(hex,f){ try{ hex=String(hex).replace('#',''); if(hex.length!==6) return '#'+hex; const n=parseInt(hex,16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255; r=Math.round(r*f);g=Math.round(g*f);b=Math.round(b*f); return 'rgb('+r+','+g+','+b+')'; }catch(e){ return '#'+hex; } }
 function _guardarEdit(key, campo, val) {
   if (!_pesoEdits[key]) _pesoEdits[key] = {};
   _pesoEdits[key][campo] = String(val).replace(/kg$/i,'').trim();
@@ -1867,7 +1875,9 @@ function renderRutina() {
       if (nBloques) partes.push(nBloques+' bloque'+(nBloques>1?'s':''));
       const sub = partes.join(' · ');
       const tags = (hoy?'<span class="dr-tag today">HOY</span>':'') + (hasCasa?'<span class="dr-tag">🏠 CASA</span>':'');
-      return '<div class="dayrow '+(on?'on ':'')+(hoy?'today':'')+'" onclick="selDia('+i+')">'+
+      const _diaCol = (sem.diaColores && sem.diaColores[i] && /^#?[0-9a-fA-F]{6}$/.test(String(sem.diaColores[i]).replace('#',''))) ? ('#'+String(sem.diaColores[i]).replace('#','')) : '';
+      const _dcolStyle = _diaCol ? ' style="background:linear-gradient(150deg,'+_diaCol+','+_darkenHex(_diaCol,.62)+');border-color:'+_diaCol+';box-shadow:0 6px 22px -8px '+_diaCol+'99;"' : '';
+      return '<div class="dayrow '+(on?'on ':'')+(hoy?'today ':'')+(_diaCol?'dcol':'')+'"'+_dcolStyle+' onclick="selDia('+i+')">'+
         '<div class="dr-date"><span class="dr-dow">'+DS[i]+'</span><span class="dr-num">'+dayNum+'</span></div>'+
         '<div class="dr-sep"></div>'+
         '<div class="dr-body">'+

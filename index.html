@@ -11392,6 +11392,8 @@ function _setDiaColor(semIdx,i,color){
   if(!sem.diaColores) sem.diaColores={};
   if(color) sem.diaColores[i]=color; else delete sem.diaColores[i];
   try{ const planes=getPlanificaciones(); const idx=planes.findIndex(p=>p.id===planSemActualId); if(idx>=0){ planes[idx].semanasArray=JSON.parse(JSON.stringify(planSemanasArray)); savePlanificaciones(planes); } }catch(e){}
+  // Sincronizar solo (con retardo) para que el color llegue a la app del alumno sin publicar aparte
+  try{ clearTimeout(window._colorSyncTO); window._colorSyncTO=setTimeout(function(){ try{ if(typeof forzarSyncFirebase==='function') forzarSyncFirebase(); }catch(e){} }, 900); }catch(e){}
   const pop=document.getElementById('dia-pal-pop'); if(pop) pop.style.display='none';
   renderPlanMes();
 }
