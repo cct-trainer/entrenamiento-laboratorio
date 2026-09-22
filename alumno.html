@@ -940,8 +940,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260922182108 por un timestamp en cada deploy
-const _APP_VERSION = '20260922182108';
+// deploy.bat reemplaza 20260922195708 por un timestamp en cada deploy
+const _APP_VERSION = '20260922195708';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -8403,8 +8403,12 @@ function renderSesion() {
       const _blkCls = 'blk' + (_hasPausa ? '' : (_nEj>=2 ? ' combo-blue' : (_nEj===1 ? ' solo-gold' : '')));
       const _partMin = _durBloqueMin(b, _st&&_st.reduce);
       const _partHTML = '<div style="text-align:right;font-size:10.5px;font-weight:700;color:var(--muted);margin-top:1px;padding-right:3px;">≈ '+_partMin+' min</div>';
-      return '<div class="'+_blkCls+'" style="margin-bottom:14px;">'+
-        '<div class="blk-body" style="padding:2px 0 0;">'+_sysCardHTML(b)+ejesHTML+_partHTML+_porqueBloqueHTML(b)+'</div>'+
+      // Color de la etiqueta del bloque (lo elige el coach)
+      const _col = (b && b.color && /^#?[0-9a-fA-F]{6}$/.test(String(b.color).replace('#',''))) ? ('#'+String(b.color).replace('#','')) : '';
+      const _colStyle = _col ? 'border-left:4px solid '+_col+';' : '';
+      const _colHdr = _col ? '<div style="display:inline-flex;align-items:center;gap:7px;background:'+_col+'22;color:'+_col+';font-size:11px;font-weight:900;letter-spacing:.6px;padding:5px 11px;border-radius:8px;margin:0 0 9px 2px;text-transform:uppercase;"><span style="width:8px;height:8px;border-radius:50%;background:'+_col+';"></span>'+(_grupo||'')+'</div>' : '';
+      return '<div class="'+_blkCls+'" style="margin-bottom:14px;'+_colStyle+'">'+
+        '<div class="blk-body" style="padding:2px 0 0;">'+_colHdr+_sysCardHTML(b)+ejesHTML+_partHTML+_porqueBloqueHTML(b)+'</div>'+
       '</div>';
     }).join('');
 
