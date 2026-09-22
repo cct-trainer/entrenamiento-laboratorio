@@ -4216,11 +4216,12 @@ select.toolbox-input option:disabled { color: #888; }
         <div class="module-header">
           <div class="mh-left">
             <h2 class="mh-title">Registros</h2>
-            <p class="mh-sub">Notas y observaciones del entrenador</p>
+            <p class="mh-sub">Registro de cargas y notas del entrenador</p>
           </div>
           <div class="mh-actions"></div>
         </div>
         <div class="module-content">
+          <div id="reg-cargas-cont" style="max-width:820px;margin:0 auto 24px;"></div>
           <div id="coach-sub-notas" class="perfil-subcontent active" style="display:block;">
             <div style="max-width:740px;margin:0 auto;">
               <div class="notas-panel" style="border-radius:14px;">
@@ -14972,6 +14973,95 @@ function perfilSegGo(sub) {
   });
 }
 
+// ══════════════ REGISTRO DE CARGAS (por alumno · por mes) ══════════════
+// Arma, desde las sesiones completadas del alumno, una tabla por ejercicio con Día · Fecha · Peso
+// y el cambio respecto a la vez anterior (para ver si subió o se mantuvo).
+let _regMes=null;
+function _regEsc(s){ return String(s==null?'':s).replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function _regNumPeso(v){ const n=parseFloat(String(v==null?'':v).replace(',','.').replace(/[^0-9.]/g,'')); return isFinite(n)?n:0; }
+function _regFmtPeso(n){ return (Math.round(n*100)/100).toString().replace('.',','); }
+function _regDiaNombre(fecha){ const d=new Date(fecha+'T12:00:00'); const dd=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']; return isNaN(d.getTime())?'':dd[d.getDay()]; }
+function _regFechaCorta(fecha){ const p=String(fecha).split('-'); return p.length===3?(p[2]+'/'+p[1]):fecha; }
+function _regNomMes(ym){ const a=ym.split('-'); const M=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']; return (M[parseInt(a[1],10)]||ym)+' '+a[0]; }
+function _regEmptyHTML(){ return '<div style="background:#fff;border:1px solid #E5EBF3;border-radius:14px;padding:30px;text-align:center;color:#9aa4b4;font-size:13px;">Todavía no hay cargas registradas.<br><span style="font-size:11.5px;">Cuando el alumno termine entrenamientos con sus pesos, aparecen acá automáticamente.</span></div>'; }
+function _regSetMes(m){ _regMes=m; renderRegistroCargas(currentAlumnoId); }
+function _regExData(comp, mes){
+  const planes=(typeof getPlanificaciones==='function')?getPlanificaciones():[];
+  const planById={}; planes.forEach(p=>{ if(p&&p.id) planById[p.id]=p; });
+  const fechasSet=new Set(); const mapa={};
+  comp.filter(c=>String(c.fecha).slice(0,7)===mes).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))).forEach(c=>{
+    fechasSet.add(c.fecha);
+    let ses=null; try{ const plan=planById[c.planId]; const dias=plan&&plan.semanasArray&&plan.semanasArray[c.sem]&&plan.semanasArray[c.sem].dias; let dd=dias?(dias[c.dia]!=null?dias[c.dia]:dias[String(c.dia)]):null; ses=Array.isArray(dd)?dd[c.mod||0]:dd; }catch(e){}
+    const local={};
+    Object.keys(c.resultados||{}).forEach(k=>{
+      const mm=k.match(/^\d+_\d+_b(\d+)e(\d+)_efec_(\d+)$/); if(!mm) return;
+      const bi=+mm[1], ei=+mm[2]; const v=c.resultados[k]||{};
+      const peso=_regNumPeso(v.peso); const reps=v.reps||'';
+      const letra='ABCDEFGHIJ'[bi]||(bi+1); const uid='b'+bi+'e'+ei; let badge=letra+(ei+1); let nombre='', mus='';
+      if(c.ejerciciosNombres && c.ejerciciosNombres[uid]) nombre=c.ejerciciosNombres[uid];   // nombre guardado al terminar (fiable aunque el plan cambie)
+      if(ses && ses.bloques && ses.bloques[bi] && ses.bloques[bi].ejercicios && ses.bloques[bi].ejercicios[ei]){
+        const ej=ses.bloques[bi].ejercicios[ei]; if(!nombre) nombre=ej.nombre||'';
+        mus=Array.isArray(ej.principales)?ej.principales.join(' · '):(ej.musculos||'');
+      }
+      if(!nombre) nombre='Ejercicio '+letra+(ei+1);
+      if(!nombre) return;
+      if(!local[nombre]) local[nombre]={nombre,badge,mus,peso:0,reps:'',nser:0};
+      if(peso>local[nombre].peso) local[nombre].peso=peso;
+      if(reps) local[nombre].reps=reps;
+      local[nombre].nser++;
+    });
+    Object.keys(local).forEach(key=>{ const L=local[key]; if(L.peso<=0) return; if(!mapa[key]) mapa[key]={nombre:L.nombre,badge:L.badge,mus:L.mus,items:[]}; mapa[key].items.push({fecha:c.fecha,dia:_regDiaNombre(c.fecha),peso:L.peso,reps:L.reps,nser:L.nser}); });
+  });
+  const exs=Object.keys(mapa).map(k=>mapa[k]).filter(x=>x.items.length);
+  exs.forEach(x=>x.items.sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))));
+  exs.sort((a,b)=>String(a.badge).localeCompare(String(b.badge)));
+  return {exs, nSes:fechasSet.size};
+}
+async function renderRegistroCargas(alumnoId){
+  const cont=document.getElementById('reg-cargas-cont'); if(!cont) return;
+  cont.innerHTML='<div style="text-align:center;color:#9aa4b4;padding:22px;font-size:13px;">Cargando registro de cargas…</div>';
+  let comp=[];
+  try{ if(window._db && alumnoId){ const d=await window._db.collection('alumnos').doc(alumnoId).get(); if(d.exists) comp=(d.data().sesionesCompletadas)||[]; } }catch(e){}
+  if(!comp.length && typeof _COMPLETADAS!=='undefined' && Array.isArray(_COMPLETADAS)) comp=_COMPLETADAS.slice();
+  comp=(comp||[]).filter(c=>c && c.fecha && c.resultados);
+  if(!comp.length){ cont.innerHTML=_regEmptyHTML(); return; }
+  const meses=[...new Set(comp.map(c=>String(c.fecha).slice(0,7)))].sort().reverse();
+  if(!_regMes || meses.indexOf(_regMes)<0) _regMes=meses[0];
+  const R=_regExData(comp,_regMes); const exs=R.exs;
+  let subieron=0, mant=0;
+  exs.forEach(x=>{ if(x.items.length<2){ mant++; return; } (x.items[x.items.length-1].peso > x.items[0].peso) ? subieron++ : mant++; });
+  const selMes='<select onchange="_regSetMes(this.value)" style="font-size:12.5px;font-weight:700;color:#0B1739;border:1.5px solid #cbd5e6;border-radius:9px;padding:8px 11px;background:#f7f9fc;cursor:pointer;font-family:inherit;">'+meses.map(m=>'<option value="'+m+'"'+(m===_regMes?' selected':'')+'>'+_regNomMes(m)+'</option>').join('')+'</select>';
+  let html='<div style="background:#fff;border:1px solid #E5EBF3;border-radius:15px;padding:15px 17px;margin-bottom:14px;box-shadow:0 8px 22px -18px rgba(20,40,80,.2);">'
+    +'<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><div style="font-size:16px;font-weight:800;color:#0B1739;">📊 Registro de cargas</div><div style="margin-left:auto;">'+selMes+'</div></div>'
+    +'<div style="display:flex;gap:16px;margin-top:12px;font-size:11.5px;color:#5a6b85;flex-wrap:wrap;"><span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:50%;background:#22C875;"></span>Subió</span><span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:50%;background:#9aa4b4;"></span>Se mantuvo</span><span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:50%;background:#c0553f;"></span>Bajó</span></div></div>';
+  html+='<div style="display:flex;gap:10px;margin-bottom:14px;">'
+    +'<div style="flex:1;background:#fff;border:1px solid #E5EBF3;border-radius:12px;padding:12px;text-align:center;"><b style="display:block;font-size:22px;font-weight:900;color:#12915a;">'+subieron+'</b><span style="font-size:10.5px;color:#7B89A5;font-weight:600;">SUBIERON</span></div>'
+    +'<div style="flex:1;background:#fff;border:1px solid #E5EBF3;border-radius:12px;padding:12px;text-align:center;"><b style="display:block;font-size:22px;font-weight:900;color:#8a7b52;">'+mant+'</b><span style="font-size:10.5px;color:#7B89A5;font-weight:600;">SE MANTUVIERON</span></div>'
+    +'<div style="flex:1;background:#fff;border:1px solid #E5EBF3;border-radius:12px;padding:12px;text-align:center;"><b style="display:block;font-size:22px;font-weight:900;color:#0B1739;">'+exs.length+'</b><span style="font-size:10.5px;color:#7B89A5;font-weight:600;">EJERCICIOS</span></div>'
+    +'<div style="flex:1;background:#fff;border:1px solid #E5EBF3;border-radius:12px;padding:12px;text-align:center;"><b style="display:block;font-size:22px;font-weight:900;color:#0B1739;">'+R.nSes+'</b><span style="font-size:10.5px;color:#7B89A5;font-weight:600;">SESIONES</span></div></div>';
+  if(!exs.length){ html+='<div style="background:#fff;border:1px solid #E5EBF3;border-radius:13px;padding:24px;text-align:center;color:#9aa4b4;font-size:13px;">Este mes no hay ejercicios con peso registrado.</div>'; cont.innerHTML=html; return; }
+  const th='font-size:10px;font-weight:800;color:#8a97ac;text-transform:uppercase;letter-spacing:.5px;padding:10px 16px;background:#fff;border-bottom:1px solid #f0f3f8;';
+  const td='padding:11px 16px;border-bottom:1px solid #f4f6fa;';
+  exs.forEach(x=>{
+    const diffMes=x.items[x.items.length-1].peso - x.items[0].peso;
+    const trend = diffMes>0 ? '<span style="margin-left:auto;font-size:12px;font-weight:800;padding:5px 11px;border-radius:999px;color:#12915a;background:#E7F8EF;">▲ +'+_regFmtPeso(diffMes)+' kg en el mes</span>'
+                            : '<span style="margin-left:auto;font-size:12px;font-weight:800;padding:5px 11px;border-radius:999px;color:#8a7b52;background:#f5efe0;">= sin cambios</span>';
+    let rows='';
+    x.items.forEach((it,idx)=>{
+      let delta;
+      if(idx===0) delta='<span style="color:#9aa4b4;font-weight:800;">— inicio</span>';
+      else { const d=it.peso-x.items[idx-1].peso; delta = d>0?('<span style="color:#12915a;font-weight:800;">▲ +'+_regFmtPeso(d)+'</span>'):(d<0?('<span style="color:#c0553f;font-weight:800;">▼ '+_regFmtPeso(d)+'</span>'):'<span style="color:#9aa4b4;font-weight:800;">= igual</span>'); }
+      rows+='<tr><td style="'+td+'font-size:12.5px;color:#7B89A5;font-weight:700;">'+_regEsc(it.dia)+'</td>'
+        +'<td style="'+td+'font-size:13px;color:#0B1739;font-weight:600;">'+_regFechaCorta(it.fecha)+'</td>'
+        +'<td style="'+td+'text-align:right;"><span style="font-weight:900;font-size:15px;color:#0B1739;">'+_regFmtPeso(it.peso)+'</span> <span style="font-size:12px;color:#7B89A5;font-weight:600;">kg'+(it.reps?(' · '+it.nser+'×'+_regEsc(it.reps)):'')+'</span></td>'
+        +'<td style="'+td+'text-align:right;font-size:12px;">'+delta+'</td></tr>';
+    });
+    html+='<div style="background:#fff;border:1px solid #E5EBF3;border-radius:15px;overflow:hidden;margin-bottom:13px;box-shadow:0 8px 22px -18px rgba(20,40,80,.2);">'
+      +'<div style="display:flex;align-items:center;gap:11px;padding:12px 16px;border-bottom:1px solid #f0f3f8;background:#fafbfd;"><span style="font-size:11px;font-weight:900;color:#fff;background:#3A6EA5;border-radius:7px;padding:4px 9px;">'+_regEsc(x.badge)+'</span><div><div style="font-size:14px;font-weight:800;color:#0B1739;">'+_regEsc(x.nombre)+'</div>'+(x.mus?'<div style="font-size:11px;color:#7B89A5;font-weight:600;">'+_regEsc(x.mus)+'</div>':'')+'</div>'+trend+'</div>'
+      +'<table style="width:100%;border-collapse:collapse;"><tr><th style="'+th+'text-align:left;">Día</th><th style="'+th+'text-align:left;">Fecha</th><th style="'+th+'text-align:right;">Peso</th><th style="'+th+'text-align:right;">Cambio</th></tr>'+rows+'</table></div>';
+  });
+  cont.innerHTML=html;
+}
 // ── Genérico (Objetivos, Registros, Evolución) ────────────────────────────────
 function perfilSimpleGo(sec, itemId, mmKey) {
   _activarTrigger('perfil-' + mmKey + '-trigger');
@@ -14980,7 +15070,7 @@ function perfilSimpleGo(sec, itemId, mmKey) {
     _activarSection(sec);
     if (!currentAlumnoId) return;
     if (sec === 'objetivos')  { renderHistorialPlanes(currentAlumnoId); renderObjetivos(currentAlumnoId); }
-    if (sec === 'registros')  { renderNotas(currentAlumnoId,'notas'); }
+    if (sec === 'registros')  { try{ renderRegistroCargas(currentAlumnoId); }catch(e){} renderNotas(currentAlumnoId,'notas'); }
     if (sec === 'evolucion')  renderEvolucionAlumno(currentAlumnoId);
   });
 }
@@ -15016,6 +15106,7 @@ function switchPerfilSection(sec) {
     }
     if (sec === 'seguimiento')   renderMediciones(currentAlumnoId);
     if (sec === 'objetivos')     { renderHistorialPlanes(currentAlumnoId); renderObjetivos(currentAlumnoId); }
+    if (sec === 'registros')     { try{ renderRegistroCargas(currentAlumnoId); }catch(e){} renderNotas(currentAlumnoId,'notas'); }
     if (sec === 'coach')         renderNotas(currentAlumnoId,'notas');
     if (sec === 'evolucion')     renderEvolucionAlumno(currentAlumnoId);
   });

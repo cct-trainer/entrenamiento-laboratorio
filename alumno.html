@@ -940,8 +940,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260922144833 por un timestamp en cada deploy
-const _APP_VERSION = '20260922144833';
+// deploy.bat reemplaza 20260922180645 por un timestamp en cada deploy
+const _APP_VERSION = '20260922180645';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -8023,7 +8023,13 @@ async function _terminarEntrenamiento(){
     }catch(e){ console.warn('audio devolucion:', e); }
   }
   // Registro de completado (con los resultados adentro). No se crea semana nueva.
-  const completa = { planId, sem:_semIdx, dia:_diaIdx, mod:_diaModTab, fecha, at, nombre: ses.nombre || DN[_diaIdx], resultados, tecnicas, comentario, audio:audioFlag };
+  // Nombres de los ejercicios en el momento de terminar (para el Registro de cargas del coach, aunque el plan cambie)
+  const ejerciciosNombres = {};
+  (ses.bloques||[]).forEach(function(b,bi){ (b.ejercicios||[]).forEach(function(ej,ei){
+    const uid='b'+bi+'e'+ei; const sp=_semIdx+'_'+_diaIdx+'_'+uid; let sust=''; try{ sust=_getEdit(sp,'sust'); }catch(e){}
+    ejerciciosNombres[uid] = sust || (typeof _nomEj==='function'?_nomEj(ej):(ej.nombre||'')) || '';
+  }); });
+  const completa = { planId, sem:_semIdx, dia:_diaIdx, mod:_diaModTab, fecha, at, nombre: ses.nombre || DN[_diaIdx], resultados, tecnicas, ejerciciosNombres, comentario, audio:audioFlag };
 
   if (!_data.sesionesCompletadas) _data.sesionesCompletadas = [];
   _data.sesionesCompletadas.push(completa);
