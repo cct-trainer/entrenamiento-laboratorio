@@ -940,8 +940,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260922123521 por un timestamp en cada deploy
-const _APP_VERSION = '20260922123521';
+// deploy.bat reemplaza 20260922141926 por un timestamp en cada deploy
+const _APP_VERSION = '20260922141926';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -7674,19 +7674,9 @@ function _sesDetalleHTML(ses){
   let info = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;position:relative;box-shadow:0 10px 30px -14px rgba(0,0,0,.4);">';
   info += '<div style="font-size:15px;font-weight:800;color:var(--text);line-height:1.25;">'+_nombreSesionShow(ses).toUpperCase()+'</div>';
   info += '<div style="display:flex;flex-direction:column;gap:9px;margin-top:13px;">';
-  // Lugar
+  // Lugar (única fila que queda: sin tiempo, sin nivel, sin objetivo, sin elementos, sin videos)
   info += row('🏋️', _compEsc(_tc(ses.lugar)||(_diaModTab===1?_t('casa'):_t('gym'))));
-  // Duración
-  if(durVal) info += row('🕐', _compEsc(durVal));
-  // Nivel (puntos + texto)
-  if(dif) info += '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);"><span style="width:18px;display:flex;gap:3px;justify-content:center;flex-shrink:0;">'+dots+'</span><span>'+_t('nivel')+' '+_t('niv_'+dif)+'</span></div>';
-  // (La fila de "Objetivo" se reemplazó por el compilado de videos, más abajo)
-  // Equipamiento (sesión o calculado desde los ejercicios)
-  const _eq = _equipoSes(ses);
-  if(_eq) info += row('🧰', _compEsc(_eq));
   info += '</div>';
-  // Compilado de videos de la sesión (en el lugar del objetivo)
-  info += _compiladoVideosHTML(ses);
   if(ses.descripcion) info += '<div style="font-size:13px;color:var(--muted);line-height:1.55;margin-top:13px;padding-top:13px;border-top:1px solid var(--border);">'+_compEsc(ses.descripcion)+'</div>';
   info += '</div>';
   return info;
