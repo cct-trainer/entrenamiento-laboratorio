@@ -21591,6 +21591,11 @@ function renderFormBib(ex) {
   const _prev = ex;
   document.getElementById('modal-bib-form').innerHTML = `
     <h3 style="font-size:14px;font-weight:700;color:#222;margin-bottom:20px;">${bibEjIdActual ? 'Editar ejercicio' : 'Nuevo ejercicio'}</h3>
+    <div style="background:#f0f6ff;border:1px solid #cfe0f6;border-radius:10px;padding:12px;margin-bottom:18px;">
+      <div style="font-size:12.5px;font-weight:800;color:#2f5f95;margin-bottom:7px;">📋 Pegar desde ChatGPT <span style="font-weight:500;color:#7a90b0;">(rellena todo de una vez)</span></div>
+      <textarea id="bib-f-pegar" rows="4" placeholder="Pegá acá el texto completo del ejercicio (NOMBRE, NOMBRE EN INGLÉS, MÚSCULOS A TRABAJAR, TÉCNICA DE EJECUCIÓN, LINK DE VIDEO...)" style="width:100%;border:1px solid #cfe0f6;border-radius:8px;padding:10px;font-family:inherit;font-size:12.5px;resize:vertical;box-sizing:border-box;color:#222;"></textarea>
+      <button type="button" onclick="_bibRellenarDesdePegado()" style="margin-top:8px;background:#3A6EA5;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:12.5px;font-weight:800;cursor:pointer;">Rellenar campos ↓</button>
+    </div>
     <div style="display:flex;flex-direction:column;gap:18px;">
       <div class="bib-field">
         <label>Nombre *</label>
@@ -21647,6 +21652,63 @@ function renderFormBib(ex) {
     </div>`;
 }
 
+// Parsea el texto pegado desde ChatGPT (títulos + contenido) → {nombre, nombreIngles, musculos, ejecucion, video}
+function _bibParsePegado(txt){
+  const t = String(txt||'').replace(/\r/g,'');
+  if(!t.trim()) return {};
+  // Etiquetas que rellenan campos + etiquetas "límite" (campo:'') que solo cortan la sección anterior
+  const labels = [
+    {campo:'nombreIngles', pat:'nombre\\s+en\\s+ingl[eé]s|english\\s*name'},
+    {campo:'musculos',     pat:'m[uú]sculos\\s+a\\s+trabajar|m[uú]sculos\\s+principales|m[uú]sculos|musculatura\\s+principal'},
+    {campo:'ejecucion',    pat:'t[eé]cnica\\s+de\\s+ejecuci[oó]n|c[oó]mo\\s+se\\s+ejecuta|ejecuci[oó]n'},
+    {campo:'video',        pat:'link\\s+de\\s+v[ií]deo|v[ií]deo|video'},
+    {campo:'nombre',       pat:'nombre\\s+del\\s+ejercicio|nombre'},
+    {campo:'',             pat:'errores\\s+frecuentes|errores\\s+comunes|errores'},
+    {campo:'',             pat:'m[uú]sculos\\s+secundarios|secundarios'},
+    {campo:'',             pat:'equipamiento|equipo'},
+    {campo:'',             pat:'patr[oó]n(\\s+de\\s+movimiento)?'},
+    {campo:'',             pat:'categor[ií]a'},
+    {campo:'',             pat:'nivel'},
+    {campo:'',             pat:'objetivo'},
+    {campo:'',             pat:'tipo\\s+de\\s+trabajo|tipo'},
+    {campo:'',             pat:'t[eé]cnicas?\\s+de\\s+intensidad|variantes|progresi[oó]n|consejos|notas'},
+  ];
+  const found=[];
+  labels.forEach(l=>{
+    const re=new RegExp('^[\\s>*#•\\-]*(?:'+l.pat+')\\s*:?[ \\t]*','gim');
+    let m;
+    while((m=re.exec(t))){ found.push({campo:l.campo, start:m.index, end:m.index+m[0].length, len:m[0].length}); if(m.index===re.lastIndex) re.lastIndex++; }
+  });
+  if(!found.length) return {};
+  // ordenar por posición; en empates (misma línea) queda la etiqueta más larga (ej. "nombre en inglés" antes que "nombre")
+  found.sort((a,b)=> a.start-b.start || b.len-a.len);
+  const clean=[];
+  found.forEach(f=>{ const last=clean[clean.length-1]; if(last && f.start < last.end) return; clean.push(f); });
+  const out={};
+  clean.forEach((f,i)=>{
+    if(!f.campo) return;
+    const next = clean[i+1] ? clean[i+1].start : t.length;
+    let val = t.slice(f.end, next).trim();
+    val = val.replace(/\n{3,}/g,'\n\n').trim();
+    if(f.campo==='video'){ const mm=val.match(/https?:\/\/\S+/); val = mm?mm[0]:''; }
+    if(f.campo==='musculos'){ val = val.replace(/\s*\n\s*/g,', ').replace(/\s*,\s*,+/g,', ').trim(); }
+    if(!out[f.campo]) out[f.campo]=val;
+  });
+  return out;
+}
+function _bibRellenarDesdePegado(){
+  const ta=document.getElementById('bib-f-pegar'); if(!ta){ return; }
+  const parsed=_bibParsePegado(ta.value);
+  const keys=Object.keys(parsed).filter(k=>parsed[k]);
+  if(!keys.length){ toast('No reconocí los campos. Pegá el texto con sus títulos (NOMBRE, MÚSCULOS A TRABAJAR, TÉCNICA DE EJECUCIÓN…)','error'); return; }
+  const set=(id,val)=>{ const el=document.getElementById(id); if(el && val!=null && val!=='') el.value=val; };
+  set('bib-f-nombre', parsed.nombre);
+  set('bib-f-nombreIngles', parsed.nombreIngles);
+  set('bib-f-musculos', parsed.musculos);
+  set('bib-f-ejecucion', parsed.ejecucion);
+  set('bib-f-video', parsed.video);
+  toast('✓ '+keys.length+' campo'+(keys.length>1?'s':'')+' completado'+(keys.length>1?'s':'')+' — revisá y tocá Guardar');
+}
 function guardarEjercicioBib() {
   const nombre = document.getElementById('bib-f-nombre')?.value.trim();
   if (!nombre) { toast('El nombre es obligatorio', 'error'); return; }
