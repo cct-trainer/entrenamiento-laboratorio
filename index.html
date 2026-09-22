@@ -27265,6 +27265,29 @@ function copiarLinkFormulario(id){
   const url='https://cct-trainer.github.io/entrenamiento-laboratorio/formulario-entrenamiento.html'+(id?('?a='+encodeURIComponent(id)):'');
   navigator.clipboard.writeText(url).then(()=>toast('🏋️ Link del formulario copiado — mandáselo al alumno')).catch(()=>prompt('Copiá este link:',url));
 }
+// Copiar el CONTENIDO que mandó el alumno en su actualización (para pegar donde se necesite)
+function _textoActualizacion(u){
+  if(!u) return '';
+  const nom=(u.nombre)||(typeof _updNombre==='function'?_updNombre(u):'')||'Alumno';
+  const fecha=u.createdAt?new Date(u.createdAt).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}):'';
+  const partes=['ACTUALIZACIÓN — '+nom+(fecha?' ('+fecha+')':'')];
+  if(u.resumenEjecutivo) partes.push('\nResumen:\n'+u.resumenEjecutivo);
+  const det=(typeof _updDetalle==='function'?_updDetalle(u.promptMaestro):(u.promptMaestro||''));
+  if(det) partes.push('\nDetalle:\n'+det);
+  return partes.join('\n');
+}
+function copiarContenidoActualizacion(updId){
+  const u = updId ? (typeof _findUpd==='function'?_findUpd(updId):null) : null;
+  if(!u){ toast('No encontré la actualización'); return; }
+  const txt=_textoActualizacion(u);
+  navigator.clipboard.writeText(txt).then(()=>toast('📋 Actualización copiada — ya la podés pegar')).catch(()=>prompt('Copiá el contenido:',txt));
+}
+function copiarCheckin(alumnoId, fecha){
+  const al=getAlumnos().find(a=>a.id===alumnoId); if(!al){ toast('No encontré al alumno'); return; }
+  const c=(al.checkins||[]).find(x=>String(x.fecha||'')===String(fecha||'')); if(!c){ toast('No encontré la actualización'); return; }
+  const txt=_textoActualizacion({nombre:al.nombre, createdAt:c.fecha, resumenEjecutivo:c.resumen, promptMaestro:c.prompt});
+  navigator.clipboard.writeText(txt).then(()=>toast('📋 Actualización copiada — ya la podés pegar')).catch(()=>prompt('Copiá el contenido:',txt));
+}
 async function _verSustituciones(id){
   const al = getAlumnos().find(a=>a.id===id);
   const nom = al ? (al.nombre||'Alumno') : 'Alumno';
@@ -27344,7 +27367,7 @@ async function abrirActualizaciones(){
       +'<div style="display:flex;justify-content:space-between;align-items:baseline;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">'+_iaEsc(nom)+(aplic?' <span style="font-size:10px;color:#059669;font-weight:800;">✓ APLICADA</span>':'')+(existe?'':' <span style="font-size:10px;color:#c62828;font-weight:600;">(no encontrado)</span>')+'</div><div style="font-size:11px;color:#999;">'+fecha+'</div></div>'
       +'<div style="font-size:12.5px;color:#333;margin:10px 0;line-height:1.7;">'+_updResumenHTML(u.resumenEjecutivo)+'</div>'
       +'<details open style="margin-bottom:10px;"><summary style="cursor:pointer;color:#7c3aed;font-size:12px;font-weight:700;">Detalle completo</summary><pre style="white-space:pre-wrap;font-size:11.5px;color:#333;background:#f7f7fb;border:1px solid #eee;border-radius:8px;padding:12px;margin-top:6px;font-family:inherit;max-height:340px;overflow:auto;line-height:1.6;">'+_iaEsc(_updDetalle(u.promptMaestro))+'</pre></details>'
-      +'<div style="display:flex;gap:8px;">'+acciones+'</div></div>';
+      +'<div style="display:flex;gap:8px;"><button onclick="copiarContenidoActualizacion(\''+u._id+'\')" style="background:#eef2ff;color:#4338ca;border:none;border-radius:8px;padding:10px 12px;font-size:12px;font-weight:800;cursor:pointer;">📋 Copiar</button>'+acciones+'</div></div>';
   }).join('') : '<div style="text-align:center;color:#999;padding:26px;font-size:13px;">No hay actualizaciones.<br><span style="font-size:11px;">Cuando un alumno complete su formulario de actualización, aparece acá.</span></div>';
   ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:600px;width:100%;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.25);" onclick="event.stopPropagation()">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div style="font-size:15px;font-weight:800;color:#1a1a2e;">🔄 Actualizaciones de alumnos ('+_pend+' nuevas)</div>'
@@ -27413,7 +27436,8 @@ function verHistorialCheckins(id){
     const fecha=c.fecha?new Date(c.fecha).toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
     return '<div style="border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-size:11px;color:#999;">'+fecha+'</div>'
-      +'<button onclick="borrarCheckin(\''+id+'\',\''+(c.fecha||'')+'\')" style="background:#fee2e2;color:#c62828;border:none;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Borrar</button></div>'
+      +'<div style="display:flex;gap:6px;"><button onclick="copiarCheckin(\''+id+'\',\''+(c.fecha||'')+'\')" style="background:#eef2ff;color:#4338ca;border:none;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:800;cursor:pointer;">📋 Copiar</button>'
+      +'<button onclick="borrarCheckin(\''+id+'\',\''+(c.fecha||'')+'\')" style="background:#fee2e2;color:#c62828;border:none;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Borrar</button></div></div>'
       +'<div style="font-size:12.5px;color:#333;line-height:1.7;">'+_updResumenHTML(c.resumen)+'</div>'
       +(c.prompt?'<details open style="margin-top:8px;"><summary style="cursor:pointer;color:#7c3aed;font-size:12px;font-weight:700;">Detalle completo</summary><pre style="white-space:pre-wrap;font-size:11.5px;color:#333;background:#f7f7fb;border:1px solid #eee;border-radius:8px;padding:12px;margin-top:6px;font-family:inherit;max-height:340px;overflow:auto;line-height:1.6;">'+_iaEsc(_updDetalle(c.prompt))+'</pre></details>':'')
       +'</div>';
