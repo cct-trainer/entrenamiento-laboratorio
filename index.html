@@ -161,6 +161,58 @@ main { padding: 28px 32px; max-width: none; margin: 0; }
 .ac-work .pl svg { width:12px; height:12px; margin-left:2px; }
 .ac-work .lbl { flex:1; text-align:center; font-size:13px; font-weight:700; letter-spacing:.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ac-work .arr { width:34px; align-self:stretch; display:flex; align-items:center; justify-content:center; border-left:1px solid rgba(255,255,255,.2); flex-shrink:0; }
+/* ───────── DASHBOARD ALUMNOS · rediseño ───────── */
+.nd-wrap{--nd-navy:#0B1739;--nd-accent:#2563EB;--nd-border:#EAEEF4;--nd-border2:#F0F3F8;--nd-text:#0B1739;--nd-muted:#7C8798;--nd-muted2:#9AA6B6;--nd-hoy:#12A150;--nd-hoy-bg:#E9F7EF;--nd-man:#2563EB;--nd-man-bg:#EAF1FE;--nd-sin:#8A98AC;--nd-sin-bg:#F1F4F8;}
+.nd-tools{display:flex;align-items:center;gap:11px;margin-bottom:18px;flex-wrap:wrap;}
+.nd-search{position:relative;flex:1;min-width:220px;max-width:440px;}
+.nd-search input{width:100%;height:42px;border:1px solid var(--nd-border);border-radius:11px;background:#fff;padding:0 14px 0 40px;font-size:13.5px;color:var(--nd-text);outline:none;font-family:inherit;box-shadow:0 1px 2px rgba(16,24,40,.03);}
+.nd-search input:focus{border-color:#c9d6ec;box-shadow:0 0 0 3px rgba(37,99,235,.08);}
+.nd-search .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--nd-muted2);display:flex;}
+.nd-new{height:42px;padding:0 18px;border:none;border-radius:11px;background:var(--nd-navy);color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-family:inherit;box-shadow:0 6px 16px -8px rgba(11,23,57,.5);}
+.nd-new:hover{background:#12224a;}
+.nd-filters{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:24px;}
+.nd-chip{height:34px;padding:0 14px;border:1px solid var(--nd-border);background:#fff;border-radius:999px;font-size:12.5px;font-weight:600;color:#5c6a7d;cursor:pointer;display:inline-flex;align-items:center;gap:7px;font-family:inherit;transition:.12s;}
+.nd-chip:hover{border-color:#c9d6ec;color:var(--nd-text);}
+.nd-chip .n{font-size:11px;font-weight:800;color:var(--nd-muted2);}
+.nd-chip.on{background:var(--nd-navy);border-color:var(--nd-navy);color:#fff;}
+.nd-chip.on .n{color:rgba(255,255,255,.7);}
+.nd-chip.obj.on{background:#EEF3FB;border-color:#d4e0f2;color:var(--nd-navy);}
+.nd-fdiv{width:1px;height:22px;background:var(--nd-border);margin:0 6px;}
+.nd-sec{margin-bottom:28px;}
+.nd-sec-hd{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.nd-sec-ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.nd-sec-ic svg{width:19px;height:19px;stroke:currentColor;}
+.nd-sec-ic.hoy{background:var(--nd-hoy-bg);color:var(--nd-hoy);}
+.nd-sec-ic.man{background:var(--nd-man-bg);color:var(--nd-man);}
+.nd-sec-ic.prox{background:#EEF3FB;color:var(--nd-navy);}
+.nd-sec-ic.sin{background:var(--nd-sin-bg);color:var(--nd-sin);}
+.nd-sec-tx{flex:1;min-width:0;}
+.nd-sec-tx h2{font-size:16px;font-weight:800;color:var(--nd-text);letter-spacing:-.2px;}
+.nd-sec-tx p{font-size:12.5px;color:var(--nd-muted);margin-top:1px;}
+.nd-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+@media(max-width:1500px){.nd-grid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:1150px){.nd-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:680px){.nd-grid{grid-template-columns:1fr;}}
+.nd-card{background:#fff;border:1px solid var(--nd-border);border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 20px -10px rgba(16,24,40,.10);display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s;}
+.nd-card:hover{transform:translateY(-2px);box-shadow:0 14px 30px -14px rgba(16,24,40,.16);}
+.nd-ctop{display:flex;align-items:center;gap:12px;cursor:pointer;}
+.nd-av{width:46px;height:46px;border-radius:50%;flex-shrink:0;background:#eef1f6;display:flex;align-items:center;justify-content:center;font-size:18px;color:#9aa6b6;overflow:hidden;}
+.nd-av img{width:100%;height:100%;border-radius:50%;object-fit:cover;}
+.nd-nm{font-size:15px;font-weight:800;color:var(--nd-text);letter-spacing:-.2px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nd-next{display:flex;align-items:center;gap:9px;margin-top:13px;padding-top:13px;border-top:1px solid var(--nd-border2);cursor:pointer;}
+.nd-next .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.nd-next .tx{font-size:13.5px;font-weight:700;color:var(--nd-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nd-next.hoy .dot{background:var(--nd-hoy);box-shadow:0 0 0 3px var(--nd-hoy-bg);}
+.nd-next.man .dot{background:var(--nd-man);box-shadow:0 0 0 3px var(--nd-man-bg);}
+.nd-next.prox .dot{background:var(--nd-navy);box-shadow:0 0 0 3px #EEF3FB;}
+.nd-next.sin .dot{background:var(--nd-sin);}
+.nd-next.sin .tx{color:var(--nd-muted);font-weight:600;}
+.nd-btn{height:40px;margin-top:14px;border:none;border-radius:11px;background:var(--nd-navy);color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;transition:.15s;}
+.nd-btn:hover{background:#12224a;filter:brightness(1.02);}
+.nd-btn svg{width:13px;height:13px;fill:currentColor;}
+.nd-empty{padding:30px;text-align:center;color:var(--nd-muted2);font-size:13px;}
+body.coach-bg-on .nd-search input{background:#fff;}
+body.coach-bg-on .nd-chip:not(.on){background:#fff;}
 .alu-search-wrap { position: relative; flex: 1; }
 .alu-search-ico { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #9fb0c6; font-size: 14px; pointer-events: none; }
 .alu-filters { display: flex; gap: 22px; margin: 8px 0 20px; flex-wrap: wrap; border-bottom: 1px solid #eceef2; }
@@ -14347,7 +14399,7 @@ function _objCat(obj){
   if (/rendimiento|deportivo/.test(o)) return 'rendimiento';
   return 'otros';
 }
-let _aluCat = 'todos', _aluQ = '';
+let _aluCat = 'todos', _aluQ = '', _aluEst = 'todos';
 // Badge de objetivo con color según categoría
 function _objPillHTML(objetivo){
   if(!objetivo) return '<span style="font-size:12px;color:#aab1bd;font-weight:500;">Sin objetivo</span>';
@@ -14394,68 +14446,80 @@ function renderAlumnosGrid() {
   const grid = document.getElementById('alumnos-grid');
   if (!grid) return;
   const alumnos = getAlumnos();
-  grid.className = 'alumnos-grid crm';
-  _aluCat = 'todos'; _aluQ = '';
-  // Contar categorías presentes
-  const counts = {};
-  alumnos.forEach(a => { const c = _objCat(a.objetivo); counts[c] = (counts[c]||0)+1; });
-  const orden = ['hipertrofia','salud','perdida','masa','recomp','rendimiento','otros'];
-  const chips = ['<button class="fchip on" data-cat="todos" onclick="_setAluCat(\'todos\',this)">Todos · '+alumnos.length+'</button>']
-    .concat(orden.filter(c => counts[c]).map(c =>
-      '<button class="fchip" data-cat="'+c+'" onclick="_setAluCat(\''+c+'\',this)">'+_CAT_LBL[c]+'</button>'
-    )).join('');
-  const cards = alumnos.map(a => {
+  _aluCat = 'todos'; _aluQ = ''; _aluEst = 'todos';
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const items = alumnos.map(a => {
     const cat = _objCat(a.objetivo);
     const prox = _proximaSesionAlumno(a.id);
-    const proxTxt = prox ? _proxLabel(prox) : '';
-    const _calSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="17" rx="3"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>';
-    const _chevSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
-    const nextLine = proxTxt
-      ? '<div class="ac-next" onclick="event.stopPropagation();openPerfilAlumno(\''+a.id+'\')"><div class="ac-cal">'+_calSvg+'</div><div class="ac-next-tx"><span class="k">Próxima: </span><span class="v">'+proxTxt+'</span></div><div class="ac-chev">'+_chevSvg+'</div></div>'
-      : '<div class="ac-next"><div class="ac-cal">'+_calSvg+'</div><div class="ac-next-tx"><span class="ac-next-off">Sin sesión programada</span></div></div>';
-    return `
-    <div class="alu-card" data-nom="${(a.nombre||'').toLowerCase()}" data-obj="${cat}">
-      <div class="ac-top" style="cursor:pointer;" onclick="openPerfilAlumno('${a.id}')">
-        <div class="alu-card-av">${a.foto ? `<img src="${a.foto}">` : '👤'}</div>
-        <div class="alu-card-main">
-          <div class="alu-card-nom">${a.nombre||''}</div>
-          <div style="margin-top:9px;">${_objPillHTML(a.objetivo)}</div>
-        </div>
-      </div>
-      ${nextLine}
-      <button class="ac-work" onclick="event.stopPropagation();_veAbrirAlumno('${a.id}')">
-        <span class="pl"><svg viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l11-7z"/></svg></span>
-        <span class="lbl">Trabajar sesión</span>
-        <span class="arr"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-      </button>
-    </div>`; }).join('');
-  grid.innerHTML = `
-    <div class="alu-toolbar">
-      <div class="alu-search-wrap"><span class="alu-search-ico">🔍</span><input class="alu-search" type="text" placeholder="Buscar alumno…" oninput="_filtrarAlumnos(this.value)"></div>
-      <button class="alu-nuevo" onclick="openModalNuevoAlumno()">+ Nuevo alumno</button>
-    </div>
-    <div class="alu-filters">${chips}</div>
-    <div class="alu-count">${alumnos.length} alumno${alumnos.length!==1?'s':''}</div>
-    <div class="alu-cards" id="alu-list">${cards || '<div class="alu-empty">Todavía no hay alumnos cargados.</div>'}</div>`;
+    let est='sin', proxTxt='';
+    if(prox){ const diff=Math.round((prox.date-hoy)/86400000); est = diff===0?'hoy' : diff===1?'man' : 'prox'; proxTxt=_proxLabel(prox); }
+    return { a, cat, est, proxTxt };
+  });
+  const cnt={hoy:0,man:0,prox:0,sin:0}; items.forEach(x=>cnt[x.est]++);
+  const _sub=document.querySelector('.ih-sub'); if(_sub) _sub.textContent = alumnos.length+' alumno'+(alumnos.length!==1?'s':'')+' activo'+(alumnos.length!==1?'s':'');
+  const ocounts={}; items.forEach(x=>ocounts[x.cat]=(ocounts[x.cat]||0)+1);
+  const orden=['hipertrofia','salud','perdida','masa','recomp','rendimiento','otros'];
+  const objChips=orden.filter(c=>ocounts[c]).map(c=>'<button class="nd-chip obj" data-cat="'+c+'" onclick="_setAluCat(\''+c+'\',this)">'+_CAT_LBL[c]+'</button>').join('');
+  const opChip=(k,l,n)=>'<button class="nd-chip'+(k==='todos'?' on':'')+'" data-est="'+k+'" onclick="_setAluEst(\''+k+'\',this)">'+l+(n!=null?' <span class="n">'+n+'</span>':'')+'</button>';
+  const calSvg='<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="17" rx="3"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>';
+  const _esc=s=>String(s==null?'':s).replace(/</g,'&lt;').replace(/'/g,'&#39;');
+  function cardHTML(x){
+    const a=x.a; const av=a.foto?('<img src="'+a.foto+'">'):'👤';
+    const nextTx = x.est==='sin' ? 'Sin sesión programada' : x.proxTxt;
+    const btn = x.est==='sin'
+      ? '<button class="nd-btn" style="background:#F4F7FC;color:#0B1739;border:1px solid #EAEEF4;" onclick="event.stopPropagation();_veAbrirAlumno(\''+a.id+'\')">Programar sesión</button>'
+      : '<button class="nd-btn" onclick="event.stopPropagation();_veAbrirAlumno(\''+a.id+'\')"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>Trabajar sesión</button>';
+    return '<div class="nd-card" data-nom="'+_esc((a.nombre||'').toLowerCase())+'" data-obj="'+x.cat+'" data-est="'+x.est+'">'
+      +'<div class="nd-ctop" onclick="openPerfilAlumno(\''+a.id+'\')"><div class="nd-av">'+av+'</div><div style="min-width:0;"><div class="nd-nm">'+_esc(a.nombre||'')+'</div><div style="margin-top:7px;">'+_objPillHTML(a.objetivo)+'</div></div></div>'
+      +'<div class="nd-next '+x.est+'" onclick="event.stopPropagation();openPerfilAlumno(\''+a.id+'\')"><span class="dot"></span><span class="tx">'+_esc(nextTx)+'</span></div>'
+      +btn
+    +'</div>';
+  }
+  const SEC=[
+    {k:'hoy',ic:'hoy',t:'Hoy',sub:n=>n+' alumno'+(n!==1?'s':'')+' con sesión programada para hoy'},
+    {k:'man',ic:'man',t:'Mañana',sub:n=>n+' alumno'+(n!==1?'s':'')+' con sesión programada para mañana'},
+    {k:'prox',ic:'prox',t:'Próximos días',sub:n=>n+' alumno'+(n!==1?'s':'')+' con sesión más adelante'},
+    {k:'sin',ic:'sin',t:'Sin sesión programada',sub:n=>n+' alumno'+(n!==1?'s':'')+' sin sesión programada'},
+  ];
+  const secsHTML=SEC.map(s=>{ const list=items.filter(x=>x.est===s.k); if(!list.length) return '';
+    return '<section class="nd-sec" data-sec="'+s.k+'"><div class="nd-sec-hd"><div class="nd-sec-ic '+s.ic+'">'+calSvg+'</div><div class="nd-sec-tx"><h2>'+s.t+'</h2><p>'+s.sub(list.length)+'</p></div></div><div class="nd-grid">'+list.map(cardHTML).join('')+'</div></section>';
+  }).join('');
+  grid.className='nd-wrap';
+  grid.innerHTML =
+    '<div class="nd-tools">'
+      +'<div class="nd-search"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg></span><input type="text" placeholder="Buscar alumno…" oninput="_filtrarAlumnos(this.value)"></div>'
+      +'<button class="nd-new" onclick="openModalNuevoAlumno()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Nuevo alumno</button>'
+    +'</div>'
+    +'<div class="nd-filters">'
+      + opChip('todos','Todos',alumnos.length) + opChip('hoy','Hoy',cnt.hoy) + opChip('man','Mañana',cnt.man) + opChip('sin','Sin sesión',cnt.sin)
+      + (objChips ? '<span class="nd-fdiv"></span>'+objChips : '')
+    +'</div>'
+    +'<div id="alu-list">'+(secsHTML || '<div class="nd-empty">Todavía no hay alumnos cargados.</div>')+'</div>';
+}
+function _setAluEst(est, btn){
+  _aluEst = est;
+  document.querySelectorAll('.nd-filters .nd-chip:not(.obj)').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  _aplicarFiltroAlumnos();
 }
 function _setAluCat(cat, btn){
-  _aluCat = cat;
-  document.querySelectorAll('.alu-filters .fchip').forEach(b => b.classList.remove('on'));
-  if (btn) btn.classList.add('on');
+  const was = (_aluCat===cat);
+  document.querySelectorAll('.nd-filters .nd-chip.obj').forEach(b=>b.classList.remove('on'));
+  if(was){ _aluCat='todos'; } else { _aluCat=cat; if(btn) btn.classList.add('on'); }
   _aplicarFiltroAlumnos();
 }
 function _filtrarAlumnos(q){ _aluQ = (q||'').toLowerCase().trim(); _aplicarFiltroAlumnos(); }
 function _aplicarFiltroAlumnos(){
-  let vis = 0;
-  document.querySelectorAll('#alu-list .alu-card').forEach(r => {
+  document.querySelectorAll('#alu-list .nd-card').forEach(r => {
     const okNom = r.dataset.nom.includes(_aluQ);
-    const okCat = (_aluCat === 'todos') || (r.dataset.obj === _aluCat);
-    const ok = okNom && okCat;
-    r.style.display = ok ? '' : 'none';
-    if (ok) vis++;
+    const okCat = (_aluCat==='todos') || (r.dataset.obj===_aluCat);
+    const okEst = (_aluEst==='todos') || (r.dataset.est===_aluEst);
+    r.style.display = (okNom && okCat && okEst) ? '' : 'none';
   });
-  const cnt = document.querySelector('.alu-count');
-  if (cnt) cnt.textContent = vis + ' alumno' + (vis!==1?'s':'');
+  document.querySelectorAll('#alu-list .nd-sec').forEach(sec => {
+    const anyVis = Array.from(sec.querySelectorAll('.nd-card')).some(c => c.style.display!=='none');
+    sec.style.display = anyVis ? '' : 'none';
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════════
