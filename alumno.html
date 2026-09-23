@@ -947,8 +947,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260923151049 por un timestamp en cada deploy
-const _APP_VERSION = '20260923151049';
+// deploy.bat reemplaza 20260923152505 por un timestamp en cada deploy
+const _APP_VERSION = '20260923152505';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -7539,6 +7539,10 @@ function _durBloqueSec(b, reduceMap){
     const s0=(Array.isArray(ej.series)&&ej.series[0])?ej.series[0]:(ej.ctrl||{});
     sec += nSer*(_serieDurTrab(s0.reps)+_pausaSerie(s0,combo));
   });
+  if(b.cardioData){ // bloque de cardio: sumar los minutos de su duración
+    const m=String(b.cardioData.duracion||'').match(/(\d+(?:[.,]\d+)?)\s*(h|hs|hr|hora|hour)?/i);
+    if(m){ let v=parseFloat(m[1].replace(',','.')); if(/h/i.test(m[2]||'')) v*=60; if(v>0) sec += v*60; }
+  }
   sec += 20; // transición del bloque
   return sec;
 }
@@ -8306,6 +8310,30 @@ function _adaptarSesion(bloques, budget){
   }
   return state;
 }
+function _cardioCardHTML(b){
+  const cd=b.cardioData||{}; const en=(_LANG==='en');
+  const nom=_tc(b.nombre||b.tipo||'Cardio');
+  const act=String(cd.actividad||'').trim();
+  const rows=[];
+  const add=(lbl,val)=>{ val=String(val||'').trim(); if(val) rows.push('<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid rgba(128,140,170,.15);"><span style="font-size:11px;color:var(--muted);font-weight:700;">'+lbl+'</span><span style="font-size:13px;color:var(--text);font-weight:800;text-align:right;">'+val.replace(/</g,'&lt;')+'</span></div>'); };
+  add(en?'Duration':'Duración', cd.duracion);
+  add(en?'HR zone / intensity':'Zona FC / intensidad', cd.zona);
+  add(en?'Speed (km/h)':'Velocidad (km/h)', cd.velocidad);
+  add(en?'Incline (%)':'Inclinación (%)', cd.inclinacion);
+  add(en?'Resistance':'Resistencia', cd.resistencia);
+  add('RPE', cd.rpe);
+  const obs=String(cd.observaciones||'').trim();
+  const obsHTML=obs?'<div style="margin-top:10px;font-size:12px;line-height:1.5;color:var(--text);background:rgba(230,81,0,.08);border-left:3px solid #e6773a;border-radius:0 8px 8px 0;padding:9px 11px;">'+obs.replace(/</g,'&lt;')+'</div>':'';
+  return '<div style="background:var(--card);border:1px solid rgba(230,120,60,.35);border-radius:14px;padding:13px 15px;margin-bottom:8px;">'
+    +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:4px;">'
+      +'<span style="font-size:17px;">🏃</span>'
+      +'<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:900;color:var(--text);">'+nom+'</div>'
+      +(act?'<div style="font-size:11.5px;font-weight:700;color:#e6773a;">'+act.replace(/</g,'&lt;')+'</div>':'')+'</div>'
+    +'</div>'
+    +(rows.length?'<div style="margin-top:6px;">'+rows.join('')+'</div>':'')
+    +obsHTML
+  +'</div>';
+}
 function _tiempoCard(bloques){
   const cur=_tiempoActual(); const en=(_LANG==='en'); const mx=_maxTiempoAlumno();
   const opts=_opcionesTiempo();
@@ -8409,6 +8437,14 @@ function renderSesion() {
             +'<div style="font-size:10.5px;color:var(--muted);">'+(_LANG==='en'?('Skipped in the '+_tiempoActual()+'′ version'):('Se saca en la versión '+_tiempoActual()+'′'))+'</div></div>'
             +'<button onclick="_verIgual('+bi+')" style="background:transparent;border:1px solid rgba(128,140,170,.4);color:var(--muted);border-radius:8px;padding:6px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">'+(_LANG==='en'?'Show anyway':'Ver igual')+'</button>'
           +'</div></div>';
+      }
+      // Bloque de Cardio: no tiene ejercicios, se imprime con sus datos (actividad, duración, zona, etc.)
+      const _cd=b.cardioData;
+      const _esCardio=(_cd && Object.keys(_cd).some(k=>String(_cd[k]||'').trim())) || (/cardio/i.test(b.tipo||'') && !(b.ejercicios||[]).length);
+      if(_esCardio){
+        const _partC=_durBloqueMin(b, _st&&_st.reduce);
+        const _partHTMLc=_partC?'<div style="text-align:right;font-size:10.5px;font-weight:700;color:var(--muted);margin-top:1px;padding-right:3px;">≈ '+_partC+' min</div>':'';
+        return '<div class="blk" style="margin-bottom:14px;"><div class="blk-body" style="padding:2px 0 0;">'+_cardioCardHTML(b)+_partHTMLc+_porqueBloqueHTML(b)+'</div></div>';
       }
       const _combo = /biserie|superserie|triserie|gigante|circuito/i.test(b.serieTipo||'');
       const _nEjB = (b.ejercicios||[]).length;
