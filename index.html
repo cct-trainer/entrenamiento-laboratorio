@@ -28587,7 +28587,7 @@ function _traspSetTipo(t){
   const ta=document.getElementById('trasp-texto');
   if(ta){ ta.placeholder = (t==='running')
     ? 'UNA SESIÓN:\nseries 6x400 rec 90s a 4:00\n— o —\nrodaje 40 min zona 2\nfondo 14k a 5:30\n\n— O TODA LA SEMANA (separá con DÍA:) —\nDÍA: Lunes\nrodaje 40 min z2\nDÍA: Miércoles\nseries 8x200 rec 60s\nDÍA: Sábado\nfondo 16k a 5:40'
-    : 'UNA SESIÓN:\nFUERZA PRINCIPAL\nSentadilla 4x6 @ 100kg · RIR 2 · pausa 3min\nACCESORIOS\nPrensa 3x12 · Curl femoral 3x12\n\n— O TODA LA SEMANA (separá con DÍA:) —\nDÍA: Lunes\nSentadilla 4x6 @ 100kg\nDÍA: Miércoles\nPress banca 4x8 @ 60kg'; }
+    : 'UNA SESIÓN:\nFUERZA PRINCIPAL\nPOR QUÉ: Empezamos con el patrón más pesado para aprovechar el sistema nervioso descansado.\nSentadilla 4x6 @ 100kg · RIR 2 · pausa 3min\nACCESORIOS\nPrensa 3x12 · Curl femoral 3x12\n\n— O TODA LA SEMANA (separá con DÍA:) —\nDÍA: Lunes\nSentadilla 4x6 @ 100kg\nDÍA: Miércoles\nPress banca 4x8 @ 60kg'; }
   _traspCargarSemanas();
   _traspCheck();
 }
@@ -28688,7 +28688,7 @@ function _traspEsSerieLine(t){
 function _traspBuildSesion(texto, lugar){
   const lines=String(texto||'').replace(/\r/g,'').split('\n');
   const bloques=[]; let cur=null; let curEj=null;
-  const nuevoB=n=>({ nombre:n, tipo:_traspTipoBloque(n), serieTipo:'Serie Simple', ejercicios:[], cardioData:null });
+  const nuevoB=n=>({ nombre:n, tipo:_traspTipoBloque(n), serieTipo:'Serie Simple', porque:'', ejercicios:[], cardioData:null });
   const finEj=()=>{
     if(!curEj) return;
     if(!curEj.series.length){
@@ -28699,6 +28699,9 @@ function _traspBuildSesion(texto, lugar){
   };
   lines.forEach(raw=>{
     const t=raw.trim(); if(!t) return;
+    // "POR QUÉ: ..." → nota del bloque que ve el alumno al pie (no es header ni ejercicio)
+    const mPorque=t.match(/^\s*(?:por\s?qu[eé]|porqu[eé]|motivo(?:\s+del\s+bloque)?|racional|nota\s+del\s+bloque)\s*[:\-]\s*(.+)$/i);
+    if(mPorque){ finEj(); if(cur){ cur.porque=(cur.porque?cur.porque+' ':'')+mPorque[1].trim(); } return; }
     if(_traspEsHeader(t)){ finEj(); cur=nuevoB(t.replace(/:$/,'').trim()); bloques.push(cur); return; }
     if(!cur){ cur=nuevoB('Trabajo principal'); bloques.push(cur); }
     // Serie suelta debajo de un ejercicio → se agrega a ese ejercicio (no crea uno nuevo)
