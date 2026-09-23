@@ -947,8 +947,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260923122636 por un timestamp en cada deploy
-const _APP_VERSION = '20260923122636';
+// deploy.bat reemplaza 20260923151049 por un timestamp en cada deploy
+const _APP_VERSION = '20260923151049';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -8308,14 +8308,26 @@ function _adaptarSesion(bloques, budget){
 }
 function _tiempoCard(bloques){
   const cur=_tiempoActual(); const en=(_LANG==='en'); const mx=_maxTiempoAlumno();
-  const btns=_opcionesTiempo().map(o=>'<button onclick="_setTiempo('+o+')" style="flex:1;padding:12px 2px;border-radius:11px;border:1.5px solid '+(cur===o?'#3A6EA5':'rgba(128,140,170,.35)')+';background:'+(cur===o?'#3A6EA5':'transparent')+';color:'+(cur===o?'#fff':'var(--text)')+';font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;">'+o+'<span style="display:block;font-size:8.5px;font-weight:700;letter-spacing:.5px;opacity:.75;">MIN</span></button>').join('');
+  const opts=_opcionesTiempo();
+  // Duración real (natural) de la sesión completa, sin recortes → marca el preset más cercano
+  const realMin=Math.round(_estSes(bloques,_adaptarSesion(bloques,120)));
+  const realPreset=(realMin>0&&opts.length)?opts.reduce((a,b)=>Math.abs(b-realMin)<Math.abs(a-realMin)?b:a):null;
+  const btns=opts.map(o=>{
+    const sel=(cur===o), real=(o===realPreset);
+    const bd=sel?'#3A6EA5':(real?'#3A6EA5':'rgba(128,140,170,.35)');
+    const bg=sel?'#3A6EA5':(real?'rgba(58,110,165,.14)':'transparent');
+    const cl=sel?'#fff':(real?'#7fb4e6':'var(--text)');
+    const badge=real?'<span style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#3A6EA5;color:#fff;font-size:8px;font-weight:800;letter-spacing:.2px;padding:2px 6px;border-radius:8px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.35);">~'+realMin+'′</span>':'';
+    return '<button onclick="_setTiempo('+o+')" style="position:relative;flex:1;padding:12px 2px;border-radius:11px;border:1.5px solid '+bd+';background:'+bg+';color:'+cl+';font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;'+((real&&!sel)?'box-shadow:0 0 0 3px rgba(58,110,165,.18);':'')+'">'+badge+o+'<span style="display:block;font-size:8.5px;font-weight:700;letter-spacing:.5px;opacity:.75;">MIN</span></button>';
+  }).join('');
   const state=_adaptarSesion(bloques,cur);
   const est=Math.round(_estSes(bloques,state));
   const nota = cur>=mx ? (en?('Full version (max '+mx+'′)'):('Versión completa (máx '+mx+'′)')) : (en?'Optimized — main work kept.':'Optimizada — se conserva el trabajo principal.');
   return '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;">'
     +'<div style="font-size:12.5px;font-weight:900;color:var(--text);margin-bottom:3px;">⏱ '+(en?'How much time do you have today?':'¿Cuánto tiempo tenés hoy?')+'</div>'
     +'<div style="font-size:11px;color:var(--muted);margin-bottom:11px;">'+(en?'The app keeps the goal and trims what is secondary.':'La app mantiene el objetivo y ajusta lo secundario.')+'</div>'
-    +'<div style="display:flex;gap:7px;">'+btns+'</div>'
+    +'<div style="display:flex;gap:7px;margin-top:7px;">'+btns+'</div>'
+    +(realPreset?'<div style="font-size:9.5px;color:#7fb4e6;font-weight:700;margin-top:9px;text-align:center;">'+(en?'The blue mark shows your real session time':'El celeste marca el tiempo real de tu sesión')+'</div>':'')
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:11px;font-size:11px;color:var(--muted);"><span>'+nota+'</span><span style="font-weight:800;color:'+(est<=cur?'#5fe0a0':'#E6C766')+';">~'+est+'′</span></div>'
   +'</div>';
 }
