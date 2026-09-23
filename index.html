@@ -3246,6 +3246,7 @@ select.toolbox-input option:disabled { color: #888; }
     body.coach-bg-on .fchip:hover{color:#fff !important;}
     body.coach-bg-on .fchip.on{color:#fff !important;border-bottom-color:#fff !important;}
     body.coach-bg-on .alu-filters{border-bottom-color:rgba(255,255,255,.28) !important;}
+    body.coach-bg-on .ac-work{ background:linear-gradient(135deg, var(--coach-accent1,#2F8CFF), var(--coach-accent2,#125CE6)) !important; box-shadow:0 8px 18px -10px var(--coach-accent2,#125CE6) !important; }
     </style>
     <button onclick="abrirAltas()" class="pln-btn pln-btn-guardar" title="Alta de nuevos alumnos" style="position:relative;">➕ Nuevo alumno<span id="altas-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
     <div class="tb-grp"><button onclick="_tbTog(this)" class="pln-btn pln-btn-outline" title="Pendientes por revisar" style="position:relative;">🔔<span id="tb-bell-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;">0</span></button>
@@ -3280,28 +3281,20 @@ select.toolbox-input option:disabled { color: #888; }
     <div class="tb-grp"><button onclick="_tbTog(this)" class="pln-btn pln-btn-outline" title="Color de fondo de Coach">🎨</button>
       <div class="tb-menu tb-menu-right" style="min-width:210px;">
         <div style="font-size:10px;font-weight:800;color:#8a97ac;text-transform:uppercase;letter-spacing:.5px;padding:2px 4px 9px;">Color de fondo</div>
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:0 4px 4px;">
-          <span onclick="_setCoachBg('#3A6EA5')" style="height:30px;border-radius:7px;background:#3A6EA5;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #e2e6ee;"></span>
-          <span onclick="_setCoachBg('#1668E8')" style="height:30px;border-radius:7px;background:#1668E8;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #e2e6ee;"></span>
-          <span onclick="_setCoachBg('#16A34A')" style="height:30px;border-radius:7px;background:#16A34A;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #e2e6ee;"></span>
-          <span onclick="_setCoachBg('#0EA5A0')" style="height:30px;border-radius:7px;background:#0EA5A0;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #e2e6ee;"></span>
-          <span onclick="_setCoachBg('#7C3AED')" style="height:30px;border-radius:7px;background:#7C3AED;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #e2e6ee;"></span>
-          <span onclick="_setCoachBg('#DB2777')" style="height:30px;border-radius:7px;background:#DB2777;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #e2e6ee;"></span>
-          <span onclick="_setCoachBg('#E5573F')" style="height:30px;border-radius:7px;background:#E5573F;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #e2e6ee;"></span>
-          <span onclick="_setCoachBg('#EA580C')" style="height:30px;border-radius:7px;background:#EA580C;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #e2e6ee;"></span>
-          <span onclick="_setCoachBg('#C9A84C')" style="height:30px;border-radius:7px;background:#C9A84C;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #e2e6ee;"></span>
-          <span onclick="_setCoachBg('#0B1739')" style="height:30px;border-radius:7px;background:#0B1739;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #e2e6ee;"></span>
-          <span onclick="_setCoachBg('')" title="Por defecto" style="height:30px;border-radius:7px;background:#F7F8FA;border:1.5px dashed #c2c9d4;display:flex;align-items:center;justify-content:center;color:#9aa4b4;font-size:12px;cursor:pointer;grid-column:1 / span 5;">✕ Por defecto</span>
-        </div>
+        <div id="bg-sw-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:7px;padding:0 4px 4px;"></div>
       </div>
     </div>
     <script>
+    const _BG_COLORS=['#1668E8','#3A6EA5','#0B4DA2','#1E3A8A','#2F8CFF','#0EA5A0','#14B8A6','#0D9488','#16A34A','#22C875','#15803D','#65A30D','#7C3AED','#8B5CF6','#6D28D9','#DB2777','#EC4899','#BE185D','#E5573F','#DC2626','#EA580C','#F97316','#E6A817','#C9A84C','#0B1739','#1E293B','#334155','#111827'];
+    function _bgAccent2(hex){ try{ hex=String(hex).replace('#',''); const n=parseInt(hex,16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255; r=Math.round(r*.72);g=Math.round(g*.72);b=Math.round(b*.72); return 'rgb('+r+','+g+','+b+')'; }catch(e){ return '#'+hex; } }
     function _setCoachBg(color){
-      if(color){ document.body.style.background=color; document.body.classList.add('coach-bg-on'); try{ localStorage.setItem('SOCC_COACH_BG',color); }catch(e){} }
-      else { document.body.style.background=''; document.body.classList.remove('coach-bg-on'); try{ localStorage.removeItem('SOCC_COACH_BG'); }catch(e){} }
+      if(color){ document.body.style.background=color; document.body.classList.add('coach-bg-on'); document.body.style.setProperty('--coach-accent1',color); document.body.style.setProperty('--coach-accent2',_bgAccent2(color)); try{ localStorage.setItem('SOCC_COACH_BG',color); }catch(e){} }
+      else { document.body.style.background=''; document.body.classList.remove('coach-bg-on'); document.body.style.removeProperty('--coach-accent1'); document.body.style.removeProperty('--coach-accent2'); try{ localStorage.removeItem('SOCC_COACH_BG'); }catch(e){} }
       document.querySelectorAll('.tb-grp').forEach(g=>g.classList.remove('tb-open'));
+      _renderBgSwatches();
     }
-    (function(){ try{ const c=localStorage.getItem('SOCC_COACH_BG'); if(c){ document.body.style.background=c; document.body.classList.add('coach-bg-on'); } }catch(e){} })();
+    function _renderBgSwatches(){ const g=document.getElementById('bg-sw-grid'); if(!g) return; let cur=''; try{ cur=localStorage.getItem('SOCC_COACH_BG')||''; }catch(e){} g.innerHTML=_BG_COLORS.map(c=>'<span onclick="_setCoachBg(\''+c+'\')" style="height:26px;border-radius:6px;background:'+c+';cursor:pointer;border:2px solid #fff;box-shadow:'+(c===cur?'0 0 0 2px #111':'0 0 0 1px #e2e6ee')+';"></span>').join('')+'<span onclick="_setCoachBg(\'\')" title="Por defecto" style="height:26px;border-radius:6px;background:#F7F8FA;border:1.5px dashed #c2c9d4;display:flex;align-items:center;justify-content:center;color:#9aa4b4;font-size:11px;font-weight:700;cursor:pointer;grid-column:1 / -1;">✕ Por defecto</span>'; }
+    (function(){ try{ const c=localStorage.getItem('SOCC_COACH_BG'); if(c){ document.body.style.background=c; document.body.classList.add('coach-bg-on'); document.body.style.setProperty('--coach-accent1',c); document.body.style.setProperty('--coach-accent2',_bgAccent2(c)); } }catch(e){} _renderBgSwatches(); })();
     function _tbTog(btn){ const grp=btn.closest('.tb-grp'); if(!grp) return; const open=grp.classList.contains('tb-open'); document.querySelectorAll('.tb-grp').forEach(g=>g.classList.remove('tb-open')); if(!open) grp.classList.add('tb-open'); }
     document.addEventListener('click', function(e){ const t=e.target.closest('button'); const isTog=t && /_tbTog/.test(t.getAttribute('onclick')||''); if(!isTog) document.querySelectorAll('.tb-grp').forEach(g=>g.classList.remove('tb-open')); });
     function _updToolbarBell(){ const ids=['actual-badge','bandeja-badge','bell-badge','sol-badge']; let sum=0; ids.forEach(id=>{ const el=document.getElementById(id); if(el && el.style.display!=='none'){ const n=parseInt(el.textContent,10); if(!isNaN(n)) sum+=n; } }); const b=document.getElementById('tb-bell-badge'); if(b){ if(sum>0){ b.textContent=sum; b.style.display='block'; } else b.style.display='none'; } }
