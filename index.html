@@ -13156,8 +13156,7 @@ function guardarEstadoDiaActual() {
     const _vEl = document.getElementById(bId+'-vueltas');
     const vueltas = _vEl ? (parseInt(_vEl.value,10)||'') : '';
     const porque = document.getElementById(bId+'-porque')?.value.trim() || '';
-    const color = document.getElementById(bId+'-color')?.value || '';
-    bloques.push({ nombre, tipo, serieTipo:st, serieDesc, vueltas, porque, color, ejercicios, cardioData });
+    bloques.push({ nombre, tipo, serieTipo:st, serieDesc, vueltas, porque, ejercicios, cardioData });
   });
   // planDiasData is a reference to planSemanasArray[planSemEditando].dias — update in place
   if(!planSemanasArray[planSemEditando]) return;
@@ -13257,12 +13256,6 @@ function addBloqueDia(diaIdx, datosPrevios) {
       <button class="bloque-btn-eliminar" onclick="eliminarBloqueEnDia('${id}',${diaIdx})">🗑 Eliminar</button>
     </div>
     <div class="bloque-sysbox" id="${id}-sysbox"></div>
-    <div id="${id}-colorbar" style="display:flex;align-items:center;gap:6px;padding:8px 2px 2px;flex-wrap:wrap;">
-      <span style="font-size:10.5px;font-weight:800;letter-spacing:.5px;color:#8a97ac;text-transform:uppercase;margin-right:4px;">🎨 Color del bloque</span>
-      ${['#3A6EA5','#22C875','#E6A817','#E5573F','#8B5CF6','#0EA5A0','#EC4899','#64748B','#C9A84C','#111827'].map(c=>`<span class="bloque-sw" onclick="_setBloqueColor('${id}','${c}',this)" style="width:20px;height:20px;border-radius:50%;background:${c};cursor:pointer;border:2px solid #fff;box-shadow:${datosPrevios?.color===c?'0 0 0 2px #1a2233':'0 0 0 1px #e2e6ee'};"></span>`).join('')}
-      <span class="bloque-sw" onclick="_setBloqueColor('${id}','',this)" title="Sin color" style="width:20px;height:20px;border-radius:50%;background:#fff;cursor:pointer;border:1.5px dashed #c2c9d4;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#9aa4b4;box-shadow:${!datosPrevios?.color?'0 0 0 2px #1a2233':'none'};">✕</span>
-      <input type="hidden" id="${id}-color" value="${datosPrevios?.color||''}">
-    </div>
     <div style="padding:2px 2px 6px;">
       <label style="font-size:10.5px;font-weight:800;letter-spacing:.5px;color:#8a97ac;text-transform:uppercase;display:block;margin:8px 0 5px;">💡 ¿Por qué este bloque? <span style="font-weight:500;text-transform:none;color:#b0b8c4;">(nota para el alumno · opcional)</span></label>
       <textarea id="${id}-porque" placeholder="Por qué compusiste el bloque así… (lo verá el alumno al pie del bloque)" style="width:100%;font-size:12.5px;line-height:1.5;color:#33415a;border:1px solid #dde5f1;border-radius:8px;padding:9px 10px;background:#fff;resize:vertical;min-height:52px;font-family:inherit;box-sizing:border-box;">${_escHTML(datosPrevios?.porque||'')}</textarea>
@@ -19642,13 +19635,6 @@ function renderCardioPanel(bloqueId, data) {
 function onSerieTipoChange(bloqueId) {
   refreshLetras(bloqueId);
   _renderSysbox(bloqueId);
-}
-// Elegir color del bloque desde la paleta
-function _setBloqueColor(id, color, el){
-  const inp=document.getElementById(id+'-color'); if(inp) inp.value=color;
-  const bar=document.getElementById(id+'-colorbar');
-  if(bar){ bar.querySelectorAll('.bloque-sw').forEach(s=>{ s.style.boxShadow = (s.textContent==='✕') ? 'none' : '0 0 0 1px #e2e6ee'; }); }
-  if(el) el.style.boxShadow='0 0 0 2px #1a2233';
 }
 
 // ── Sistema del bloque: descripción (cómo se ejecuta) + vueltas ──
@@ -28476,7 +28462,6 @@ function _iaJSONaPlanificacion(data, alumnoId, opts) {
         porque: String(b.porque || b.porqueBloque || b.motivo || '').trim(),   // ← "por qué armé este bloque" (viaja a la app)
         serieDesc: String(b.serieDesc || b.descripcion || '').trim(),
         vueltas: (parseInt(b.vueltas || b.rondas, 10) || ''),
-        color: String(b.color || '').trim(),
         ejercicios, cardioData
       };
     });
