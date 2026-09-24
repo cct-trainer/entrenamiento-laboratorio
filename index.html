@@ -3357,7 +3357,7 @@ select.toolbox-input option:disabled { color: #888; }
 @media(max-width:820px){ #coach-os .os-widgets{display:none;} }
 /* Wallpaper persistente en toda la app (estilo SO) */
 #os-bg-layer{position:fixed;inset:0;z-index:-2;background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#dbe8f2;}
-#os-bg-veil{position:fixed;inset:0;z-index:-1;background:rgba(244,247,250,.58);pointer-events:none;}
+#os-bg-veil{position:fixed;inset:0;z-index:-1;background:transparent;pointer-events:none;}
 body.os-mode{background-color:transparent !important;}
 body.os-mode header{background:rgba(255,255,255,.72) !important;backdrop-filter:blur(12px);}
 body.os-mode #view-inicio,body.os-mode .view{background:transparent !important;}
@@ -3387,6 +3387,9 @@ body.os-mode .mrow td{background:rgba(255,255,255,.82)!important;border-top:1px 
 body.os-mode .mrow td:first-child{border-left:4px solid #2b6ca8!important;border-top-left-radius:14px;border-bottom-left-radius:14px;}
 body.os-mode .mrow td:last-child{border-right:1px solid rgba(20,50,90,.08)!important;border-top-right-radius:14px;border-bottom-right-radius:14px;}
 body.os-mode .mrow:hover td{background:#fff!important;}
+/* Planificador (SEPTIEMBRE-CAROL) dentro de un panel de vidrio azulado */
+body.os-mode .plan-right{background:rgba(238,245,252,.6)!important;backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7)!important;border-radius:20px!important;margin:10px 10px 10px 0!important;box-shadow:0 18px 46px -26px rgba(10,30,60,.4);}
+body.os-mode .run-topbar{background:transparent!important;}
 /* Barra lateral del planificador → vidrio azulado (V3) */
 body.os-mode .plan-sidebar{background:rgba(238,245,252,.82)!important;color:#16304d!important;border-right:1px solid rgba(255,255,255,.7)!important;}
 body.os-mode .plan-sidebar-name{color:#16304d!important;}
