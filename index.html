@@ -3390,6 +3390,14 @@ body.os-mode .perfil-nav{background:rgba(255,255,255,.72)!important;backdrop-fil
 body.os-mode .perfil-nav-btn,body.os-mode .perfil-nav-plan-trigger{color:#33526f!important;}
 body.os-mode .perfil-nav-btn.active,body.os-mode .perfil-nav-plan-trigger.active,body.os-mode .perfil-nav-plan-trigger.open{color:#0B1739!important;}
 body.os-mode .module-header{background:rgba(255,255,255,.55)!important;border-bottom:1px solid rgba(20,50,90,.1)!important;}
+/* ---- Header real con logo en iniciales CC + nombre en negro ---- */
+.hl-brand{display:flex;align-items:center;gap:11px;cursor:pointer;}
+.hl-cc{position:relative;width:42px;height:42px;border-radius:13px;background:linear-gradient(150deg,#12233d,#0B1739);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px -8px rgba(11,23,57,.6);flex-shrink:0;}
+.hl-cc b{font-size:16px;font-weight:900;color:#fff;letter-spacing:-1px;}
+.hl-cc i{position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:5px;background:linear-gradient(135deg,#E8C96A,#C9A84C);box-shadow:0 2px 6px -1px rgba(201,168,76,.7);}
+.hl-nm{line-height:1.05;}
+.hl-nm b{display:block;font-size:16px;font-weight:900;color:#0b0f16;letter-spacing:-.2px;}
+.hl-nm span{font-size:9.5px;font-weight:700;color:#8698ad;letter-spacing:2px;}
 </style>
 <div id="coach-os">
   <div id="os-veil"></div>
@@ -3530,6 +3538,8 @@ window.addEventListener('load',function(){ try{
   // Capa de wallpaper persistente + veil, detrás de toda la app
   if(!document.getElementById('os-bg-layer')){ const l=document.createElement('div'); l.id='os-bg-layer'; document.body.insertBefore(l,document.body.firstChild); const v=document.createElement('div'); v.id='os-bg-veil'; document.body.insertBefore(v,l.nextSibling); }
   document.body.classList.add('os-mode');
+  // Rebrandear el header real: logo en iniciales CC + nombre en negro
+  try{ const hl=document.querySelector('.header-left'); if(hl && !hl.dataset.osrebrand){ hl.dataset.osrebrand='1'; hl.onclick=function(){ if(typeof _osShow==='function') _osShow(); }; hl.innerHTML='<div class="hl-brand"><div class="hl-cc"><b>CC</b><i></i></div><div class="hl-nm"><b>Christian Cattaneo</b><span>LABORATORIO DE ENTRENAMIENTO</span></div></div>'; } }catch(e){}
   let saved=null; try{ saved=JSON.parse(localStorage.getItem('SOCC_COACH_WALL')||'null'); }catch(e){}
   if(saved){ _OS_WALLS.some((w,i)=>{ const same=(w.type===saved.type)&&((w.type==='grad'?w.css===saved.css:w.url===saved.url)); if(same)_osCurBg=i; return same; }); if(_osCurBg<0||!_OS_WALLS[_osCurBg]) _osCurBg=-1; _osApplyWall(saved); } else { _osApplyWall(_OS_WALLS[0]); }
   _osRenderThumbs(); _osTick(); setInterval(_osTick,1000);
