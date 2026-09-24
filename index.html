@@ -3352,6 +3352,17 @@ body.os-mode header{background:rgba(255,255,255,.72) !important;backdrop-filter:
 body.os-mode #view-inicio,body.os-mode .view{background:transparent !important;}
 #os-home-btn{transition:transform .15s;}
 #os-home-btn:hover{transform:translateY(-3px) scale(1.05);}
+/* Resultados del buscador dentro del escritorio */
+#coach-os .os-results{margin-top:16px;width:100%;max-width:640px;max-height:44vh;overflow-y:auto;display:flex;flex-direction:column;gap:9px;padding:2px;}
+#coach-os .os-res{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.9);border-radius:14px;padding:10px 12px;cursor:pointer;box-shadow:0 12px 28px -18px rgba(10,30,60,.5);transition:.12s;}
+#coach-os .os-res:hover{transform:translateY(-1px);background:#fff;}
+#coach-os .os-res .av{width:40px;height:40px;border-radius:50%;background:#dbe7f3;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#4a6b8c;flex-shrink:0;overflow:hidden;}
+#coach-os .os-res .av img{width:100%;height:100%;object-fit:cover;}
+#coach-os .os-res .tx{flex:1;min-width:0;}
+#coach-os .os-res .tx b{display:block;font-size:14px;font-weight:800;color:#16304d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#coach-os .os-res .tx span{font-size:11.5px;color:#7c93a9;}
+#coach-os .os-res-btn{border:none;border-radius:10px;background:#0B1739;color:#fff;font-size:12px;font-weight:700;padding:9px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+#coach-os .os-res-btn:hover{filter:brightness(1.1);}
 </style>
 <div id="coach-os">
   <div id="os-veil"></div>
@@ -3373,10 +3384,11 @@ body.os-mode #view-inicio,body.os-mode .view{background:transparent !important;}
     <div class="os-box">
       <div class="row">
         <div class="add" onclick="_osOpen('openModalNuevoAlumno')" title="Nuevo alumno">＋</div>
-        <input id="os-search" type="text" placeholder="Buscá un alumno o escribí qué querés hacer…" onkeydown="_osSearch(event)">
-        <button class="go" onclick="_osGo('inicio')">→</button>
+        <input id="os-search" type="text" placeholder="Buscá un alumno…" oninput="_osSearchLive(this.value)" onkeydown="_osSearchKey(event)">
+        <button class="go" onclick="_osGoFirst()">→</button>
       </div>
     </div>
+    <div id="os-results" class="os-results" style="display:none;"></div>
     <div class="os-chips">
       <div class="os-chip" onclick="_osOpen('navIrCalendario')">🗓️ Agenda de hoy</div>
       <div class="os-chip" onclick="_osOpen('navIrFuerza')">📋 Planificar sesión</div>
@@ -3420,10 +3432,34 @@ function _osSetUrl(){ const u=(document.getElementById('os-bgurl-input').value||
 function _osRenderThumbs(){ const g=document.getElementById('os-bggrid'); if(!g)return; g.innerHTML=_OS_WALLS.map((w,i)=>{ const bg=w.type==='grad'?w.css:"url('"+w.url+"')"; return '<div class="os-bgthumb'+(i===_osCurBg?' sel':'')+'" style="background-image:'+bg+'" onclick="_osSetBg('+i+')"></div>'; }).join(''); }
 function _osTogBg(e){ if(e)e.stopPropagation(); document.getElementById('os-bgpanel').classList.toggle('open'); }
 function _osHide(){ const el=_osEl(); if(el) el.style.display='none'; }
-function _osShow(){ const el=_osEl(); if(!el)return; el.style.display='block'; _osRenderWidgets(); _osTick(); document.getElementById('os-bgpanel')?.classList.remove('open'); }
+function _osShow(){ const el=_osEl(); if(!el)return; el.style.display='block'; _osRenderWidgets(); _osTick(); document.getElementById('os-bgpanel')?.classList.remove('open'); const inp=document.getElementById('os-search'); if(inp) inp.value=''; _osSearchLive(''); }
 function _osGo(v){ _osHide(); try{ if(typeof showView==='function') showView(v); }catch(e){} }
 function _osOpen(fn){ _osHide(); try{ if(typeof window[fn]==='function'){ window[fn](); return; } }catch(e){} try{ if(typeof showView==='function') showView('inicio'); }catch(e){} }
-function _osSearch(e){ if(e.key==='Enter'){ const q=e.target.value||''; _osHide(); try{ if(typeof showView==='function') showView('inicio'); }catch(err){} setTimeout(()=>{ try{ if(typeof _filtrarAlumnos==='function') _filtrarAlumnos(q); }catch(err){} },80); } }
+function _osMatches(q){ q=(q||'').toLowerCase().trim(); if(!q)return[]; let als=[]; try{ als=(typeof getAlumnos==='function')?(getAlumnos()||[]):[]; }catch(e){} return als.filter(a=>String(a.nombre||'').toLowerCase().includes(q)); }
+function _osSearchLive(q){
+  const res=document.getElementById('os-results'); const chips=document.querySelector('#coach-os .os-chips'); if(!res)return;
+  q=(q||'').trim();
+  if(!q){ res.style.display='none'; res.innerHTML=''; if(chips)chips.style.display=''; return; }
+  if(chips)chips.style.display='none'; res.style.display='flex';
+  const match=_osMatches(q).slice(0,8);
+  const esc=s=>String(s==null?'':s).replace(/</g,'&lt;').replace(/'/g,'&#39;');
+  if(!match.length){ res.innerHTML='<div style="text-align:center;color:#5a7690;font-size:13px;background:rgba(255,255,255,.9);border-radius:12px;padding:16px;">Sin resultados para “'+esc(q)+'”</div>'; return; }
+  const hoy=new Date();hoy.setHours(0,0,0,0); const DOW=['dom','lun','mar','mié','jue','vie','sáb'];
+  res.innerHTML=match.map(a=>{
+    let p=null;try{p=(typeof _proximaSesionAlumno==='function')?_proximaSesionAlumno(a.id):null;}catch(e){}
+    let prox='Sin sesión programada'; if(p){ const d=Math.round((p.date-hoy)/86400000); const c=d===0?'Hoy':d===1?'Mañana':(DOW[p.date.getDay()]+' '+p.date.getDate()); prox='Próxima: '+c; }
+    const av=a.foto?('<img src="'+esc(a.foto)+'">'):_osIniciales(a.nombre);
+    return '<div class="os-res">'
+      +'<div class="av" onclick="_osAbrirAlumno(\''+a.id+'\')">'+av+'</div>'
+      +'<div class="tx" onclick="_osAbrirAlumno(\''+a.id+'\')"><b>'+esc(a.nombre||'')+'</b><span>'+prox+'</span></div>'
+      +'<button class="os-res-btn" onclick="_osTrabajar(\''+a.id+'\')">Trabajar →</button>'
+    +'</div>';
+  }).join('');
+}
+function _osAbrirAlumno(id){ _osHide(); try{ if(typeof openPerfilAlumno==='function') openPerfilAlumno(id); }catch(e){} }
+function _osTrabajar(id){ _osHide(); try{ if(typeof _veAbrirAlumno==='function'){ _veAbrirAlumno(id); return; } if(typeof openPerfilAlumno==='function') openPerfilAlumno(id); }catch(e){} }
+function _osSearchKey(e){ if(e.key==='Enter'){ const m=_osMatches(e.target.value); if(m.length) _osAbrirAlumno(m[0].id); } }
+function _osGoFirst(){ const inp=document.getElementById('os-search'); const m=_osMatches(inp&&inp.value); if(m.length) _osAbrirAlumno(m[0].id); }
 function _osIniciales(n){ n=String(n||'').trim(); if(!n)return'?'; const p=n.split(/\s+/); return ((p[0]||'')[0]||'').toUpperCase()+((p[1]||'')[0]||'').toUpperCase(); }
 function _osRenderWidgets(){
   const cont=document.getElementById('os-widgets'); if(!cont) return;
