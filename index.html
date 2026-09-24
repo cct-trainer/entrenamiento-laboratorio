@@ -3449,6 +3449,11 @@ body.os-mode nav{background:rgba(255,255,255,.72)!important;backdrop-filter:blur
 body.os-mode nav > .nav-btn,body.os-mode nav .nav-dropdown-trigger,body.os-mode nav .perfil-nav-btn,body.os-mode nav .perfil-nav-plan-trigger{color:#33526f!important;}
 body.os-mode nav > .nav-btn:hover,body.os-mode nav .nav-dropdown-trigger:hover,body.os-mode nav .perfil-nav-btn:hover,body.os-mode nav .perfil-nav-plan-trigger:hover{background:rgba(20,50,90,.06)!important;color:#0b0f16!important;}
 body.os-mode nav > .nav-btn.active,body.os-mode nav .nav-dropdown-trigger.active,body.os-mode nav .nav-dropdown-trigger.open,body.os-mode nav .perfil-nav-btn.active,body.os-mode nav .perfil-nav-plan-trigger.active{color:#0b0f16!important;}
+/* Una sola barra: header + navegación en la misma fila (altura del escritorio) */
+body.os-mode header{display:flex!important;align-items:center!important;gap:10px!important;flex-wrap:nowrap!important;min-height:58px!important;height:58px!important;padding:0 16px!important;}
+body.os-mode header #main-nav{background:transparent!important;backdrop-filter:none!important;min-height:0!important;height:auto!important;padding:0!important;border-bottom:none!important;display:flex;align-items:center;flex-wrap:nowrap;overflow:visible;gap:0;}
+body.os-mode header #main-nav > .nav-btn,body.os-mode header #main-nav .nav-dropdown-trigger,body.os-mode header #main-nav .perfil-nav-btn,body.os-mode header #main-nav .perfil-nav-plan-trigger{padding:6px 9px!important;font-size:12.5px!important;}
+body.os-mode header > div:last-child{margin-left:auto!important;}
 </style>
 <div id="coach-os">
   <div id="os-veil"></div>
@@ -3591,6 +3596,8 @@ window.addEventListener('load',function(){ try{
   document.body.classList.add('os-mode');
   // Rebrandear el header real: logo en iniciales CC + nombre en negro
   try{ const hl=document.querySelector('.header-left'); if(hl && !hl.dataset.osrebrand){ hl.dataset.osrebrand='1'; hl.onclick=function(){ if(typeof _osShow==='function') _osShow(); }; hl.innerHTML='<div class="hl-brand"><div class="hl-cc"><b>CC</b><i></i></div><div class="hl-nm"><b>Christian Cattaneo</b><span>LABORATORIO DE ENTRENAMIENTO</span></div></div>'; } }catch(e){}
+  // Una sola barra: mover la navegación adentro del header (misma fila)
+  try{ const hdr=document.querySelector('header'); const nav=document.getElementById('main-nav'); if(hdr&&nav&&!nav.dataset.osmerged){ nav.dataset.osmerged='1'; const hl2=hdr.querySelector('.header-left'); if(hl2&&hl2.nextSibling){ hdr.insertBefore(nav,hl2.nextSibling); } else { hdr.appendChild(nav); } } }catch(e){}
   let saved=null; try{ saved=JSON.parse(localStorage.getItem('SOCC_COACH_WALL')||'null'); }catch(e){}
   if(saved){ _OS_WALLS.some((w,i)=>{ const same=(w.type===saved.type)&&((w.type==='grad'?w.css===saved.css:w.url===saved.url)); if(same)_osCurBg=i; return same; }); if(_osCurBg<0||!_OS_WALLS[_osCurBg]) _osCurBg=-1; _osApplyWall(saved); } else { _osApplyWall(_OS_WALLS[0]); }
   _osRenderThumbs(); _osTick(); setInterval(_osTick,1000);
