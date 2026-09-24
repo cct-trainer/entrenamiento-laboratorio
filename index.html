@@ -3570,7 +3570,7 @@ function _osSearchLive(q){
     +'</div>';
   }).join('');
 }
-function _osAbrirAlumno(id){ _osHide(); setTimeout(function(){ try{ if(typeof openPerfilAlumno==='function'){ openPerfilAlumno(id); } else if(typeof showView==='function'){ showView('inicio'); } }catch(e){ console.error('coach-os abrir perfil:', e); if(typeof showView==='function') showView('inicio'); } }, 0); }
+function _osAbrirAlumno(id){ window._osSkipHome=true; try{ if(typeof openPerfilAlumno==='function'){ openPerfilAlumno(id); } }catch(e){ console.error('coach-os abrir perfil:', e); } _osHide(); window._osSkipHome=false; }
 function _osTrabajar(id){ _osHide(); try{ if(typeof _veAbrirAlumno==='function'){ _veAbrirAlumno(id); return; } if(typeof openPerfilAlumno==='function') openPerfilAlumno(id); }catch(e){} }
 function _osSearchKey(e){ if(e.key==='Enter'){ const m=_osMatches(e.target.value); if(m.length) _osAbrirAlumno(m[0].id); } }
 function _osGoFirst(){ const inp=document.getElementById('os-search'); const m=_osMatches(inp&&inp.value); if(m.length) _osAbrirAlumno(m[0].id); }
