@@ -3398,6 +3398,22 @@ body.os-mode .module-header{background:rgba(255,255,255,.55)!important;border-bo
 .hl-nm{line-height:1.05;}
 .hl-nm b{display:block;font-size:16px;font-weight:900;color:#0b0f16;letter-spacing:-.2px;}
 .hl-nm span{font-size:9.5px;font-weight:700;color:#8698ad;letter-spacing:2px;}
+/* ---- Planificador estilo escritorio: tarjetas de día claras + semana marcada ---- */
+body.os-mode .plan-fila.pm-fill{color:#16304d!important;box-shadow:0 8px 20px -16px rgba(20,50,90,.4)!important;}
+body.os-mode .plan-fila.pm-fill:hover{transform:translateY(-2px);box-shadow:0 14px 28px -16px rgba(20,50,90,.45)!important;}
+body.os-mode .pm-fill .pm-num{color:#16304d!important;}
+body.os-mode .pm-fill .pm-dw{color:#22405f!important;}
+body.os-mode .pm-fill .pm-mo{color:#7c93a9!important;}
+body.os-mode .pm-fill .pm-abtn{color:#5a7690!important;}
+body.os-mode .pm-fill .pm-abtn:hover{background:rgba(20,50,90,.08)!important;color:#16304d!important;}
+body.os-mode .pm-fill .pm-check{color:#9A7A28!important;}
+body.os-mode .pm-fill .pm-rev{color:#9A7A28!important;background:#FDF6E3!important;}
+body.os-mode .pm-fill .pm-nses{color:#22405f!important;background:rgba(20,50,90,.08)!important;}
+/* Semana de trabajo MARCADA (clara, con borde de acento) */
+body.os-mode .mes-semana-bloque.sem-actual{background:rgba(43,108,168,.06)!important;border:2px solid #2b6ca8!important;box-shadow:0 14px 36px -22px rgba(43,108,168,.5)!important;}
+body.os-mode .mes-semana-bloque.sem-actual .mes-semana-header{background:transparent!important;}
+body.os-mode .mes-semana-bloque.sem-actual .mes-semana-titulo-txt{color:#215a8f!important;}
+body.os-mode .mes-semana-bloque.sem-actual .mes-semana-titulo-txt::before{color:#2b6ca8!important;}
 </style>
 <div id="coach-os">
   <div id="os-veil"></div>
@@ -11722,6 +11738,8 @@ function pegarSesionDia(diaIdx, semIdx){
 function _setObjetivoSemana(idx, val){ if(planSemanasArray[idx]) planSemanasArray[idx].objetivo = val; }
 // ── Color de la tarjeta del día (planificador) ──
 function _darkenHex(hex,f){ try{ hex=String(hex).replace('#',''); if(hex.length!==6) return '#'+hex; const n=parseInt(hex,16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255; r=Math.round(r*f);g=Math.round(g*f);b=Math.round(b*f); return 'rgb('+r+','+g+','+b+')'; }catch(e){ return '#'+hex; } }
+// Aclara un color hacia el blanco (amt 0..1) — para las tarjetas de día en tono claro
+function _tintHex(hex,amt){ try{ hex=String(hex).replace('#',''); if(hex.length!==6) return '#'+hex; const n=parseInt(hex,16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255; r=Math.round(r+(255-r)*amt);g=Math.round(g+(255-g)*amt);b=Math.round(b+(255-b)*amt); return 'rgb('+r+','+g+','+b+')'; }catch(e){ return '#'+hex; } }
 const _DIA_PAL=['#3A6EA5','#22C875','#E6A817','#E5573F','#8B5CF6','#0EA5A0','#EC4899','#475569','#C9A84C','#0f172a'];
 function _diaColorPopInner(semIdx,i,cur){
   const sw=_DIA_PAL.map(c=>'<span onclick="event.stopPropagation();_setDiaColor('+semIdx+','+i+',\''+c+'\')" style="width:22px;height:22px;border-radius:7px;background:'+c+';cursor:pointer;border:2px solid #fff;box-shadow:'+(c===cur?'0 0 0 2px #111':'0 0 0 1px #e2e6ee')+';"></span>').join('');
@@ -11809,8 +11827,8 @@ function renderPlanMes() {
         + '<button class="pm-abtn pm-del" onclick="event.stopPropagation();'+delAction+'" title="Eliminar">'+_PMIC.del+'</button>'
       + '</div>';
       const fCls = f || 'none';
-      const _diaCol = (sem.diaColores && sem.diaColores[i]) || '';
-      const _colStyle = _diaCol ? 'background:linear-gradient(150deg,'+_diaCol+','+_darkenHex(_diaCol,.6)+') !important;color:#fff;' : '';
+      const _diaCol = (sem.diaColores && sem.diaColores[i]) || '#2b6ca8';   // azul uniforme por defecto; el 🎨 lo cambia por día
+      const _colStyle = 'background:'+_tintHex(_diaCol,.90)+' !important;border:1.5px solid '+_tintHex(_diaCol,.55)+' !important;box-shadow:0 8px 20px -16px rgba(20,50,90,.4) !important;';
       return '<div class="plan-fila plan-dia-card tiene-sesion pm-card pm-fill foco-'+fCls+'" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" draggable="true" style="'+_colStyle+'" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
         + '<div class="pm-top">'+topHead+'<span class="pm-dotf foco-'+f+'"></span></div>'
         + acc
