@@ -3344,6 +3344,14 @@ select.toolbox-input option:disabled { color: #888; }
 #coach-os .os-bgurl button{border:none;border-radius:10px;background:#0B1739;color:#fff;font-size:12.5px;font-weight:700;padding:0 14px;cursor:pointer;}
 #coach-os .os-bghint{font-size:10.5px;color:#8496ab;margin-top:8px;line-height:1.4;}
 @media(max-width:820px){ #coach-os .os-widgets{display:none;} }
+/* Wallpaper persistente en toda la app (estilo SO) */
+#os-bg-layer{position:fixed;inset:0;z-index:-2;background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#dbe8f2;}
+#os-bg-veil{position:fixed;inset:0;z-index:-1;background:rgba(244,247,250,.58);pointer-events:none;}
+body.os-mode{background-color:transparent !important;}
+body.os-mode header{background:rgba(255,255,255,.72) !important;backdrop-filter:blur(12px);}
+body.os-mode #view-inicio,body.os-mode .view{background:transparent !important;}
+#os-home-btn{transition:transform .15s;}
+#os-home-btn:hover{transform:translateY(-3px) scale(1.05);}
 </style>
 <div id="coach-os">
   <div id="os-veil"></div>
@@ -3406,7 +3414,7 @@ const _OS_WALLS=[
 ];
 let _osCurBg=0;
 function _osEl(){ return document.getElementById('coach-os'); }
-function _osApplyWall(w){ const el=_osEl(); if(!el||!w)return; if(w.type==='grad'){ el.style.backgroundImage=w.css; el.style.backgroundColor='#dbe8f2'; } else { el.style.backgroundImage="url('"+w.url+"')"; } }
+function _osApplyWall(w){ if(!w)return; const setBg=(node)=>{ if(!node)return; if(w.type==='grad'){ node.style.backgroundImage=w.css; node.style.backgroundColor='#dbe8f2'; } else { node.style.backgroundImage="url('"+w.url+"')"; } }; setBg(_osEl()); setBg(document.getElementById('os-bg-layer')); }
 function _osSetBg(i){ _osCurBg=i; _osApplyWall(_OS_WALLS[i]); _osRenderThumbs(); try{localStorage.setItem('SOCC_COACH_WALL',JSON.stringify(_OS_WALLS[i]));}catch(e){} }
 function _osSetUrl(){ const u=(document.getElementById('os-bgurl-input').value||'').trim(); if(!u)return; const w={type:'img',url:u}; _osCurBg=-1; _osApplyWall(w); _osRenderThumbs(); try{localStorage.setItem('SOCC_COACH_WALL',JSON.stringify(w));}catch(e){} }
 function _osRenderThumbs(){ const g=document.getElementById('os-bggrid'); if(!g)return; g.innerHTML=_OS_WALLS.map((w,i)=>{ const bg=w.type==='grad'?w.css:"url('"+w.url+"')"; return '<div class="os-bgthumb'+(i===_osCurBg?' sel':'')+'" style="background-image:'+bg+'" onclick="_osSetBg('+i+')"></div>'; }).join(''); }
@@ -3446,6 +3454,9 @@ function _osTick(){
 }
 document.addEventListener('click',function(){ const el=_osEl(); if(el&&el.style.display!=='none'){ document.getElementById('os-bgpanel')?.classList.remove('open'); } });
 window.addEventListener('load',function(){ try{
+  // Capa de wallpaper persistente + veil, detrás de toda la app
+  if(!document.getElementById('os-bg-layer')){ const l=document.createElement('div'); l.id='os-bg-layer'; document.body.insertBefore(l,document.body.firstChild); const v=document.createElement('div'); v.id='os-bg-veil'; document.body.insertBefore(v,l.nextSibling); }
+  document.body.classList.add('os-mode');
   let saved=null; try{ saved=JSON.parse(localStorage.getItem('SOCC_COACH_WALL')||'null'); }catch(e){}
   if(saved){ _OS_WALLS.some((w,i)=>{ const same=(w.type===saved.type)&&((w.type==='grad'?w.css===saved.css:w.url===saved.url)); if(same)_osCurBg=i; return same; }); if(_osCurBg<0||!_OS_WALLS[_osCurBg]) _osCurBg=-1; _osApplyWall(saved); } else { _osApplyWall(_OS_WALLS[0]); }
   _osRenderThumbs(); _osTick(); setInterval(_osTick,1000);
