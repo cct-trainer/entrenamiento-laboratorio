@@ -3454,6 +3454,11 @@ body.os-mode header{display:flex!important;align-items:center!important;gap:10px
 body.os-mode header #main-nav{background:transparent!important;backdrop-filter:none!important;min-height:0!important;height:auto!important;padding:0!important;border-bottom:none!important;display:flex;align-items:center;flex-wrap:nowrap;overflow:visible;gap:0;}
 body.os-mode header #main-nav > .nav-btn,body.os-mode header #main-nav .nav-dropdown-trigger,body.os-mode header #main-nav .perfil-nav-btn,body.os-mode header #main-nav .perfil-nav-plan-trigger{padding:6px 9px!important;font-size:12.5px!important;}
 body.os-mode header > div:last-child{margin-left:auto!important;}
+/* Dentro de un alumno: ocultar el menú general (Inicio/Blog/Planificador) y dejar solo las solapas del alumno */
+body.os-mode #main-nav:has(#nav-alumno-items.visible) > #nav-btn-inicio,
+body.os-mode #main-nav:has(#nav-alumno-items.visible) > #nav-btn-blog,
+body.os-mode #main-nav:has(#nav-alumno-items.visible) > .nav-dropdown-wrap,
+body.os-mode #main-nav:has(#nav-alumno-items.visible) > .nav-sep{display:none!important;}
 </style>
 <div id="coach-os">
   <div id="os-veil"></div>
