@@ -3533,10 +3533,16 @@ const _OS_WALLS=[
 let _osCurBg=0;
 function _osEl(){ return document.getElementById('coach-os'); }
 function _osApplyWall(w){ if(!w)return; const setBg=(node)=>{ if(!node)return; if(w.type==='grad'){ node.style.backgroundImage=w.css; node.style.backgroundColor='#dbe8f2'; } else { node.style.backgroundImage="url('"+w.url+"')"; } }; setBg(_osEl()); setBg(document.getElementById('os-bg-layer')); }
+// Guarda el fondo elegido: localStorage (rápido) + Firebase (fijo y sincronizado).
+function _osSaveWall(w){ try{ localStorage.setItem('SOCC_COACH_WALL',JSON.stringify(w)); }catch(e){} try{ if(window._db) window._db.collection('alumnos').doc('zz_config_global').set({coachWall:w},{merge:true}); }catch(e){} }
+function _osFijarWall(w){ if(!w)return; _osCurBg=-1; _OS_WALLS.forEach((ww,i)=>{ if(ww.type===w.type && (ww.type==='grad'?ww.css===w.css:ww.url===w.url)) _osCurBg=i; }); _osApplyWall(w); try{ _osRenderThumbs(); }catch(e){} }
 // Lee el fondo guardado (el último que elegiste) y lo fija. Se llama al cargar y al mostrar el escritorio.
-function _osLoadWall(){ let saved=null; try{ saved=JSON.parse(localStorage.getItem('SOCC_COACH_WALL')||'null'); }catch(e){} const w=saved||_OS_WALLS[0]; _osCurBg=0; if(saved){ _osCurBg=-1; _OS_WALLS.forEach((ww,i)=>{ if(ww.type===saved.type && (ww.type==='grad'?ww.css===saved.css:ww.url===saved.url)) _osCurBg=i; }); } _osApplyWall(w); }
-function _osSetBg(i){ _osCurBg=i; _osApplyWall(_OS_WALLS[i]); _osRenderThumbs(); try{localStorage.setItem('SOCC_COACH_WALL',JSON.stringify(_OS_WALLS[i]));}catch(e){} }
-function _osSetUrl(){ const u=(document.getElementById('os-bgurl-input').value||'').trim(); if(!u)return; const w={type:'img',url:u}; _osCurBg=-1; _osApplyWall(w); _osRenderThumbs(); try{localStorage.setItem('SOCC_COACH_WALL',JSON.stringify(w));}catch(e){} }
+function _osLoadWall(){ let saved=null; try{ saved=JSON.parse(localStorage.getItem('SOCC_COACH_WALL')||'null'); }catch(e){} _osFijarWall(saved||_OS_WALLS[0]);
+  // Además traer de Firebase el último fondo guardado (por si el localStorage no persistió)
+  try{ if(window._db){ window._db.collection('alumnos').doc('zz_config_global').get().then(function(d){ try{ if(d&&d.exists){ const cw=(d.data()||{}).coachWall; if(cw){ try{localStorage.setItem('SOCC_COACH_WALL',JSON.stringify(cw));}catch(e){} _osFijarWall(cw); } } }catch(e){} }).catch(function(){}); } }catch(e){}
+}
+function _osSetBg(i){ _osCurBg=i; _osApplyWall(_OS_WALLS[i]); _osRenderThumbs(); _osSaveWall(_OS_WALLS[i]); }
+function _osSetUrl(){ const u=(document.getElementById('os-bgurl-input').value||'').trim(); if(!u)return; const w={type:'img',url:u}; _osCurBg=-1; _osApplyWall(w); _osRenderThumbs(); _osSaveWall(w); }
 function _osRenderThumbs(){ const g=document.getElementById('os-bggrid'); if(!g)return; g.innerHTML=_OS_WALLS.map((w,i)=>{ const bg=w.type==='grad'?w.css:"url('"+w.url+"')"; return '<div class="os-bgthumb'+(i===_osCurBg?' sel':'')+'" style="background-image:'+bg+'" onclick="_osSetBg('+i+')"></div>'; }).join(''); }
 function _osTogBg(e){ if(e)e.stopPropagation(); document.getElementById('os-bgpanel').classList.toggle('open'); }
 function _osHide(){ const el=_osEl(); if(el) el.style.display='none'; }
