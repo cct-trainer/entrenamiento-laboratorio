@@ -3433,7 +3433,7 @@ function _osRenderThumbs(){ const g=document.getElementById('os-bggrid'); if(!g)
 function _osTogBg(e){ if(e)e.stopPropagation(); document.getElementById('os-bgpanel').classList.toggle('open'); }
 function _osHide(){ const el=_osEl(); if(el) el.style.display='none'; }
 function _osShow(){ const el=_osEl(); if(!el)return; el.style.display='block'; _osRenderWidgets(); _osTick(); document.getElementById('os-bgpanel')?.classList.remove('open'); const inp=document.getElementById('os-search'); if(inp) inp.value=''; _osSearchLive(''); }
-function _osGo(v){ _osHide(); try{ if(typeof showView==='function') showView(v); }catch(e){} }
+function _osGo(v){ _osHide(); try{ window._osSkipHome=true; if(typeof showView==='function') showView(v); }catch(e){} finally{ window._osSkipHome=false; } }
 function _osOpen(fn){ _osHide(); try{ if(typeof window[fn]==='function'){ window[fn](); return; } }catch(e){} try{ if(typeof showView==='function') showView('inicio'); }catch(e){} }
 function _osMatches(q){ q=(q||'').toLowerCase().trim(); if(!q)return[]; let als=[]; try{ als=(typeof getAlumnos==='function')?(getAlumnos()||[]):[]; }catch(e){} return als.filter(a=>String(a.nombre||'').toLowerCase().includes(q)); }
 function _osSearchLive(q){
@@ -14414,6 +14414,8 @@ function showView(v) {
     const chip = document.getElementById('nav-alumno-chip');
     if (chip) chip.textContent = '';
     renderAlumnosGrid();
+    // "Inicio" = escritorio (estilo SO). El dock "Alumnos" usa _osGo (con _osSkipHome) para ver la lista completa.
+    if(!window._osSkipHome){ try{ if(typeof _osShow==='function') _osShow(); }catch(e){} }
   }
   if (v === 'planificador' || v === 'running') {
     document.getElementById('nav-btn-planificador')?.classList.add('active');
