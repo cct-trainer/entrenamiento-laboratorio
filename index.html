@@ -3375,23 +3375,24 @@ body.os-mode #view-inicio,body.os-mode .view{background:transparent !important;}
 #coach-os .os-res-btn{border:none;border-radius:10px;background:#0B1739;color:#fff;font-size:12px;font-weight:700;padding:9px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
 #coach-os .os-res-btn:hover{filter:brightness(1.1);}
 /* ---- Perfil del alumno en estilo escritorio (skin claro sobre el wallpaper) ---- */
-body.os-mode .perfil-layout{gap:16px;padding:16px;}
-body.os-mode .perfil-sidebar{background:rgba(238,245,252,.78)!important;backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.85)!important;border-radius:20px!important;color:#16304d!important;margin:16px 0 16px 16px!important;box-shadow:0 18px 46px -26px rgba(10,30,60,.45);}
+body.os-mode .perfil-layout{gap:0!important;margin:16px!important;background:#ffffff!important;border:1px solid #eef1f6!important;border-radius:20px!important;overflow:hidden;box-shadow:0 22px 54px -28px rgba(10,25,50,.5);}
+body.os-mode .perfil-sidebar{background:transparent!important;border:none!important;border-right:1px solid #eef1f6!important;border-radius:0!important;color:#16304d!important;margin:0!important;box-shadow:none!important;}
 /* V3 · el cuerpo del plan queda dentro de un panel de vidrio azulado */
-body.os-mode .perfil-main{background:rgba(238,245,252,.6)!important;backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7)!important;border-radius:20px!important;margin:16px 16px 16px 14px!important;box-shadow:0 18px 46px -26px rgba(10,30,60,.4);}
+body.os-mode .perfil-main{background:transparent!important;border:none!important;border-radius:0!important;margin:0!important;box-shadow:none!important;}
 body.os-mode .module-content,body.os-mode .module-header{background:transparent!important;}
 body.os-mode .plan-theme-row{background:transparent!important;}
 /* Cada mes → tarjeta blanca redondeada con acento azul, separadas */
 body.os-mode #view-perfil table{border-collapse:separate!important;border-spacing:0 10px!important;}
-body.os-mode .mrow td{background:rgba(255,255,255,.82)!important;border-top:1px solid rgba(20,50,90,.08)!important;border-bottom:1px solid rgba(20,50,90,.08)!important;padding:14px 12px!important;vertical-align:middle;}
-body.os-mode .mrow td:first-child{border-left:4px solid #2b6ca8!important;border-top-left-radius:14px;border-bottom-left-radius:14px;}
-body.os-mode .mrow td:last-child{border-right:1px solid rgba(20,50,90,.08)!important;border-top-right-radius:14px;border-bottom-right-radius:14px;}
+body.os-mode .mrow td{background:#ffffff!important;border-top:1px solid #eef1f6!important;border-bottom:1px solid #eef1f6!important;padding:14px 12px!important;vertical-align:middle;box-shadow:0 6px 16px -12px rgba(20,50,90,.28);}
+body.os-mode .mrow td:first-child{border-left:1px solid #eef1f6!important;border-top-left-radius:14px;border-bottom-left-radius:14px;}
+body.os-mode .mrow td:last-child{border-right:1px solid #eef1f6!important;border-top-right-radius:14px;border-bottom-right-radius:14px;}
 body.os-mode .mrow:hover td{background:#fff!important;}
 /* Planificador (SEPTIEMBRE-CAROL) dentro de un panel de vidrio azulado */
-body.os-mode .plan-right{background:rgba(238,245,252,.6)!important;backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7)!important;border-radius:20px!important;margin:16px 16px 16px 14px!important;box-shadow:0 18px 46px -26px rgba(10,30,60,.4);}
+body.os-mode .plan-right{background:transparent!important;border:none!important;border-radius:0!important;margin:0!important;box-shadow:none!important;}
 body.os-mode .run-topbar{background:transparent!important;}
 /* Barra lateral del planificador → vidrio azulado (V3) */
-body.os-mode .plan-sidebar{background:rgba(238,245,252,.82)!important;color:#16304d!important;border:1px solid rgba(255,255,255,.7)!important;border-radius:20px!important;margin:16px 0 16px 16px!important;height:auto!important;box-shadow:0 18px 46px -26px rgba(10,30,60,.4);}
+body.os-mode #view-planificador.active,body.os-mode #view-running.active{background:#ffffff!important;border:1px solid #eef1f6!important;border-radius:20px!important;margin:16px!important;overflow:hidden;box-shadow:0 22px 54px -28px rgba(10,25,50,.5);display:flex;}
+body.os-mode .plan-sidebar{background:transparent!important;color:#16304d!important;border:none!important;border-right:1px solid #eef1f6!important;border-radius:0!important;margin:0!important;height:auto!important;box-shadow:none!important;}
 body.os-mode .plan-sidebar-name{color:#16304d!important;}
 body.os-mode .plan-sidebar-sub{color:#7c93a9!important;}
 body.os-mode .plan-sidebar-back{color:#5a7690!important;border:1px solid rgba(20,50,90,.14)!important;background:rgba(255,255,255,.7)!important;}
