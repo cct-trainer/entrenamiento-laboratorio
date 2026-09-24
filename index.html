@@ -3533,12 +3533,14 @@ const _OS_WALLS=[
 let _osCurBg=0;
 function _osEl(){ return document.getElementById('coach-os'); }
 function _osApplyWall(w){ if(!w)return; const setBg=(node)=>{ if(!node)return; if(w.type==='grad'){ node.style.backgroundImage=w.css; node.style.backgroundColor='#dbe8f2'; } else { node.style.backgroundImage="url('"+w.url+"')"; } }; setBg(_osEl()); setBg(document.getElementById('os-bg-layer')); }
+// Lee el fondo guardado (el último que elegiste) y lo fija. Se llama al cargar y al mostrar el escritorio.
+function _osLoadWall(){ let saved=null; try{ saved=JSON.parse(localStorage.getItem('SOCC_COACH_WALL')||'null'); }catch(e){} const w=saved||_OS_WALLS[0]; _osCurBg=0; if(saved){ _osCurBg=-1; _OS_WALLS.forEach((ww,i)=>{ if(ww.type===saved.type && (ww.type==='grad'?ww.css===saved.css:ww.url===saved.url)) _osCurBg=i; }); } _osApplyWall(w); }
 function _osSetBg(i){ _osCurBg=i; _osApplyWall(_OS_WALLS[i]); _osRenderThumbs(); try{localStorage.setItem('SOCC_COACH_WALL',JSON.stringify(_OS_WALLS[i]));}catch(e){} }
 function _osSetUrl(){ const u=(document.getElementById('os-bgurl-input').value||'').trim(); if(!u)return; const w={type:'img',url:u}; _osCurBg=-1; _osApplyWall(w); _osRenderThumbs(); try{localStorage.setItem('SOCC_COACH_WALL',JSON.stringify(w));}catch(e){} }
 function _osRenderThumbs(){ const g=document.getElementById('os-bggrid'); if(!g)return; g.innerHTML=_OS_WALLS.map((w,i)=>{ const bg=w.type==='grad'?w.css:"url('"+w.url+"')"; return '<div class="os-bgthumb'+(i===_osCurBg?' sel':'')+'" style="background-image:'+bg+'" onclick="_osSetBg('+i+')"></div>'; }).join(''); }
 function _osTogBg(e){ if(e)e.stopPropagation(); document.getElementById('os-bgpanel').classList.toggle('open'); }
 function _osHide(){ const el=_osEl(); if(el) el.style.display='none'; }
-function _osShow(){ const el=_osEl(); if(!el)return; el.style.display='block'; _osRenderWidgets(); _osTick(); document.getElementById('os-bgpanel')?.classList.remove('open'); const inp=document.getElementById('os-search'); if(inp) inp.value=''; _osSearchLive(''); }
+function _osShow(){ const el=_osEl(); if(!el)return; el.style.display='block'; _osLoadWall(); _osRenderWidgets(); _osTick(); document.getElementById('os-bgpanel')?.classList.remove('open'); const inp=document.getElementById('os-search'); if(inp) inp.value=''; _osSearchLive(''); }
 function _osGo(v){ _osHide(); try{ window._osSkipHome=true; if(typeof showView==='function') showView(v); }catch(e){} finally{ window._osSkipHome=false; } }
 function _osOpen(fn){ _osHide(); try{ if(typeof window[fn]==='function'){ window[fn](); return; } }catch(e){} try{ if(typeof showView==='function') showView('inicio'); }catch(e){} }
 function _osMatches(q){ q=(q||'').toLowerCase().trim(); if(!q)return[]; let als=[]; try{ als=(typeof getAlumnos==='function')?(getAlumnos()||[]):[]; }catch(e){} return als.filter(a=>String(a.nombre||'').toLowerCase().includes(q)); }
@@ -3562,7 +3564,7 @@ function _osSearchLive(q){
     +'</div>';
   }).join('');
 }
-function _osAbrirAlumno(id){ _osHide(); try{ if(typeof openPerfilAlumno==='function') openPerfilAlumno(id); }catch(e){} }
+function _osAbrirAlumno(id){ _osHide(); setTimeout(function(){ try{ if(typeof openPerfilAlumno==='function'){ openPerfilAlumno(id); } else if(typeof showView==='function'){ showView('inicio'); } }catch(e){ console.error('coach-os abrir perfil:', e); if(typeof showView==='function') showView('inicio'); } }, 0); }
 function _osTrabajar(id){ _osHide(); try{ if(typeof _veAbrirAlumno==='function'){ _veAbrirAlumno(id); return; } if(typeof openPerfilAlumno==='function') openPerfilAlumno(id); }catch(e){} }
 function _osSearchKey(e){ if(e.key==='Enter'){ const m=_osMatches(e.target.value); if(m.length) _osAbrirAlumno(m[0].id); } }
 function _osGoFirst(){ const inp=document.getElementById('os-search'); const m=_osMatches(inp&&inp.value); if(m.length) _osAbrirAlumno(m[0].id); }
@@ -3580,7 +3582,7 @@ function _osRenderWidgets(){
   const lbl=x=>{ if(x.est==='hoy')return'Sesión de hoy'; if(x.est==='man')return'Entrena mañana'; const d=x.p.date; return 'Próxima: '+DOW[d.getDay()]+' '+d.getDate(); };
   const tag=x=>{ if(x.est==='hoy')return'<span class="tag tag-hoy">HOY</span>'; if(x.est==='man')return'<span class="tag tag-prox">MAÑ</span>'; return '<span class="tag tag-prox">PRÓX</span>'; };
   const esc=s=>String(s==null?'':s).replace(/</g,'&lt;').replace(/'/g,'&#39;');
-  const items = lista.length ? lista.map(x=>{ const a=x.a; const av=a.foto?('<img src="'+esc(a.foto)+'">'):_osIniciales(a.nombre); return '<div class="os-ritem" onclick="_osHide();if(typeof openPerfilAlumno===\'function\')openPerfilAlumno(\''+a.id+'\')"><div class="av">'+av+'</div><div class="tx"><b>'+esc(a.nombre||'')+'</b><span>'+lbl(x)+'</span></div>'+tag(x)+'</div>'; }).join('') : '<div style="font-size:12px;color:#7c93a9;padding:6px;">No hay sesiones próximas cargadas.</div>';
+  const items = lista.length ? lista.map(x=>{ const a=x.a; const av=a.foto?('<img src="'+esc(a.foto)+'">'):_osIniciales(a.nombre); return '<div class="os-ritem" style="cursor:pointer;" onclick="_osAbrirAlumno(\''+a.id+'\')"><div class="av">'+av+'</div><div class="tx"><b>'+esc(a.nombre||'')+'</b><span>'+lbl(x)+'</span></div>'+tag(x)+'</div>'; }).join('') : '<div style="font-size:12px;color:#7c93a9;padding:6px;">No hay sesiones próximas cargadas.</div>';
   const resumen = hoyN>0 ? (hoyN+' alumno'+(hoyN!==1?'s':'')+' entrena'+(hoyN!==1?'n':'')+' hoy') : (manN>0 ? (manN+' entrena'+(manN!==1?'n':'')+' mañana') : (als.length+' alumno'+(als.length!==1?'s':'')+' activo'+(als.length!==1?'s':'')));
   cont.innerHTML =
     '<div class="os-wg"><div class="cap">📁 TU DÍA</div><h3>'+resumen+'</h3><p>'+(als.length? ('Tenés '+als.length+' alumno'+(als.length!==1?'s':'')+' en total.'):'Cargá tu primer alumno para empezar.')+'</p></div>'+
@@ -3604,8 +3606,7 @@ window.addEventListener('load',function(){ try{
   try{ const hl=document.querySelector('.header-left'); if(hl && !hl.dataset.osrebrand){ hl.dataset.osrebrand='1'; hl.onclick=function(){ if(typeof _osShow==='function') _osShow(); }; hl.innerHTML='<div class="hl-brand"><div class="hl-cc"><b>CC</b><i></i></div><div class="hl-nm"><b>Christian Cattaneo</b><span>LABORATORIO DE ENTRENAMIENTO</span></div></div>'; } }catch(e){}
   // Una sola barra: mover la navegación adentro del header (misma fila)
   try{ const hdr=document.querySelector('header'); const nav=document.getElementById('main-nav'); if(hdr&&nav&&!nav.dataset.osmerged){ nav.dataset.osmerged='1'; const hl2=hdr.querySelector('.header-left'); if(hl2&&hl2.nextSibling){ hdr.insertBefore(nav,hl2.nextSibling); } else { hdr.appendChild(nav); } } }catch(e){}
-  let saved=null; try{ saved=JSON.parse(localStorage.getItem('SOCC_COACH_WALL')||'null'); }catch(e){}
-  if(saved){ _OS_WALLS.some((w,i)=>{ const same=(w.type===saved.type)&&((w.type==='grad'?w.css===saved.css:w.url===saved.url)); if(same)_osCurBg=i; return same; }); if(_osCurBg<0||!_OS_WALLS[_osCurBg]) _osCurBg=-1; _osApplyWall(saved); } else { _osApplyWall(_OS_WALLS[0]); }
+  _osLoadWall();
   _osRenderThumbs(); _osTick(); setInterval(_osTick,1000);
   setTimeout(_osShow,120);
 }catch(e){ console.warn('coach-os init',e); } });
