@@ -3574,7 +3574,8 @@ function _osRenderWidgets(){
   const rows=als.map(a=>{ let p=null; try{ p=(typeof _proximaSesionAlumno==='function')?_proximaSesionAlumno(a.id):null; }catch(e){} let est='sin',dias=9999; if(p){ dias=Math.round((p.date-hoy)/86400000); est=dias===0?'hoy':dias===1?'man':'prox'; } return {a,p,est,dias}; });
   const hoyN=rows.filter(x=>x.est==='hoy').length;
   const manN=rows.filter(x=>x.est==='man').length;
-  const lista=rows.filter(x=>x.p).sort((a,b)=>a.dias-b.dias).slice(0,4);
+  const hoyRows=rows.filter(x=>x.est==='hoy');
+  const lista = hoyRows.length ? hoyRows : rows.filter(x=>x.p).sort((a,b)=>a.dias-b.dias).slice(0,6);
   const DOW=['dom','lun','mar','mié','jue','vie','sáb'];
   const lbl=x=>{ if(x.est==='hoy')return'Sesión de hoy'; if(x.est==='man')return'Entrena mañana'; const d=x.p.date; return 'Próxima: '+DOW[d.getDay()]+' '+d.getDate(); };
   const tag=x=>{ if(x.est==='hoy')return'<span class="tag tag-hoy">HOY</span>'; if(x.est==='man')return'<span class="tag tag-prox">MAÑ</span>'; return '<span class="tag tag-prox">PRÓX</span>'; };
@@ -3583,7 +3584,7 @@ function _osRenderWidgets(){
   const resumen = hoyN>0 ? (hoyN+' alumno'+(hoyN!==1?'s':'')+' entrena'+(hoyN!==1?'n':'')+' hoy') : (manN>0 ? (manN+' entrena'+(manN!==1?'n':'')+' mañana') : (als.length+' alumno'+(als.length!==1?'s':'')+' activo'+(als.length!==1?'s':'')));
   cont.innerHTML =
     '<div class="os-wg"><div class="cap">📁 TU DÍA</div><h3>'+resumen+'</h3><p>'+(als.length? ('Tenés '+als.length+' alumno'+(als.length!==1?'s':'')+' en total.'):'Cargá tu primer alumno para empezar.')+'</p></div>'+
-    '<div class="os-wg"><div class="cap">💬 SEGUÍ CON…</div>'+items+'</div>';
+    '<div class="os-wg"><div class="cap">'+(hoyRows.length?('🗓️ HOY DAS CLASES ('+hoyRows.length+')'):'💬 SEGUÍ CON…')+'</div><div style="max-height:46vh;overflow-y:auto;margin:-2px;padding:2px;">'+items+'</div></div>';
 }
 function _osTick(){
   const c=document.getElementById('os-clock'); if(!c)return;
