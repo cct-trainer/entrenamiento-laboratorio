@@ -3375,7 +3375,10 @@ body.os-mode #view-inicio,body.os-mode .view{background:transparent !important;}
 #coach-os .os-res-btn{border:none;border-radius:10px;background:#0B1739;color:#fff;font-size:12px;font-weight:700;padding:9px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
 #coach-os .os-res-btn:hover{filter:brightness(1.1);}
 /* ---- Perfil del alumno en estilo escritorio (skin claro sobre el wallpaper) ---- */
-body.os-mode .perfil-layout{gap:0!important;margin:16px!important;background:#ffffff!important;border:1px solid #eef1f6!important;border-radius:20px!important;overflow:hidden;box-shadow:0 22px 54px -28px rgba(10,25,50,.5);}
+body.os-mode #view-perfil.active{margin:0!important;}
+body.os-mode #view-perfil.active .perfil-layout{gap:0!important;margin:16px!important;min-height:auto!important;background:#ffffff!important;border:1px solid #eef1f6!important;border-radius:20px!important;overflow:hidden;box-shadow:0 22px 54px -28px rgba(10,25,50,.5);}
+body.os-mode #view-perfil.active .perfil-sidebar{position:static!important;height:auto!important;border-radius:0!important;}
+body.os-mode #view-perfil.active .perfil-main{min-height:auto!important;border-radius:0!important;}
 body.os-mode .perfil-sidebar{background:transparent!important;border:none!important;border-right:1px solid #eef1f6!important;border-radius:0!important;color:#16304d!important;margin:0!important;box-shadow:none!important;}
 /* V3 · el cuerpo del plan queda dentro de un panel de vidrio azulado */
 body.os-mode .perfil-main{background:transparent!important;border:none!important;border-radius:0!important;margin:0!important;box-shadow:none!important;}
