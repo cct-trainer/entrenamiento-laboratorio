@@ -3288,10 +3288,11 @@ select.toolbox-input option:disabled { color: #888; }
 <!-- ══════════ ESCRITORIO COACH (pantalla de inicio estilo SO) ══════════ -->
 <style>
 #coach-os{position:fixed;inset:0;z-index:9000;color:#12233d;overflow:hidden;display:none;
+  background-image:radial-gradient(1200px 500px at 50% -8%,#cfe6f6,transparent 60%),radial-gradient(900px 480px at 88% 108%,#eaf3e2,transparent 55%),linear-gradient(180deg,#bcdcf0,#d7e8f2 34%,#eef4ee);
   background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#dbe8f2;transition:background-image .35s;}
 #coach-os *{box-sizing:border-box;}
 #os-veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,25,50,.06),rgba(10,25,50,.16));pointer-events:none;z-index:1;}
-#coach-os .os-menubar{position:absolute;top:0;left:0;right:0;height:58px;z-index:40;display:flex;align-items:center;gap:14px;padding:0 16px;background:rgba(255,255,255,.94);backdrop-filter:blur(16px);border-bottom:1px solid rgba(20,50,90,.08);box-shadow:0 6px 20px -14px rgba(10,30,60,.4);}
+#coach-os .os-menubar{position:absolute;top:0;left:0;right:0;height:70px;z-index:40;display:flex;align-items:center;gap:14px;padding:0 18px;background:rgba(255,255,255,.94);backdrop-filter:blur(16px);border-bottom:1px solid rgba(20,50,90,.08);box-shadow:0 6px 20px -14px rgba(10,30,60,.4);}
 #coach-os .os-brand{display:flex;align-items:center;gap:11px;padding-right:14px;border-right:1px solid rgba(20,50,90,.1);cursor:pointer;}
 #coach-os .os-brand .cc{position:relative;width:40px;height:40px;border-radius:12px;background:linear-gradient(150deg,#12233d,#0B1739);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px -8px rgba(11,23,57,.6);}
 #coach-os .os-brand .cc b{font-size:15px;font-weight:900;color:#fff;letter-spacing:-1px;}
@@ -3311,7 +3312,11 @@ select.toolbox-input option:disabled { color: #888; }
 #coach-os .os-ico b{position:absolute;top:-4px;right:-4px;background:#e5573f;color:#fff;font-size:9px;font-weight:800;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;}
 #coach-os .os-clock{font-size:12.5px;font-weight:700;color:#1c3752;text-align:right;line-height:1.15;}
 #coach-os .os-clock small{display:block;font-size:10px;font-weight:600;color:#4d6b88;}
-#coach-os .os-desk{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px 120px;}
+#coach-os .os-desk{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px 120px;}
+#coach-os .os-herologo{margin-bottom:30px;background:transparent;padding:0;box-shadow:none;}
+#coach-os .os-herologo img{height:130px;width:auto;display:block;max-width:90vw;}
+/* Sin barra en el inicio */
+#coach-os .os-menubar{display:none!important;}
 #coach-os .os-hi{text-align:center;font-size:29px;font-weight:800;letter-spacing:-.5px;color:#fff;text-shadow:0 2px 18px rgba(10,25,50,.45);margin-bottom:22px;}
 #coach-os .os-hi span{color:#bfe0ff;}
 #coach-os .os-box{width:100%;max-width:660px;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.9);border-radius:20px;box-shadow:0 26px 70px -26px rgba(10,30,60,.6);padding:14px 16px;}
@@ -3323,7 +3328,7 @@ select.toolbox-input option:disabled { color: #888; }
 #coach-os .os-chips{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:720px;}
 #coach-os .os-chip{height:38px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,.7);background:rgba(255,255,255,.62);backdrop-filter:blur(6px);font-size:13px;font-weight:600;color:#22405f;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:.15s;}
 #coach-os .os-chip:hover{background:#fff;transform:translateY(-1px);}
-#coach-os .os-widgets{position:absolute;top:64px;right:20px;width:290px;display:flex;flex-direction:column;gap:13px;z-index:9;}
+#coach-os .os-widgets{position:absolute;top:22px;right:20px;width:290px;display:flex;flex-direction:column;gap:13px;z-index:9;}
 #coach-os .os-wg{background:rgba(255,255,255,.8);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.9);border-radius:18px;padding:15px 15px 13px;box-shadow:0 18px 44px -24px rgba(10,30,60,.5);}
 #coach-os .os-wg .cap{font-size:11px;color:#6a86a0;font-weight:700;margin-bottom:7px;}
 #coach-os .os-wg h3{font-size:16px;font-weight:800;color:#16304d;margin-bottom:3px;}
@@ -3339,11 +3344,12 @@ select.toolbox-input option:disabled { color: #888; }
 #coach-os .tag-hoy{background:#e4f6ec;color:#1c8a4e;} #coach-os .tag-rev{background:#eaf1fb;color:#356bb0;} #coach-os .tag-prox{background:#f0f3f7;color:#5c6a7d;}
 #coach-os .os-dock{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:40;display:flex;align-items:flex-end;gap:9px;padding:9px 12px;background:rgba(255,255,255,.55);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.6);border-radius:20px;box-shadow:0 20px 50px -20px rgba(10,30,60,.5);}
 #coach-os .os-dapp{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;background:linear-gradient(160deg,#ffffff,#eef4fb);box-shadow:0 6px 14px -8px rgba(20,40,80,.5);transition:transform .15s;position:relative;}
+#coach-os .os-dapp-new{background:#0B1739!important;color:#fff;font-weight:900;}
 #coach-os .os-dapp:hover{transform:translateY(-8px) scale(1.06);}
 #coach-os .os-dapp .lbl{position:absolute;top:-28px;background:#0B1739;color:#fff;font-size:11px;font-weight:700;padding:4px 9px;border-radius:8px;white-space:nowrap;opacity:0;pointer-events:none;transition:.15s;}
 #coach-os .os-dapp:hover .lbl{opacity:1;}
 #coach-os .os-dock .div{width:1px;align-self:stretch;margin:6px 3px;background:rgba(20,40,80,.15);}
-#coach-os .os-bgpanel{position:absolute;top:52px;right:14px;width:330px;z-index:60;background:rgba(255,255,255,.95);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.9);border-radius:18px;box-shadow:0 26px 64px -20px rgba(10,30,60,.55);padding:16px;display:none;}
+#coach-os .os-bgpanel{position:absolute;top:78px;right:14px;width:330px;z-index:60;background:rgba(255,255,255,.95);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.9);border-radius:18px;box-shadow:0 26px 64px -20px rgba(10,30,60,.55);padding:16px;display:none;}
 #coach-os .os-bgpanel.open{display:block;}
 #coach-os .os-bgpanel h4{font-size:12px;font-weight:800;color:#33526f;letter-spacing:.4px;text-transform:uppercase;margin-bottom:10px;}
 #coach-os .os-bggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:13px;}
@@ -3356,7 +3362,7 @@ select.toolbox-input option:disabled { color: #888; }
 #coach-os .os-bghint{font-size:10.5px;color:#8496ab;margin-top:8px;line-height:1.4;}
 @media(max-width:820px){ #coach-os .os-widgets{display:none;} }
 /* Wallpaper persistente en toda la app (estilo SO) */
-#os-bg-layer{position:fixed;inset:0;z-index:-2;background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#dbe8f2;}
+#os-bg-layer{position:fixed;inset:0;z-index:-2;background-image:radial-gradient(1200px 500px at 50% -8%,#cfe6f6,transparent 60%),radial-gradient(900px 480px at 88% 108%,#eaf3e2,transparent 55%),linear-gradient(180deg,#bcdcf0,#d7e8f2 34%,#eef4ee);background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#dbe8f2;}
 #os-bg-veil{position:fixed;inset:0;z-index:-1;background:transparent;pointer-events:none;}
 body.os-mode{background-color:transparent !important;}
 body.os-mode header{background:rgba(255,255,255,.72) !important;backdrop-filter:blur(12px);}
@@ -3453,7 +3459,8 @@ body.os-mode nav > .nav-btn.active,body.os-mode nav .nav-dropdown-trigger.active
 body.os-mode header{display:flex!important;align-items:center!important;gap:10px!important;flex-wrap:nowrap!important;min-height:58px!important;height:58px!important;padding:0 16px!important;}
 body.os-mode header #main-nav{background:transparent!important;backdrop-filter:none!important;min-height:0!important;height:auto!important;padding:0!important;border-bottom:none!important;display:flex;align-items:center;flex-wrap:nowrap;overflow:visible;gap:0;}
 body.os-mode header #main-nav > .nav-btn,body.os-mode header #main-nav .nav-dropdown-trigger,body.os-mode header #main-nav .perfil-nav-btn,body.os-mode header #main-nav .perfil-nav-plan-trigger{padding:6px 9px!important;font-size:12.5px!important;}
-body.os-mode header > div:last-child{margin-left:auto!important;}
+body.os-mode header > div:last-child{display:none!important;}
+body.os-mode header{justify-content:flex-start!important;}
 /* Dentro de un alumno: ocultar el menú general (Inicio/Blog/Planificador) y dejar solo las solapas del alumno */
 body.os-mode #main-nav:has(#nav-alumno-items.visible) > #nav-btn-inicio,
 body.os-mode #main-nav:has(#nav-alumno-items.visible) > #nav-btn-blog,
@@ -3463,14 +3470,7 @@ body.os-mode #main-nav:has(#nav-alumno-items.visible) > .nav-sep{display:none!im
 <div id="coach-os">
   <div id="os-veil"></div>
   <div class="os-menubar">
-    <div class="os-brand" onclick="_osShow()"><div class="cc"><b>CC</b><i></i></div><div class="nm"><b>Christian Cattaneo</b><span>LABORATORIO DE ENTRENAMIENTO</span></div></div>
-    <div class="os-menus">
-      <a onclick="_osShow()">🏠 Inicio</a>
-      <a onclick="_osGo('inicio')">👥 Alumnos ▾</a>
-      <a onclick="_osOpen('navIrFuerza')">📋 Planificador ▾</a>
-      <a onclick="_osOpen('abrirMetricas')">📊 Análisis ▾</a>
-      <a onclick="_osOpen('abrirSuscripciones')">⚙️ Sistema ▾</a>
-    </div>
+    <div class="os-brand" onclick="_osShow()"><img src="cc-deportivo-azul-amarillo.png" alt="Christian Cattaneo" style="height:34px;width:auto;display:block;"></div>
     <div class="os-sp"></div>
     <div class="os-right">
       <button class="os-new" onclick="_osOpen('openModalNuevoAlumno')">＋ Nuevo alumno</button>
@@ -3486,32 +3486,27 @@ body.os-mode #main-nav:has(#nav-alumno-items.visible) > .nav-sep{display:none!im
     <div class="os-bghint">Elegí de la galería o pegá el enlace de cualquier imagen de la web (.jpg / .png). Se aplica al instante y se recuerda.</div>
   </div>
   <div class="os-desk">
+    <div class="os-herologo"><img src="cc-deportivo-azul-amarillo.png" alt="Christian Cattaneo · Laboratorio de Entrenamiento"></div>
     <div class="os-hi">Qué bueno verte, <span>Christian</span>. ¿Con quién arrancamos?</div>
     <div class="os-box">
       <div class="row">
-        <div class="add" onclick="_osOpen('openModalNuevoAlumno')" title="Nuevo alumno">＋</div>
+        <div class="add" onclick="_osNuevoAlumno()" title="Nuevo alumno">＋</div>
         <input id="os-search" type="text" placeholder="Buscá un alumno…" oninput="_osSearchLive(this.value)" onkeydown="_osSearchKey(event)">
         <button class="go" onclick="_osGoFirst()">→</button>
       </div>
     </div>
     <div id="os-results" class="os-results" style="display:none;"></div>
-    <div class="os-chips">
-      <div class="os-chip" onclick="_osOpen('navIrCalendario')">🗓️ Agenda de hoy</div>
-      <div class="os-chip" onclick="_osOpen('navIrFuerza')">📋 Planificar sesión</div>
-      <div class="os-chip" onclick="_osGo('inicio')">🧠 Analizar alumno</div>
-      <div class="os-chip" onclick="_osGo('inicio')">⚖️ Registrar cargas</div>
-      <div class="os-chip" onclick="_osOpen('openModalNuevoAlumno')">＋ Nuevo alumno</div>
-    </div>
   </div>
   <div class="os-widgets" id="os-widgets"></div>
   <div class="os-dock">
+    <div class="os-dapp os-dapp-new" onclick="_osNuevoAlumno()">＋<span class="lbl">Nuevo alumno</span></div>
+    <div class="div"></div>
     <div class="os-dapp" onclick="_osGo('inicio')">👥<span class="lbl">Alumnos</span></div>
-    <div class="os-dapp" onclick="_osOpen('navIrCalendario')">🗓️<span class="lbl">Calendario</span></div>
-    <div class="os-dapp" onclick="_osOpen('navIrFuerza')">📋<span class="lbl">Planificador</span></div>
-    <div class="os-dapp" onclick="_osGo('inicio')">⚖️<span class="lbl">Registros</span></div>
-    <div class="os-dapp" onclick="_osOpen('abrirMetricas')">📊<span class="lbl">Progreso</span></div>
-    <div class="os-dapp" onclick="_osOpen('_abrirAvisos')">💬<span class="lbl">Mensajes</span></div>
-    <div class="os-dapp" onclick="_osOpen('_generarReporteMensual')">📈<span class="lbl">Reportes</span></div>
+    <div class="os-dapp" onclick="_osModal('abrirActualizaciones')">🔄<span class="lbl">Actualizaciones</span></div>
+    <div class="os-dapp" onclick="_osModal('_abrirBandeja')">📥<span class="lbl">Actividad</span></div>
+    <div class="os-dapp" onclick="_osModal('_abrirBellModif')">🔔<span class="lbl">Modificaciones</span></div>
+    <div class="os-dapp" onclick="_osModal('_abrirAccesos')">🔑<span class="lbl">Accesos</span></div>
+    <div class="os-dapp" onclick="_osModal('_abrirAvisos')">💬<span class="lbl">Mensajes</span></div>
     <div class="div"></div>
     <div class="os-dapp" onclick="_osOpen('abrirSuscripciones')">⚙️<span class="lbl">Sistema</span></div>
     <div class="os-dapp" onclick="_osTogBg(event)">🖼️<span class="lbl">Fondo</span></div>
@@ -3533,8 +3528,35 @@ const _OS_WALLS=[
 let _osCurBg=0;
 function _osEl(){ return document.getElementById('coach-os'); }
 function _osApplyWall(w){ if(!w)return; const setBg=(node)=>{ if(!node)return; if(w.type==='grad'){ node.style.backgroundImage=w.css; node.style.backgroundColor='#dbe8f2'; } else { node.style.backgroundImage="url('"+w.url+"')"; } }; setBg(_osEl()); setBg(document.getElementById('os-bg-layer')); }
-// Guarda el fondo elegido: localStorage (rápido) + Firebase (fijo y sincronizado).
-function _osSaveWall(w){ try{ localStorage.setItem('SOCC_COACH_WALL',JSON.stringify(w)); }catch(e){} try{ if(window._db) window._db.collection('alumnos').doc('zz_config_global').set({coachWall:w},{merge:true}); }catch(e){} }
+// Convierte una imagen (URL) a data URL comprimido para incrustarla en la base
+function _osImgToDataURL(url, cb){
+  try{
+    const img=new Image(); img.crossOrigin='anonymous';
+    img.onload=function(){ try{
+      const maxW=1920; let w=img.naturalWidth||1920, h=img.naturalHeight||1080;
+      if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      let data=c.toDataURL('image/jpeg',0.72);
+      if(data.length>750000) data=c.toDataURL('image/jpeg',0.55);
+      if(data.length>820000) data=c.toDataURL('image/jpeg',0.42);
+      cb(data.length>900000 ? null : data);
+    }catch(e){ cb(null); } };
+    img.onerror=function(){ cb(null); };
+    img.src=url;
+  }catch(e){ cb(null); }
+}
+// Guarda el fondo elegido: localStorage (caché) + Firebase (fijo). Las imágenes se incrustan (data URL) para que no dependan de una URL externa.
+function _osGuardar(w){ try{ localStorage.setItem('SOCC_COACH_WALL',JSON.stringify(w)); }catch(e){} try{ if(window._db) window._db.collection('alumnos').doc('zz_config_global').set({coachWall:w},{merge:true}); }catch(e){} }
+function _osSaveWall(w){
+  if(w && w.type==='img' && w.url && w.url.indexOf('data:')!==0){
+    _osImgToDataURL(w.url, function(data){
+      const ww = data ? {type:'img',url:data} : w;
+      _osGuardar(ww); _osApplyWall(ww);
+      try{ if(typeof toast==='function') toast(data ? '🖼️ Fondo guardado en la base ✓' : '🖼️ Fondo guardado (no se pudo incrustar la imagen; se guardó el enlace)'); }catch(e){}
+    });
+  } else { _osGuardar(w); }
+}
 function _osFijarWall(w){ if(!w)return; _osCurBg=-1; _OS_WALLS.forEach((ww,i)=>{ if(ww.type===w.type && (ww.type==='grad'?ww.css===w.css:ww.url===w.url)) _osCurBg=i; }); _osApplyWall(w); try{ _osRenderThumbs(); }catch(e){} }
 // Lee el fondo guardado (el último que elegiste) y lo fija. Se llama al cargar y al mostrar el escritorio.
 function _osLoadWall(){ let saved=null; try{ saved=JSON.parse(localStorage.getItem('SOCC_COACH_WALL')||'null'); }catch(e){} _osFijarWall(saved||_OS_WALLS[0]);
@@ -3549,6 +3571,12 @@ function _osHide(){ const el=_osEl(); if(el) el.style.display='none'; }
 function _osShow(){ const el=_osEl(); if(!el)return; el.style.display='block'; _osLoadWall(); _osRenderWidgets(); _osTick(); document.getElementById('os-bgpanel')?.classList.remove('open'); const inp=document.getElementById('os-search'); if(inp) inp.value=''; _osSearchLive(''); }
 function _osGo(v){ _osHide(); try{ window._osSkipHome=true; if(typeof showView==='function') showView(v); }catch(e){} finally{ window._osSkipHome=false; } }
 function _osOpen(fn){ _osHide(); try{ if(typeof window[fn]==='function'){ window[fn](); return; } }catch(e){} try{ if(typeof showView==='function') showView('inicio'); }catch(e){} }
+// Nuevo alumno desde el escritorio: abre el modal SOBRE el escritorio (la foto queda de fondo, sin mostrar alumnos ni perfil)
+function _osNuevoAlumno(){ try{ if(typeof openModalNuevoAlumno==='function') openModalNuevoAlumno(); }catch(e){} const m=document.getElementById('modal-alumno'); if(m) m.style.zIndex='10000'; }
+// Eleva cualquier modal/overlay visible por encima del escritorio (9000)
+function _osRaiseOverlays(){ try{ document.querySelectorAll('.stc-overlay,.modal-overlay,[id$="-overlay"]').forEach(function(o){ if(o && o.style.display!=='none' && getComputedStyle(o).display!=='none'){ o.style.zIndex='10000'; } }); }catch(e){} }
+// Abre una acción (Accesos, Actualizaciones, etc.) SOBRE el escritorio, sin esconderlo
+function _osModal(fn){ try{ if(typeof window[fn]==='function') window[fn](); }catch(e){} _osRaiseOverlays(); setTimeout(_osRaiseOverlays,120); setTimeout(_osRaiseOverlays,500); setTimeout(_osRaiseOverlays,1200); }
 function _osMatches(q){ q=(q||'').toLowerCase().trim(); if(!q)return[]; let als=[]; try{ als=(typeof getAlumnos==='function')?(getAlumnos()||[]):[]; }catch(e){} return als.filter(a=>String(a.nombre||'').toLowerCase().includes(q)); }
 function _osSearchLive(q){
   const res=document.getElementById('os-results'); const chips=document.querySelector('#coach-os .os-chips'); if(!res)return;
@@ -3591,8 +3619,7 @@ function _osRenderWidgets(){
   const items = lista.length ? lista.map(x=>{ const a=x.a; const av=a.foto?('<img src="'+esc(a.foto)+'">'):_osIniciales(a.nombre); return '<div class="os-ritem" style="cursor:pointer;" onclick="_osAbrirAlumno(\''+a.id+'\')"><div class="av">'+av+'</div><div class="tx"><b>'+esc(a.nombre||'')+'</b><span>'+lbl(x)+'</span></div>'+tag(x)+'</div>'; }).join('') : '<div style="font-size:12px;color:#7c93a9;padding:6px;">No hay sesiones próximas cargadas.</div>';
   const resumen = hoyN>0 ? (hoyN+' alumno'+(hoyN!==1?'s':'')+' entrena'+(hoyN!==1?'n':'')+' hoy') : (manN>0 ? (manN+' entrena'+(manN!==1?'n':'')+' mañana') : (als.length+' alumno'+(als.length!==1?'s':'')+' activo'+(als.length!==1?'s':'')));
   cont.innerHTML =
-    '<div class="os-wg"><div class="cap">📁 TU DÍA</div><h3>'+resumen+'</h3><p>'+(als.length? ('Tenés '+als.length+' alumno'+(als.length!==1?'s':'')+' en total.'):'Cargá tu primer alumno para empezar.')+'</p></div>'+
-    '<div class="os-wg"><div class="cap">'+(hoyRows.length?('🗓️ HOY DAS CLASES ('+hoyRows.length+')'):'💬 SEGUÍ CON…')+'</div><div style="max-height:46vh;overflow-y:auto;margin:-2px;padding:2px;">'+items+'</div></div>';
+    '<div class="os-wg"><div class="cap">📁 TU DÍA</div><h3>'+resumen+'</h3><p>'+(als.length? ('Tenés '+als.length+' alumno'+(als.length!==1?'s':'')+' en total.'):'Cargá tu primer alumno para empezar.')+'</p></div>';
 }
 function _osTick(){
   const c=document.getElementById('os-clock'); if(!c)return;
@@ -3609,7 +3636,7 @@ window.addEventListener('load',function(){ try{
   if(!document.getElementById('os-bg-layer')){ const l=document.createElement('div'); l.id='os-bg-layer'; document.body.insertBefore(l,document.body.firstChild); const v=document.createElement('div'); v.id='os-bg-veil'; document.body.insertBefore(v,l.nextSibling); }
   document.body.classList.add('os-mode');
   // Rebrandear el header real: logo en iniciales CC + nombre en negro
-  try{ const hl=document.querySelector('.header-left'); if(hl && !hl.dataset.osrebrand){ hl.dataset.osrebrand='1'; hl.onclick=function(){ if(typeof _osShow==='function') _osShow(); }; hl.innerHTML='<div class="hl-brand"><div class="hl-cc"><b>CC</b><i></i></div><div class="hl-nm"><b>Christian Cattaneo</b><span>LABORATORIO DE ENTRENAMIENTO</span></div></div>'; } }catch(e){}
+  try{ const hl=document.querySelector('.header-left'); if(hl && !hl.dataset.osrebrand){ hl.dataset.osrebrand='1'; hl.onclick=function(){ if(typeof _osShow==='function') _osShow(); }; hl.innerHTML='<img src="cc-deportivo-azul-amarillo.png" alt="Christian Cattaneo · Laboratorio de Entrenamiento" style="height:52px;width:auto;display:block;">'; } }catch(e){}
   // Una sola barra: mover la navegación adentro del header (misma fila)
   try{ const hdr=document.querySelector('header'); const nav=document.getElementById('main-nav'); if(hdr&&nav&&!nav.dataset.osmerged){ nav.dataset.osmerged='1'; const hl2=hdr.querySelector('.header-left'); if(hl2&&hl2.nextSibling){ hdr.insertBefore(nav,hl2.nextSibling); } else { hdr.appendChild(nav); } } }catch(e){}
   _osLoadWall();
@@ -4796,6 +4823,7 @@ window.addEventListener('load',function(){ try{
         <button class="pln-btn pln-btn-outline" onclick="_iaShowImportModal()" style="background:#ecfdf5;color:#059669;border-color:#10b981;">📥 Importar JSON</button>
         <button class="pln-btn pln-btn-outline" onclick="guardarPlantillaSesion()">Guardar plantilla</button>
         <button class="pln-btn pln-btn-outline" onclick="duplicarMesMismoAlumno()" title="Duplicar este mes/ciclo completo para el mismo alumno">📋 Duplicar mes</button>
+        <button class="pln-btn pln-btn-outline" onclick="_exportarMesExcel()" title="Descargar el mes completo en Excel" style="background:#e6f7ec;color:#1c8a4e;border-color:#7bd3a0;">📊 Excel</button>
         <button class="pln-btn pln-btn-guardar" onclick="abrirModalAsignarSesion()">Asignar a alumno</button>
         <button id="copiloto-toggle-btn" class="copiloto-toggle-btn" onclick="toggleCopiloto()" style="display:none;">Copiloto IA</button>
       </div>
@@ -14321,6 +14349,57 @@ ${_headerFuerzaHTML(titulo,a,extra,movil)}
   toast(`${movil?'📱':'⬇'} Exportado ✓`);
 }
 
+// ── Exportar el MES COMPLETO (todas las semanas y días) a Excel (.xlsx) ──
+function _exportarMesExcel(){
+  function _fdia(lunes,k){ try{ const d=new Date(lunes+'T12:00:00'); d.setDate(d.getDate()+k); return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}); }catch(e){ return ''; } }
+  function gen(){
+    try{
+      const alId = (typeof planSemOriginalAlumnoId!=='undefined' && planSemOriginalAlumnoId) || (typeof currentAlumnoId!=='undefined'?currentAlumnoId:null);
+      const a = (typeof getAlumnos==='function'?getAlumnos():[]).find(x=>x&&x.id===alId);
+      const nom = (a&&a.nombre)||'Alumno';
+      let titulo='Mes'; try{ const pl=(typeof getPlanificaciones==='function'?getPlanificaciones():[]).find(p=>p&&p.id===planSemActualId); if(pl&&pl.titulo) titulo=pl.titulo; }catch(e){}
+      const sems = (typeof planSemanasArray!=='undefined' && planSemanasArray)||[];
+      if(!sems.length){ if(typeof toast==='function') toast('Abrí un mes primero','error'); return; }
+      const DOW=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+      const rows=[[nom+'  ·  '+titulo],[],['Semana','Día','Fecha','Bloque','Tipo','Ejercicio','Serie','Reps','Peso','RIR','Pausa']];
+      sems.forEach((w,wi)=>{
+        const dias=w.dias||w.diasData||{};
+        for(let k=0;k<7;k++){
+          const arr=dias[String(k)]; if(!Array.isArray(arr)) continue;
+          arr.forEach(ses=>{
+            const fecha=w.fechaInicio?_fdia(w.fechaInicio,k):'';
+            (ses.bloques||[]).forEach(b=>{
+              const ejs=b.ejercicios||[];
+              if(b.cardioData && !ejs.length){
+                const cd=b.cardioData;
+                rows.push(['S'+(w.semana||wi+1),DOW[k],fecha,b.nombre||'',b.tipo||'Cardio',(cd.actividad||'Cardio'),'',(cd.duracion||''),(cd.zona||''),'',(cd.rpe||'')]);
+                return;
+              }
+              ejs.forEach(ej=>{
+                const series=(ej.series&&ej.series.length)?ej.series:[{reps:(ej.ctrl&&ej.ctrl.reps)||'',peso:(ej.ctrl&&ej.ctrl.peso)||'',rir:(ej.ctrl&&ej.ctrl.rir)||'',pausa:(ej.ctrl&&ej.ctrl.pausa)||''}];
+                series.forEach((s,si)=>{
+                  rows.push(['S'+(w.semana||wi+1),DOW[k],fecha,b.nombre||'',b.serieTipo||b.tipo||'',ej.nombre||'',si+1,s.reps||'',s.peso||'',s.rir||'',s.pausa||'']);
+                });
+              });
+            });
+          });
+        }
+      });
+      if(rows.length<=3){ if(typeof toast==='function') toast('Este mes no tiene sesiones cargadas','error'); return; }
+      const wb=XLSX.utils.book_new();
+      const ws=XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols']=[{wch:8},{wch:11},{wch:12},{wch:28},{wch:16},{wch:36},{wch:7},{wch:11},{wch:13},{wch:8},{wch:10}];
+      if(ws['!merges']===undefined) ws['!merges']=[]; ws['!merges'].push({s:{r:0,c:0},e:{r:0,c:10}});
+      XLSX.utils.book_append_sheet(wb,ws,'Mes');
+      const fname=(nom+' - '+titulo).replace(/[\\/:*?"<>|]+/g,' ').trim()+'.xlsx';
+      XLSX.writeFile(wb,fname);
+      if(typeof toast==='function') toast('📊 Excel descargado ✓');
+    }catch(e){ console.error('exportar excel:',e); if(typeof toast==='function') toast('Error al generar el Excel','error'); }
+  }
+  if(window.XLSX){ gen(); return; }
+  if(typeof toast==='function') toast('Preparando Excel…');
+  const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload=gen; s.onerror=function(){ if(typeof toast==='function') toast('No se pudo cargar la librería de Excel (¿sin internet?)','error'); }; document.head.appendChild(s);
+}
 function _descargarHTMLFuerza(filename, titulo, a, extra, cuerpo, movil) {
   const alumnoNombre = a ? a.nombre : '';
   const feedbackBtnSingle = `

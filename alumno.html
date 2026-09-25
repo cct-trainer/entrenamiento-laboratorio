@@ -947,8 +947,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260924132608 por un timestamp en cada deploy
-const _APP_VERSION = '20260924132608';
+// deploy.bat reemplaza 20260925112202 por un timestamp en cada deploy
+const _APP_VERSION = '20260925112202';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -8359,6 +8359,42 @@ function _tiempoCard(bloques){
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:11px;font-size:11px;color:var(--muted);"><span>'+nota+'</span><span style="font-weight:800;color:'+(est<=cur?'#5fe0a0':'#E6C766')+';">~'+est+'′</span></div>'
   +'</div>';
 }
+// ── Descargar la sesión como planilla Excel (registro de pesos por serie) ──
+function _descargarPlanillaExcel(){
+  function gen(){
+    try{
+      const sem=_plan&&_plan.semanasArray&&_plan.semanasArray[_semIdx];
+      const diasArr=(sem&&sem.dias&&sem.dias[_diaIdx])||[];
+      const ses=diasArr[_diaModTab]||diasArr[0];
+      if(!ses||!(ses.bloques||[]).length){ alert('No hay sesión para descargar'); return; }
+      const nom=(_data&&_data.nombre)||'Alumno';
+      let fecha=''; try{ if(sem&&sem.fechaInicio){ const d=new Date(sem.fechaInicio+'T12:00:00'); d.setDate(d.getDate()+_diaIdx); fecha=d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}); } }catch(e){}
+      let maxS=1; (ses.bloques||[]).forEach(b=>(b.ejercicios||[]).forEach(e=>{ const n=(e.series&&e.series.length)||1; if(n>maxS)maxS=n; }));
+      const header=['Ejercicio','Reps']; for(let i=1;i<=maxS;i++) header.push('Serie '+i); header.push('Notas');
+      const rows=[[nom+'  ·  '+(ses.nombre||'Sesión')+(fecha?('  ·  '+fecha):'')],[],header];
+      (ses.bloques||[]).forEach(b=>{
+        const ejs=b.ejercicios||[];
+        if(b.cardioData && !ejs.length){ const cd=b.cardioData; rows.push([(b.nombre||'Cardio').toUpperCase()]); const r=[cd.actividad||'Cardio',cd.duracion||'']; for(let i=0;i<maxS;i++) r.push(''); r.push(cd.zona||''); rows.push(r); return; }
+        rows.push([(b.nombre||'').toUpperCase()]);
+        ejs.forEach(ej=>{
+          const series=ej.series||[]; const reps=(series[0]&&series[0].reps)||(ej.ctrl&&ej.ctrl.reps)||'';
+          const row=[ej.nombre||'', reps];
+          for(let i=0;i<maxS;i++){ const s=series[i]; row.push(s?(s.peso||''):''); }
+          row.push('');
+          rows.push(row);
+        });
+      });
+      const wb=XLSX.utils.book_new(); const ws=XLSX.utils.aoa_to_sheet(rows);
+      const cols=[{wch:34},{wch:9}]; for(let i=0;i<maxS;i++) cols.push({wch:10}); cols.push({wch:24}); ws['!cols']=cols;
+      ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:header.length-1}}];
+      XLSX.utils.book_append_sheet(wb,ws,'Mi planilla');
+      const fname=(nom+' - '+(ses.nombre||'sesion')).replace(/[\\/:*?"<>|]+/g,' ').trim()+'.xlsx';
+      XLSX.writeFile(wb,fname);
+    }catch(e){ console.error('excel alumno:',e); alert('No pude generar la planilla'); }
+  }
+  if(window.XLSX){ gen(); return; }
+  const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload=gen; s.onerror=function(){ alert('No se pudo cargar la librería de Excel (¿sin internet?)'); }; document.head.appendChild(s);
+}
 function renderSesion() {
   const ctn=document.getElementById('sesion-ctn');
   if (_diaIdx===null||!_plan) { ctn.innerHTML=''; return; }
@@ -8498,6 +8534,7 @@ function renderSesion() {
     // Rectángulo de fondo (gris topo / tiza) con todo el contenido de la sesión
     '<div style="margin:0 -16px;padding:16px 16px 24px;background:var(--ses-panel);">'+
       _sesDetalleHTML(ses) +
+      '<button onclick="_descargarPlanillaExcel()" style="width:100%;margin:2px 0 14px;padding:12px;border:1px solid rgba(31,122,68,.4);border-radius:12px;background:rgba(31,122,68,.10);color:#1f7a44;font-size:13.5px;font-weight:800;cursor:pointer;">📊 '+(_LANG==='en'?'Download my sheet (Excel)':'Descargar mi planilla (Excel)')+'</button>' +
       _bloquesHTML + _devBox + _finBtn + _revBadge +
       // Check-in estructurado (energía/RPE/sueño/dolor) — alimenta el dashboard del coach
       '<div style="margin-top:12px;">'+
