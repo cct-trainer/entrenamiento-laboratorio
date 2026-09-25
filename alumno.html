@@ -947,8 +947,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260925112202 por un timestamp en cada deploy
-const _APP_VERSION = '20260925112202';
+// deploy.bat reemplaza 20260925113844 por un timestamp en cada deploy
+const _APP_VERSION = '20260925113844';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -8359,7 +8359,7 @@ function _tiempoCard(bloques){
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:11px;font-size:11px;color:var(--muted);"><span>'+nota+'</span><span style="font-weight:800;color:'+(est<=cur?'#5fe0a0':'#E6C766')+';">~'+est+'′</span></div>'
   +'</div>';
 }
-// ── Descargar la sesión como planilla Excel (registro de pesos por serie) ──
+// ── Descargar la sesión como planilla Excel (registro de pesos por serie, con estilos) ──
 function _descargarPlanillaExcel(){
   function gen(){
     try{
@@ -8371,29 +8371,45 @@ function _descargarPlanillaExcel(){
       let fecha=''; try{ if(sem&&sem.fechaInicio){ const d=new Date(sem.fechaInicio+'T12:00:00'); d.setDate(d.getDate()+_diaIdx); fecha=d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}); } }catch(e){}
       let maxS=1; (ses.bloques||[]).forEach(b=>(b.ejercicios||[]).forEach(e=>{ const n=(e.series&&e.series.length)||1; if(n>maxS)maxS=n; }));
       const header=['Ejercicio','Reps']; for(let i=1;i<=maxS;i++) header.push('Serie '+i); header.push('Notas');
-      const rows=[[nom+'  ·  '+(ses.nombre||'Sesión')+(fecha?('  ·  '+fecha):'')],[],header];
+      const ncol=header.length;
+      const rows=[], meta=[]; const push=(r,t)=>{ rows.push(r); meta.push(t); };
+      push([nom+'  ·  '+(ses.nombre||'Sesión')+(fecha?('  ·  '+fecha):'')],'title');
+      push([],'');
+      push(header,'header');
       (ses.bloques||[]).forEach(b=>{
         const ejs=b.ejercicios||[];
-        if(b.cardioData && !ejs.length){ const cd=b.cardioData; rows.push([(b.nombre||'Cardio').toUpperCase()]); const r=[cd.actividad||'Cardio',cd.duracion||'']; for(let i=0;i<maxS;i++) r.push(''); r.push(cd.zona||''); rows.push(r); return; }
-        rows.push([(b.nombre||'').toUpperCase()]);
+        if(b.cardioData && !ejs.length){ const cd=b.cardioData; push([(b.nombre||'Cardio').toUpperCase()],'block'); const r=[cd.actividad||'Cardio',cd.duracion||'']; for(let i=0;i<maxS;i++) r.push(''); r.push(cd.zona||''); push(r,'ex'); return; }
+        push([(b.nombre||'').toUpperCase()],'block');
         ejs.forEach(ej=>{
           const series=ej.series||[]; const reps=(series[0]&&series[0].reps)||(ej.ctrl&&ej.ctrl.reps)||'';
           const row=[ej.nombre||'', reps];
           for(let i=0;i<maxS;i++){ const s=series[i]; row.push(s?(s.peso||''):''); }
           row.push('');
-          rows.push(row);
+          push(row,'ex');
         });
       });
-      const wb=XLSX.utils.book_new(); const ws=XLSX.utils.aoa_to_sheet(rows);
-      const cols=[{wch:34},{wch:9}]; for(let i=0;i<maxS;i++) cols.push({wch:10}); cols.push({wch:24}); ws['!cols']=cols;
-      ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:header.length-1}}];
-      XLSX.utils.book_append_sheet(wb,ws,'Mi planilla');
+      const ws=XLSX.utils.aoa_to_sheet(rows);
+      const bd={style:'thin',color:{rgb:'D6DEE8'}}; const border={top:bd,bottom:bd,left:bd,right:bd};
+      for(let R=0;R<meta.length;R++){ const t=meta[R];
+        for(let C=0;C<ncol;C++){ const ref=XLSX.utils.encode_cell({r:R,c:C}); if(!ws[ref]) ws[ref]={t:'s',v:''}; let s;
+          if(t==='title'){ s={font:{bold:true,sz:13,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'1F7A44'}},alignment:{vertical:'center'}}; }
+          else if(t==='header'){ s={font:{bold:true,sz:10,color:{rgb:'1F5C39'}},fill:{fgColor:{rgb:'E8F3EC'}},border:border,alignment:{vertical:'center'}}; }
+          else if(t==='block'){ s={font:{bold:true,sz:10,color:{rgb:'6E6E1E'}},fill:{fgColor:{rgb:'F3F6D9'}},border:border,alignment:{vertical:'center'}}; }
+          else if(t==='ex'){ s={border:border,alignment:{vertical:'center'},font:{sz:11}}; if(C>=2 && C<=1+maxS){ s.fill={fgColor:{rgb:'FFF8E6'}}; s.alignment={horizontal:'center',vertical:'center'}; s.font={bold:true,sz:11}; } else if(C===1){ s.alignment={horizontal:'center',vertical:'center'}; } }
+          else { s={}; }
+          ws[ref].s=s;
+        }
+      }
+      const cols=[{wch:38},{wch:9}]; for(let i=0;i<maxS;i++) cols.push({wch:10}); cols.push({wch:26}); ws['!cols']=cols;
+      ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:ncol-1}}];
+      ws['!rows']=[{hpt:24}];
+      const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Mi planilla');
       const fname=(nom+' - '+(ses.nombre||'sesion')).replace(/[\\/:*?"<>|]+/g,' ').trim()+'.xlsx';
       XLSX.writeFile(wb,fname);
     }catch(e){ console.error('excel alumno:',e); alert('No pude generar la planilla'); }
   }
-  if(window.XLSX){ gen(); return; }
-  const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload=gen; s.onerror=function(){ alert('No se pudo cargar la librería de Excel (¿sin internet?)'); }; document.head.appendChild(s);
+  if(window._xlsxStyled && window.XLSX){ gen(); return; }
+  const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js'; s.onload=function(){ window._xlsxStyled=true; gen(); }; s.onerror=function(){ alert('No se pudo cargar la librería de Excel (¿sin internet?)'); }; document.head.appendChild(s);
 }
 function renderSesion() {
   const ctn=document.getElementById('sesion-ctn');
