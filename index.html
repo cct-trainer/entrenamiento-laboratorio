@@ -1567,8 +1567,8 @@ body.coach-bg-on .nd-chip:not(.on){background:#fff;}
   color: #aaa; letter-spacing: 1px; text-transform: uppercase;
   border-bottom: 1px solid #f0f0f0;
 }
-.series-table td { border-bottom: 1px solid #f7f7f7; padding: 5px 6px; }
-.series-table tr:last-child td { border-bottom: none; }
+.series-table td { border-bottom: 1px solid #dbe1ea; padding: 5px 6px; }
+.series-table tr:last-child td { border-bottom: 2px solid #b9c2d0; }
 .serie-num-cell {
   font-size: 10px; font-weight: 700; color: #999;
   text-transform: uppercase; width: 60px;
@@ -1925,7 +1925,7 @@ select.toolbox-input option:disabled { color: #888; }
   font-weight: 700; color: #555; border: 1px solid #e0e0e0;
   font-size: 11px; letter-spacing: 0.3px;
 }
-.series-table td { border: 1px solid #e8e8e8; padding: 5px 6px; text-align: center; }
+.series-table td { border: 1px solid #e8e8e8; border-bottom: 1.5px solid #b9c2d0; padding: 5px 6px; text-align: center; }
 .serie-num-cell { background: #f8f8f8; font-weight: 700; color: #444; font-size: 11px; min-width: 70px; }
 .series-table input {
   width: 100%; border: none; background: transparent;
@@ -3382,12 +3382,12 @@ body.os-mode #view-inicio,body.os-mode .view{background:transparent !important;}
 #coach-os .os-res-btn:hover{filter:brightness(1.1);}
 /* ---- Perfil del alumno en estilo escritorio (skin claro sobre el wallpaper) ---- */
 body.os-mode #view-perfil.active{margin:0!important;}
-body.os-mode #view-perfil.active .perfil-layout{gap:0!important;margin:16px!important;min-height:auto!important;background:#ffffff!important;border:1px solid #eef1f6!important;border-radius:20px!important;overflow:hidden;box-shadow:0 22px 54px -28px rgba(10,25,50,.5);}
-body.os-mode #view-perfil.active .perfil-sidebar{position:static!important;height:auto!important;border-radius:0!important;}
-body.os-mode #view-perfil.active .perfil-main{min-height:auto!important;border-radius:0!important;}
-body.os-mode .perfil-sidebar{background:transparent!important;border:none!important;border-right:1px solid #eef1f6!important;border-radius:0!important;color:#16304d!important;margin:0!important;box-shadow:none!important;}
+body.os-mode #view-perfil.active .perfil-layout{gap:16px!important;margin:16px!important;min-height:auto!important;background:transparent!important;border:none!important;border-radius:0!important;overflow:visible!important;box-shadow:none!important;}
+body.os-mode #view-perfil.active .perfil-sidebar{position:sticky!important;top:16px!important;align-self:flex-start!important;height:auto!important;border-radius:20px!important;}
+body.os-mode #view-perfil.active .perfil-main{min-height:auto!important;border-radius:20px!important;}
+body.os-mode .perfil-sidebar{background:#ffffff!important;border:1px solid #eef1f6!important;border-radius:20px!important;color:#16304d!important;margin:0!important;box-shadow:0 22px 54px -28px rgba(10,25,50,.5);}
 /* V3 · el cuerpo del plan queda dentro de un panel de vidrio azulado */
-body.os-mode .perfil-main{background:transparent!important;border:none!important;border-radius:0!important;margin:0!important;box-shadow:none!important;}
+body.os-mode .perfil-main{background:#ffffff!important;border:1px solid #eef1f6!important;border-radius:20px!important;margin:0!important;box-shadow:0 22px 54px -28px rgba(10,25,50,.5);overflow:hidden;}
 /* Espacio prolijo: el bloque usa su propio margen, no el padding del main */
 body.os-mode main{padding:0!important;}
 body.os-mode #view-inicio.active{background:#ffffff!important;border:1px solid #eef1f6!important;border-radius:22px!important;margin:16px!important;padding:22px 24px!important;box-shadow:0 24px 60px -28px rgba(10,25,50,.55);}
@@ -3400,11 +3400,11 @@ body.os-mode .mrow td:first-child{border-left:1px solid #eef1f6!important;border
 body.os-mode .mrow td:last-child{border-right:1px solid #eef1f6!important;border-top-right-radius:14px;border-bottom-right-radius:14px;}
 body.os-mode .mrow:hover td{background:#fff!important;}
 /* Planificador (SEPTIEMBRE-CAROL) dentro de un panel de vidrio azulado */
-body.os-mode .plan-right{background:transparent!important;border:none!important;border-radius:0!important;margin:0!important;box-shadow:none!important;}
+body.os-mode .plan-right{background:#ffffff!important;border:1px solid #eef1f6!important;border-radius:20px!important;margin:0!important;box-shadow:0 22px 54px -28px rgba(10,25,50,.5);overflow:hidden;}
 body.os-mode .run-topbar{background:transparent!important;}
 /* Barra lateral del planificador → vidrio azulado (V3) */
-body.os-mode #view-planificador.active,body.os-mode #view-running.active{background:#ffffff!important;border:1px solid #eef1f6!important;border-radius:20px!important;margin:16px!important;overflow:hidden;box-shadow:0 22px 54px -28px rgba(10,25,50,.5);display:flex;}
-body.os-mode .plan-sidebar{background:transparent!important;color:#16304d!important;border:none!important;border-right:1px solid #eef1f6!important;border-radius:0!important;margin:0!important;height:auto!important;box-shadow:none!important;}
+body.os-mode #view-planificador.active,body.os-mode #view-running.active{background:transparent!important;border:none!important;border-radius:0!important;box-shadow:none!important;margin:16px!important;padding:0!important;overflow:visible!important;display:flex!important;gap:16px!important;}
+body.os-mode .plan-sidebar{background:#ffffff!important;color:#16304d!important;border:1px solid #eef1f6!important;border-radius:20px!important;margin:0!important;height:auto!important;position:sticky!important;top:16px!important;align-self:flex-start!important;box-shadow:0 22px 54px -28px rgba(10,25,50,.5);}
 body.os-mode .plan-sidebar-name{color:#16304d!important;}
 body.os-mode .plan-sidebar-sub{color:#7c93a9!important;}
 body.os-mode .plan-sidebar-back{color:#5a7690!important;border:1px solid rgba(20,50,90,.14)!important;background:rgba(255,255,255,.7)!important;}
@@ -3435,16 +3435,14 @@ body.os-mode .module-header{background:rgba(255,255,255,.55)!important;border-bo
 .hl-nm b{display:block;font-size:16px;font-weight:900;color:#0b0f16;letter-spacing:-.2px;}
 .hl-nm span{font-size:9.5px;font-weight:700;color:#8698ad;letter-spacing:2px;}
 /* ---- Planificador estilo escritorio: tarjetas de día claras + semana marcada ---- */
-body.os-mode .plan-fila.pm-fill{color:#16304d!important;box-shadow:0 8px 20px -16px rgba(20,50,90,.4)!important;}
-body.os-mode .plan-fila.pm-fill:hover{transform:translateY(-2px);box-shadow:0 14px 28px -16px rgba(20,50,90,.45)!important;}
-body.os-mode .pm-fill .pm-num{color:#16304d!important;}
-body.os-mode .pm-fill .pm-dw{color:#22405f!important;}
-body.os-mode .pm-fill .pm-mo{color:#7c93a9!important;}
-body.os-mode .pm-fill .pm-abtn{color:#5a7690!important;}
-body.os-mode .pm-fill .pm-abtn:hover{background:rgba(20,50,90,.08)!important;color:#16304d!important;}
-body.os-mode .pm-fill .pm-check{color:#9A7A28!important;}
-body.os-mode .pm-fill .pm-rev{color:#9A7A28!important;background:#FDF6E3!important;}
-body.os-mode .pm-fill .pm-nses{color:#22405f!important;background:rgba(20,50,90,.08)!important;}
+/* Tarjetas de día en color pleno → texto blanco (estilo original) */
+body.os-mode .plan-fila.pm-fill{color:#fff!important;}
+body.os-mode .plan-fila.pm-fill:hover{transform:translateY(-2px);}
+body.os-mode .pm-fill .pm-num{color:#fff!important;}
+body.os-mode .pm-fill .pm-dw{color:#eef2f8!important;}
+body.os-mode .pm-fill .pm-mo{color:#c3ccda!important;}
+body.os-mode .pm-fill .pm-abtn{color:#dfe6f0!important;}
+body.os-mode .pm-fill .pm-abtn:hover{background:rgba(255,255,255,.14)!important;color:#fff!important;}
 /* Semana de trabajo MARCADA (clara, con borde de acento) */
 body.os-mode .mes-semana-bloque.sem-actual{background:rgba(43,108,168,.06)!important;border:2px solid #2b6ca8!important;box-shadow:0 14px 36px -22px rgba(43,108,168,.5)!important;}
 body.os-mode .mes-semana-bloque.sem-actual .mes-semana-header{background:transparent!important;}
@@ -11343,6 +11341,17 @@ function renderPlanSidebar(tipo) {
   const sbId = tipo === 'running' ? 'plan-running-sb-content' : 'plan-fuerza-sb-content';
   const sb = document.getElementById(sbId);
   if (!sb) return;
+  // Misma barra del alumno que en el perfil (Portal, Editar, Link, Formulario, Sustituciones, Acceso)
+  try{
+    if(currentAlumnoId && typeof renderSidebarAlumno==='function'){
+      renderSidebarAlumno(currentAlumnoId);
+      const src=document.getElementById('psb-content');
+      if(src && src.innerHTML.trim()){
+        const _back='<button class="plan-sidebar-back" onclick="if(typeof openPerfilAlumno===\'function\')openPerfilAlumno(currentAlumnoId)" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-bottom:14px;padding:9px;border:1px solid rgba(20,50,90,.14);border-radius:10px;background:rgba(255,255,255,.7);color:#33526f;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">← Volver al perfil</button>';
+        sb.innerHTML = _back + src.innerHTML; return;
+      }
+    }
+  }catch(e){ console.warn('planSidebar reuse:', e); }
   const a = currentAlumnoId ? getAlumnos().find(x => x.id === currentAlumnoId) : null;
   const edad = (a && calcularEdad) ? calcularEdad(a.nacimiento) : '';
   const fotoHTML = (a?.foto)
@@ -11910,8 +11919,8 @@ function renderPlanMes() {
         + '<button class="pm-abtn pm-del" onclick="event.stopPropagation();'+delAction+'" title="Eliminar">'+_PMIC.del+'</button>'
       + '</div>';
       const fCls = f || 'none';
-      const _diaCol = (sem.diaColores && sem.diaColores[i]) || '#2b6ca8';   // azul uniforme por defecto; el 🎨 lo cambia por día
-      const _colStyle = 'background:'+_tintHex(_diaCol,.90)+' !important;border:1.5px solid '+_tintHex(_diaCol,.55)+' !important;box-shadow:0 8px 20px -16px rgba(20,50,90,.4) !important;';
+      const _diaCol = (sem.diaColores && sem.diaColores[i]) || '#1a1f2b';   // negro por defecto; el 🎨 lo cambia por día
+      const _colStyle = 'background:'+_diaCol+' !important;border:1.5px solid '+_darkenHex(_diaCol,.8)+' !important;box-shadow:0 8px 20px -14px rgba(20,50,90,.45) !important;';
       return '<div class="plan-fila plan-dia-card tiene-sesion pm-card pm-fill foco-'+fCls+'" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" draggable="true" style="'+_colStyle+'" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
         + '<div class="pm-top">'+topHead+'<span class="pm-dotf foco-'+f+'"></span></div>'
         + acc
@@ -28906,14 +28915,14 @@ function _iaJSONaPlanificacion(data, alumnoId, opts) {
         const nSer = Math.min(parseInt(ej.series) || 3, 10);
         // Aproximación eliminada: si la IA la generó, se pliega como series de trabajo normales.
         const aproFold = Array.isArray(ej.seriesApro)
-          ? ej.seriesApro.slice(0, 6).map(s => ({ reps: String(s.reps || ''), peso: String(s.peso || ''), rir: '', pausa: String(ej.pausa || ''), comentarios: '' }))
+          ? ej.seriesApro.slice(0, 6).map((s, ix) => ({ tipo: (ix === 0 ? 'cal' : 'apr'), reps: String(s.reps || ''), peso: String(s.peso || ''), rir: '', pausa: String(ej.pausa || ''), comentarios: '' }))
           : [];
         let pesoEf = String(ej.peso || '').trim();
         if (/aproximaci|ver serie|ver apro|seg[uú]n/i.test(pesoEf)) {
           const ultApro = aproFold.length ? parseFloat(String(aproFold[aproFold.length - 1].peso).replace(',', '.')) : NaN;
           pesoEf = !isNaN(ultApro) ? (Math.round((ultApro * 1.05) / 2.5) * 2.5) + ' kg' : '';
         }
-        const fila = { reps: String(ej.reps || ''), peso: pesoEf, rir: String(ej.rir || ''), pausa: String(ej.pausa || ''), comentarios: '' };
+        const fila = { tipo: 'efec', reps: String(ej.reps || ''), peso: pesoEf, rir: String(ej.rir || ''), pausa: String(ej.pausa || ''), comentarios: '' };
         const seriesTrabajo = aproFold.concat(Array.from({ length: nSer }, () => ({ ...fila })));
         return {
           nombre: _iaMatchBiblioteca(String(ej.nombre || '').trim()),
@@ -29091,8 +29100,20 @@ function _traspParseEj(line){
   return { nombre, series, reps, peso, rir, pausa, nota };
 }
 // ¿La línea es una serie suelta? ("1x15@13,6Kg", "3x12", "Serie 1: 8 reps", "S1 - 8x40")
+// Detecta un prefijo de tipo de serie (Calentamiento / Aproximación / Efectiva) y devuelve {tipo, rest}
+function _traspTipoSerie(t){
+  const s=String(t||'').replace(/^[\-•*\s]+/,'');
+  const m=s.match(/^(calentamiento|calent|cal|aproximaci[oó]nes?|aproximaci[oó]n|aprox|apr|efectivas?|efectiva|efec|ef)\b[\s:.\-–]*/i);
+  if(!m) return null;
+  const w=m[1].toLowerCase(); let tipo='efec';
+  if(w.indexOf('cal')===0) tipo='cal'; else if(w.indexOf('apr')===0||w.indexOf('aprox')===0) tipo='apr'; else tipo='efec';
+  const rest=s.slice(m[0].length).trim();
+  if(!rest) return null;               // era solo la palabra, no una serie
+  return { tipo, rest };
+}
 function _traspEsSerieLine(t){
   const s=t.replace(/^[\-•*\s]+/,'');
+  const tg=_traspTipoSerie(s); if(tg && /\d/.test(tg.rest)) return true;   // "cal 1x15", "aprox 5 @60kg", etc.
   if(/^\d+\s*[x×]\s*\d/.test(s)) return true;          // empieza con SxR, sin nombre → es una serie
   if(/^(serie|set)\s*\d/i.test(s)) return true;
   if(/^s\s*\d+\s*[:\-–)]/i.test(s)) return true;
@@ -29123,9 +29144,10 @@ function _traspBuildSesion(texto, lugar){
     if(!cur){ cur=nuevoB('Trabajo principal'); bloques.push(cur); }
     // Serie suelta debajo de un ejercicio → se agrega a ese ejercicio (no crea uno nuevo)
     if(curEj && _traspEsSerieLine(t)){
-      const v=_traspParseEj(t);
+      const tg=_traspTipoSerie(t); const _tipo=tg?tg.tipo:''; const _lin=tg?tg.rest:t;
+      const v=_traspParseEj(_lin);
       const nS=Math.min(parseInt(v.series)||1,12);
-      for(let i=0;i<nS;i++) curEj.series.push({reps:String(v.reps||curEj._reps||''),peso:String(v.peso||curEj._peso||''),rir:String(v.rir||''),pausa:String(v.pausa||curEj._pausa||''),comentarios:''});
+      for(let i=0;i<nS;i++){ const _s={reps:String(v.reps||curEj._reps||''),peso:String(v.peso||curEj._peso||''),rir:String(v.rir||''),pausa:String(v.pausa||curEj._pausa||''),comentarios:''}; if(_tipo) _s.tipo=_tipo; curEj.series.push(_s); }
       return;
     }
     // Ejercicio nuevo
