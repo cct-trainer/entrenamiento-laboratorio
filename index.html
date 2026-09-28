@@ -3403,7 +3403,7 @@ body.os-mode .mrow:hover td{background:#fff!important;}
 body.os-mode .plan-right{background:#ffffff!important;border:1px solid #eef1f6!important;border-radius:20px!important;margin:0!important;box-shadow:0 22px 54px -28px rgba(10,25,50,.5);overflow:hidden;}
 body.os-mode .run-topbar{background:transparent!important;}
 /* Barra lateral del planificador → vidrio azulado (V3) */
-body.os-mode #view-planificador.active,body.os-mode #view-running.active{background:transparent!important;border:none!important;border-radius:0!important;box-shadow:none!important;margin:16px!important;padding:0!important;overflow:visible!important;display:flex!important;gap:16px!important;}
+body.os-mode #view-planificador.active,body.os-mode #view-running.active{background:transparent!important;border:none!important;border-radius:0!important;box-shadow:none!important;margin:16px!important;padding:0!important;height:auto!important;min-height:calc(100vh - 60px)!important;overflow:visible!important;display:flex!important;gap:16px!important;align-items:flex-start!important;}
 body.os-mode .plan-sidebar{background:#ffffff!important;color:#16304d!important;border:1px solid #eef1f6!important;border-radius:20px!important;margin:0!important;height:auto!important;position:sticky!important;top:16px!important;align-self:flex-start!important;box-shadow:0 22px 54px -28px rgba(10,25,50,.5);}
 body.os-mode .plan-sidebar-name{color:#16304d!important;}
 body.os-mode .plan-sidebar-sub{color:#7c93a9!important;}
@@ -20246,7 +20246,7 @@ function addEjercicio(bloqueId) {
         <div class="series-sec-body" id="${ejId}-efec-body">
           <table class="series-table">
             <thead><tr>
-              <th>Serie</th><th>Tipo</th><th>Reps</th><th onclick="event.stopPropagation();_togglePesoUnit()" style="cursor:pointer;" title="Cambiar entre kg y lb">Peso (<span class="peso-unit">${_pesoUnit()}</span>)</th><th>RIR</th><th>Pausa</th><th></th>
+              <th>Serie</th><th>Tipo</th><th class="th-reps">Reps</th><th class="th-peso" onclick="event.stopPropagation();_togglePesoUnit()" style="cursor:pointer;" title="Cambiar entre kg y lb">Peso (<span class="peso-unit">${_pesoUnit()}</span>)</th><th>RIR <span onclick="event.stopPropagation();_infoRIR()" title="¿Qué es el RIR?" style="cursor:pointer;color:#3A6EA5;font-weight:900;">ⓘ</span></th><th>Pausa</th><th></th>
             </tr></thead>
             <tbody id="${ejId}-efec-tbody"></tbody>
           </table>
@@ -20269,7 +20269,7 @@ function addEjercicio(bloqueId) {
           </div>
           <table class="series-table">
             <thead><tr>
-              <th>#</th><th>Tipo</th><th>Reps</th><th onclick="event.stopPropagation();_togglePesoUnit()" style="cursor:pointer;" title="Cambiar entre kg y lb">Peso (<span class="peso-unit">${_pesoUnit()}</span>)</th><th>RIR</th><th>Pausa</th><th></th>
+              <th>#</th><th>Tipo</th><th class="th-reps">Reps</th><th class="th-peso" onclick="event.stopPropagation();_togglePesoUnit()" style="cursor:pointer;" title="Cambiar entre kg y lb">Peso (<span class="peso-unit">${_pesoUnit()}</span>)</th><th>RIR <span onclick="event.stopPropagation();_infoRIR()" title="¿Qué es el RIR?" style="cursor:pointer;color:#3A6EA5;font-weight:900;">ⓘ</span></th><th>Pausa</th><th></th>
             </tr></thead>
             <tbody id="${ejId}-drop-tbody"></tbody>
           </table>
@@ -20356,6 +20356,18 @@ function eliminarEjercicio(ejId, bloqueId) {
 function _pesoUnit() {
   try { return localStorage.getItem('SOCC_PESO_UNIT') === 'lb' ? 'lb' : 'kg'; } catch(e) { return 'kg'; }
 }
+// ── Cardio: Reps→Tiempo, Peso→Intensidad ──
+function _esEjCardio(n){ return /bicicleta|cinta|caminat|el[ií]ptic|remo\s*erg|escalera|stair|trote|troted|correr|carrera|spinning|\bspin\b|cardio|hiit|airbike|assault|treadmill|remoergo/i.test(String(n||'')); }
+function _ajustarCardioHeaders(ejId){
+  const card=document.getElementById(ejId); if(!card) return;
+  const nom=(card.querySelector('.ej-nombre-input')||{}).value||'';
+  const cardio=_esEjCardio(nom);
+  card.querySelectorAll('.th-reps').forEach(th=>{ th.textContent = cardio ? 'Tiempo' : 'Reps'; });
+  card.querySelectorAll('.th-peso').forEach(th=>{ th.innerHTML = cardio ? 'Intensidad' : ('Peso (<span class="peso-unit">'+_pesoUnit()+'</span>)'); });
+}
+function _ajustarTodosCardio(){ try{ document.querySelectorAll('.ej-card').forEach(c=>{ if(c.id) _ajustarCardioHeaders(c.id); }); }catch(e){} }
+setInterval(_ajustarTodosCardio, 1500);
+function _infoRIR(){ alert('RIR — Repeticiones en Reserva\n\nEs cuántas repeticiones te QUEDABAN sin llegar al fallo al terminar la serie.\n\n• RIR 2 = te quedaban 2 en el tanque (podías hacer 2 más).\n• RIR 1 = te quedaba 1.\n• RIR 0 = llegaste justo al fallo, no podías ni una más.\n\nSirve para medir el esfuerzo de cada serie. Si no estás seguro, dejalo vacío.'); }
 function _togglePesoUnit() {
   const nu = _pesoUnit() === 'kg' ? 'lb' : 'kg';
   try { localStorage.setItem('SOCC_PESO_UNIT', nu); } catch(e) {}
@@ -29166,7 +29178,27 @@ function _traspBuildSesion(texto, lugar){
   });
   finEj();
   bloques.forEach(b=>b.ejercicios.forEach(e=>{ delete e._reps; delete e._peso; delete e._rir; delete e._pausa; }));
+  try{ _traspUnirCalentamiento(bloques); }catch(e){ console.warn('unir calent:', e); }
   return { bloques:bloques.filter(b=>b.ejercicios.length), lugar:lugar||'' };
+}
+// Une el calentamiento/aproximación del principal en el MISMO ejercicio (Cal / Apr / Efec en una sola tabla)
+function _traspUnirCalentamiento(bloques){
+  const norm=s=>String(s||'').toLowerCase().replace(/\s+/g,' ').trim();
+  const esCalent=b=>/calent|movilidad|aproxim|especif|específ/i.test((b.nombre||'')) || /Calentamiento/i.test(b.tipo||'');
+  const esPrincipal=b=>/principal|potencia/i.test((b.nombre||'')) || /Fuerza Principal/i.test(b.tipo||'');
+  (bloques||[]).forEach(bp=>{ if(!esPrincipal(bp)) return;
+    (bp.ejercicios||[]).forEach(ejP=>{
+      const nom=norm(ejP.nombre); if(!nom) return;
+      (ejP.series||[]).forEach(s=>{ if(!s.tipo) s.tipo='efec'; });
+      let warm=[];
+      bloques.forEach(bc=>{ if(bc===bp || !esCalent(bc)) return;
+        const keep=[];
+        (bc.ejercicios||[]).forEach(ejC=>{ if(norm(ejC.nombre)===nom){ warm=warm.concat(ejC.series||[]); } else keep.push(ejC); });
+        bc.ejercicios=keep;
+      });
+      if(warm.length){ warm=warm.map((s,ix)=>({ ...s, tipo:(ix===0?'cal':'apr') })); ejP.series=warm.concat(ejP.series||[]); ejP.ctrl.series=String(ejP.series.length); }
+    });
+  });
 }
 // Mapea "Lunes"/"mié"/fecha → índice de día (Lun=0 … Dom=6)
 function _traspDiaIdx(s){

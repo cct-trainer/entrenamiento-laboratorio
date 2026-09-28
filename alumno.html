@@ -947,8 +947,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260926180716 por un timestamp en cada deploy
-const _APP_VERSION = '20260926180716';
+// deploy.bat reemplaza 20260928150747 por un timestamp en cada deploy
+const _APP_VERSION = '20260928150747';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2432,6 +2432,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
 
   // Helper: tabla de series con prefijo de etiqueta
   function _seriesTable(arr, prefijoLabel, savePrefix, uid, offset, flush) {
+    // (info RIR definido abajo como función global)
     offset = offset || 0;
     if (!arr || !arr.length) return '';
     const hasPeso  = true;   // el peso SIEMPRE se muestra (aunque venga vacío) para que el alumno lo cargue en el gym
@@ -2455,11 +2456,12 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
     const _manc = _esMancuernaEj(ej) && ej.mancUna!==true;
     const _cuHtml = _manc ? '<div style="font-size:8.5px;font-weight:800;color:#3A6EA5;margin-top:1px;line-height:1;">c/u</div>' : '';
     const _uni = _esUnilateralEj(ej);   // unilateral → las reps son de cada lado
+    const _cardio = /bicicleta|cinta|caminat|el[ií]ptic|remo\s*erg|escalera|trote|correr|carrera|spinning|cardio|hiit|airbike|treadmill/i.test(String((ej&&ej.nombre)||''));
     const head = '<tr>'+
       '<th style="'+thStyle+'">SERIE</th>'+
-      '<th style="'+thStyle+'">'+(_uni?'REPS POR LADO':'REPS')+'</th>'+
-      (hasPeso  ? '<th style="'+thStyle+'">PESO (KG)</th>' : '')+
-      (hasRir   ? '<th style="'+thStyle+'">RIR</th>'  : '')+
+      '<th style="'+thStyle+'">'+(_cardio?'TIEMPO':(_uni?'REPS POR LADO':'REPS'))+'</th>'+
+      (hasPeso  ? '<th style="'+thStyle+'">'+(_cardio?'INTENSIDAD':'PESO (KG)')+'</th>' : '')+
+      (hasRir   ? '<th style="'+thStyle+'">RIR <span onclick="_infoRIRAlumno()" style="cursor:pointer;color:#3A6EA5;font-weight:900;">ⓘ</span></th>'  : '')+
       (hasPausa ? '<th style="'+thStyle+'">PAUSA</th>': '')+
       '<th style="'+thStyle+'width:26px;"></th>'+
     '</tr>';
@@ -8359,6 +8361,7 @@ function _tiempoCard(bloques){
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:11px;font-size:11px;color:var(--muted);"><span>'+nota+'</span><span style="font-weight:800;color:'+(est<=cur?'#5fe0a0':'#E6C766')+';">~'+est+'′</span></div>'
   +'</div>';
 }
+function _infoRIRAlumno(){ var en=(typeof _LANG!=='undefined'&&_LANG==='en'); alert(en ? 'RIR — Reps in Reserve\n\nHow many reps you had LEFT before failure at the end of the set.\n• RIR 2 = 2 left in the tank.\n• RIR 1 = 1 left.\n• RIR 0 = you hit failure.\n\nUsed to gauge effort. If unsure, leave it blank.' : 'RIR — Repeticiones en Reserva\n\nEs cuántas repeticiones te QUEDABAN sin llegar al fallo al terminar la serie.\n• RIR 2 = te quedaban 2 (podías hacer 2 más).\n• RIR 1 = te quedaba 1.\n• RIR 0 = llegaste justo al fallo, ni una más.\n\nSirve para medir el esfuerzo de cada serie. Si no estás seguro, dejalo vacío.'); }
 // ── Descargar la sesión como planilla Excel (registro de pesos por serie, con estilos) ──
 function _descargarPlanillaExcel(){
   function gen(){
