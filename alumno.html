@@ -947,8 +947,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260928150747 por un timestamp en cada deploy
-const _APP_VERSION = '20260928150747';
+// deploy.bat reemplaza 20260928152433 por un timestamp en cada deploy
+const _APP_VERSION = '20260928152433';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2383,6 +2383,52 @@ function _sysCardHTML(b){
         +rounds
       +'</div>'
       +(desc?'<div style="font-size:12px;line-height:1.5;color:var(--muted);">'+esc(desc)+'</div>':'')
+    +'</div>';
+  }catch(e){ return ''; }
+}
+// ── Guía visual del CIRCUITO: "recorré así, por vueltas" (A1→A2→A3… y repetís) ──
+function _circuitoVueltasHTML(b, letra){
+  try{
+    if(!b || !_esCircular(b.serieTipo)) return '';
+    const ejs=(b.ejercicios||[]).filter(e=>e&&(e.nombre||e.ejercicio));
+    if(ejs.length<2) return '';
+    const esc=s=>String(s==null?'':s).replace(/</g,'&lt;');
+    const _cardioEj=n=>/bicicleta|cinta|caminat|el[ií]ptic|remo\s*erg|escalera|trote|correr|carrera|spinning|cardio|hiit|airbike|treadmill/i.test(String(n||''));
+    // cantidad de vueltas: la mayor cantidad de series entre los ejercicios (o lo pautado por el coach)
+    let R=0; ejs.forEach(e=>{ const n=(Array.isArray(e.series)&&e.series.length)||parseInt(e.ctrl&&e.ctrl.series,10)||0; if(n>R)R=n; });
+    const vP=parseInt(b.vueltas,10); if(vP>0) R=Math.max(R,vP); if(!R) R=1; if(R>12)R=12;
+    const en=(_LANG==='en');
+    const nombreSis=(typeof _tc==='function')?_tc(b.serieTipo||''):(b.serieTipo||'');
+    let rondas='';
+    for(let r=0;r<R;r++){
+      let filas='';
+      ejs.forEach((e,ei)=>{
+        const nm=esc(e.nombre||e.ejercicio||'');
+        const s=(Array.isArray(e.series)&&e.series[r])?e.series[r]:(Array.isArray(e.series)&&e.series.length?e.series[e.series.length-1]:null);
+        const ctrl=e.ctrl||{};
+        const reps=(s&&s.reps)||ctrl.reps||'';
+        const peso=(s&&s.peso)||ctrl.peso||'';
+        const isC=_cardioEj(e.nombre||e.ejercicio);
+        const repsTxt=reps?esc(reps)+(isC?'':' '+(en?'reps':'reps')):(en?'—':'—');
+        const pesoTxt=peso?('<span style="font-size:12px;font-weight:800;color:#cfe0ff;white-space:nowrap;">'+esc(peso).replace(/kg$/i,'').trim()+(isC?'':' kg')+'</span>'):'';
+        filas+='<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:1px solid rgba(120,140,180,.14);">'
+          +'<span style="width:26px;height:26px;border-radius:8px;background:#3A6EA5;color:#fff;font-size:10.5px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+letra+(ei+1)+'</span>'
+          +'<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.2;">'+nm+'</div>'
+          +'<div style="font-size:10.5px;color:var(--muted);">'+(isC?(en?'Time':'Tiempo')+': ':'')+repsTxt+'</div></div>'
+          +pesoTxt
+        +'</div>';
+      });
+      const pausaTxt=(r<R-1)?('<span style="font-size:10px;font-weight:700;color:#8a92a1;">'+(en?'rest ↓':'descanso ↓')+'</span>'):'';
+      rondas+='<div style="border:1px solid rgba(58,110,165,.28);border-radius:12px;overflow:hidden;margin-bottom:9px;">'
+        +'<div style="background:#16233f;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;">'
+          +'<span style="font-size:11px;font-weight:900;color:#7fb0e6;letter-spacing:.6px;">'+(en?'ROUND':'VUELTA')+' '+(r+1)+'</span>'+pausaTxt
+        +'</div>'+filas
+      +'</div>';
+    }
+    return '<div style="background:var(--card);border:1px solid rgba(58,110,165,.30);border-radius:14px;padding:12px 13px;margin-bottom:12px;">'
+      +'<div style="font-size:11.5px;font-weight:900;color:#5b93cf;letter-spacing:.3px;margin-bottom:3px;">🔄 '+(en?'Do it like this — one set of each, then repeat':'Recorré así — una serie de cada uno y repetís')+'</div>'
+      +'<div style="font-size:10.5px;color:var(--muted);margin-bottom:10px;">'+esc(nombreSis)+' · '+R+' '+(en?(R>1?'rounds':'round'):(R>1?'vueltas':'vuelta'))+'</div>'
+      +rondas
     +'</div>';
   }catch(e){ return ''; }
 }
@@ -8516,8 +8562,11 @@ function renderSesion() {
       const _blkCls = 'blk' + (_hasPausa ? '' : (_nEj>=2 ? ' combo-blue' : (_nEj===1 ? ' solo-gold' : '')));
       const _partMin = _durBloqueMin(b, _st&&_st.reduce);
       const _partHTML = '<div style="text-align:right;font-size:10.5px;font-weight:700;color:var(--muted);margin-top:1px;padding-right:3px;">≈ '+_partMin+' min</div>';
+      // Circuito/superserie: guía visual "por vueltas" arriba + tablas de registro abajo
+      const _circGuide = _combo ? _circuitoVueltasHTML(b, letra) : '';
+      const _regHead = _circGuide ? '<div style="font-size:10px;font-weight:900;letter-spacing:.7px;color:var(--muted);margin:6px 2px 8px;text-transform:uppercase;">✍️ '+(_LANG==='en'?'Log your loads':'Registrá tus cargas')+'</div>' : '';
       return '<div class="'+_blkCls+'" style="margin-bottom:14px;">'+
-        '<div class="blk-body" style="padding:2px 0 0;">'+_sysCardHTML(b)+ejesHTML+_partHTML+_porqueBloqueHTML(b)+'</div>'+
+        '<div class="blk-body" style="padding:2px 0 0;">'+_sysCardHTML(b)+_circGuide+_regHead+ejesHTML+_partHTML+_porqueBloqueHTML(b)+'</div>'+
       '</div>';
     }).join('');
 
