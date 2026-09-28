@@ -947,8 +947,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260928152814 por un timestamp en cada deploy
-const _APP_VERSION = '20260928152814';
+// deploy.bat reemplaza 20260928154626 por un timestamp en cada deploy
+const _APP_VERSION = '20260928154626';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2458,7 +2458,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
     const _uni = _esUnilateralEj(ej);   // unilateral → las reps son de cada lado
     const _cardio = /bicicleta|cinta|caminat|el[ií]ptic|remo\s*erg|escalera|trote|correr|carrera|spinning|cardio|hiit|airbike|treadmill/i.test(String((ej&&ej.nombre)||''));
     const head = '<tr>'+
-      '<th style="'+thStyle+'">SERIE</th>'+
+      '<th style="'+thStyle+'">'+(window._circLblOn?(_LANG==='en'?'ROUND':'VUELTA'):'SERIE')+'</th>'+
       '<th style="'+thStyle+'">'+(_cardio?'TIEMPO':(_uni?'REPS POR LADO':'REPS'))+'</th>'+
       (hasPeso  ? '<th style="'+thStyle+'">'+(_cardio?'INTENSIDAD':'PESO (KG)')+'</th>' : '')+
       (hasRir   ? '<th style="'+thStyle+'">RIR <span onclick="_infoRIRAlumno()" style="cursor:pointer;color:#3A6EA5;font-weight:900;">ⓘ</span></th>'  : '')+
@@ -2508,7 +2508,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
         : '';
       // La pausa se muestra como dato (el descanso lo maneja el timer automático al marcar la serie)
       const pausaCel = (s.pausa ? _compEsc(s.pausa) : (defPausa>=60?(Math.round(defPausa/60)+' min'):(defPausa+' seg')));
-      const serieLbl = '<span class="s-num'+(done?' on':'')+'">S'+labelNum+'</span>' + (lado ? ' <span style="color:var(--muted);font-weight:600;">'+lado+'</span>' : '') + tipoBadge;
+      const serieLbl = '<span class="s-num'+(done?' on':'')+'">'+(window._circLblOn?'V':'S')+labelNum+'</span>' + (lado ? ' <span style="color:var(--muted);font-weight:600;">'+lado+'</span>' : '') + tipoBadge;
       // Serie agregada por el alumno (extra) → se puede eliminar. Serie del coach → ✕ = "no la hice".
       const _esExtra = (keyIdx >= arr.length);
       const delBtn = spBase
@@ -8273,6 +8273,64 @@ function _opcionesTiempo(){ const mx=_maxTiempoAlumno(); return [120,90,60,45,30
 function _tiempoActual(){ const mx=_maxTiempoAlumno(); const v=parseInt(_tiempoDispMap[_tiempoKey()],10); return (v&&v<=mx)?v:mx; }
 function _setTiempo(b){ _tiempoDispMap[_tiempoKey()]=b; renderSesion(); }
 function _verIgual(bi){ _verIgualSet[_tiempoKey()+'_'+bi]=1; renderSesion(); }
+// ── Circuito Fusión 3: navegación por estaciones (una a la vez) ──
+window._circStation = window._circStation || {};
+window._circLblOn = false;
+function _circIr(bi, st){ window._circStation['b'+bi]=st; renderSesion(); setTimeout(()=>{ const el=document.getElementById('circ-b'+bi); if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); },40); }
+function _circNext(bi, nEj){ const cur=window._circStation['b'+bi]||0; _circIr(bi, cur<nEj-1?cur+1:0); }
+function _circPrev(bi){ const cur=window._circStation['b'+bi]||0; if(cur>0) _circIr(bi,cur-1); }
+// series efectivas hechas de una estación (para progreso/estado)
+function _circSerieKey(bi,ei,i){ return (_semIdx||0)+'_'+(_diaIdx||0)+'_b'+bi+'e'+ei+'_efec_'+i; }
+function _circNSer(ej){ return (Array.isArray(ej.series)&&ej.series.length)?ej.series.length:(parseInt(ej&&ej.ctrl&&ej.ctrl.series,10)||1); }
+function _circDoneCount(bi,ei,ej){ let c=0,n=_circNSer(ej); for(let i=0;i<n;i++){ if(_getEdit(_circSerieKey(bi,ei,i),'done')==='1') c++; } return c; }
+function _circEstDone(bi,ei,ej){ return _circDoneCount(bi,ei,ej)>=_circNSer(ej); }
+// bloque circular renderizado como "player" de estaciones (Fusión 3)
+function _circuitPlayerHTML(b, bi, letra, grupo, serieLbl, defP, stObj){
+  const ejs=(b.ejercicios||[]);
+  const nEj=ejs.length;
+  let cur=window._circStation['b'+bi]; if(cur==null) cur=0; cur=Math.max(0,Math.min(nEj-1,cur));
+  const en=(_LANG==='en');
+  // progreso total del circuito
+  let tot=0,dn=0; ejs.forEach((e,ei)=>{ const n=_circNSer(e); tot+=n; dn+=_circDoneCount(bi,ei,e); });
+  // rail de estaciones
+  let rail='<div style="display:flex;align-items:center;gap:3px;background:#0e1a30;border:1px solid #22345a;border-top:none;padding:9px 10px;overflow-x:auto;">';
+  ejs.forEach((e,ei)=>{
+    const done=_circEstDone(bi,ei,e), on=(ei===cur);
+    const bg=on?'#3A6EA5':(done?'#123a24':'#16233f'), bd=on?'#3A6EA5':(done?'#1f5c39':'#26375c'), col=on?'#fff':(done?'#4fd07f':'#7f93b5');
+    const nm=String(e.nombre||e.ejercicio||'').split(' ').slice(0,1).join(' ');
+    rail+='<div onclick="_circIr('+bi+','+ei+')" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-width:52px;flex:1;">'
+      +'<div style="width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;background:'+bg+';color:'+col+';border:1.5px solid '+bd+';'+(on?'box-shadow:0 4px 12px rgba(58,110,165,.5);':'')+'">'+(done&&!on?'✓':(letra+(ei+1)))+'</div>'
+      +'<div style="font-size:8px;font-weight:700;color:'+(on?'#cfe0ff':'#7f8ba3')+';max-width:64px;text-align:center;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+nm.replace(/</g,'&lt;')+'</div></div>';
+    if(ei<nEj-1) rail+='<span style="color:#3a4a68;font-size:12px;flex:0;">›</span>';
+  });
+  rail+='</div>';
+  // tarjeta de la estación actual (reutiliza _ejCard con etiqueta VUELTA)
+  const _nr=stObj&&stObj.reduce&&stObj.reduce[cur];
+  window._circLblOn=true;
+  const card=_ejCard(ejs[cur], 'b'+bi+'e'+cur, letra+(cur+1), grupo, serieLbl, defP);
+  window._circLblOn=false;
+  // preview de las próximas estaciones de la vuelta
+  let prev='';
+  if(cur<nEj-1){
+    let cards='';
+    for(let i=cur+1;i<nEj;i++){ const e=ejs[i]; const isC=/bicicleta|cinta|caminat|el[ií]ptic|remo\s*erg|escalera|trote|correr|carrera|spinning|cardio|hiit|airbike|treadmill/i.test(String(e.nombre||e.ejercicio||'')); const reps=(Array.isArray(e.series)&&e.series[0]&&e.series[0].reps)||(e.ctrl&&e.ctrl.reps)||''; const dd=_circEstDone(bi,i,e);
+      cards+='<div onclick="_circIr('+bi+','+i+')" style="flex:1;min-width:120px;background:#132845;border:1px solid #24365c;border-radius:10px;padding:8px 10px;cursor:pointer;'+(dd?'opacity:.5;':'')+'"><div style="font-size:10px;font-weight:900;color:#7fb0e6;">'+letra+(i+1)+(dd?' ✓':'')+'</div><div style="font-size:12px;font-weight:800;color:#e6eefc;line-height:1.15;">'+String(e.nombre||e.ejercicio||'').replace(/</g,'&lt;')+'</div><div style="font-size:10px;color:#8fa6cf;">'+(isC?(reps||'—')+' · media':(reps||'—')+' reps')+'</div></div>';
+    }
+    prev='<div style="background:#0e1a30;border:1px solid #22345a;border-top:none;padding:11px 12px;"><div style="font-size:9px;font-weight:900;letter-spacing:1px;color:#6b7d99;margin-bottom:7px;">'+(en?'NEXT IN THIS ROUND':'DESPUÉS EN ESTA VUELTA')+'</div><div style="display:flex;gap:8px;flex-wrap:wrap;">'+cards+'</div></div>';
+  } else {
+    prev='<div style="background:#0e1a30;border:1px solid #22345a;border-top:none;padding:11px 12px;font-size:12px;font-weight:700;color:#8fb4e6;">'+(en?'End of the circuit — rest and repeat the round':'Fin del recorrido — descansá y repetí la vuelta')+'</div>';
+  }
+  // barra de progreso + botón siguiente
+  const pct = tot?Math.round(dn/tot*100):0;
+  const progHTML='<div style="background:#0e1a30;border:1px solid #22345a;border-top:none;border-radius:0 0 12px 12px;padding:10px 12px;">'
+    +'<div style="display:flex;justify-content:space-between;font-size:10.5px;font-weight:800;color:#8fa6cf;margin-bottom:6px;"><span>'+(en?'Circuit progress':'Progreso del circuito')+'</span><span>'+dn+'/'+tot+' '+(en?'sets':'series')+'</span></div>'
+    +'<div style="height:7px;background:#1b2540;border-radius:5px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#3A6EA5,#6aa0dc);border-radius:5px;transition:width .3s;"></div></div></div>';
+  const navBtns='<div style="display:flex;gap:8px;margin-top:10px;">'
+    +(cur>0?'<button onclick="_circPrev('+bi+')" style="width:54px;border:1px solid #2a3a57;background:rgba(58,110,165,.12);color:#8fb7e6;border-radius:12px;font-size:16px;font-weight:900;cursor:pointer;">‹</button>':'')
+    +'<button onclick="_circNext('+bi+','+nEj+')" style="flex:1;padding:14px;border:none;border-radius:12px;background:#3A6EA5;color:#fff;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">'+(cur<nEj-1?(en?'Next station ›':'Siguiente estación ›'):(en?'Back to A1 (new round) ↻':'Volver a '+letra+'1 (otra vuelta) ↻'))+'</button></div>';
+  const _tiempoNote=_nr?'<div style="font-size:11px;font-weight:700;color:#E6C766;background:rgba(214,168,84,.12);border-radius:8px;padding:6px 10px;margin:8px 0 0;">⏱ '+(en?('Today: '+_nr+' sets'):('Hoy: hacé '+_nr+' vueltas'))+'</div>':'';
+  return '<div id="circ-b'+bi+'">'+_sysCardHTML(b)+rail+card+prev+progHTML+_tiempoNote+navBtns+_porqueBloqueHTML(b)+'</div>';
+}
 function _prioTipo(t){
   t=String(t||'').toLowerCase();
   if(/fuerza principal|potencia/.test(t)) return 100;
@@ -8503,6 +8561,15 @@ function renderSesion() {
       }
       const _combo = /biserie|superserie|triserie|gigante|circuito/i.test(b.serieTipo||'');
       const _nEjB = (b.ejercicios||[]).length;
+      // Circuito / superserie con 2+ ejercicios → "player" de estaciones (Fusión 3): una estación a la vez
+      if(_combo && _nEjB>=2){
+        const _hasPausaC = (b.ejercicios||[]).some(e => e && e.pausaActiva && e.pausaActiva.activo && Array.isArray(e.pausaActiva.items) && e.pausaActiva.items.length);
+        if(!_hasPausaC){
+          return '<div class="blk combo-blue" style="margin-bottom:14px;">'+
+            '<div class="blk-body" style="padding:2px 0 0;">'+_circuitPlayerHTML(b,bi,letra,_grupo,_serieLbl,30,_st)+'</div>'+
+          '</div>';
+        }
+      }
       const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>{
         const _defP = (!_combo) ? 60 : ((ei===_nEjB-1) ? 60 : 30);   // simple 1min · combo intermedio 30s · último 1min
         const _card=_ejCard(ej,'b'+bi+'e'+ei, letra+(ei+1), _grupo, _serieLbl, _defP);
