@@ -947,8 +947,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260929101549 por un timestamp en cada deploy
-const _APP_VERSION = '20260929101549';
+// deploy.bat reemplaza 20260929102003 por un timestamp en cada deploy
+const _APP_VERSION = '20260929102003';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2384,6 +2384,33 @@ function _sysCardHTML(b){
       +'</div>'
       +(desc?'<div style="font-size:12px;line-height:1.5;color:var(--muted);">'+esc(desc)+'</div>':'')
     +'</div>';
+  }catch(e){ return ''; }
+}
+// ── Encabezado de bloque V2: TIPO de sistema en grande (destacado) + músculo chico ──
+function _blockHeaderV2(b){
+  const st=String((b&&b.serieTipo)||'').trim();
+  const circ=_esCircular(st);
+  const tipoLbl=(st?((typeof _tc==='function')?_tc(st):st):(_LANG==='en'?'STRAIGHT SET':'SERIE SIMPLE')).toUpperCase();
+  const grupo=(typeof _tc==='function')?_tc(b.nombre||b.tipo||''):(b.nombre||b.tipo||'');
+  const v=parseInt(b&&b.vueltas,10);
+  const esc=s=>String(s==null?'':s).replace(/</g,'&lt;');
+  const bg=circ?'linear-gradient(135deg,#22508a,#15294a)':'linear-gradient(135deg,#2b3547,#1b2331)';
+  const bd=circ?'#6aa0dc':'#3a465c';
+  const ttSize=circ?'22px':'15px';
+  const ttCol=circ?'#fff':'#dfe6f2';
+  const pill=(circ&&v>0)?'<span style="background:rgba(255,255,255,.18);color:#fff;font-size:11px;font-weight:900;padding:5px 12px;border-radius:999px;letter-spacing:.5px;white-space:nowrap;">'+v+' '+(v>1?(_LANG==='en'?'rounds':'vueltas'):(_LANG==='en'?'round':'vuelta'))+'</span>':'';
+  return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;border-left:4px solid '+bd+';background:'+bg+';margin-bottom:11px;">'
+    +'<div><div style="font-size:'+ttSize+';font-weight:900;color:'+ttCol+';line-height:1;letter-spacing:.3px;">'+esc(tipoLbl)+'</div>'
+    +(grupo?'<div style="font-size:10.5px;font-weight:700;color:#9fb2cc;margin-top:5px;letter-spacing:.5px;">'+esc(grupo)+'</div>':'')+'</div>'
+    +pill+'</div>';
+}
+// descripción "cómo se hace" (solo texto, para acompañar el encabezado en circuitos)
+function _sysDescHTML(b){
+  try{
+    const st=String((b&&b.serieTipo)||'').trim(); if(!st||!_esCircular(st)) return '';
+    const info=_sysInfo(st); let desc=String((b&&b.serieDesc)||'').trim(); if(!desc&&info)desc=info.desc;
+    if(!desc) return '';
+    return '<div style="font-size:11.5px;line-height:1.45;color:var(--muted);background:var(--card);border:1px solid rgba(58,110,165,.22);border-radius:10px;padding:9px 12px;margin-bottom:11px;">'+String(desc).replace(/</g,'&lt;')+'</div>';
   }catch(e){ return ''; }
 }
 // ── "¿Por qué este bloque?" (nota del coach, al pie del bloque) ──
@@ -8329,7 +8356,7 @@ function _circuitPlayerHTML(b, bi, letra, grupo, serieLbl, defP, stObj){
     +(cur>0?'<button onclick="_circPrev('+bi+')" style="width:54px;border:1px solid #2a3a57;background:rgba(58,110,165,.12);color:#8fb7e6;border-radius:12px;font-size:16px;font-weight:900;cursor:pointer;">‹</button>':'')
     +'<button onclick="_circNext('+bi+','+nEj+')" style="flex:1;padding:14px;border:none;border-radius:12px;background:#3A6EA5;color:#fff;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">'+(cur<nEj-1?(en?'Next station ›':'Siguiente estación ›'):(en?'Back to A1 (new round) ↻':'Volver a '+letra+'1 (otra vuelta) ↻'))+'</button></div>';
   const _tiempoNote=_nr?'<div style="font-size:11px;font-weight:700;color:#E6C766;background:rgba(214,168,84,.12);border-radius:8px;padding:6px 10px;margin:8px 0 0;">⏱ '+(en?('Today: '+_nr+' sets'):('Hoy: hacé '+_nr+' vueltas'))+'</div>':'';
-  return '<div id="circ-b'+bi+'">'+_sysCardHTML(b)+rail+card+prev+progHTML+_tiempoNote+navBtns+_porqueBloqueHTML(b)+'</div>';
+  return '<div id="circ-b'+bi+'">'+_blockHeaderV2(b)+_sysDescHTML(b)+rail+card+prev+progHTML+_tiempoNote+navBtns+_porqueBloqueHTML(b)+'</div>';
 }
 function _prioTipo(t){
   t=String(t||'').toLowerCase();
@@ -8584,7 +8611,7 @@ function renderSesion() {
       const _partMin = _durBloqueMin(b, _st&&_st.reduce);
       const _partHTML = '<div style="text-align:right;font-size:10.5px;font-weight:700;color:var(--muted);margin-top:1px;padding-right:3px;">≈ '+_partMin+' min</div>';
       return '<div class="'+_blkCls+'" style="margin-bottom:14px;">'+
-        '<div class="blk-body" style="padding:2px 0 0;">'+_sysCardHTML(b)+ejesHTML+_partHTML+_porqueBloqueHTML(b)+'</div>'+
+        '<div class="blk-body" style="padding:2px 0 0;">'+_blockHeaderV2(b)+_sysDescHTML(b)+ejesHTML+_partHTML+_porqueBloqueHTML(b)+'</div>'+
       '</div>';
     }).join('');
 
