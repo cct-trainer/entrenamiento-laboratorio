@@ -947,8 +947,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260928154626 por un timestamp en cada deploy
-const _APP_VERSION = '20260928154626';
+// deploy.bat reemplaza 20260929101549 por un timestamp en cada deploy
+const _APP_VERSION = '20260929101549';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -8276,7 +8276,7 @@ function _verIgual(bi){ _verIgualSet[_tiempoKey()+'_'+bi]=1; renderSesion(); }
 // ── Circuito Fusión 3: navegación por estaciones (una a la vez) ──
 window._circStation = window._circStation || {};
 window._circLblOn = false;
-function _circIr(bi, st){ window._circStation['b'+bi]=st; renderSesion(); setTimeout(()=>{ const el=document.getElementById('circ-b'+bi); if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); },40); }
+function _circIr(bi, st){ window._circStation['b'+bi]=st; renderSesion(); setTimeout(()=>{ const el=document.getElementById('circ-b'+bi); if(!el) return; const hdr=document.querySelector('.hdr'); const off=(hdr?hdr.offsetHeight:0)+8; const y=el.getBoundingClientRect().top+window.pageYOffset-off; window.scrollTo({top:Math.max(0,y),behavior:'smooth'}); },60); }
 function _circNext(bi, nEj){ const cur=window._circStation['b'+bi]||0; _circIr(bi, cur<nEj-1?cur+1:0); }
 function _circPrev(bi){ const cur=window._circStation['b'+bi]||0; if(cur>0) _circIr(bi,cur-1); }
 // series efectivas hechas de una estación (para progreso/estado)
