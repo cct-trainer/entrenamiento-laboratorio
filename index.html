@@ -16172,8 +16172,16 @@ async function _abrirPortalAlumno(id) {
   if (win) { try { win.document.write('<div style="font-family:system-ui,sans-serif;padding:26px;color:#334;font-size:15px;">Sincronizando el plan y abriendo el portal…</div>'); } catch (e) {} }
   // Guardar lo que esté abierto en el planificador antes de publicar
   try { if (typeof guardarEstadoDiaActual === 'function') guardarEstadoDiaActual(); } catch (e) {}
-  // Esperar a que la sincronización COMPLETA termine, así el portal ve lo último
-  try { if (typeof forzarSyncFirebase === 'function') await forzarSyncFirebase(); } catch (e) {}
+  // Esperar a que la sincronización termine, PERO con un tope de tiempo: si tarda
+  // demasiado o se cuelga, abrimos el portal igual (no dejamos la pestaña trabada).
+  try {
+    if (typeof forzarSyncFirebase === 'function') {
+      await Promise.race([
+        Promise.resolve(forzarSyncFirebase()).catch(()=>{}),
+        new Promise(res => setTimeout(res, 7000))
+      ]);
+    }
+  } catch (e) {}
   let url;
   try { url = a ? await _portalLinkFor(a) : (PORTAL_BASE + 'alumno.html?id=' + encodeURIComponent(id)); }
   catch (e) { url = PORTAL_BASE + 'alumno.html?id=' + encodeURIComponent(id); }

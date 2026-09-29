@@ -950,8 +950,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260929120946 por un timestamp en cada deploy
-const _APP_VERSION = '20260929120946';
+// deploy.bat reemplaza 20260929122820 por un timestamp en cada deploy
+const _APP_VERSION = '20260929122820';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2431,7 +2431,7 @@ function _sysDescHTML(b){
     const st=String((b&&b.serieTipo)||'').trim(); if(!st||!_esCircular(st)) return '';
     const info=_sysInfo(st); let desc=String((b&&b.serieDesc)||'').trim(); if(!desc&&info)desc=info.desc;
     if(!desc) return '';
-    return '<div style="font-size:11.5px;line-height:1.45;color:var(--muted);background:var(--card);border:1px solid rgba(58,110,165,.22);border-radius:10px;padding:9px 12px;margin-bottom:11px;">'+String(desc).replace(/</g,'&lt;')+'</div>';
+    return '<div style="font-size:12px;line-height:1.5;color:var(--muted);background:transparent;border:none;padding:2px 2px 4px;margin-bottom:10px;">'+String(desc).replace(/</g,'&lt;')+'</div>';
   }catch(e){ return ''; }
 }
 // ── "¿Por qué este bloque?" (nota del coach, al pie del bloque) ──
@@ -8350,14 +8350,14 @@ function _circuitPlayerHTML(b, bi, letra, grupo, serieLbl, defP, stObj){
   // progreso total del circuito
   let tot=0,dn=0; ejs.forEach((e,ei)=>{ const n=_circNSer(e); tot+=n; dn+=_circDoneCount(bi,ei,e); });
   // rail de estaciones
-  let rail='<div style="display:flex;align-items:center;gap:3px;background:#0e1a30;border:1px solid #22345a;border-top:none;padding:9px 10px;overflow-x:auto;">';
+  let rail='<div style="display:flex;align-items:center;gap:3px;background:transparent;border:none;padding:4px 2px 10px;overflow-x:auto;">';
   ejs.forEach((e,ei)=>{
     const done=_circEstDone(bi,ei,e), on=(ei===cur);
     const bg=on?'#3A6EA5':(done?'#123a24':'#16233f'), bd=on?'#3A6EA5':(done?'#1f5c39':'#26375c'), col=on?'#fff':(done?'#4fd07f':'#7f93b5');
     const nm=String(e.nombre||e.ejercicio||'').split(' ').slice(0,1).join(' ');
     rail+='<div onclick="_circIr('+bi+','+ei+')" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-width:52px;flex:1;">'
       +'<div style="width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;background:'+bg+';color:'+col+';border:1.5px solid '+bd+';'+(on?'box-shadow:0 4px 12px rgba(58,110,165,.5);':'')+'">'+(done&&!on?'✓':(letra+(ei+1)))+'</div>'
-      +'<div style="font-size:8px;font-weight:700;color:'+(on?'#cfe0ff':'#7f8ba3')+';max-width:64px;text-align:center;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+nm.replace(/</g,'&lt;')+'</div></div>';
+      +'<div style="font-size:11px;font-weight:800;color:'+(on?'#cfe0ff':'#8fa0ba')+';max-width:82px;text-align:center;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+nm.replace(/</g,'&lt;')+'</div></div>';
     if(ei<nEj-1) rail+='<span style="color:#3a4a68;font-size:12px;flex:0;">›</span>';
   });
   rail+='</div>';
