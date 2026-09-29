@@ -16067,12 +16067,12 @@ function renderSidebarAlumno(id) {
       ${edad ? `<div style="font-size:11px;color:#8FA1BD;margin-top:3px;">${edad} años · ${a.nivel||'Sin nivel'}</div>` : ''}
       ${a.dias ? `<div style="font-size:10px;color:#8FA1BD;margin-top:2px;">${a.dias} días/semana</div>` : ''}
     </div>
-    <button onclick="_copiarLinkPortal('${id}')"
+    <button onclick="_abrirPortalAlumno('${id}')"
       style="width:100%;background:#3A6EA5;border:none;border-radius:9px;
              color:#fff;font-size:12px;font-weight:800;padding:11px 12px;cursor:pointer;
              letter-spacing:0.3px;font-family:inherit;margin-bottom:8px;transition:filter .15s;"
       onmouseover="this.style.filter='brightness(1.06)'" onmouseout="this.style.filter='none'">
-      Portal del alumno
+      🔗 Abrir portal del alumno
     </button>
     <button onclick="openModalEditarAlumno('${id}')"
       style="width:100%;background:#222B3A;border:1px solid #283142;border-radius:9px;
@@ -16163,6 +16163,24 @@ async function _copiarLinkPortal(id) {
   navigator.clipboard.writeText(url)
     .then(() => toast('Link copiado — mandáselo al alumno por WhatsApp'))
     .catch(() => { prompt('Copiá este link y mandáselo al alumno:', url); });
+}
+// Abre el portal del alumno en una pestaña nueva (y copia el link). Abre la pestaña
+// de forma sincrónica para que el navegador no la bloquee, y luego setea la URL.
+async function _abrirPortalAlumno(id) {
+  const a = (typeof getAlumnos === 'function' ? getAlumnos() : []).find(x => x.id === id);
+  const win = window.open('about:blank', '_blank');   // sincrónico → evita el bloqueo de pop-ups
+  if (win) { try { win.document.write('<div style="font-family:system-ui,sans-serif;padding:26px;color:#334;font-size:15px;">Sincronizando el plan y abriendo el portal…</div>'); } catch (e) {} }
+  // Guardar lo que esté abierto en el planificador antes de publicar
+  try { if (typeof guardarEstadoDiaActual === 'function') guardarEstadoDiaActual(); } catch (e) {}
+  // Esperar a que la sincronización COMPLETA termine, así el portal ve lo último
+  try { if (typeof forzarSyncFirebase === 'function') await forzarSyncFirebase(); } catch (e) {}
+  let url;
+  try { url = a ? await _portalLinkFor(a) : (PORTAL_BASE + 'alumno.html?id=' + encodeURIComponent(id)); }
+  catch (e) { url = PORTAL_BASE + 'alumno.html?id=' + encodeURIComponent(id); }
+  if (win && !win.closed) { win.location.href = url; }
+  else { window.open(url, '_blank'); }   // fallback si algo cerró la pestaña
+  try { await navigator.clipboard.writeText(url); toast('Portal abierto · link copiado'); }
+  catch (e) { toast('Portal abierto'); }
 }
 
 // ── Control de acceso y WhatsApp ──────────────────────────────────────────────

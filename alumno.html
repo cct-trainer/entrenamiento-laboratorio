@@ -950,8 +950,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260929110243 por un timestamp en cada deploy
-const _APP_VERSION = '20260929110243';
+// deploy.bat reemplaza 20260929120946 por un timestamp en cada deploy
+const _APP_VERSION = '20260929120946';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2862,13 +2862,13 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
     : (_musStr ? String(_musStr).split(/[,·|/]/)[0] : (grupo||''));
   const _grupoTxt = _tc(String(_musPrin).trim());
   const _grupoBadge = _grupoTxt ? (
-    '<div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(160deg,#4d89c6,#2f5f95);color:#fff;font-size:8px;font-weight:900;letter-spacing:.8px;padding:4px 9px;border-radius:8px;margin:0;box-shadow:0 3px 8px rgba(58,110,165,.4),inset 0 1px 0 rgba(255,255,255,.28);text-transform:uppercase;">'+
-      '<span style="display:inline-flex;gap:1.5px;align-items:center;"><span style="width:2px;height:8px;background:#fff;border-radius:2px;"></span><span style="width:2px;height:8px;background:#fff;border-radius:2px;opacity:.7;"></span><span style="width:2px;height:8px;background:#fff;border-radius:2px;"></span></span>'+
+    '<div style="display:inline-flex;align-items:center;gap:5px;color:#8fa0ba;font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;">'+
+      '<span style="display:inline-flex;gap:1.5px;align-items:center;"><span style="width:2px;height:8px;background:#4a6a92;border-radius:2px;"></span><span style="width:2px;height:8px;background:#4a6a92;border-radius:2px;opacity:.7;"></span><span style="width:2px;height:8px;background:#4a6a92;border-radius:2px;"></span></span>'+
       _grupoTxt.replace(/</g,'&lt;')+
     '</div>'
   ) : '';
-  return '<div id="'+uid+'-card" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .2s;">'+
-    '<div style="padding:12px 11px 12px;">'+
+  return '<div id="'+uid+'-card" style="background:transparent;border:1px solid transparent;border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .2s;">'+
+    '<div style="padding:10px 2px 12px;">'+
       '<div style="display:flex;align-items:flex-start;gap:10px;">'+
         '<div style="flex:1;min-width:0;">'+
           '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px;">'+
