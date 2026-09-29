@@ -947,8 +947,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260929102003 por un timestamp en cada deploy
-const _APP_VERSION = '20260929102003';
+// deploy.bat reemplaza 20260929103049 por un timestamp en cada deploy
+const _APP_VERSION = '20260929103049';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2518,11 +2518,20 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
             'onchange="_guardarEdit(\''+sp+'\',\'reps\',this.value)" onclick="event.stopPropagation()" '+
             'style="'+inpStyle+'font-size:13px;">'
           : (repsVal||'—'));
+      // Peso: si es TEXTO (Banda amarilla, Corporal, etc.) se muestra completo con salto de línea; si es número, casillero angosto
+      const _pesoEsTexto = /[a-zA-ZÁÉÍÓÚáéíóúÑñ]/.test(String(pesoRaw||''));
+      const _pesoTxtStyle = 'display:block;width:100%;min-width:64px;max-width:120px;margin:0 auto;'+
+        'color:'+_ctext+';font-size:11.5px;font-weight:700;text-align:center;line-height:1.15;'+
+        'white-space:normal;word-break:break-word;overflow-wrap:anywhere;outline:none;padding:3px 4px;';
       const pesoCel = sp
-        ? '<input id="inp_'+sp+'_peso" type="text" inputmode="decimal" value="'+pesoRaw+'" placeholder="—" '+
-          'onchange="_guardarEdit(\''+sp+'\',\'peso\',this.value)" onclick="event.stopPropagation()" '+
-          'style="'+inpStyle+'">'
-        : (pesoRaw ? pesoRaw+' kg' : '—');
+        ? (_pesoEsTexto
+            ? '<div id="inp_'+sp+'_peso" contenteditable="true" '+
+              'onblur="_guardarEdit(\''+sp+'\',\'peso\',this.textContent.trim())" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()" '+
+              'style="'+_pesoTxtStyle+'">'+_compEsc(pesoRaw)+'</div>'
+            : '<input id="inp_'+sp+'_peso" type="text" inputmode="decimal" value="'+pesoRaw+'" placeholder="—" '+
+              'onchange="_guardarEdit(\''+sp+'\',\'peso\',this.value)" onclick="event.stopPropagation()" '+
+              'style="'+inpStyle+'">')
+        : (pesoRaw ? (_pesoEsTexto?_compEsc(pesoRaw):pesoRaw+' kg') : '—');
       const rirRaw = (sp ? _getEdit(sp,'rir') : '') || s.rir || '';
       const rirCel = sp
         ? '<input id="inp_'+sp+'_rir" type="text" inputmode="text" value="'+rirRaw+'" placeholder="—" '+
