@@ -313,6 +313,9 @@ html.light .blk-body{padding:0 2px 4px;}
 .blk.combo-blue{border:1.5px solid #4a86c4;}
 html.light .blk.solo-gold{border:1.5px solid #C9A84C;border-radius:12px;padding:8px 8px 2px;}
 html.light .blk.combo-blue{border:1.5px solid #4a86c4;border-radius:12px;padding:8px 8px 2px;}
+/* Panel lleno uniforme (Estilo B) para todos los bloques */
+.blk.pfill{background:#161d30;border:1px solid #2a3550;border-radius:16px;padding:14px;box-shadow:0 10px 26px -18px rgba(0,0,0,.7);}
+html.light .blk.pfill{background:#eef2f8;border:1px solid #d7dfec;border-radius:16px;padding:14px;box-shadow:0 10px 26px -20px rgba(20,40,80,.25);}
 
 .ejrow{display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border-radius:7px;}
 .ejrow:nth-child(odd){background:var(--row-odd);}
@@ -947,8 +950,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260929103049 por un timestamp en cada deploy
-const _APP_VERSION = '20260929103049';
+// deploy.bat reemplaza 20260929110243 por un timestamp en cada deploy
+const _APP_VERSION = '20260929110243';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2388,21 +2391,39 @@ function _sysCardHTML(b){
 }
 // ── Encabezado de bloque V2: TIPO de sistema en grande (destacado) + músculo chico ──
 function _blockHeaderV2(b){
+  const en=(_LANG==='en');
   const st=String((b&&b.serieTipo)||'').trim();
   const circ=_esCircular(st);
-  const tipoLbl=(st?((typeof _tc==='function')?_tc(st):st):(_LANG==='en'?'STRAIGHT SET':'SERIE SIMPLE')).toUpperCase();
-  const grupo=(typeof _tc==='function')?_tc(b.nombre||b.tipo||''):(b.nombre||b.tipo||'');
-  const v=parseInt(b&&b.vueltas,10);
+  const tipoLbl=(st?((typeof _tc==='function')?_tc(st):st):(en?'STRAIGHT SET':'SERIE SIMPLE')).toUpperCase();
   const esc=s=>String(s==null?'':s).replace(/</g,'&lt;');
+  // Nombre del bloque para la barrita superior (parte antes de "—")
+  const rawName=String((b&&(b.nombre||b.tipo))||'').trim();
+  const parts=rawName.split(/\s*[—–]\s*| - /);
+  const barraName=(parts[0]||'').trim().toUpperCase();
+  // Lateralidad (solo si hay señal: nombre lo dice o los ejercicios son unilaterales)
+  const ejs=(b&&b.ejercicios)||[];
+  let someUni=false; try{ someUni=ejs.some(e=>_esUnilateralEj(e)); }catch(_){}
+  let lat='';
+  if(/unilateral/i.test(rawName)) lat=en?'Unilateral':'Unilateral';
+  else if(/bilateral/i.test(rawName)) lat=en?'Bilateral':'Bilateral';
+  else if(someUni) lat=en?'Unilateral':'Unilateral';
+  // Vueltas
+  let v=parseInt(b&&b.vueltas,10); if(!(v>0)){ const m=rawName.match(/(\d+)\s*vuelta/i); if(m) v=parseInt(m[1],10); }
   const bg=circ?'linear-gradient(135deg,#22508a,#15294a)':'linear-gradient(135deg,#2b3547,#1b2331)';
   const bd=circ?'#6aa0dc':'#3a465c';
   const ttSize=circ?'22px':'15px';
   const ttCol=circ?'#fff':'#dfe6f2';
-  const pill=(circ&&v>0)?'<span style="background:rgba(255,255,255,.18);color:#fff;font-size:11px;font-weight:900;padding:5px 12px;border-radius:999px;letter-spacing:.5px;white-space:nowrap;">'+v+' '+(v>1?(_LANG==='en'?'rounds':'vueltas'):(_LANG==='en'?'round':'vuelta'))+'</span>':'';
-  return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;border-left:4px solid '+bd+';background:'+bg+';margin-bottom:11px;">'
-    +'<div><div style="font-size:'+ttSize+';font-weight:900;color:'+ttCol+';line-height:1;letter-spacing:.3px;">'+esc(tipoLbl)+'</div>'
-    +(grupo?'<div style="font-size:10.5px;font-weight:700;color:#9fb2cc;margin-top:5px;letter-spacing:.5px;">'+esc(grupo)+'</div>':'')+'</div>'
-    +pill+'</div>';
+  const mk=(lbl,val)=>'<div style="font-size:11px;font-weight:500;color:#9fb2cc;letter-spacing:.3px;margin-top:6px;"><span style="font-weight:600;color:#7f93b5;letter-spacing:.6px;">'+lbl+'</span> <span style="color:#dfe6f2;">'+val+'</span></div>';
+  const metaLat = lat ? mk(en?'SIDE:':'LATERALIDAD:', lat) : '';
+  const metaV   = (v>0) ? mk(en?'ROUNDS:':'VUELTAS:', v) : '';
+  const barra = barraName
+    ? '<div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:#9fb2d6;letter-spacing:.5px;margin-bottom:11px;"><span style="width:4px;height:16px;border-radius:3px;background:#3A6EA5;flex-shrink:0;"></span>'+esc(barraName)+'</div>'
+    : '';
+  const hdr = '<div style="padding:12px 14px;border-radius:11px;border-left:4px solid '+bd+';background:'+bg+';margin-bottom:12px;">'
+    +'<div style="font-size:'+ttSize+';font-weight:900;color:'+ttCol+';line-height:1;letter-spacing:.3px;">'+esc(tipoLbl)+'</div>'
+    +metaLat+metaV
+  +'</div>';
+  return barra+hdr;
 }
 // descripción "cómo se hace" (solo texto, para acompañar el encabezado en circuitos)
 function _sysDescHTML(b){
@@ -8593,7 +8614,7 @@ function renderSesion() {
       if(_esCardio){
         const _partC=_durBloqueMin(b, _st&&_st.reduce);
         const _partHTMLc=_partC?'<div style="text-align:right;font-size:10.5px;font-weight:700;color:var(--muted);margin-top:1px;padding-right:3px;">≈ '+_partC+' min</div>':'';
-        return '<div class="blk" style="margin-bottom:14px;"><div class="blk-body" style="padding:2px 0 0;">'+_cardioCardHTML(b)+_partHTMLc+_porqueBloqueHTML(b)+'</div></div>';
+        return '<div class="blk pfill" style="margin-bottom:16px;"><div class="blk-body" style="padding:2px 0 0;">'+_cardioCardHTML(b)+_partHTMLc+_porqueBloqueHTML(b)+'</div></div>';
       }
       const _combo = /biserie|superserie|triserie|gigante|circuito/i.test(b.serieTipo||'');
       const _nEjB = (b.ejercicios||[]).length;
@@ -8601,7 +8622,7 @@ function renderSesion() {
       if(_combo && _nEjB>=2){
         const _hasPausaC = (b.ejercicios||[]).some(e => e && e.pausaActiva && e.pausaActiva.activo && Array.isArray(e.pausaActiva.items) && e.pausaActiva.items.length);
         if(!_hasPausaC){
-          return '<div class="blk combo-blue" style="margin-bottom:14px;">'+
+          return '<div class="blk pfill" style="margin-bottom:16px;">'+
             '<div class="blk-body" style="padding:2px 0 0;">'+_circuitPlayerHTML(b,bi,letra,_grupo,_serieLbl,30,_st)+'</div>'+
           '</div>';
         }
@@ -8619,7 +8640,7 @@ function renderSesion() {
       const _blkCls = 'blk' + (_hasPausa ? '' : (_nEj>=2 ? ' combo-blue' : (_nEj===1 ? ' solo-gold' : '')));
       const _partMin = _durBloqueMin(b, _st&&_st.reduce);
       const _partHTML = '<div style="text-align:right;font-size:10.5px;font-weight:700;color:var(--muted);margin-top:1px;padding-right:3px;">≈ '+_partMin+' min</div>';
-      return '<div class="'+_blkCls+'" style="margin-bottom:14px;">'+
+      return '<div class="blk pfill" style="margin-bottom:16px;">'+
         '<div class="blk-body" style="padding:2px 0 0;">'+_blockHeaderV2(b)+_sysDescHTML(b)+ejesHTML+_partHTML+_porqueBloqueHTML(b)+'</div>'+
       '</div>';
     }).join('');
