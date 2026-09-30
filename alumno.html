@@ -950,8 +950,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260930170919 por un timestamp en cada deploy
-const _APP_VERSION = '20260930170919';
+// deploy.bat reemplaza 20260930182701 por un timestamp en cada deploy
+const _APP_VERSION = '20260930182701';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1857,7 +1857,7 @@ function renderRutina() {
   const diasEntrena = [];
   for (let i=0;i<7;i++){
     const arr = sem.dias?.[i] || [];
-    if (arr.some(s => s?.bloques?.length)) diasEntrena.push(i);
+    if (arr.some(s => s?.bloques?.length || s?.runBloques?.length)) diasEntrena.push(i);
   }
   const dgridEl = document.getElementById('dgrid');
   if (!diasEntrena.length){
@@ -1869,7 +1869,7 @@ function renderRutina() {
       const _runS = arr.find(s=>s && s.tipoSesion==='running') || null;
       const ses = (_fuerzaA[0]?.bloques?.length ? _fuerzaA[0] : _fuerzaA[1]) || _fuerzaA[0] || _runS || {};
       const hasCasa = !!(_fuerzaA[1]?.bloques?.length);
-      const _hasRunDia = !!(_runS?.bloques?.length);
+      const _hasRunDia = !!((_runS?.runBloques||_runS?.bloques||[]).length);
       const _hasFuerzaDia = !!(_fuerzaA[0]?.bloques?.length || _fuerzaA[1]?.bloques?.length);
       const on = i===_diaIdx, hoy=esHoy(i);
       const dayNum = sem.fechaInicio ? (()=>{const d=new Date(sem.fechaInicio+'T12:00:00');d.setDate(d.getDate()+i);return d.getDate();})() : i+1;
@@ -8547,7 +8547,8 @@ function renderSesion() {
   const sesCasa = fuerzaArr[1] || null;
   const hasCasa = !!(sesCasa?.bloques?.length);
   const hasGym  = !!(sesGym?.bloques?.length);
-  const hasRun  = !!(runSes?.bloques?.length);
+  const _runB   = runSes ? (runSes.runBloques || runSes.bloques || []) : [];
+  const hasRun  = !!_runB.length;
   const hasFuerza = hasGym || hasCasa;
   // Vista Fuerza / Running (solo relevante si el día tiene ambas)
   if(!window._diaVista) window._diaVista='fuerza';
@@ -8592,6 +8593,15 @@ function renderSesion() {
     '</div>' : '';
 
   const ses = (_vista==='running') ? runSes : (_diaModTab === 0 ? sesGym : sesCasa);
+
+  // ── Vista RUNNING: se dibuja con el render lindo de running (entrada en calor, pasadas, etc.) ──
+  if (_vista==='running' && hasRun) {
+    const bodyR = _runB.map(_runBloqueHTML).join('');
+    ctn.innerHTML = back + vistaTabs +
+      '<div style="margin:0 -16px;padding:16px 16px 26px;background:var(--ses-panel);">'+ bodyR +'</div>';
+    try{ _wakeOn && _wakeOn(); }catch(e){}
+    return;
+  }
 
   if (!ses?.bloques?.length) {
     const msgGym = '<div class="empty" style="padding:20px"><div class="empty-txt">'+_t('sin_sesion_gym')+' '+DN[_diaIdx]+'</div></div>';
