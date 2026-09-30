@@ -10107,6 +10107,7 @@ function runEliminarSemana(){
 
 // ── Abrir planificador running ──────────────────────────────────────────────
 function abrirPlanRunning() {
+  window._runTargetFuerza = null;   // abrir normal = NO modo "guardar en fuerza" (lo setea _diaTipoPick si corresponde)
   runPlanActualId = null;
   const hoy = new Date().toISOString().split('T')[0];
   runSemanasArray = [{ semana:1, fechaInicio:hoy, diasData:{} }];
@@ -10731,8 +10732,41 @@ function _secRunResumen(b){
   return [b.distancia?b.distancia+' km':'', b.duracion?b.duracion+' min':'', b.ritmo?b.ritmo+'/km':'', b.zona||''].filter(Boolean).join(' · ') || '—';
 }
 
+// ── Guardar el running DENTRO de la semana de fuerza (cuando se entró desde "+ Agregar" de un día) ──
+function _guardarRunningEnFuerza(){
+  const t=window._runTargetFuerza; if(!t){ return; }
+  if(typeof _runSyncSemana==='function') _runSyncSemana();
+  const planes=getPlanificaciones();
+  const p=planes.find(x=>x.id===t.planId);
+  if(!p){ toast('No encontré el plan de fuerza destino','error'); return; }
+  if(!(Array.isArray(p.semanasArray)&&p.semanasArray.length)) p.semanasArray=[{semana:1,fechaInicio:p.fecha||'',dias:p.diasData||{}}];
+  const w=p.semanasArray[t.semIdx]||p.semanasArray[0];
+  w.dias=w.dias||{};
+  const lunes=w.fechaInicio||p.fecha||'';
+  const _MC=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const _nom=(dIdx)=>{ if(!lunes) return 'Running'; const d=new Date(lunes+'T12:00:00'); d.setDate(d.getDate()+dIdx); return 'Running — '+d.getDate()+' '+_MC[d.getMonth()]; };
+  let cargadas=0;
+  Object.keys(runDiasData||{}).forEach(k=>{
+    const bloques=runDiasData[k]; if(!Array.isArray(bloques)||!bloques.length) return;
+    const dk=String(k);
+    const s={ tipoSesion:'running', lugar:'Running', bloques:[], runBloques:JSON.parse(JSON.stringify(bloques)), nombre:_nom(+k) };
+    if(!Array.isArray(w.dias[dk])) w.dias[dk]=[];
+    const li=w.dias[dk].findIndex(x=>x&&x.tipoSesion==='running');
+    if(li>=0) w.dias[dk][li]=s; else w.dias[dk].push(s);
+    cargadas++;
+  });
+  if(!cargadas){ toast('No hay días de running para guardar. Armá al menos un bloque.','error'); return; }
+  if(p.semanasArray.indexOf(w)===0) p.diasData=p.semanasArray[0].dias;
+  savePlanificaciones(planes);
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+  window._runTargetFuerza=null;
+  const vr=document.getElementById('view-running'); if(vr) vr.classList.remove('active');
+  toast('✅ Running guardado en la semana de fuerza ✓');
+  if(typeof abrirPlanFuerzaExistente==='function') abrirPlanFuerzaExistente(p.id);
+}
 // ── GUARDAR PLANIFICACIÓN RUNNING ─────────────────────────────────────────────
 function guardarPlanRunning() {
+  if(window._runTargetFuerza) return _guardarRunningEnFuerza();
   const alumnoId = document.getElementById('run-alumno-select').value;
   const titulo = document.getElementById('run-titulo').value.trim() || 'Plan running';
   if(!alumnoId) { toast('Seleccioná un alumno','error'); return; }
@@ -12521,7 +12555,13 @@ function _diaTipoSelector(diaIdx, semIdx){
 }
 function _diaTipoPick(tipo, diaIdx, semIdx){
   const ov=document.getElementById('dia-tipo-ov'); if(ov) ov.remove();
-  if(tipo==='running'){ if(typeof abrirPlanRunning==='function') abrirPlanRunning(); else toast('No se pudo abrir el planificador de running','error'); }
+  if(tipo==='running'){
+    const _pid=planSemActualId, _si=(semIdx!==undefined?semIdx:planSemEditando);
+    if(typeof abrirPlanRunning==='function') abrirPlanRunning(); else { toast('No se pudo abrir el planificador de running','error'); return; }
+    // Contexto: al guardar, el running cae en ESTE plan de fuerza, esta semana, este día
+    window._runTargetFuerza = { planId: _pid, semIdx: _si };
+    setTimeout(()=>{ try{ if(typeof abrirDiaEditor==='function') abrirDiaEditor(diaIdx); }catch(e){} }, 150);
+  }
   else { abrirPlanDiaEditor(diaIdx, semIdx); }
 }
 function abrirPlanDiaEditor(diaIdx, semIdx) {
