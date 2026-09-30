@@ -950,8 +950,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260930183750 por un timestamp en cada deploy
-const _APP_VERSION = '20260930183750';
+// deploy.bat reemplaza 20260930184616 por un timestamp en cada deploy
+const _APP_VERSION = '20260930184616';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1869,7 +1869,7 @@ function renderRutina() {
       const _runS = arr.find(s=>s && s.tipoSesion==='running') || null;
       const ses = (_fuerzaA[0]?.bloques?.length ? _fuerzaA[0] : _fuerzaA[1]) || _fuerzaA[0] || _runS || {};
       const hasCasa = !!(_fuerzaA[1]?.bloques?.length);
-      const _hasRunDia = !!((_runS?.runBloques||_runS?.bloques||[]).length);
+      const _hasRunDia = !!((_runS?.runBloques||[]).length);
       const _hasFuerzaDia = !!(_fuerzaA[0]?.bloques?.length || _fuerzaA[1]?.bloques?.length);
       const on = i===_diaIdx, hoy=esHoy(i);
       const dayNum = sem.fechaInicio ? (()=>{const d=new Date(sem.fechaInicio+'T12:00:00');d.setDate(d.getDate()+i);return d.getDate();})() : i+1;
@@ -8547,7 +8547,7 @@ function renderSesion() {
   const sesCasa = fuerzaArr[1] || null;
   const hasCasa = !!(sesCasa?.bloques?.length);
   const hasGym  = !!(sesGym?.bloques?.length);
-  const _runB   = runSes ? (runSes.runBloques || runSes.bloques || []) : [];
+  const _runB   = runSes ? (runSes.runBloques || []) : [];   // solo bloques REALES de running (ignora cardio viejo)
   const hasRun  = !!_runB.length;
   const hasFuerza = hasGym || hasCasa;
   // Vista Fuerza / Running (solo relevante si el día tiene ambas)

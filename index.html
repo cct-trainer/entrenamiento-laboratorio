@@ -4823,6 +4823,7 @@ window.addEventListener('load',function(){ try{
         <button class="pln-btn pln-btn-outline" onclick="guardarPlantillaSesion()">Guardar plantilla</button>
         <button class="pln-btn pln-btn-outline" onclick="duplicarMesMismoAlumno()" title="Duplicar este mes/ciclo completo para el mismo alumno">📋 Duplicar mes</button>
         <button class="pln-btn pln-btn-outline" onclick="_exportarMesExcel()" title="Descargar el mes completo en Excel" style="background:#e6f7ec;color:#1c8a4e;border-color:#7bd3a0;">📊 Excel</button>
+        <button class="pln-btn pln-btn-outline" onclick="_limpiarRunningDelPlan()" title="Borrar todas las sesiones de running de este mes (la fuerza queda intacta)" style="background:#fdeeee;color:#b4322f;border-color:#eeb7b5;">🧹 Limpiar running</button>
         <button class="pln-btn pln-btn-guardar" onclick="abrirModalAsignarSesion()">Asignar a alumno</button>
         <button id="copiloto-toggle-btn" class="copiloto-toggle-btn" onclick="toggleCopiloto()" style="display:none;">Copiloto IA</button>
       </div>
@@ -5026,7 +5027,7 @@ window.addEventListener('load',function(){ try{
     </div>
 
     <!-- NAV SEMANA (mismo estilo de solapa que fuerza) -->
-    <div style="display:flex;align-items:center;gap:0;border-bottom:2px solid #e8e0cc;margin-bottom:0;">
+    <div id="run-nav-semana" style="display:flex;align-items:center;gap:0;border-bottom:2px solid #e8e0cc;margin-bottom:0;">
       <div style="padding:10px 22px;font-size:12px;font-weight:800;letter-spacing:1px;border-bottom:3px solid #C9A84C;color:#C9A84C;">DISTRIBUCIÓN SEMANAL</div>
       <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
         <button class="run-semana-btn" style="--c:#C9A84C;" onclick="runSemanaAnterior()">‹</button>
@@ -10106,8 +10107,16 @@ function runEliminarSemana(){
 }
 
 // ── Abrir planificador running ──────────────────────────────────────────────
+// Modo "un solo día": oculta metadatos, nav de semana y grilla de 7 días → solo el editor del día
+function _runFocoDia(on){
+  const hide=(sel,byId)=>{ const el=byId?document.getElementById(sel):document.querySelector(sel); if(el) el.style.display = on?'none':''; };
+  hide('.run-meta-bar');
+  hide('run-nav-semana', true);
+  hide('run-dias-grid', true);
+}
 function abrirPlanRunning() {
   window._runTargetFuerza = null;   // abrir normal = NO modo "guardar en fuerza" (lo setea _diaTipoPick si corresponde)
+  _runFocoDia(false);               // vista normal = mostrar todo
   runPlanActualId = null;
   const hoy = new Date().toISOString().split('T')[0];
   runSemanasArray = [{ semana:1, fechaInicio:hoy, diasData:{} }];
@@ -12553,19 +12562,41 @@ function _diaTipoSelector(diaIdx, semIdx){
   +'</div>';
   document.body.appendChild(ov);
 }
+// Borra TODAS las sesiones de running del mes actual (la fuerza queda intacta)
+function _limpiarRunningDelPlan(){
+  if(!Array.isArray(planSemanasArray)||!planSemanasArray.length){ toast('Abrí primero un mes de planificación','error'); return; }
+  if(!confirm('¿Borrar TODAS las sesiones de running de este mes? La fuerza queda intacta. (Sirve para limpiar pruebas viejas)')) return;
+  let n=0;
+  planSemanasArray.forEach(w=>{ if(!w||!w.dias) return; Object.keys(w.dias).forEach(k=>{ const arr=w.dias[k]; if(Array.isArray(arr)){ const before=arr.length; w.dias[k]=arr.filter(s=>!(s&&s.tipoSesion==='running')); n+=before-w.dias[k].length; } }); });
+  try{ const planes=getPlanificaciones(); const idx=planes.findIndex(p=>p.id===planSemActualId); if(idx>=0){ planes[idx].semanasArray=JSON.parse(JSON.stringify(planSemanasArray)); if(planes[idx].semanasArray[0]) planes[idx].diasData=planes[idx].semanasArray[0].dias; savePlanificaciones(planes); } }catch(e){}
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+  if(typeof renderPlanMes==='function') renderPlanMes();
+  toast('🧹 '+n+' sesión(es) de running eliminadas');
+}
 function _diaTipoPick(tipo, diaIdx, semIdx){
   const ov=document.getElementById('dia-tipo-ov'); if(ov) ov.remove();
-  if(tipo==='running'){
-    const _pid=planSemActualId, _si=(semIdx!==undefined?semIdx:planSemEditando);
-    if(typeof abrirPlanRunning==='function') abrirPlanRunning(); else { toast('No se pudo abrir el planificador de running','error'); return; }
-    // Contexto: al guardar, el running cae en ESTE plan de fuerza, esta semana, este día
-    window._runTargetFuerza = { planId: _pid, semIdx: _si };
-    setTimeout(()=>{ try{ if(typeof abrirDiaEditor==='function') abrirDiaEditor(diaIdx); }catch(e){} }, 150);
-  }
+  if(tipo==='running'){ _abrirRunningFocoDia(diaIdx, semIdx); }
   else { abrirPlanDiaEditor(diaIdx, semIdx); }
+}
+// Abre el planificador de running en modo UN SOLO DÍA (sin grilla de 7 días), atado a la semana de fuerza.
+// Si se pasan bloques existentes, los carga para editar.
+function _abrirRunningFocoDia(diaIdx, semIdx, existingBlocks){
+  const _pid=planSemActualId, _si=(semIdx!==undefined?semIdx:planSemEditando);
+  if(typeof abrirPlanRunning!=='function'){ toast('No se pudo abrir el planificador de running','error'); return; }
+  abrirPlanRunning();
+  window._runTargetFuerza = { planId:_pid, semIdx:_si, diaIdx:diaIdx };
+  if(Array.isArray(existingBlocks) && existingBlocks.length){ runDiasData[String(diaIdx)] = JSON.parse(JSON.stringify(existingBlocks)); }
+  setTimeout(()=>{ try{ _runFocoDia(true); if(typeof abrirDiaEditor==='function') abrirDiaEditor(diaIdx); const d=document.getElementById('run-titulo-display'); if(d) d.textContent='🏃 RUNNING — '+(['LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO','DOMINGO'][diaIdx]||''); }catch(e){} }, 160);
 }
 function abrirPlanDiaEditor(diaIdx, semIdx) {
   semIdx = (semIdx !== undefined) ? semIdx : planSemEditando;
+  // Si el día es SOLO running → editarlo en el planificador de running (no en el editor de fuerza)
+  try{
+    const _w=planSemanasArray[semIdx]; const _arr=(_w&&_w.dias&&_w.dias[diaIdx])||[];
+    const _run=_arr.find(s=>s&&s.tipoSesion==='running');
+    const _soloRun=_arr.length && _arr.every(s=>s&&s.tipoSesion==='running');
+    if(_soloRun && _run){ return _abrirRunningFocoDia(diaIdx, semIdx, _run.runBloques||[]); }
+  }catch(e){}
   // Guardar estado del editor previo
   guardarEstadoDiaActual();
   // Cambiar semana activa si es otra
