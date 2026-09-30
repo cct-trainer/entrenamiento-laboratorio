@@ -4561,7 +4561,7 @@ window.addEventListener('load',function(){ try{
             <div style="font-size:12px;color:#888;margin-top:4px;">Transfiere tu sesión tal cual a la planilla del alumno. No la modifica ni la optimiza.</div>
             <div style="display:flex;gap:8px;margin-top:14px;">
               <button id="trasp-tab-fuerza" onclick="_traspSetTipo('fuerza')" style="flex:1;padding:10px;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;background:#7c3aed;color:#fff;font-family:inherit;">💪 Fuerza</button>
-              <button id="trasp-tab-running" onclick="_traspSetTipo('running')" style="display:none;flex:1;padding:10px;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;background:#f0f0f0;color:#666;font-family:inherit;">🏃 Running</button>
+              <button id="trasp-tab-running" onclick="_traspSetTipo('running')" style="flex:1;padding:10px;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;background:#f0f0f0;color:#666;font-family:inherit;">🏃 Running</button>
             </div>
           </div>
           <div style="padding:16px 26px;overflow-y:auto;">
@@ -11892,7 +11892,7 @@ function renderPlanMes() {
       // Día vacío → tarjeta punteada con "+ Agregar"
       if(!tiene){
         const _pegChip = _clipSesion() ? '<button onclick="event.stopPropagation();pegarSesionDia('+i+','+semIdx+')" title="Pegar la sesión copiada" style="margin-top:6px;background:#eef2ff;color:#3A6EA5;border:1px solid #cfe0f6;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">📋 Pegar</button>' : '';
-        return '<div class="plan-fila pm-empty" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
+        return '<div class="plan-fila pm-empty" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" onclick="_diaTipoSelector('+i+','+semIdx+')">'
           + '<div class="pm-top">'+topHead+'</div>'
           + '<div class="pm-add">+ Agregar</div>'
           + _pegChip
@@ -12493,6 +12493,27 @@ function eliminarSesionDia(diaIdx, semIdx, sesionIdx) {
 }
 
 // ── Editor de día (usa los bloques/ejercicios existentes) ────────────────────
+// ── Selector Fuerza / Running al tocar "+ Agregar" en un día vacío ──
+function _diaTipoSelector(diaIdx, semIdx){
+  const prev=document.getElementById('dia-tipo-ov'); if(prev) prev.remove();
+  const ov=document.createElement('div');
+  ov.id='dia-tipo-ov';
+  ov.style.cssText='position:fixed;inset:0;z-index:4000;background:rgba(10,20,40,.45);display:flex;align-items:center;justify-content:center;padding:20px;';
+  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+  const btn=(tipo,ic,txt,col)=>'<button onclick="_diaTipoPick(\''+tipo+'\','+diaIdx+','+semIdx+')" onmouseover="this.style.borderColor=\''+col+'\';this.style.background=\'#f2f7fc\';" onmouseout="this.style.borderColor=\'#dbe1ea\';this.style.background=\'#fbfcfe\';" style="display:flex;align-items:center;gap:12px;width:100%;padding:15px 16px;border-radius:12px;border:1.5px solid #dbe1ea;background:#fbfcfe;font-size:15px;font-weight:800;color:#33424f;cursor:pointer;margin-bottom:10px;font-family:inherit;transition:.12s;"><span style="font-size:20px;">'+ic+'</span> '+txt+'</button>';
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;box-shadow:0 24px 60px -20px rgba(10,30,60,.5);width:100%;max-width:320px;padding:20px;">'
+    +'<div style="font-size:11px;font-weight:800;letter-spacing:.5px;color:#8a93a3;text-transform:uppercase;text-align:center;margin-bottom:14px;">¿Qué tipo de día?</div>'
+    +btn('fuerza','🏋️','Fuerza','#22508a')
+    +btn('running','🏃','Running','#15633a')
+    +'<div onclick="document.getElementById(\'dia-tipo-ov\').remove()" style="text-align:center;font-size:12px;color:#9aa3b2;font-weight:700;cursor:pointer;margin-top:8px;">Cancelar</div>'
+  +'</div>';
+  document.body.appendChild(ov);
+}
+function _diaTipoPick(tipo, diaIdx, semIdx){
+  const ov=document.getElementById('dia-tipo-ov'); if(ov) ov.remove();
+  if(tipo==='running'){ if(typeof abrirPlanRunning==='function') abrirPlanRunning(); else toast('No se pudo abrir el planificador de running','error'); }
+  else { abrirPlanDiaEditor(diaIdx, semIdx); }
+}
 function abrirPlanDiaEditor(diaIdx, semIdx) {
   semIdx = (semIdx !== undefined) ? semIdx : planSemEditando;
   // Guardar estado del editor previo
@@ -29067,7 +29088,8 @@ function _traspCargarSemanas(){
   const sel=document.getElementById('trasp-destino'); if(!sel) return;
   let opts='<option value="new">➕ Nueva planificación (crear semana)</option>';
   if(id){
-    const planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]).filter(p=>p.alumnoId===id && (_traspTipo==='running' ? p.tipoPlan==='running' : p.tipoPlan!=='running'));
+    // Fuerza y Running comparten los MISMOS planes/semanas (el running cae en la misma semana que la fuerza)
+    const planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]).filter(p=>p.alumnoId===id && p.tipoPlan!=='running');
     planes.forEach(p=>{
       const sems=(Array.isArray(p.semanasArray)&&p.semanasArray.length)?p.semanasArray:[{semana:1,fechaInicio:p.fecha||''}];
       sems.forEach((w,wi)=>{
@@ -29352,7 +29374,23 @@ function _traspEnviar(){
   toast('✅ Sesión cargada en la planilla');
   if(typeof abrirPlanFuerzaExistente==='function') abrirPlanFuerzaExistente(planId);
 }
-// ── Enviar a la planilla de RUNNING ──────────────────────────────────────────
+// ── Convertir bloques de running (parser) → bloques de cardio (que el coach y la app ya muestran) ──
+function _runToCardioBloques(runB){
+  return (runB||[]).map(b=>{
+    if(!b) return null;
+    if(b.tipo==='pasadas'){
+      const p=b.pasadas||[]; const f=p[0]||{};
+      const u=(b.unidad==='tiempo')?'':(b.unidad||'m');
+      const resumen=p.length+' × '+(f.distancia||'?')+u+(f.ritmo?' a '+f.ritmo:'')+(f.pausa?' · rec '+f.pausa:'');
+      return { nombre:b.label||'Pasadas / Intervalos', tipo:'Cardio', serieTipo:'', ejercicios:[], cardioData:{ actividad:'Intervalos', observaciones:resumen } };
+    }
+    if(b.tipo==='descanso') return { nombre:'Descanso activo', tipo:'Cardio', serieTipo:'', ejercicios:[], cardioData:{ actividad:'Descanso activo' } };
+    const dur = b.duracion ? (b.duracion+' min') : (b.distancia ? (b.distancia+' km') : '');
+    const obs = [b.ritmo?('Ritmo '+b.ritmo+'/km'):'', b.obs||''].filter(Boolean).join(' · ');
+    return { nombre:b.label||'Carrera', tipo:'Cardio', serieTipo:'', ejercicios:[], cardioData:{ actividad:'Carrera', duracion:dur, zona:b.zona||'', observaciones:obs } };
+  }).filter(Boolean);
+}
+// ── Enviar a la planilla de RUNNING → cae en la MISMA semana/plan que la fuerza ──
 function _traspEnviarRunning(){
   const id=document.getElementById('trasp-alumno').value;
   const dest=document.getElementById('trasp-destino').value;
@@ -29361,44 +29399,65 @@ function _traspEnviarRunning(){
   if(!id||!dest||!fecha){ toast('Completá alumno, semana y fecha','error'); return; }
   if(!txt){ toast('Escribí o pegá la sesión','error'); return; }
   const planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]);
-  // ¿Semana completa? (varias sesiones con "DÍA: ...")
+  const _MC=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const _nom=(lunesStr,dIdx)=>{ const d=new Date(lunesStr+'T12:00:00'); d.setDate(d.getDate()+dIdx); return 'Running — '+d.getDate()+' '+_MC[d.getMonth()]; };
+  const mkSes=(lineas)=>{ const rb=_secRunParse(lineas); const bl=_runToCardioBloques(rb); if(!bl.length) return null; return { tipoSesion:'running', lugar:'Running', bloques:bl }; };
   const partes=_traspSplitSemana(txt);
   const esSemana = partes.length>1 || (partes.length===1 && /^\s*d[ií]a\s*[:\-]/im.test(txt));
-  const diasData={}; let cargadas=0;
-  if(esSemana){
-    partes.forEach(pt=>{ const dIdx=_traspDiaIdx(pt.dia); if(dIdx<0) return; const bloques=_secRunParse(pt.lineas.join('\n')); if(!bloques.length) return; diasData[String(dIdx)]=bloques; cargadas++; });
-    if(!cargadas){ toast('No pude leer las sesiones. Separá cada día con "DÍA: Lunes".','error'); return; }
-  } else {
-    const bloques=_secRunParse(txt);
-    if(!bloques.length){ toast('No pude leer la sesión. Ej: "series 6x400 rec 90s" o "rodaje 40 min z2".','error'); return; }
-    const dayIdx=(new Date(fecha+'T12:00:00').getDay()+6)%7; // Lun=0
-    diasData[String(dayIdx)]=bloques; cargadas=1;
-  }
   let planId;
-  if(dest==='new'){
-    const lunes=_getLunesDe(fecha);
-    const nuevo={ id:genId(), alumnoId:id, tipoPlan:'running', tipoPlanEstructura:'semanal',
-      titulo:'Plan running', semanaNum:1, fecha:lunes, objetivo:'', nivel:'',
-      diasData:diasData, semanasArray:[{semana:1,fechaInicio:lunes,diasData:diasData}], createdAt:new Date().toISOString() };
-    planes.push(nuevo); planId=nuevo.id;
+  if(esSemana){
+    const nuevasDias={}; let cargadas=0;
+    partes.forEach(pt=>{ const dIdx=_traspDiaIdx(pt.dia); if(dIdx<0) return; const s=mkSes(pt.lineas.join('\n')); if(!s) return; nuevasDias[String(dIdx)]=s; cargadas++; });
+    if(!cargadas){ toast('No pude leer las sesiones de running. Separá cada día con "DÍA: Lunes".','error'); return; }
+    if(dest==='new'){
+      const lunes=_getLunesDe(fecha);
+      const dias={}; Object.keys(nuevasDias).forEach(k=>{ const s=nuevasDias[k]; s.nombre=_nom(lunes,+k); dias[k]=[s]; });
+      const nuevo={ id:genId(), alumnoId:id, tipoPlan:'fuerza', tipoPlanEstructura:'semanal',
+        titulo:'Running · semana', semanaNum:1, fecha:lunes,
+        diasData:dias, semanasArray:[{semana:1,fechaInicio:lunes,dias}], createdAt:new Date().toISOString() };
+      planes.push(nuevo); planId=nuevo.id;
+    } else {
+      const parts=dest.split('|'); const wi=+parts[1]; const p=planes.find(x=>x.id===parts[0]);
+      if(!p){ toast('No encontré el plan destino','error'); return; }
+      if(!(Array.isArray(p.semanasArray)&&p.semanasArray.length)) p.semanasArray=[{semana:1,fechaInicio:p.fecha||_getLunesDe(fecha),dias:p.diasData||{}}];
+      const w=p.semanasArray[wi]||p.semanasArray[0];
+      const lunes=w.fechaInicio||_getLunesDe(fecha);
+      w.dias=w.dias||{};
+      const ocupados=Object.keys(nuevasDias).filter(k=>Array.isArray(w.dias[k])&&w.dias[k].some(s=>s&&s.tipoSesion==='running'));
+      if(ocupados.length && !confirm('Esa semana ya tiene '+ocupados.length+' día(s) con running. ¿Reemplazarlos?')) return;
+      Object.keys(nuevasDias).forEach(k=>{ const s=nuevasDias[k]; s.nombre=_nom(lunes,+k); if(!Array.isArray(w.dias[k])) w.dias[k]=[]; const li=w.dias[k].findIndex(x=>x&&x.tipoSesion==='running'); if(li>=0) w.dias[k][li]=s; else w.dias[k].push(s); });
+      if(p.semanasArray.indexOf(w)===0) p.diasData=p.semanasArray[0].dias;
+      planId=p.id;
+    }
   } else {
-    const parts=dest.split('|'); const wi=+parts[1]; const p=planes.find(x=>x.id===parts[0]);
-    if(!p){ toast('No encontré el plan destino','error'); return; }
-    if(!(Array.isArray(p.semanasArray)&&p.semanasArray.length)) p.semanasArray=[{semana:1,fechaInicio:p.fecha||_getLunesDe(fecha),diasData:p.diasData||{}}];
-    const w=p.semanasArray[wi]||p.semanasArray[0];
-    w.diasData=w.diasData||{};
-    const ocupados=Object.keys(diasData).filter(k=>Array.isArray(w.diasData[k])&&w.diasData[k].length);
-    if(ocupados.length && !confirm('Esa semana ya tiene '+ocupados.length+' día(s) con sesión de running. ¿Reemplazarlos?')) return;
-    Object.keys(diasData).forEach(k=>{ w.diasData[k]=diasData[k]; });
-    if(p.semanasArray.indexOf(w)===0) p.diasData=p.semanasArray[0].diasData;
-    planId=p.id;
+    const s=mkSes(txt); if(!s){ toast('No pude leer la sesión de running. Ej: "rodaje 40 min z2" o "series 6x400 rec 90s".','error'); return; }
+    const fTxt=new Date(fecha+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+    s.nombre='Running — '+fTxt;
+    const dayIdx=(new Date(fecha+'T12:00:00').getDay()+6)%7;
+    if(dest==='new'){
+      const lunes=_getLunesDe(fecha); const dias={}; dias[String(dayIdx)]=[s];
+      const nuevo={ id:genId(), alumnoId:id, tipoPlan:'fuerza', tipoPlanEstructura:'semanal',
+        titulo:'Running · '+fTxt, semanaNum:1, fecha:lunes,
+        diasData:dias, semanasArray:[{semana:1,fechaInicio:lunes,dias}], createdAt:new Date().toISOString() };
+      planes.push(nuevo); planId=nuevo.id;
+    } else {
+      const parts=dest.split('|'); const wi=+parts[1]; const p=planes.find(x=>x.id===parts[0]);
+      if(!p){ toast('No encontré el plan destino','error'); return; }
+      if(!(Array.isArray(p.semanasArray)&&p.semanasArray.length)) p.semanasArray=[{semana:1,fechaInicio:p.fecha||_getLunesDe(fecha),dias:p.diasData||{}}];
+      const w=p.semanasArray[wi]||p.semanasArray[0];
+      w.dias=w.dias||{};
+      const dk=String(dayIdx); if(!Array.isArray(w.dias[dk])) w.dias[dk]=[];
+      const li=w.dias[dk].findIndex(x=>x&&x.tipoSesion==='running'); if(li>=0) w.dias[dk][li]=s; else w.dias[dk].push(s);
+      if(p.semanasArray.indexOf(w)===0) p.diasData=p.semanasArray[0].dias;
+      planId=p.id;
+    }
   }
   savePlanificaciones(planes);
   if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
   document.getElementById('trasp-modal').style.display='none';
   const t=document.getElementById('trasp-texto'); if(t) t.value='';
-  toast('✅ '+cargadas+' sesión'+(cargadas!==1?'es':'')+' de running cargada'+(cargadas!==1?'s':'')+' en la planilla');
-  if(typeof renderPerfilPlanificaciones==='function' && currentAlumnoId===id) renderPerfilPlanificaciones(id,'running');
+  toast('✅ Running cargado en la semana ✓');
+  if(typeof abrirPlanFuerzaExistente==='function' && planId) abrirPlanFuerzaExistente(planId);
 }
 async function _iaEnviarPlanificador(contentOverride, alumnoOverride, opts) {
   const content = (contentOverride!=null && String(contentOverride).trim()!=='') ? String(contentOverride) : (localStorage.getItem('SOCC_IA_LAST_PLAN') || '');

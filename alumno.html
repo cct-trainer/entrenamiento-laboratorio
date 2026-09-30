@@ -950,8 +950,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260930135445 por un timestamp en cada deploy
-const _APP_VERSION = '20260930135445';
+// deploy.bat reemplaza 20260930170919 por un timestamp en cada deploy
+const _APP_VERSION = '20260930170919';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1865,8 +1865,12 @@ function renderRutina() {
   } else {
     dgridEl.innerHTML = diasEntrena.map(i => {
       const arr = sem.dias[i] || [];
-      const ses = (arr[0]?.bloques?.length ? arr[0] : arr[1]) || arr[0] || {};
-      const hasCasa = !!(arr[1]?.bloques?.length);
+      const _fuerzaA = arr.filter(s=>s && s.tipoSesion!=='running');
+      const _runS = arr.find(s=>s && s.tipoSesion==='running') || null;
+      const ses = (_fuerzaA[0]?.bloques?.length ? _fuerzaA[0] : _fuerzaA[1]) || _fuerzaA[0] || _runS || {};
+      const hasCasa = !!(_fuerzaA[1]?.bloques?.length);
+      const _hasRunDia = !!(_runS?.bloques?.length);
+      const _hasFuerzaDia = !!(_fuerzaA[0]?.bloques?.length || _fuerzaA[1]?.bloques?.length);
       const on = i===_diaIdx, hoy=esHoy(i);
       const dayNum = sem.fechaInicio ? (()=>{const d=new Date(sem.fechaInicio+'T12:00:00');d.setDate(d.getDate()+i);return d.getDate();})() : i+1;
       const bloques = ses.bloques || [];
@@ -1877,7 +1881,7 @@ function renderRutina() {
       if (nEj) partes.push(nEj+' ejercicio'+(nEj>1?'s':''));
       if (nBloques) partes.push(nBloques+' bloque'+(nBloques>1?'s':''));
       const sub = partes.join(' · ');
-      const tags = (hoy?'<span class="dr-tag today">HOY</span>':'') + (hasCasa?'<span class="dr-tag">🏠 CASA</span>':'');
+      const tags = (hoy?'<span class="dr-tag today">HOY</span>':'') + (hasCasa?'<span class="dr-tag">🏠 CASA</span>':'') + (_hasRunDia?'<span class="dr-tag" style="background:rgba(230,120,60,.18);color:#e6773a;">🏃 RUNNING'+(_hasFuerzaDia?' + FUERZA':'')+'</span>':'');
       const _diaCol = (sem.diaColores && sem.diaColores[i] && /^#?[0-9a-fA-F]{6}$/.test(String(sem.diaColores[i]).replace('#',''))) ? ('#'+String(sem.diaColores[i]).replace('#','')) : '';
       const _dcolStyle = _diaCol ? ' style="background:linear-gradient(150deg,'+_diaCol+','+_darkenHex(_diaCol,.62)+');border-color:'+_diaCol+';box-shadow:0 6px 22px -8px '+_diaCol+'99;"' : '';
       return '<div class="dayrow '+(on?'on ':'')+(hoy?'today ':'')+(_diaCol?'dcol':'')+'"'+_dcolStyle+' onclick="selDia('+i+')">'+
@@ -1917,6 +1921,7 @@ function volverDias() {
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function _switchDiaModTab(t) { _diaModTab=t; renderSesion(); }
+function _switchDiaVista(v) { window._diaVista=v; renderSesion(); }
 
 async function _logActividad(diaIdx) {
   if (!_db || !_alumnoId) return;
@@ -8535,10 +8540,20 @@ function renderSesion() {
   if (_diaIdx===null||!_plan) { ctn.innerHTML=''; return; }
   const sem=_plan.semanasArray?.[_semIdx];
   const diasArr = sem?.dias?.[_diaIdx] || [];
-  const sesGym  = diasArr[0] || null;
-  const sesCasa = diasArr[1] || null;
+  // Separar sesiones de FUERZA (Gym/Casa por posición) de la de RUNNING (tipoSesion:'running')
+  const fuerzaArr = diasArr.filter(s=>s && s.tipoSesion!=='running');
+  const runSes    = diasArr.find(s=>s && s.tipoSesion==='running') || null;
+  const sesGym  = fuerzaArr[0] || null;
+  const sesCasa = fuerzaArr[1] || null;
   const hasCasa = !!(sesCasa?.bloques?.length);
   const hasGym  = !!(sesGym?.bloques?.length);
+  const hasRun  = !!(runSes?.bloques?.length);
+  const hasFuerza = hasGym || hasCasa;
+  // Vista Fuerza / Running (solo relevante si el día tiene ambas)
+  if(!window._diaVista) window._diaVista='fuerza';
+  let _vista = window._diaVista;
+  if(_vista==='running' && !hasRun) _vista='fuerza';
+  if(_vista==='fuerza' && !hasFuerza && hasRun) _vista='running';
 
   // Encabezado con botón de volver a la lista de días
   const _dnum = sem?.fechaInicio ? (()=>{const d=new Date(sem.fechaInicio+'T12:00:00');d.setDate(d.getDate()+_diaIdx);return d.getDate();})() : _diaIdx+1;
@@ -8560,13 +8575,23 @@ function renderSesion() {
     'color:'+(active?'var(--gold)':'var(--muted)')+';transition:all .15s;">'+
     icon+' '+label+'</button>';
 
-  const tabs = hasCasa ?
+  // Solapa superior Fuerza / Running (día mixto)
+  const _vistaBtn = (v, label, active) =>
+    '<button onclick="_switchDiaVista(\''+v+'\')" style="flex:1;padding:12px 0;font-size:13px;font-weight:800;letter-spacing:.3px;border:1.5px solid '+(active?'#3A6EA5':'rgba(128,140,170,.35)')+';border-radius:12px;cursor:pointer;'+
+    'background:'+(active?'#3A6EA5':'transparent')+';color:'+(active?'#fff':'var(--text)')+';transition:.15s;font-family:inherit;">'+label+'</button>';
+  const vistaTabs = (hasFuerza && hasRun) ?
+    '<div style="display:flex;gap:9px;margin-bottom:14px;">'+
+      _vistaBtn('fuerza','🏋️ Fuerza', _vista==='fuerza')+
+      _vistaBtn('running','🏃 Running', _vista==='running')+
+    '</div>' : '';
+
+  const tabs = (_vista==='fuerza' && hasCasa) ?
     '<div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:14px;">'+
       _tabBtn(0,'','GYM', _diaModTab===0)+
       _tabBtn(1,'','CASA', _diaModTab===1)+
     '</div>' : '';
 
-  const ses = _diaModTab === 0 ? sesGym : sesCasa;
+  const ses = (_vista==='running') ? runSes : (_diaModTab === 0 ? sesGym : sesCasa);
 
   if (!ses?.bloques?.length) {
     const msgGym = '<div class="empty" style="padding:20px"><div class="empty-txt">'+_t('sin_sesion_gym')+' '+DN[_diaIdx]+'</div></div>';
@@ -8575,7 +8600,7 @@ function renderSesion() {
       '<div class="empty-txt">'+_t('sin_sesion_casa')+'</div>'+
       '<div style="font-size:12px;color:var(--muted);margin-top:6px;">'+_t('sin_sesion_casa_sub')+'</div>'+
     '</div>';
-    ctn.innerHTML = back + tabs + (_diaModTab===0 ? msgGym : msgCasa);
+    ctn.innerHTML = back + vistaTabs + tabs + (_diaModTab===0 ? msgGym : msgCasa);
     return;
   }
 
@@ -8670,7 +8695,7 @@ function renderSesion() {
     ? '<div style="margin-top:10px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;font-weight:800;color:#7fb0e6;background:rgba(96,165,224,.10);border:1px solid rgba(96,165,224,.28);border-radius:12px;padding:10px;">👁️ '+(_LANG==='en'?'Your coach reviewed this workout':'Tu coach vio tu entrenamiento')+'</div>'
     : '';
 
-  ctn.innerHTML= back + tabs +
+  ctn.innerHTML= back + vistaTabs + tabs +
     // Foto limpia arriba (con un pequeño degradado final hacia el rectángulo)
     '<div style="position:relative;height:220px;margin:0 -16px;background:#0a0a12 url(\''+_sesImg+'\') center/cover no-repeat;">'+
       '<div style="position:absolute;left:0;right:0;bottom:0;height:64px;background:linear-gradient(to bottom, transparent, var(--ses-panel));"></div>'+
