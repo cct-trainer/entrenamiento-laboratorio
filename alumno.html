@@ -950,8 +950,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260929122820 por un timestamp en cada deploy
-const _APP_VERSION = '20260929122820';
+// deploy.bat reemplaza 20260930133038 por un timestamp en cada deploy
+const _APP_VERSION = '20260930133038';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2564,7 +2564,8 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
         ? 'ontouchstart="_lpStart(event,\''+sp+'\',\''+uid_safe+'\')" ontouchend="_lpEnd()" ontouchmove="_lpEnd()" oncontextmenu="_showCtxMenu(event,\''+sp+'\',\''+uid_safe+'\');return false"'
         : '';
       // La pausa se muestra como dato (el descanso lo maneja el timer automático al marcar la serie)
-      const pausaCel = (s.pausa ? _compEsc(s.pausa) : (defPausa>=60?(Math.round(defPausa/60)+' min'):(defPausa+' seg')));
+      // En CIRCUITOS: pasar de un ejercicio a otro = 20 seg automáticos.
+      const pausaCel = window._circLblOn ? '20 seg' : (s.pausa ? _compEsc(s.pausa) : (defPausa>=60?(Math.round(defPausa/60)+' min'):(defPausa+' seg')));
       const serieLbl = '<span class="s-num'+(done?' on':'')+'">'+(window._circLblOn?'V':'S')+labelNum+'</span>' + (lado ? ' <span style="color:var(--muted);font-weight:600;">'+lado+'</span>' : '') + tipoBadge;
       // Serie agregada por el alumno (extra) → se puede eliminar. Serie del coach → ✕ = "no la hice".
       const _esExtra = (keyIdx >= arr.length);
@@ -2577,11 +2578,11 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
       const _tecR0 = (ej && ej.tecnica) || {};
       const _tecR = _tecR0.tipo ? _tecR0 : ((_tecR0.tecnica||_tecR0.familia) ? _tecNorm(_tecR0) : _tecR0);
       const _tecP = _tecR.params || {};
-      let _restSec = _segDe(s.pausa)||defPausa;   // pausa por defecto según tipo de bloque (simple 60s · combo 30s · último 60s)
+      let _restSec = window._circLblOn ? 20 : (_segDe(s.pausa)||defPausa);   // circuito → 20s entre estaciones; si no, pausa del bloque
       if(_tecR.tipo==='fst7' && _tecP.descanso){ const m=String(_tecP.descanso).match(/\d+/); if(m) _restSec=parseInt(m[0]); }
       let _isoSec = 0;
       if(_tecR.tipo==='iso_hold' && _tecP.seg){ const m=String(_tecP.seg).match(/\d+/); if(m) _isoSec=parseInt(m[0]); }
-      return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+(done?' s-done':'')+'" data-pausa="'+(_segDe(s.pausa)||defPausa)+'" data-rest="'+_restSec+'" data-iso="'+_isoSec+'" '+touch+'>'+
+      return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+(done?' s-done':'')+'" data-pausa="'+(window._circLblOn?20:(_segDe(s.pausa)||defPausa))+'" data-rest="'+_restSec+'" data-iso="'+_isoSec+'" '+touch+'>'+
         '<td style="'+tdBase+'font-size:11px;font-weight:800;cursor:pointer;" onclick="event.stopPropagation();_serieTap(\''+sp+'\')">'+serieLbl+'</td>'+
         '<td style="'+tdBase+'">'+repsCel+((_uni && !/\blado\b/i.test(String(repsVal)))?'<div style="font-size:8.5px;font-weight:800;color:#8a63c9;margin-top:1px;line-height:1;">c/lado</div>':'')+'</td>'+
         (hasPeso  ? '<td style="'+tdBase+'">'+pesoCel+_cuHtml+'</td>' : '')+
