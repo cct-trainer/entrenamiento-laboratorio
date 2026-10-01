@@ -950,8 +950,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260930223623 por un timestamp en cada deploy
-const _APP_VERSION = '20260930223623';
+// deploy.bat reemplaza 20261001192601 por un timestamp en cada deploy
+const _APP_VERSION = '20261001192601';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1882,7 +1882,8 @@ function renderRutina() {
       if (nBloques) partes.push(nBloques+' bloque'+(nBloques>1?'s':''));
       const sub = partes.join(' · ');
       const tags = (hoy?'<span class="dr-tag today">HOY</span>':'') + (hasCasa?'<span class="dr-tag">🏠 CASA</span>':'') + (_hasRunDia?'<span class="dr-tag" style="background:rgba(43,143,204,.20);color:#5bb6ea;">RUNNING'+(_hasFuerzaDia?' + FUERZA':'')+'</span>':'');
-      const _diaCol = (sem.diaColores && sem.diaColores[i] && /^#?[0-9a-fA-F]{6}$/.test(String(sem.diaColores[i]).replace('#',''))) ? ('#'+String(sem.diaColores[i]).replace('#','')) : '';
+      let _diaCol = (sem.diaColores && sem.diaColores[i] && /^#?[0-9a-fA-F]{6}$/.test(String(sem.diaColores[i]).replace('#',''))) ? ('#'+String(sem.diaColores[i]).replace('#','')) : '';
+      if(!_diaCol && _hasRunDia && !_hasFuerzaDia) _diaCol = '#2b8fcc';   // día de solo running → celeste (como en el coach)
       const _dcolStyle = _diaCol ? ' style="background:linear-gradient(150deg,'+_diaCol+','+_darkenHex(_diaCol,.62)+');border-color:'+_diaCol+';box-shadow:0 6px 22px -8px '+_diaCol+'99;"' : '';
       return '<div class="dayrow '+(on?'on ':'')+(hoy?'today ':'')+(_diaCol?'dcol':'')+'"'+_dcolStyle+' onclick="selDia('+i+')">'+
         '<div class="dr-date"><span class="dr-dow">'+DS[i]+'</span><span class="dr-num">'+dayNum+'</span></div>'+
