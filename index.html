@@ -10109,10 +10109,11 @@ function runEliminarSemana(){
 // ── Abrir planificador running ──────────────────────────────────────────────
 // Modo "un solo día": oculta metadatos, nav de semana y grilla de 7 días → solo el editor del día
 function _runFocoDia(on){
-  const hide=(sel,byId)=>{ const el=byId?document.getElementById(sel):document.querySelector(sel); if(el) el.style.display = on?'none':''; };
-  hide('.run-meta-bar');
-  hide('run-nav-semana', true);
-  hide('run-dias-grid', true);
+  const vr=document.getElementById('view-running'); if(!vr) return;
+  const hide=(el)=>{ if(el) el.style.display = on?'none':''; };
+  hide(vr.querySelector('.run-meta-bar'));   // ← la barra de datos DENTRO de la vista de running (no la de fuerza)
+  hide(document.getElementById('run-nav-semana'));
+  hide(document.getElementById('run-dias-grid'));
 }
 function abrirPlanRunning() {
   window._runTargetFuerza = null;   // abrir normal = NO modo "guardar en fuerza" (lo setea _diaTipoPick si corresponde)
@@ -10222,6 +10223,7 @@ function renderDiaEditor(diaIdx) {
         <span style="font-size:18px;">📅</span>
         <span class="run-sesion-editor-titulo">${DIAS_SEMANA[diaIdx].toUpperCase()}</span>
         <div style="display:flex;gap:8px;margin-left:auto;">
+          ${window._runTargetFuerza ? '<button onclick="_borrarRunningDia()" title="Borrar el running de este día" style="background:#fdeeee;color:#b4322f;border:1px solid #eeb7b5;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer;">🗑 Borrar running</button>' : ''}
           <button class="run-sesion-cerrar" onclick="cerrarDiaEditor()">×</button>
         </div>
       </div>
@@ -10743,6 +10745,7 @@ function _secRunResumen(b){
 
 // ── Guardar el running DENTRO de la semana de fuerza (cuando se entró desde "+ Agregar" de un día) ──
 function _guardarRunningEnFuerza(){
+ try{
   const t=window._runTargetFuerza; if(!t){ return; }
   if(typeof _runSyncSemana==='function') _runSyncSemana();
   const planes=getPlanificaciones();
@@ -10754,24 +10757,29 @@ function _guardarRunningEnFuerza(){
   const lunes=w.fechaInicio||p.fecha||'';
   const _MC=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   const _nom=(dIdx)=>{ if(!lunes) return 'Running'; const d=new Date(lunes+'T12:00:00'); d.setDate(d.getDate()+dIdx); return 'Running — '+d.getDate()+' '+_MC[d.getMonth()]; };
-  let cargadas=0;
-  Object.keys(runDiasData||{}).forEach(k=>{
-    const bloques=runDiasData[k]; if(!Array.isArray(bloques)||!bloques.length) return;
-    const dk=String(k);
-    const s={ tipoSesion:'running', lugar:'Running', bloques:[], runBloques:JSON.parse(JSON.stringify(bloques)), nombre:_nom(+k) };
+  let cargadas=0, vaciados=0;
+  // Días que el editor tocó (los que tienen o tuvieron bloques). Siempre incluimos el día destino.
+  const _diasEditor = new Set(Object.keys(runDiasData||{}).map(String));
+  if(t.diaIdx!==undefined) _diasEditor.add(String(t.diaIdx));
+  _diasEditor.forEach(dk=>{
+    const bloques=runDiasData[dk];
     if(!Array.isArray(w.dias[dk])) w.dias[dk]=[];
-    const li=w.dias[dk].findIndex(x=>x&&x.tipoSesion==='running');
-    if(li>=0) w.dias[dk][li]=s; else w.dias[dk].push(s);
-    cargadas++;
+    // Sacar SIEMPRE cualquier running viejo/duplicado de ese día
+    w.dias[dk]=w.dias[dk].filter(x=>!(x&&x.tipoSesion==='running'));
+    if(Array.isArray(bloques)&&bloques.length){
+      w.dias[dk].push({ tipoSesion:'running', lugar:'Running', bloques:[], runBloques:JSON.parse(JSON.stringify(bloques)), nombre:_nom(+dk) });
+      cargadas++;
+    } else { vaciados++; }
   });
-  if(!cargadas){ toast('No hay días de running para guardar. Armá al menos un bloque.','error'); return; }
+  if(!cargadas && !vaciados){ toast('No hay nada para guardar','error'); return; }
   if(p.semanasArray.indexOf(w)===0) p.diasData=p.semanasArray[0].dias;
   savePlanificaciones(planes);
   if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
   window._runTargetFuerza=null;
   const vr=document.getElementById('view-running'); if(vr) vr.classList.remove('active');
-  toast('✅ Running guardado en la semana de fuerza ✓');
+  toast(cargadas? '✅ Running guardado en la semana de fuerza ✓' : '🗑 Running quitado de ese día');
   if(typeof abrirPlanFuerzaExistente==='function') abrirPlanFuerzaExistente(p.id);
+ }catch(err){ console.error('guardar running en fuerza:',err); toast('Error al guardar el running: '+(err&&err.message||err),'error'); }
 }
 // ── GUARDAR PLANIFICACIÓN RUNNING ─────────────────────────────────────────────
 function guardarPlanRunning() {
@@ -12565,13 +12573,27 @@ function _diaTipoSelector(diaIdx, semIdx){
 // Borra TODAS las sesiones de running del mes actual (la fuerza queda intacta)
 function _limpiarRunningDelPlan(){
   if(!Array.isArray(planSemanasArray)||!planSemanasArray.length){ toast('Abrí primero un mes de planificación','error'); return; }
-  if(!confirm('¿Borrar TODAS las sesiones de running de este mes? La fuerza queda intacta. (Sirve para limpiar pruebas viejas)')) return;
+  if(!confirm('¿Borrar TODAS las sesiones de running de este alumno? La fuerza queda intacta. (Sirve para limpiar pruebas viejas)')) return;
   let n=0;
+  // 1) Running embebido en las semanas de este mes
   planSemanasArray.forEach(w=>{ if(!w||!w.dias) return; Object.keys(w.dias).forEach(k=>{ const arr=w.dias[k]; if(Array.isArray(arr)){ const before=arr.length; w.dias[k]=arr.filter(s=>!(s&&s.tipoSesion==='running')); n+=before-w.dias[k].length; } }); });
-  try{ const planes=getPlanificaciones(); const idx=planes.findIndex(p=>p.id===planSemActualId); if(idx>=0){ planes[idx].semanasArray=JSON.parse(JSON.stringify(planSemanasArray)); if(planes[idx].semanasArray[0]) planes[idx].diasData=planes[idx].semanasArray[0].dias; savePlanificaciones(planes); } }catch(e){}
+  try{
+    let planes=getPlanificaciones();
+    const idx=planes.findIndex(p=>p.id===planSemActualId);
+    if(idx>=0){ planes[idx].semanasArray=JSON.parse(JSON.stringify(planSemanasArray)); if(planes[idx].semanasArray[0]) planes[idx].diasData=planes[idx].semanasArray[0].dias; }
+    // 2) Running embebido en CUALQUIER plan de fuerza del mismo alumno
+    const alId=(planes[idx]&&planes[idx].alumnoId)||currentAlumnoId;
+    planes.forEach(p=>{ if(p.alumnoId!==alId || p.tipoPlan==='running') return; (p.semanasArray||[]).forEach(w=>{ if(!w||!w.dias) return; Object.keys(w.dias).forEach(k=>{ if(Array.isArray(w.dias[k])){ const b=w.dias[k].length; w.dias[k]=w.dias[k].filter(s=>!(s&&s.tipoSesion==='running')); n+=b-w.dias[k].length; } }); }); });
+    // 3) Planes de running SUELTOS del alumno (los que se hayan creado aparte)
+    const beforePlanes=planes.length;
+    planes=planes.filter(p=>!(p.alumnoId===alId && p.tipoPlan==='running'));
+    const planesRunBorrados=beforePlanes-planes.length;
+    savePlanificaciones(planes);
+    if(planesRunBorrados) n+=planesRunBorrados;
+  }catch(e){ console.error(e); }
   if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
   if(typeof renderPlanMes==='function') renderPlanMes();
-  toast('🧹 '+n+' sesión(es) de running eliminadas');
+  toast('🧹 Running eliminado ('+n+' ítems). Rearmá limpio.');
 }
 function _diaTipoPick(tipo, diaIdx, semIdx){
   const ov=document.getElementById('dia-tipo-ov'); if(ov) ov.remove();
@@ -12580,6 +12602,22 @@ function _diaTipoPick(tipo, diaIdx, semIdx){
 }
 // Abre el planificador de running en modo UN SOLO DÍA (sin grilla de 7 días), atado a la semana de fuerza.
 // Si se pasan bloques existentes, los carga para editar.
+// Borra la sesión de running del día que está abierto en el editor de running (modo foco)
+function _borrarRunningDia(){
+  const t=window._runTargetFuerza; if(!t){ toast('No hay día de running abierto','error'); return; }
+  if(!confirm('¿Borrar la sesión de running de este día? (la fuerza de ese día queda intacta)')) return;
+  const planes=getPlanificaciones(); const p=planes.find(x=>x.id===t.planId); if(!p){ toast('No encontré el plan','error'); return; }
+  const w=(p.semanasArray&&p.semanasArray[t.semIdx])||(p.semanasArray&&p.semanasArray[0]); if(!w||!w.dias){ return; }
+  const dk=String(t.diaIdx);
+  if(Array.isArray(w.dias[dk])) w.dias[dk]=w.dias[dk].filter(s=>!(s&&s.tipoSesion==='running'));
+  if(p.semanasArray.indexOf(w)===0) p.diasData=p.semanasArray[0].dias;
+  savePlanificaciones(planes);
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+  window._runTargetFuerza=null;
+  const vr=document.getElementById('view-running'); if(vr) vr.classList.remove('active');
+  toast('🗑 Running borrado de ese día');
+  if(typeof abrirPlanFuerzaExistente==='function') abrirPlanFuerzaExistente(p.id);
+}
 function _abrirRunningFocoDia(diaIdx, semIdx, existingBlocks){
   const _pid=planSemActualId, _si=(semIdx!==undefined?semIdx:planSemEditando);
   if(typeof abrirPlanRunning!=='function'){ toast('No se pudo abrir el planificador de running','error'); return; }
