@@ -950,8 +950,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260930214507 por un timestamp en cada deploy
-const _APP_VERSION = '20260930214507';
+// deploy.bat reemplaza 20260930215544 por un timestamp en cada deploy
+const _APP_VERSION = '20260930215544';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -8577,9 +8577,10 @@ function renderSesion() {
     icon+' '+label+'</button>';
 
   // Solapa superior Fuerza / Running (día mixto)
-  const _vistaBtn = (v, label, active) =>
-    '<button onclick="_switchDiaVista(\''+v+'\')" style="flex:1;padding:12px 0;font-size:13px;font-weight:800;letter-spacing:.3px;border:1.5px solid '+(active?'#3A6EA5':'rgba(128,140,170,.35)')+';border-radius:12px;cursor:pointer;'+
-    'background:'+(active?'#3A6EA5':'transparent')+';color:'+(active?'#fff':'var(--text)')+';transition:.15s;font-family:inherit;">'+label+'</button>';
+  const _vistaBtn = (v, label, active) => {
+    const _ac = v==='running' ? '#c75b22' : '#3A6EA5';   // running = naranja · fuerza = azul
+    return '<button onclick="_switchDiaVista(\''+v+'\')" style="flex:1;padding:12px 0;font-size:13px;font-weight:800;letter-spacing:.3px;border:1.5px solid '+(active?_ac:'rgba(128,140,170,.35)')+';border-radius:12px;cursor:pointer;'+
+    'background:'+(active?_ac:'transparent')+';color:'+(active?'#fff':'var(--text)')+';transition:.15s;font-family:inherit;">'+label+'</button>'; };
   const vistaTabs = (hasFuerza && hasRun) ?
     '<div style="display:flex;gap:9px;margin-bottom:14px;">'+
       _vistaBtn('fuerza','🏋️ Fuerza', _vista==='fuerza')+

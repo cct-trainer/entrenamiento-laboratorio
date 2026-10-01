@@ -10748,37 +10748,50 @@ function _guardarRunningEnFuerza(){
  try{
   const t=window._runTargetFuerza; if(!t){ return; }
   if(typeof _runSyncSemana==='function') _runSyncSemana();
-  const planes=getPlanificaciones();
-  const p=planes.find(x=>x.id===t.planId);
-  if(!p){ toast('No encontré el plan de fuerza destino','error'); return; }
-  if(!(Array.isArray(p.semanasArray)&&p.semanasArray.length)) p.semanasArray=[{semana:1,fechaInicio:p.fecha||'',dias:p.diasData||{}}];
-  const w=p.semanasArray[t.semIdx]||p.semanasArray[0];
+  // Si el plan destino es el que está ABIERTO en el planificador de fuerza, trabajamos sobre su
+  // estado EN MEMORIA (planSemanasArray) para no perder cambios no guardados (ej. otras sesiones).
+  const esActual = (t.planId===planSemActualId && Array.isArray(planSemanasArray) && planSemanasArray.length);
+  let planes=getPlanificaciones();
+  let p=planes.find(x=>x.id===t.planId);
+  if(!p && !esActual){ toast('No encontré el plan de fuerza destino','error'); return; }
+  let semanas;
+  if(esActual){ semanas=planSemanasArray; }
+  else {
+    if(!(Array.isArray(p.semanasArray)&&p.semanasArray.length)) p.semanasArray=[{semana:1,fechaInicio:p.fecha||'',dias:p.diasData||{}}];
+    semanas=p.semanasArray;
+  }
+  const w=semanas[t.semIdx]||semanas[0];
   w.dias=w.dias||{};
-  const lunes=w.fechaInicio||p.fecha||'';
+  const lunes=w.fechaInicio||(p&&p.fecha)||'';
   const _MC=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   const _nom=(dIdx)=>{ if(!lunes) return 'Running'; const d=new Date(lunes+'T12:00:00'); d.setDate(d.getDate()+dIdx); return 'Running — '+d.getDate()+' '+_MC[d.getMonth()]; };
   let cargadas=0, vaciados=0;
-  // Días que el editor tocó (los que tienen o tuvieron bloques). Siempre incluimos el día destino.
   const _diasEditor = new Set(Object.keys(runDiasData||{}).map(String));
   if(t.diaIdx!==undefined) _diasEditor.add(String(t.diaIdx));
   _diasEditor.forEach(dk=>{
     const bloques=runDiasData[dk];
     if(!Array.isArray(w.dias[dk])) w.dias[dk]=[];
-    // Sacar SIEMPRE cualquier running viejo/duplicado de ese día
-    w.dias[dk]=w.dias[dk].filter(x=>!(x&&x.tipoSesion==='running'));
+    w.dias[dk]=w.dias[dk].filter(x=>!(x&&x.tipoSesion==='running'));   // saca running viejo/duplicado del día
     if(Array.isArray(bloques)&&bloques.length){
       w.dias[dk].push({ tipoSesion:'running', lugar:'Running', bloques:[], runBloques:JSON.parse(JSON.stringify(bloques)), nombre:_nom(+dk) });
       cargadas++;
     } else { vaciados++; }
   });
   if(!cargadas && !vaciados){ toast('No hay nada para guardar','error'); return; }
-  if(p.semanasArray.indexOf(w)===0) p.diasData=p.semanasArray[0].dias;
+  // Persistir
+  if(esActual){
+    const idx=planes.findIndex(x=>x.id===planSemActualId);
+    if(idx>=0){ planes[idx].semanasArray=JSON.parse(JSON.stringify(planSemanasArray)); if(planes[idx].semanasArray[0]) planes[idx].diasData=planes[idx].semanasArray[0].dias; }
+    else { planes.push({ id:planSemActualId, alumnoId:currentAlumnoId, tipoPlan:'fuerza', tipoPlanEstructura:'semanal', semanasArray:JSON.parse(JSON.stringify(planSemanasArray)), createdAt:new Date().toISOString() }); }
+  } else {
+    if(p.semanasArray.indexOf(w)===0) p.diasData=p.semanasArray[0].dias;
+  }
   savePlanificaciones(planes);
   if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
   window._runTargetFuerza=null;
   const vr=document.getElementById('view-running'); if(vr) vr.classList.remove('active');
-  toast(cargadas? '✅ Running guardado en la semana de fuerza ✓' : '🗑 Running quitado de ese día');
-  if(typeof abrirPlanFuerzaExistente==='function') abrirPlanFuerzaExistente(p.id);
+  toast(cargadas? '✅ Running guardado en la semana ✓' : '🗑 Running quitado de ese día');
+  if(typeof abrirPlanFuerzaExistente==='function') abrirPlanFuerzaExistente(t.planId);
  }catch(err){ console.error('guardar running en fuerza:',err); toast('Error al guardar el running: '+(err&&err.message||err),'error'); }
 }
 // ── GUARDAR PLANIFICACIÓN RUNNING ─────────────────────────────────────────────
@@ -11981,7 +11994,9 @@ function renderPlanMes() {
         + '<button class="pm-abtn pm-del" onclick="event.stopPropagation();'+delAction+'" title="Eliminar">'+_PMIC.del+'</button>'
       + '</div>';
       const fCls = f || 'none';
-      const _diaCol = (sem.diaColores && sem.diaColores[i]) || '#1a1f2b';   // negro por defecto; el 🎨 lo cambia por día
+      // Día de SOLO running → naranja por defecto (se distingue de la fuerza); el 🎨 manda si elegís otro
+      const _esRunDia = sesiones.length && sesiones.every(s=>s&&s.tipoSesion==='running');
+      const _diaCol = (sem.diaColores && sem.diaColores[i]) || (_esRunDia ? '#c75b22' : '#1a1f2b');
       const _colStyle = 'background:'+_diaCol+' !important;border:1.5px solid '+_darkenHex(_diaCol,.8)+' !important;box-shadow:0 8px 20px -14px rgba(20,50,90,.45) !important;';
       return '<div class="plan-fila plan-dia-card tiene-sesion pm-card pm-fill foco-'+fCls+'" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" draggable="true" style="'+_colStyle+'" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
         + '<div class="pm-top">'+topHead+'<span class="pm-dotf foco-'+f+'"></span></div>'
@@ -12606,17 +12621,21 @@ function _diaTipoPick(tipo, diaIdx, semIdx){
 function _borrarRunningDia(){
   const t=window._runTargetFuerza; if(!t){ toast('No hay día de running abierto','error'); return; }
   if(!confirm('¿Borrar la sesión de running de este día? (la fuerza de ese día queda intacta)')) return;
-  const planes=getPlanificaciones(); const p=planes.find(x=>x.id===t.planId); if(!p){ toast('No encontré el plan','error'); return; }
-  const w=(p.semanasArray&&p.semanasArray[t.semIdx])||(p.semanasArray&&p.semanasArray[0]); if(!w||!w.dias){ return; }
+  const esActual = (t.planId===planSemActualId && Array.isArray(planSemanasArray) && planSemanasArray.length);
+  let planes=getPlanificaciones(); let p=planes.find(x=>x.id===t.planId);
+  const semanas = esActual ? planSemanasArray : (p&&p.semanasArray);
+  if(!semanas){ toast('No encontré el plan','error'); return; }
+  const w=semanas[t.semIdx]||semanas[0]; if(!w||!w.dias){ return; }
   const dk=String(t.diaIdx);
   if(Array.isArray(w.dias[dk])) w.dias[dk]=w.dias[dk].filter(s=>!(s&&s.tipoSesion==='running'));
-  if(p.semanasArray.indexOf(w)===0) p.diasData=p.semanasArray[0].dias;
+  if(esActual){ const idx=planes.findIndex(x=>x.id===planSemActualId); if(idx>=0){ planes[idx].semanasArray=JSON.parse(JSON.stringify(planSemanasArray)); if(planes[idx].semanasArray[0]) planes[idx].diasData=planes[idx].semanasArray[0].dias; } }
+  else if(p.semanasArray.indexOf(w)===0){ p.diasData=p.semanasArray[0].dias; }
   savePlanificaciones(planes);
   if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
   window._runTargetFuerza=null;
   const vr=document.getElementById('view-running'); if(vr) vr.classList.remove('active');
   toast('🗑 Running borrado de ese día');
-  if(typeof abrirPlanFuerzaExistente==='function') abrirPlanFuerzaExistente(p.id);
+  if(typeof abrirPlanFuerzaExistente==='function') abrirPlanFuerzaExistente(t.planId);
 }
 function _abrirRunningFocoDia(diaIdx, semIdx, existingBlocks){
   const _pid=planSemActualId, _si=(semIdx!==undefined?semIdx:planSemEditando);
