@@ -10348,6 +10348,8 @@ function buildPasadasHTML(diaIdx, bi, b, tipo) {
       <td class="run-tiempo-calculado" id="run-tiempo-${diaIdx}-${bi}-${pi}">${tiempoTotal}</td>
       <td><input type="text" value="${p.pausa||''}" placeholder="2 min"
         onchange="updatePasada(${diaIdx},${bi},${pi},'pausa',this.value)"></td>
+      <td><input type="text" value="${p.ritmoRec||''}" placeholder="6:00 / suave"
+        onchange="updatePasada(${diaIdx},${bi},${pi},'ritmoRec',this.value)"></td>
       <td><input type="text" value="${p.obs||''}" placeholder="observación"
         onchange="updatePasada(${diaIdx},${bi},${pi},'obs',this.value)"></td>
       <td><button class="btn-del-row" onclick="eliminarPasada(${diaIdx},${bi},${pi})">×</button></td>
@@ -10455,6 +10457,7 @@ function buildPasadasHTML(diaIdx, bi, b, tipo) {
               <th>Ritmo (min/km)</th>
               <th>Tiempo total</th>
               <th>Pausa</th>
+              <th>Ritmo recup</th>
               <th>Observaciones</th>
               <th></th>
             </tr></thead>
@@ -10804,6 +10807,12 @@ function _secRunResumen(b){
   return [b.distancia?b.distancia+' km':'', b.duracion?b.duracion+' min':'', b.ritmo?b.ritmo+'/km':'', b.zona||''].filter(Boolean).join(' · ') || '—';
 }
 
+// Etiqueta descriptiva del running según el tipo del bloque principal (Intervalos, Fondo, etc.)
+function _runTipoLabel(bloques){
+  const map={ 'pasadas':'Intervalos', 'fartlek':'Cambios de ritmo', 'continua-l':'Fondo', 'continua-m':'Rodaje', 'continua-c':'Continuo', 'recuperacion':'Regenerativo', 'tempo':'Tempo', 'progresivos':'Progresivos', 'descanso':'Descanso' };
+  const b=(bloques||[]).find(x=>x && x.tipo && x.tipo!=='descanso') || (bloques||[]).find(x=>x && x.tipo);
+  return (b && map[b.tipo]) || 'Running';
+}
 // ── Guardar el running DENTRO de la semana de fuerza (cuando se entró desde "+ Agregar" de un día) ──
 function _guardarRunningEnFuerza(){
  try{
@@ -10834,7 +10843,7 @@ function _guardarRunningEnFuerza(){
     if(!Array.isArray(w.dias[dk])) w.dias[dk]=[];
     w.dias[dk]=w.dias[dk].filter(x=>!(x&&x.tipoSesion==='running'));   // saca running viejo/duplicado del día
     if(Array.isArray(bloques)&&bloques.length){
-      w.dias[dk].push({ tipoSesion:'running', lugar:'Running', bloques:[], runBloques:JSON.parse(JSON.stringify(bloques)), nombre:_nom(+dk) });
+      w.dias[dk].push({ tipoSesion:'running', lugar:'Running', bloques:[], runBloques:JSON.parse(JSON.stringify(bloques)), nombre:'Running — '+_runTipoLabel(bloques) });
       cargadas++;
     } else { vaciados++; }
   });
@@ -12057,7 +12066,7 @@ function renderPlanMes() {
       const fCls = f || 'none';
       // Día de SOLO running → naranja por defecto (se distingue de la fuerza); el 🎨 manda si elegís otro
       const _esRunDia = sesiones.length && sesiones.every(s=>s&&s.tipoSesion==='running');
-      const _diaCol = (sem.diaColores && sem.diaColores[i]) || (_esRunDia ? '#c75b22' : '#1a1f2b');
+      const _diaCol = (sem.diaColores && sem.diaColores[i]) || (_esRunDia ? '#2b8fcc' : '#1a1f2b');
       const _colStyle = 'background:'+_diaCol+' !important;border:1.5px solid '+_darkenHex(_diaCol,.8)+' !important;box-shadow:0 8px 20px -14px rgba(20,50,90,.45) !important;';
       return '<div class="plan-fila plan-dia-card tiene-sesion pm-card pm-fill foco-'+fCls+'" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" draggable="true" style="'+_colStyle+'" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
         + '<div class="pm-top">'+topHead+'<span class="pm-dotf foco-'+f+'"></span></div>'
@@ -29611,7 +29620,7 @@ function _traspEnviarRunning(){
     if(!cargadas){ toast('No pude leer las sesiones de running. Separá cada día con "DÍA: Lunes".','error'); return; }
     if(dest==='new'){
       const lunes=_getLunesDe(fecha);
-      const dias={}; Object.keys(nuevasDias).forEach(k=>{ const s=nuevasDias[k]; s.nombre=_nom(lunes,+k); dias[k]=[s]; });
+      const dias={}; Object.keys(nuevasDias).forEach(k=>{ const s=nuevasDias[k]; s.nombre='Running — '+_runTipoLabel(s.runBloques); dias[k]=[s]; });
       const nuevo={ id:genId(), alumnoId:id, tipoPlan:'fuerza', tipoPlanEstructura:'semanal',
         titulo:'Running · semana', semanaNum:1, fecha:lunes,
         diasData:dias, semanasArray:[{semana:1,fechaInicio:lunes,dias}], createdAt:new Date().toISOString() };
@@ -29625,14 +29634,13 @@ function _traspEnviarRunning(){
       w.dias=w.dias||{};
       const ocupados=Object.keys(nuevasDias).filter(k=>Array.isArray(w.dias[k])&&w.dias[k].some(s=>s&&s.tipoSesion==='running'));
       if(ocupados.length && !confirm('Esa semana ya tiene '+ocupados.length+' día(s) con running. ¿Reemplazarlos?')) return;
-      Object.keys(nuevasDias).forEach(k=>{ const s=nuevasDias[k]; s.nombre=_nom(lunes,+k); if(!Array.isArray(w.dias[k])) w.dias[k]=[]; const li=w.dias[k].findIndex(x=>x&&x.tipoSesion==='running'); if(li>=0) w.dias[k][li]=s; else w.dias[k].push(s); });
+      Object.keys(nuevasDias).forEach(k=>{ const s=nuevasDias[k]; s.nombre='Running — '+_runTipoLabel(s.runBloques); if(!Array.isArray(w.dias[k])) w.dias[k]=[]; const li=w.dias[k].findIndex(x=>x&&x.tipoSesion==='running'); if(li>=0) w.dias[k][li]=s; else w.dias[k].push(s); });
       if(p.semanasArray.indexOf(w)===0) p.diasData=p.semanasArray[0].dias;
       planId=p.id;
     }
   } else {
     const s=mkSes(txt); if(!s){ toast('No pude leer la sesión de running. Ej: "rodaje 40 min z2" o "series 6x400 rec 90s".','error'); return; }
-    const fTxt=new Date(fecha+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'});
-    s.nombre='Running — '+fTxt;
+    s.nombre='Running — '+_runTipoLabel(s.runBloques);
     const dayIdx=(new Date(fecha+'T12:00:00').getDay()+6)%7;
     if(dest==='new'){
       const lunes=_getLunesDe(fecha); const dias={}; dias[String(dayIdx)]=[s];
