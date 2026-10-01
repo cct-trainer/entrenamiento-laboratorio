@@ -10255,7 +10255,68 @@ function buildBloqueEditorHTML(diaIdx, bloqueIdx, b) {
   if(b.tipo==='pasadas')      return buildPasadasHTML(diaIdx, bloqueIdx, b, tipo);
   if(b.tipo==='progresivos')  return buildProgresivosHTML(diaIdx, bloqueIdx, b, tipo);
   if(b.tipo==='descanso')     return buildDescansoHTML(diaIdx, bloqueIdx, b, tipo);
+  if(b.tipo==='fartlek')      return buildFartlekHTML(diaIdx, bloqueIdx, b, tipo);
   return buildContinuaHTML(diaIdx, bloqueIdx, b, tipo);
+}
+// ── FARTLEK: intervalos trabajo/recuperación (tiempo o metros + ritmo, por cantidad) ──
+function buildFartlekHTML(diaIdx, bi, b, tipo){
+  const unidad=b.unidad||'tiempo';
+  const uLabel = unidad==='km'?'km':(unidad==='m'?'m':'');
+  const phT = unidad==='km'?'1':(unidad==='m'?'400':'1 min');
+  const phR = unidad==='km'?'0.4':(unidad==='m'?'200':'2 min');
+  const t=b.trabajo||{}; const r=b.recup||{}; const reps=b.reps||'';
+  const _u = unidad==='tiempo'?'':' '+unidad;
+  const resumen = (reps&&t.valor) ? (reps+' × '+(t.valor||'?')+_u+(t.ritmo?' '+t.ritmo:'')+'  ·  rec '+(r.valor||'?')+_u+(r.ritmo?' '+r.ritmo:'')) : '';
+  const uRadio=(val,lbl)=>`<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;font-weight:600;"><input type="radio" name="fu-${diaIdx}-${bi}" value="${val}" ${unidad===val?'checked':''} onchange="updateBloqueUnidad(${diaIdx},${bi},'${val}')" style="accent-color:#3A6EA5;"> ${lbl}</label>`;
+  return `<div class="run-bloque" id="run-bloque-${diaIdx}-${bi}">
+    <div class="run-bloque-head">
+      <span class="run-bloque-icono">${tipo.icon}</span>
+      <span class="run-bloque-tipo">${tipo.label}</span>
+      <button class="run-bloque-remove" onclick="eliminarBloqueRunning(${diaIdx},${bi})">×</button>
+    </div>
+    <div class="run-bloque-body">
+      <div style="display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:12px;">
+        <div class="run-field" style="max-width:140px;"><label>Repeticiones</label>
+          <input type="number" min="1" value="${reps}" placeholder="8" onchange="updateFartlek(${diaIdx},${bi},'reps',this.value)"></div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:8px;">
+          <span style="font-size:10px;font-weight:800;color:#8a93a3;letter-spacing:1px;text-transform:uppercase;">Unidad:</span>
+          ${uRadio('tiempo','Tiempo')} ${uRadio('m','Metros')} ${uRadio('km','Km')}
+        </div>
+      </div>
+      <div class="run-seccion" style="border-left:3px solid #3A6EA5;">
+        <div class="run-seccion-titulo">⚡ TRABAJO (fuerte)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="run-field"><label>${unidad==='tiempo'?'Tiempo':'Distancia'+(uLabel?' ('+uLabel+')':'')}</label>
+            <input type="text" value="${t.valor||''}" placeholder="${phT}" onchange="updateFartlek(${diaIdx},${bi},'trabajo.valor',this.value)"></div>
+          <div class="run-field"><label>Ritmo / intensidad</label>
+            <input type="text" value="${t.ritmo||''}" placeholder="Intenso / 4:00" onchange="updateFartlek(${diaIdx},${bi},'trabajo.ritmo',this.value)"></div>
+        </div>
+      </div>
+      <div class="run-seccion" style="border-left:3px solid #5b93cf;margin-top:10px;">
+        <div class="run-seccion-titulo">RECUPERACIÓN (suave)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="run-field"><label>${unidad==='tiempo'?'Tiempo':'Distancia'+(uLabel?' ('+uLabel+')':'')}</label>
+            <input type="text" value="${r.valor||''}" placeholder="${phR}" onchange="updateFartlek(${diaIdx},${bi},'recup.valor',this.value)"></div>
+          <div class="run-field"><label>Ritmo / intensidad</label>
+            <input type="text" value="${r.ritmo||''}" placeholder="Suave / 6:00" onchange="updateFartlek(${diaIdx},${bi},'recup.ritmo',this.value)"></div>
+        </div>
+      </div>
+      ${resumen?`<div style="margin-top:12px;background:#eaf1fb;border:1px solid #cfe0f6;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:800;color:#2f5f95;">${resumen}</div>`:''}
+      <div class="run-obs-field" style="margin-top:12px;">
+        <label>Observaciones</label>
+        <textarea placeholder="Terreno, indicaciones, sensaciones esperadas..." onchange="updateBloqueObs(${diaIdx},${bi},this.value)">${b.obs||''}</textarea>
+      </div>
+    </div>
+  </div>`;
+}
+function updateFartlek(diaIdx, bi, path, val){
+  const b=runDiasData[diaIdx]&&runDiasData[diaIdx][bi]; if(!b) return;
+  if(path==='reps'){ b.reps=val; }
+  else if(path.indexOf('trabajo.')===0){ b.trabajo=b.trabajo||{}; b.trabajo[path.split('.')[1]]=val; }
+  else if(path.indexOf('recup.')===0){ b.recup=b.recup||{}; b.recup[path.split('.')[1]]=val; }
+  else { b[path]=val; }
+  // Actualizar el cuadrito de resumen sin perder foco de los inputs
+  try{ renderDiaEditor(diaIdx); }catch(e){}
 }
 
 // ── PASADAS / INTERVALOS ──────────────────────────────────────────────────────

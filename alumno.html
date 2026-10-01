@@ -950,8 +950,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260930221537 por un timestamp en cada deploy
-const _APP_VERSION = '20260930221537';
+// deploy.bat reemplaza 20260930222418 por un timestamp en cada deploy
+const _APP_VERSION = '20260930222418';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -9024,6 +9024,21 @@ function _runBloqueHTML(b){
       '<div style="background:#fff;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>'+
         '<th style="'+th+'">PASADA</th><th style="'+th+'">'+(unidad==='tiempo'?'TIEMPO':'DISTANCIA')+'</th><th style="'+th+'">RITMO</th><th style="'+th+'">PAUSA</th>'+
       '</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+  } else if (b.tipo==='fartlek' && (b.reps||b.trabajo||b.recup)){
+    const t=b.trabajo||{}, r=b.recup||{}; const unidad=b.unidad||'tiempo'; const _u=unidad==='tiempo'?'':' '+unidad; const reps=b.reps||'';
+    resumen='<div style="display:flex;align-items:center;gap:12px;background:#0f1a2e;border:1px solid #27467a;border-radius:13px;padding:12px 14px;margin-bottom:14px;">'+
+      '<div style="font-size:20px;font-weight:900;color:#7fb0e6;line-height:1;white-space:nowrap;">'+(reps?esc(reps)+' × ':'')+esc(t.valor||'?')+(unidad==='tiempo'?'':esc(_u))+'</div>'+
+      '<div style="font-size:11.5px;color:#c3d2e6;font-weight:600;line-height:1.35;">trabajo <b style="color:#fff;">'+esc(t.ritmo||'fuerte')+'</b> · recuperación '+esc(r.valor||'?')+(unidad==='tiempo'?'':esc(_u))+' '+esc(r.ritmo||'suave')+'</div></div>';
+    mainHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:2px;">'+
+      '<div style="background:#101826;border:1px solid #233246;border-left:4px solid #3A6EA5;border-radius:11px;padding:10px 12px;">'+
+        '<div style="font-size:8px;font-weight:900;letter-spacing:1px;color:#7fb0e6;text-transform:uppercase;">Trabajo</div>'+
+        '<div style="font-size:15px;font-weight:900;color:var(--text);margin-top:3px;">'+esc(t.valor||'—')+(unidad==='tiempo'?'':esc(_u))+'</div>'+
+        '<div style="font-size:11px;color:var(--muted);">'+esc(t.ritmo||'fuerte')+'</div></div>'+
+      '<div style="background:#101826;border:1px solid #233246;border-left:4px solid #5b93cf;border-radius:11px;padding:10px 12px;">'+
+        '<div style="font-size:8px;font-weight:900;letter-spacing:1px;color:#7fb0e6;text-transform:uppercase;">Recuperación</div>'+
+        '<div style="font-size:15px;font-weight:900;color:var(--text);margin-top:3px;">'+esc(r.valor||'—')+(unidad==='tiempo'?'':esc(_u))+'</div>'+
+        '<div style="font-size:11px;color:var(--muted);">'+esc(r.ritmo||'suave')+'</div></div>'+
+    '</div>';
   } else {
     const fields=[
       b.distancia?['DISTANCIA',esc(b.distancia)+(b.unidad||'')]:null,
