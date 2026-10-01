@@ -950,8 +950,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20260930215544 por un timestamp en cada deploy
-const _APP_VERSION = '20260930215544';
+// deploy.bat reemplaza 20260930221537 por un timestamp en cada deploy
+const _APP_VERSION = '20260930221537';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -8982,70 +8982,82 @@ function _runDetalleHTML(i){
     '<div style="height:24px;background:var(--ses-panel);margin:0 -16px;"></div>';
 }
 function _runBloqueHTML(b){
-  const tipoObj = TIPOS_RUN[b.tipo] || {icon:'🏃', label:b.label||b.tipo||'Sesión'};
+  const tipoObj = TIPOS_RUN[b.tipo] || {label:b.label||b.tipo||'Sesión'};
+  const esc=s=>String(s==null?'':s).replace(/</g,'&lt;');
+  // Entrada en calor (línea celeste, sin emoji)
   const calent = b.calent && (b.calent.tipo||b.calent.duracion) ? (
-    '<div style="background:color-mix(in srgb,var(--gold) 7%,transparent);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:8px;">'+
-      '<div style="font-size:9px;font-weight:800;color:var(--gold);letter-spacing:1px;margin-bottom:6px;">🔥 ENTRADA EN CALOR</div>'+
-      (b.calent.tipo?'<div style="font-size:12px;color:var(--text);font-weight:600;">'+b.calent.tipo+'</div>':'')+
-      (b.calent.duracion?'<div style="font-size:11px;color:var(--muted);margin-top:2px;">'+b.calent.duracion+'</div>':'')+
-      (b.calent.ritmo?'<div style="font-size:11px;color:var(--muted);">Ritmo: '+b.calent.ritmo+'</div>':'')+
-      (b.calent.ejercicios?'<div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">'+b.calent.ejercicios+'</div>':'')+
+    '<div style="background:#101826;border:1px solid #233246;border-left:4px solid #5b93cf;border-radius:13px;padding:11px 13px;margin-bottom:12px;">'+
+      '<div style="font-size:9px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:#7fb0e6;">Entrada en calor</div>'+
+      ((b.calent.tipo||b.calent.duracion)?'<div style="font-size:14px;font-weight:800;color:var(--text);margin-top:3px;">'+esc([b.calent.tipo,b.calent.duracion].filter(Boolean).join(' · '))+'</div>':'')+
+      (b.calent.ritmo?'<div style="font-size:11.5px;color:var(--muted);margin-top:1px;">Ritmo '+esc(b.calent.ritmo)+'</div>':'')+
+      (b.calent.ejercicios?'<div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">'+esc(b.calent.ejercicios)+'</div>':'')+
     '</div>') : '';
+  // Vuelta a la calma
   const vuelta = b.vuelta && (b.vuelta.tipo||b.vuelta.duracion) ? (
-    '<div style="background:color-mix(in srgb,var(--gold) 5%,transparent);border-left:3px solid var(--gold-d);border-radius:0 8px 8px 0;padding:10px 12px;margin-top:8px;">'+
-      '<div style="font-size:9px;font-weight:800;color:var(--gold-d);letter-spacing:1px;margin-bottom:6px;">❄️ VUELTA A LA CALMA</div>'+
-      (b.vuelta.tipo?'<div style="font-size:12px;color:var(--text);font-weight:600;">'+b.vuelta.tipo+'</div>':'')+
-      (b.vuelta.duracion?'<div style="font-size:11px;color:var(--muted);margin-top:2px;">'+b.vuelta.duracion+'</div>':'')+
-      (b.vuelta.intensidad?'<div style="font-size:11px;color:var(--muted);">Intensidad: '+b.vuelta.intensidad+'</div>':'')+
-      (b.vuelta.obs?'<div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">'+b.vuelta.obs+'</div>':'')+
+    '<div style="background:#101826;border:1px solid #233246;border-left:4px solid #3A6EA5;border-radius:13px;padding:11px 13px;margin-top:10px;">'+
+      '<div style="font-size:9px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:#7fb0e6;">Vuelta a la calma</div>'+
+      ((b.vuelta.tipo||b.vuelta.duracion)?'<div style="font-size:14px;font-weight:800;color:var(--text);margin-top:3px;">'+esc([b.vuelta.tipo,b.vuelta.duracion].filter(Boolean).join(' · '))+'</div>':'')+
+      (b.vuelta.intensidad?'<div style="font-size:11.5px;color:var(--muted);margin-top:1px;">Intensidad '+esc(b.vuelta.intensidad)+'</div>':'')+
+      (b.vuelta.obs?'<div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">'+esc(b.vuelta.obs)+'</div>':'')+
     '</div>') : '';
-  let mainHTML = '';
+  let resumen='', mainHTML='';
   if (b.tipo==='pasadas' && b.pasadas?.length){
     const unidad=b.unidad||'m'; const _uL = unidad==='tiempo'?'':' '+unidad;
+    const n=b.pasadas.length; const f=b.pasadas[0]||{};
+    // Resumen grande (celeste)
+    resumen='<div style="display:flex;align-items:center;gap:12px;background:#0f1a2e;border:1px solid #27467a;border-radius:13px;padding:12px 14px;margin-bottom:14px;">'+
+      '<div style="font-size:20px;font-weight:900;color:#7fb0e6;line-height:1;white-space:nowrap;">'+n+' × '+esc(f.distancia||'?')+(unidad==='tiempo'?'':esc(_uL))+'</div>'+
+      '<div style="font-size:11.5px;color:#c3d2e6;font-weight:600;line-height:1.35;">'+n+' pasadas'+(f.ritmo?' a <b style="color:#fff;">'+esc(f.ritmo)+'/km</b>':'')+(f.pausa?' · recuperación '+esc(f.pausa):'')+'</div></div>';
+    // Tabla estilo series de fuerza (banda azul + tabla blanca + pastillas)
+    const th='background:#f4f6f8;color:#8a92a1;font-size:8px;font-weight:800;letter-spacing:1px;padding:6px 8px;border:1px solid #eef0f3;text-align:center;';
+    const td='background:#fff;padding:7px 6px;text-align:center;border:1px solid #e8e8e8;border-bottom:1.5px solid #b9c2d0;color:#20242c;font-size:13px;font-weight:800;';
+    const pill='display:inline-block;min-width:34px;background:#eef2f7;border:1px solid #d3d9e2;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;color:#20242c;';
     const rows=b.pasadas.map((p,pi)=>
       '<tr>'+
-        '<td style="background:color-mix(in srgb,var(--gold) 12%,transparent);color:var(--gold);font-size:10px;font-weight:800;text-align:center;padding:7px 8px;border:1px solid var(--border);">'+(pi+1)+'</td>'+
-        '<td style="text-align:center;padding:7px 8px;border:1px solid var(--border);font-size:13px;font-weight:700;color:var(--text);">'+(p.distancia||'—')+_uL+'</td>'+
-        '<td style="text-align:center;padding:7px 8px;border:1px solid var(--border);font-size:13px;font-weight:700;color:var(--gold);">'+(p.ritmo||'—')+'/km</td>'+
-        '<td style="text-align:center;padding:7px 8px;border:1px solid var(--border);font-size:11px;color:var(--muted);">'+(p.pausa||'—')+'</td>'+
+        '<td style="'+td+'"><span style="'+pill+'">'+(pi+1)+'</span></td>'+
+        '<td style="'+td+'">'+esc(p.distancia||'—')+(p.distancia?esc(_uL):'')+'</td>'+
+        '<td style="'+td+'color:#2f5f95;">'+(p.ritmo?esc(p.ritmo)+'/km':'—')+'</td>'+
+        '<td style="'+td+'color:#6b7d92;font-weight:700;font-size:12px;">'+esc(p.pausa||'—')+'</td>'+
       '</tr>').join('');
-    mainHTML='<div style="overflow-x:auto;margin:10px 0;"><table style="width:100%;border-collapse:collapse;"><thead><tr>'+
-      ['#','DISTANCIA','RITMO','PAUSA'].map(th=>'<th style="background:var(--row-odd);font-size:8px;color:var(--muted);font-weight:800;padding:6px 8px;border:1px solid var(--border);letter-spacing:1px;">'+th+'</th>').join('')+
-      '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+    mainHTML='<div style="margin:4px 0 12px;border-radius:12px;overflow:hidden;box-shadow:0 6px 16px rgba(0,0,0,.30);">'+
+      '<div style="font-size:10px;font-weight:900;letter-spacing:1.8px;color:#fff;background:linear-gradient(180deg,#4179b0,#3A6EA5);padding:9px 13px;">PASADAS</div>'+
+      '<div style="background:#fff;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>'+
+        '<th style="'+th+'">PASADA</th><th style="'+th+'">'+(unidad==='tiempo'?'TIEMPO':'DISTANCIA')+'</th><th style="'+th+'">RITMO</th><th style="'+th+'">PAUSA</th>'+
+      '</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
   } else {
     const fields=[
-      b.distancia?['DISTANCIA',b.distancia+(b.unidad||'')]:null,
-      b.duracion?['DURACIÓN',b.duracion]:null,
-      b.ritmo?['RITMO',b.ritmo+'/km']:null,
-      b.ritmoMin?['RITMO MÍN',b.ritmoMin+'/km']:null,
-      b.ritmoMax?['RITMO MÁX',b.ritmoMax+'/km']:null,
-      b.fc?['FC OBJETIVO',b.fc+' bpm']:null,
-      b.rpe?['RPE',b.rpe]:null,
+      b.distancia?['DISTANCIA',esc(b.distancia)+(b.unidad||'')]:null,
+      b.duracion?['DURACIÓN',esc(b.duracion)]:null,
+      b.ritmo?['RITMO',esc(b.ritmo)+'/km']:null,
+      b.ritmoMin?['RITMO MÍN',esc(b.ritmoMin)+'/km']:null,
+      b.ritmoMax?['RITMO MÁX',esc(b.ritmoMax)+'/km']:null,
+      b.fc?['FC OBJETIVO',esc(b.fc)+' bpm']:null,
+      b.zona?['ZONA',esc(b.zona)]:null,
+      b.rpe?['RPE',esc(b.rpe)]:null,
     ].filter(Boolean);
     if (fields.length){
       mainHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0;">'+
-        fields.map(([k,v])=>'<div style="background:var(--input-bg);border-radius:8px;padding:10px 12px;">'+
-          '<div style="font-size:8px;font-weight:800;color:var(--gold);letter-spacing:1px;margin-bottom:4px;">'+k+'</div>'+
+        fields.map(([k,v])=>'<div style="background:#101826;border:1px solid #233246;border-radius:10px;padding:10px 12px;">'+
+          '<div style="font-size:8px;font-weight:900;color:#7fb0e6;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase;">'+k+'</div>'+
           '<div style="font-size:16px;font-weight:900;color:var(--text);">'+v+'</div></div>').join('')+
       '</div>';
     }
   }
   if (b.tipo==='progresivos' && b.tramos?.length){
     mainHTML+='<div style="margin-top:8px;">'+b.tramos.map((t,i)=>
-      '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--input-bg);border-radius:6px;margin-bottom:4px;">'+
-        '<span style="font-size:11px;font-weight:700;color:var(--gold);">Tramo '+(i+1)+'</span>'+
-        '<span style="font-size:11px;color:var(--text);">'+(t.distancia||'')+' '+(t.ritmo?'· '+t.ritmo+'/km':'')+'</span>'+
+      '<div style="display:flex;justify-content:space-between;padding:9px 12px;background:#101826;border:1px solid #233246;border-radius:9px;margin-bottom:6px;">'+
+        '<span style="font-size:11px;font-weight:800;color:#7fb0e6;">Tramo '+(i+1)+'</span>'+
+        '<span style="font-size:12px;color:var(--text);font-weight:700;">'+esc(t.distancia||'')+(t.ritmo?' · '+esc(t.ritmo)+'/km':'')+'</span>'+
       '</div>').join('')+'</div>';
   }
-  const obs = b.obs ? '<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-top:8px;padding:10px 12px;background:var(--input-bg);border-radius:8px;">'+b.obs+'</div>' : '';
-  return '<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;margin-bottom:12px;overflow:hidden;">'+
-    '<div style="padding:13px 14px;">'+
-      '<div style="display:flex;align-items:center;gap:9px;margin-bottom:'+((calent||mainHTML||vuelta||obs)?'10px':'0')+';">'+
-        '<span style="font-size:19px;">'+(tipoObj.icon||'🏃')+'</span>'+
-        '<div><div style="font-size:14px;font-weight:900;color:var(--gold);">'+(tipoObj.label||'Sesión')+'</div>'+(b.nombre?'<div style="font-size:10px;color:var(--muted);">'+b.nombre+'</div>':'')+'</div>'+
-      '</div>'+
-      calent+mainHTML+vuelta+obs+
+  const obs = b.obs ? '<div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:10px;padding:10px 12px;background:#101826;border:1px solid #233246;border-radius:10px;">'+esc(b.obs)+'</div>' : '';
+  const rr = (b.tipo==='pasadas'&&b.pasadas?.length)?('<span style="background:rgba(255,255,255,.16);color:#fff;font-size:11px;font-weight:900;padding:4px 11px;border-radius:999px;white-space:nowrap;">'+b.pasadas.length+' pasadas</span>'):'';
+  // Bloque contenedor (mismo fondo oscuro que los demás) + cabecera azul
+  return '<div style="background:#161d30;border:1px solid #2a3550;border-radius:18px;overflow:hidden;margin-bottom:14px;box-shadow:0 14px 34px -20px rgba(0,0,0,.7);">'+
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;background:linear-gradient(135deg,#22508a,#15294a);border-bottom:1px solid #2f5c8c;">'+
+      '<span style="font-size:16px;font-weight:900;color:#fff;letter-spacing:.3px;">'+esc(tipoObj.label||b.nombre||'Running')+'</span>'+rr+
     '</div>'+
+    '<div style="padding:14px 15px;">'+resumen+calent+mainHTML+vuelta+obs+'</div>'+
   '</div>';
 }
 
