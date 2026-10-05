@@ -954,8 +954,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261005145406 por un timestamp en cada deploy
-const _APP_VERSION = '20261005145406';
+// deploy.bat reemplaza 20261005152238 por un timestamp en cada deploy
+const _APP_VERSION = '20261005152238';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1817,7 +1817,7 @@ function renderRutina() {
     const varios = _planesFuerza.length > 1;
     const mesNom = _mesNombreDe(_plan, _planIdx).toUpperCase();
     const fx = _planFecha(_plan);
-    const fxLabel = fx ? new Date(fx+'T12:00:00').toLocaleDateString('es-AR',{month:'long',year:'numeric'}) : '';
+    const fxLabel = fx ? new Date(fx+'T12:00:00').toLocaleDateString(_LANG==='en'?'en-US':'es-AR',{month:'long',year:'numeric'}) : '';
     const prevDis = _planIdx<=0, nextDis = _planIdx>=_planesFuerza.length-1;
     const esActivo = !!(_plan && _plan.activo);
     const activoTag = esActivo
@@ -1842,17 +1842,17 @@ function renderRutina() {
     const _hoyW = _hoyISO();
     let _semReal = 0, _anyDate = false;
     sems.forEach((s,i)=>{ if(s.fechaInicio){ _anyDate=true; if(s.fechaInicio<=_hoyW) _semReal=i; } });
-    weekEl.innerHTML = '<div class="slabel" style="margin-bottom:7px;">SEMANAS</div><div class="wk-seg">'
+    weekEl.innerHTML = '<div class="slabel" style="margin-bottom:7px;">'+(_LANG==='en'?'WEEKS':'SEMANAS')+'</div><div class="wk-seg">'
       + sems.map((s,i)=>{
           const on = i===_semIdx;
           const rel = _anyDate ? (i<_semReal?'past':(i>_semReal?'future':'current')) : 'current';
           let rango='';
           if (s.fechaInicio){ const l=new Date(s.fechaInicio+'T12:00:00'); const d=new Date(l); d.setDate(d.getDate()+6);
-            const dd=x=>x.getDate(), mm=x=>x.toLocaleDateString('es-AR',{month:'short'}).replace('.','');
+            const dd=x=>x.getDate(), mm=x=>x.toLocaleDateString(_LANG==='en'?'en-US':'es-AR',{month:'short'}).replace('.','');
             rango = mm(l)===mm(d) ? (dd(l)+' – '+dd(d)+' '+mm(l)) : (dd(l)+' '+mm(l)+' – '+dd(d)+' '+mm(d)); }
           const st = on ? ' now' : (rel==='past'?' done':(rel==='future'?' next':''));
-          const attrs = rel==='future' ? ' disabled title="Semana futura — todavía no disponible"' : ' onclick="_selSemana('+i+')"';
-          const nlbl = on ? ('Semana '+(i+1)) : ('S'+(i+1));
+          const attrs = rel==='future' ? ' disabled title="'+(_LANG==='en'?'Future week — not available yet':'Semana futura — todavía no disponible')+'"' : ' onclick="_selSemana('+i+')"';
+          const nlbl = on ? ((_LANG==='en'?'Week ':'Semana ')+(i+1)) : ((_LANG==='en'?'W':'S')+(i+1));
           return '<button class="wk-s'+st+'"'+attrs+'><span class="ws-n">'+nlbl+'</span>'+(rango?'<span class="ws-d">'+rango+'</span>':'')+'</button>';
         }).join('')
       + '</div>';
@@ -1890,8 +1890,8 @@ function renderRutina() {
       const nEj = bloques.reduce((a,b)=>a+((b.ejercicios||[]).length),0);
       const title = _nombreSesionShow(ses).toUpperCase();
       const partes = [DN[i]];
-      if (nEj) partes.push(nEj+' ejercicio'+(nEj>1?'s':''));
-      if (nBloques) partes.push(nBloques+' bloque'+(nBloques>1?'s':''));
+      if (nEj) partes.push(nEj+(_LANG==='en'?(' exercise'+(nEj>1?'s':'')):(' ejercicio'+(nEj>1?'s':''))));
+      if (nBloques) partes.push(nBloques+(_LANG==='en'?(' block'+(nBloques>1?'s':'')):(' bloque'+(nBloques>1?'s':''))));
       const sub = partes.join(' · ');
       const tags = (hoy?'<span class="dr-tag today">'+(_LANG==='en'?'TODAY':'HOY')+'</span>':'') + (hasCasa?'<span class="dr-tag">🏠 '+(_LANG==='en'?'HOME':'CASA')+'</span>':'') + (_hasRunDia?'<span class="dr-tag" style="background:rgba(43,143,204,.20);color:#5bb6ea;">RUNNING'+(_hasFuerzaDia?(_LANG==='en'?' + STRENGTH':' + FUERZA'):'')+'</span>':'');
       let _diaCol = (sem.diaColores && sem.diaColores[i] && /^#?[0-9a-fA-F]{6}$/.test(String(sem.diaColores[i]).replace('#',''))) ? ('#'+String(sem.diaColores[i]).replace('#','')) : '';
