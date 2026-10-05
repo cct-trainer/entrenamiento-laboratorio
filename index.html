@@ -13235,11 +13235,6 @@ function renderPlanDiaEditor(diaIdx) {
   editor.innerHTML = `
     <div class="plan-sesion-editor" style="margin-bottom:0;">
       <div class="plan-sesion-body">
-        <!-- tabs Gym / Casa -->
-        <div style="display:flex;border-bottom:1px solid #e0e4ed;margin-bottom:4px;" id="editor-mod-tabs">
-          <button id="editor-tab-0" style="${_tabStyle(_editorModTab===0)}" onclick="_switchEditorTab(0,${diaIdx})">GYM</button>
-          <button id="editor-tab-1" style="${_tabStyle(_editorModTab===1)}" onclick="_switchEditorTab(1,${diaIdx})">CASA</button>
-        </div>
         <div style="padding:14px 16px 4px;">
           <input id="plan-sesion-nombre" type="text" maxlength="80"
             placeholder="Nombre de la sesión  (ej: Piernas · Fuerza, Tren superior · Hipertrofia…)"
@@ -13251,6 +13246,13 @@ function renderPlanDiaEditor(diaIdx) {
               <option value="">— (muestra día · ejercicios · bloques)</option>
               <option>Día 1</option><option>Día 2</option><option>Día 3</option><option>Día 4</option><option>Día 5</option><option>Día 6</option>
               <option>Opcional 1</option><option>Opcional 2</option><option>Opcional 3</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+            <span style="font-size:10px;font-weight:800;color:#888;letter-spacing:.5px;white-space:nowrap;">¿DÓNDE SE EJECUTA?</span>
+            <select id="plan-ses-lugar" style="flex:1;padding:8px 10px;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px;font-weight:700;background:#f4f6fb;">
+              <option value="Gym">🏋️ Gym</option>
+              <option value="Casa">🏠 Casa</option>
             </select>
           </div>
           <details style="margin-top:8px;">
@@ -13276,8 +13278,6 @@ function renderPlanDiaEditor(diaIdx) {
             </div>
             <div id="plan-ses-imgprev" style="margin-top:6px;"></div>
             <div style="display:flex;gap:8px;margin-top:8px;">
-              <div style="flex:1;"><div style="font-size:9px;color:#888;font-weight:800;margin-bottom:3px;">LUGAR</div>
-                <select id="plan-ses-lugar" style="width:100%;padding:7px 8px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;"><option value="">(auto)</option><option>Gym</option><option>Casa</option><option>Cualquiera</option></select></div>
               <div style="flex:1;"><div style="font-size:9px;color:#888;font-weight:800;margin-bottom:3px;">NIVEL</div>
                 <select id="plan-ses-dif" style="width:100%;padding:7px 8px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;"><option value="">—</option><option value="1">Principiante</option><option value="2">Intermedio</option><option value="3">Avanzado</option></select></div>
               <div style="flex:1;"><div style="font-size:9px;color:#888;font-weight:800;margin-bottom:3px;">DURACIÓN</div>
