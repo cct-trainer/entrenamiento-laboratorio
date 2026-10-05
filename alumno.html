@@ -954,8 +954,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261005184406 por un timestamp en cada deploy
-const _APP_VERSION = '20261005184406';
+// deploy.bat reemplaza 20261005190820 por un timestamp en cada deploy
+const _APP_VERSION = '20261005190820';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1901,13 +1901,19 @@ function renderRutina() {
       // Lugar del día (Gym / Casa): de ses.lugar; si no está, se infiere por posición
       const _lugar = String((ses&&ses.lugar)||'').toLowerCase();
       const _esCasaDia = _lugar.indexOf('casa')>=0 ? true : (_lugar.indexOf('gym')>=0 ? false : (hasCasa && !hasGym));
-      const _locTag = _hasFuerzaDia ? ('<span class="dr-tag" style="'+(_esCasaDia?'background:rgba(43,143,204,.22);color:#5bb6ea;':'background:rgba(58,110,165,.22);color:#7fb4e6;')+'">'+(_esCasaDia?('🏠 '+(_LANG==='en'?'HOME':'CASA')):'🏋️ GYM')+'</span>') : '';
-      const tags = (hoy?'<span class="dr-tag today">'+(_LANG==='en'?'TODAY':'HOY')+'</span>':'') + _locTag + (_hasRunDia?'<span class="dr-tag" style="background:rgba(43,143,204,.20);color:#5bb6ea;">RUNNING'+(_hasFuerzaDia?(_LANG==='en'?' + STRENGTH':' + FUERZA'):'')+'</span>':'');
+      const _modRun = (_hasRunDia && !_hasFuerzaDia);
+      // Gradiente de modalidad: Gym azul · Casa verde · Running celeste
+      const _modGrad = _modRun ? 'linear-gradient(160deg,#2f8fc7,#1c5f8a)' : (_esCasaDia ? 'linear-gradient(160deg,#1b8768,#115039)' : 'linear-gradient(160deg,#2f5f95,#1d3c61)');
+      const _modName = _modRun ? 'RUNNING' : (_esCasaDia ? (_LANG==='en'?'HOME':'CASA') : 'GYM');
+      // Etiqueta de modalidad: blanca, más grande, sin emoji
+      const _modTag = '<span class="dr-tag" style="background:'+_modGrad+';color:#fff;font-size:11px;font-weight:800;letter-spacing:.6px;padding:5px 13px;">'+_modName+'</span>';
+      const _runExtra = (_hasRunDia && _hasFuerzaDia) ? '<span class="dr-tag" style="background:linear-gradient(160deg,#2f8fc7,#1c5f8a);color:#fff;font-size:11px;font-weight:800;letter-spacing:.6px;padding:5px 13px;">RUNNING</span>' : '';
+      const tags = (hoy?'<span class="dr-tag today">'+(_LANG==='en'?'TODAY':'HOY')+'</span>':'') + _modTag + _runExtra;
+      // Tarjeta pareja (neutral); respeta el color manual (🎨) si el coach lo puso
       let _diaCol = (sem.diaColores && sem.diaColores[i] && /^#?[0-9a-fA-F]{6}$/.test(String(sem.diaColores[i]).replace('#',''))) ? ('#'+String(sem.diaColores[i]).replace('#','')) : '';
-      if(!_diaCol && _hasRunDia && !_hasFuerzaDia) _diaCol = '#2b8fcc';   // día de solo running → celeste (como en el coach)
       const _dcolStyle = _diaCol ? ' style="background:linear-gradient(150deg,'+_diaCol+','+_darkenHex(_diaCol,.62)+');border-color:'+_diaCol+';box-shadow:0 6px 22px -8px '+_diaCol+'99;"' : '';
       return '<div class="dayrow '+(on?'on ':'')+(hoy?'today ':'')+(_diaCol?'dcol':'')+'"'+_dcolStyle+' onclick="selDia('+i+')">'+
-        '<div class="dr-date"><span class="dr-dow">'+DS[i]+'</span><span class="dr-num">'+dayNum+'</span></div>'+
+        '<div class="dr-date" style="background:'+_modGrad+';border-radius:12px;color:#fff;min-width:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;"><span class="dr-dow" style="color:rgba(255,255,255,.82);">'+DS[i]+'</span><span class="dr-num" style="color:#fff;">'+dayNum+'</span></div>'+
         '<div class="dr-sep"></div>'+
         '<div class="dr-body">'+
           '<div class="dr-title">'+title+'</div>'+
@@ -7697,7 +7703,8 @@ function _objetivoSes(ses){
 // mostrar un nombre lindo para todos; si el coach le puso nombre real, respetarlo.
 function _nombreSesionShow(ses){
   const raw = String((ses && ses.nombre) || '').trim();
-  if (!raw || /^gym\s*[—–\-]/i.test(raw)) return (_LANG==='en' ? 'Training session' : 'Sesión de entrenamiento');
+  // Nombres automáticos (Gym — fecha / Casa — fecha / Running — …) → genérico; el lugar lo muestra la etiqueta aparte
+  if (!raw || /^(gym|casa|running)\s*[—–\-]/i.test(raw)) return (_LANG==='en' ? 'Training session' : 'Sesión de entrenamiento');
   return raw;
 }
 // Equipamiento: usa el de la sesión; si no hay, lo junta desde los ejercicios
