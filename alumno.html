@@ -954,8 +954,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261005132925 por un timestamp en cada deploy
-const _APP_VERSION = '20261005132925';
+// deploy.bat reemplaza 20261005144813 por un timestamp en cada deploy
+const _APP_VERSION = '20261005144813';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -8345,8 +8345,26 @@ let _tiempoDispMap = {}, _verIgualSet = {};
 function _tiempoKey(){ return (_semIdx||0)+'_'+(_diaIdx||0)+'_'+(_diaModTab||0); }
 // Tope de tiempo que fija el ENTRENADOR para este alumno (por defecto 120). No depende del nombre del coach.
 function _maxTiempoAlumno(){ const m=parseInt((_data&&(_data.tiempoMax!=null?_data.tiempoMax:(_data.perfil&&_data.perfil.tiempoMax))),10); return (m&&m>=30&&m<=120)?m:120; }
-function _opcionesTiempo(){ const mx=_maxTiempoAlumno(); return [120,90,60,45,30].filter(o=>o<=mx); }
-function _tiempoActual(){ const mx=_maxTiempoAlumno(); const v=parseInt(_tiempoDispMap[_tiempoKey()],10); return (v&&v<=mx)?v:mx; }
+// Escalera de tiempos "lindos". La opción MÁXIMA = duración real de la sesión redondeada para arriba.
+const _TLADDER=[20,30,45,60,75,90,120];
+// Bloques de la sesión de fuerza que se está mostrando
+function _curBloques(){ try{ const sem=_plan&&_plan.semanasArray&&_plan.semanasArray[_semIdx]; const arr=sem&&sem.dias&&sem.dias[_diaIdx]; const ses=arr&&arr[_diaModTab]; return (ses&&ses.bloques)||[]; }catch(e){ return []; } }
+// Duración real (natural) y el tope de tiempo (real redondeado para arriba, sin pasar el máx del coach)
+function _tiempoMaxOpt(bloques){
+  bloques = bloques || _curBloques();
+  const realMin = Math.round(_estSes(bloques, _adaptarSesion(bloques, 120)));
+  let mx = _TLADDER.find(v=>v>=realMin) || _TLADDER[_TLADDER.length-1];
+  const coachMax=_maxTiempoAlumno();
+  if(coachMax < mx){ mx = _TLADDER.filter(v=>v<=coachMax).pop() || _TLADDER[0]; }
+  return { realMin: (realMin>0?realMin:mx), mx };
+}
+// Opciones a ofrecer: el tope (sesión completa) + hasta 2 escalones por debajo. Nunca por encima.
+function _opcionesTiempo(bloques){
+  const mx = _tiempoMaxOpt(bloques).mx;
+  const idx = _TLADDER.indexOf(mx);
+  return [_TLADDER[idx], _TLADDER[idx-1], _TLADDER[idx-2]].filter(v=>v && v>=20);
+}
+function _tiempoActual(){ const opts=_opcionesTiempo(); const mx=opts[0]||_maxTiempoAlumno(); const v=parseInt(_tiempoDispMap[_tiempoKey()],10); return (v&&v<=mx)?v:mx; }
 function _setTiempo(b){ _tiempoDispMap[_tiempoKey()]=b; renderSesion(); }
 function _verIgual(bi){ _verIgualSet[_tiempoKey()+'_'+bi]=1; renderSesion(); }
 // ── Circuito Fusión 3: navegación por estaciones (una a la vez) ──
@@ -8471,11 +8489,10 @@ function _cardioCardHTML(b){
   +'</div>';
 }
 function _tiempoCard(bloques){
-  const cur=_tiempoActual(); const en=(_LANG==='en'); const mx=_maxTiempoAlumno();
-  const opts=_opcionesTiempo();
-  // Duración real (natural) de la sesión completa, sin recortes → marca el preset más cercano
-  const realMin=Math.round(_estSes(bloques,_adaptarSesion(bloques,120)));
-  const realPreset=(realMin>0&&opts.length)?opts.reduce((a,b)=>Math.abs(b-realMin)<Math.abs(a-realMin)?b:a):null;
+  const cur=_tiempoActual(); const en=(_LANG==='en');
+  const opts=_opcionesTiempo(bloques);
+  // La opción MÁXIMA (opts[0]) = sesión completa; el badge muestra la duración real
+  const _mo=_tiempoMaxOpt(bloques); const realMin=_mo.realMin; const realPreset=opts.length?opts[0]:null;
   const btns=opts.map(o=>{
     const sel=(cur===o), real=(o===realPreset);
     const bd=sel?'#3A6EA5':(real?'#3A6EA5':'rgba(128,140,170,.35)');
@@ -8486,7 +8503,7 @@ function _tiempoCard(bloques){
   }).join('');
   const state=_adaptarSesion(bloques,cur);
   const est=Math.round(_estSes(bloques,state));
-  const nota = cur>=mx ? (en?('Full version (max '+mx+'′)'):('Versión completa (máx '+mx+'′)')) : (en?'Optimized — main work kept.':'Optimizada — se conserva el trabajo principal.');
+  const nota = cur>=_mo.mx ? (en?('Full session (~'+realMin+'′)'):('Sesión completa (~'+realMin+'′)')) : (en?'Optimized — main work kept.':'Optimizada — se conserva el trabajo principal.');
   return '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;">'
     +'<div style="font-size:12.5px;font-weight:900;color:var(--text);margin-bottom:3px;">⏱ '+(en?'How much time do you have today?':'¿Cuánto tiempo tenés hoy?')+'</div>'
     +'<div style="font-size:11px;color:var(--muted);margin-bottom:11px;">'+(en?'The app keeps the goal and trims what is secondary.':'La app mantiene el objetivo y ajusta lo secundario.')+'</div>'
