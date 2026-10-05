@@ -954,8 +954,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261005190820 por un timestamp en cada deploy
-const _APP_VERSION = '20261005190820';
+// deploy.bat reemplaza 20261005191933 por un timestamp en cada deploy
+const _APP_VERSION = '20261005191933';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1885,30 +1885,21 @@ function renderRutina() {
       const _hasFuerzaDia = !!(_fuerzaA[0]?.bloques?.length || _fuerzaA[1]?.bloques?.length);
       const on = i===_diaIdx, hoy=esHoy(i);
       const dayNum = sem.fechaInicio ? (()=>{const d=new Date(sem.fechaInicio+'T12:00:00');d.setDate(d.getDate()+i);return d.getDate();})() : i+1;
-      const bloques = ses.bloques || [];
-      const nBloques = bloques.length;
-      const nEj = bloques.reduce((a,b)=>a+((b.ejercicios||[]).length),0);
-      const partes = [DN[i]];
-      if (nEj) partes.push(nEj+(_LANG==='en'?(' exercise'+(nEj>1?'s':'')):(' ejercicio'+(nEj>1?'s':''))));
-      if (nBloques) partes.push(nBloques+(_LANG==='en'?(' block'+(nBloques>1?'s':'')):(' bloque'+(nBloques>1?'s':''))));
-      // Etiqueta del día (Día 1, Opcional 1…): título = "ENTRENAMIENTO <etiqueta>". El lugar va como etiqueta aparte.
+      // Etiqueta del día (Día 1, Opcional 1…): va como segunda línea debajo de la modalidad.
       let _etq = String((ses && ses.etiqueta)||'').trim();
       if(_LANG==='en' && _etq) _etq = _etq.replace(/^d[ií]a\b/i,'Day').replace(/^opcional\b/i,'Optional');
-      const _nomShow = _nombreSesionShow(ses);
-      const _genNom = /^(sesión de entrenamiento|training session)$/i.test(_nomShow);
-      const title = (_etq ? ((_LANG==='en'?'TRAINING ':'ENTRENAMIENTO ')+_etq) : _nomShow).toUpperCase();
-      const sub = _etq ? ((_genNom||!_nomShow) ? '' : _nomShow) : partes.join(' · ');
-      // Lugar del día (Gym / Casa): de ses.lugar; si no está, se infiere por posición
+      // Título SIEMPRE "SESIÓN DE ENTRENAMIENTO"
+      const title = (_LANG==='en'?'TRAINING SESSION':'SESIÓN DE ENTRENAMIENTO');
+      // Lugar/modalidad del día (Gym / Casa / Running): de ses.lugar; si no está, se infiere
       const _lugar = String((ses&&ses.lugar)||'').toLowerCase();
-      const _esCasaDia = _lugar.indexOf('casa')>=0 ? true : (_lugar.indexOf('gym')>=0 ? false : (hasCasa && !hasGym));
+      const _esCasaDia = _lugar.indexOf('casa')>=0 ? true : (_lugar.indexOf('gym')>=0 ? false : hasCasa);
       const _modRun = (_hasRunDia && !_hasFuerzaDia);
       // Gradiente de modalidad: Gym azul · Casa verde · Running celeste
       const _modGrad = _modRun ? 'linear-gradient(160deg,#2f8fc7,#1c5f8a)' : (_esCasaDia ? 'linear-gradient(160deg,#1b8768,#115039)' : 'linear-gradient(160deg,#2f5f95,#1d3c61)');
       const _modName = _modRun ? 'RUNNING' : (_esCasaDia ? (_LANG==='en'?'HOME':'CASA') : 'GYM');
-      // Etiqueta de modalidad: blanca, más grande, sin emoji
-      const _modTag = '<span class="dr-tag" style="background:'+_modGrad+';color:#fff;font-size:11px;font-weight:800;letter-spacing:.6px;padding:5px 13px;">'+_modName+'</span>';
-      const _runExtra = (_hasRunDia && _hasFuerzaDia) ? '<span class="dr-tag" style="background:linear-gradient(160deg,#2f8fc7,#1c5f8a);color:#fff;font-size:11px;font-weight:800;letter-spacing:.6px;padding:5px 13px;">RUNNING</span>' : '';
-      const tags = (hoy?'<span class="dr-tag today">'+(_LANG==='en'?'TODAY':'HOY')+'</span>':'') + _modTag + _runExtra;
+      // Línea 1: modalidad en blanco, mayúscula, sin emoji. Línea 2: Día X / Opcional X
+      const _modLine = '<div style="color:#fff;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">'+_modName+'</div>';
+      const _etqLine = _etq ? '<div style="color:#9fb0c4;font-size:11.5px;font-weight:700;margin-top:2px;">'+_etq+'</div>' : '';
       // Tarjeta pareja (neutral); respeta el color manual (🎨) si el coach lo puso
       let _diaCol = (sem.diaColores && sem.diaColores[i] && /^#?[0-9a-fA-F]{6}$/.test(String(sem.diaColores[i]).replace('#',''))) ? ('#'+String(sem.diaColores[i]).replace('#','')) : '';
       const _dcolStyle = _diaCol ? ' style="background:linear-gradient(150deg,'+_diaCol+','+_darkenHex(_diaCol,.62)+');border-color:'+_diaCol+';box-shadow:0 6px 22px -8px '+_diaCol+'99;"' : '';
@@ -1917,8 +1908,8 @@ function renderRutina() {
         '<div class="dr-sep"></div>'+
         '<div class="dr-body">'+
           '<div class="dr-title">'+title+'</div>'+
-          '<div class="dr-sub">'+sub+'</div>'+
-          (tags?'<div class="dr-tags">'+tags+'</div>':'')+
+          _modLine+
+          _etqLine+
         '</div>'+
         '<div class="dr-arr">&#9660;</div>'+
       '</div>';
