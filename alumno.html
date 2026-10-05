@@ -523,6 +523,10 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
       <div class="pt-av" id="pt-av">?</div>
       <div class="pt-hello" data-i18n="hola">Hola,</div>
       <div class="pt-name" id="pt-name">—</div>
+      <div id="pt-lang-wrap" style="display:flex;gap:6px;justify-content:center;margin:12px auto 0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:4px;width:fit-content;">
+        <button class="lang-opt" data-lang="es" onclick="_setLang('es')">ES</button>
+        <button class="lang-opt" data-lang="en" onclick="_setLang('en')">EN</button>
+      </div>
       <div class="pt-frase" id="pt-frase"></div>
       <div class="pt-plan" id="pt-plan"></div>
     </div>
@@ -950,8 +954,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261005132329 por un timestamp en cada deploy
-const _APP_VERSION = '20261005132329';
+// deploy.bat reemplaza 20261005132925 por un timestamp en cada deploy
+const _APP_VERSION = '20261005132925';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
