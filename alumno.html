@@ -954,8 +954,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261005152913 por un timestamp en cada deploy
-const _APP_VERSION = '20261005152913';
+// deploy.bat reemplaza 20261005153640 por un timestamp en cada deploy
+const _APP_VERSION = '20261005153640';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1888,14 +1888,16 @@ function renderRutina() {
       const bloques = ses.bloques || [];
       const nBloques = bloques.length;
       const nEj = bloques.reduce((a,b)=>a+((b.ejercicios||[]).length),0);
-      const title = _nombreSesionShow(ses).toUpperCase();
       const partes = [DN[i]];
       if (nEj) partes.push(nEj+(_LANG==='en'?(' exercise'+(nEj>1?'s':'')):(' ejercicio'+(nEj>1?'s':''))));
       if (nBloques) partes.push(nBloques+(_LANG==='en'?(' block'+(nBloques>1?'s':'')):(' bloque'+(nBloques>1?'s':''))));
-      // Si el coach le puso una etiqueta al día (Día 1, Opcional 1…), se muestra esa en vez de "día · ejercicios · bloques"
+      // Etiqueta del día (Día 1, Opcional 1…): si está, es el TÍTULO y oculta el "día · ejercicios · bloques"
       let _etq = String((ses && ses.etiqueta)||'').trim();
       if(_LANG==='en' && _etq) _etq = _etq.replace(/^d[ií]a\b/i,'Day').replace(/^opcional\b/i,'Optional');
-      const sub = _etq ? _etq.toUpperCase() : partes.join(' · ');
+      const _nomShow = _nombreSesionShow(ses);
+      const _genNom = /^(sesión de entrenamiento|training session)$/i.test(_nomShow);
+      const title = (_etq ? _etq : _nomShow).toUpperCase();
+      const sub = _etq ? (_genNom ? '' : _nomShow) : partes.join(' · ');
       const tags = (hoy?'<span class="dr-tag today">'+(_LANG==='en'?'TODAY':'HOY')+'</span>':'') + (hasCasa?'<span class="dr-tag">🏠 '+(_LANG==='en'?'HOME':'CASA')+'</span>':'') + (_hasRunDia?'<span class="dr-tag" style="background:rgba(43,143,204,.20);color:#5bb6ea;">RUNNING'+(_hasFuerzaDia?(_LANG==='en'?' + STRENGTH':' + FUERZA'):'')+'</span>':'');
       let _diaCol = (sem.diaColores && sem.diaColores[i] && /^#?[0-9a-fA-F]{6}$/.test(String(sem.diaColores[i]).replace('#',''))) ? ('#'+String(sem.diaColores[i]).replace('#','')) : '';
       if(!_diaCol && _hasRunDia && !_hasFuerzaDia) _diaCol = '#2b8fcc';   // día de solo running → celeste (como en el coach)
