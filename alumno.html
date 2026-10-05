@@ -950,8 +950,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261003133039 por un timestamp en cada deploy
-const _APP_VERSION = '20261003133039';
+// deploy.bat reemplaza 20261005132329 por un timestamp en cada deploy
+const _APP_VERSION = '20261005132329';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1036,16 +1036,16 @@ function _syncEditsFirebase(){
 }
 
 const TIPOS_RUN = {
-  'pasadas':     {icon:'⚡', label:'Pasadas / Intervalos', color:'#f59e0b'},
-  'continua-l':  {icon:'🟢', label:'Carrera continua larga', color:'#22c55e'},
-  'continua-m':  {icon:'🔵', label:'Carrera continua media', color:'#3b82f6'},
-  'continua-c':  {icon:'🟡', label:'Carrera continua corta', color:'#eab308'},
-  'fartlek':     {icon:'🔶', label:'Fartlek', color:'#f97316'},
-  'tempo':       {icon:'🔴', label:'Tempo run', color:'#ef4444'},
-  'progresivos': {icon:'📈', label:'Progresivos', color:'#8b5cf6'},
-  'recuperacion':{icon:'⚪', label:'Trote suave / Recuperación', color:'#94a3b8'},
-  'descanso':    {icon:'😴', label:'Descanso activo', color:'#64748b'},
-  'custom':      {icon:'✏️', label:'Personalizado', color:'#C9A84C'},
+  'pasadas':     {icon:'⚡', label:'Pasadas / Intervalos', labelEn:'Intervals', color:'#f59e0b'},
+  'continua-l':  {icon:'🟢', label:'Carrera continua larga', labelEn:'Long run', color:'#22c55e'},
+  'continua-m':  {icon:'🔵', label:'Carrera continua media', labelEn:'Medium run', color:'#3b82f6'},
+  'continua-c':  {icon:'🟡', label:'Carrera continua corta', labelEn:'Short run', color:'#eab308'},
+  'fartlek':     {icon:'🔶', label:'Fartlek', labelEn:'Fartlek', color:'#f97316'},
+  'tempo':       {icon:'🔴', label:'Tempo run', labelEn:'Tempo run', color:'#ef4444'},
+  'progresivos': {icon:'📈', label:'Progresivos', labelEn:'Progressions', color:'#8b5cf6'},
+  'recuperacion':{icon:'⚪', label:'Trote suave / Recuperación', labelEn:'Easy / Recovery', color:'#94a3b8'},
+  'descanso':    {icon:'😴', label:'Descanso activo', labelEn:'Active rest', color:'#64748b'},
+  'custom':      {icon:'✏️', label:'Personalizado', labelEn:'Custom', color:'#C9A84C'},
 };
 
 (async function(){
@@ -1097,6 +1097,14 @@ const TIPOS_RUN = {
     const doc = await db.collection('alumnos').doc(id).get();
     if (!doc.exists) return showErr('Todavía no hay datos para este alumno. Pedile a tu coach que sincronice el portal desde su aplicación.');
     _data = doc.data();
+
+    // Idioma por nacionalidad (lo define el coach en el perfil). Arranca en ese idioma;
+    // el alumno igual puede cambiarlo con el selector. (it/pt aún sin diccionario → inglés provisorio)
+    try{
+      window._alumnoIdioma = (_data && _data.perfil && _data.perfil.idioma) || 'es';
+      const _appLang = (window._alumnoIdioma==='en') ? 'en' : (window._alumnoIdioma==='es' ? 'es' : 'en');
+      if(_appLang!==_LANG && typeof _setLang==='function') _setLang(_appLang);
+    }catch(e){}
 
     // Aviso global del coach (vacaciones / no disponible) → banner en el home
     try{ const _av = await db.collection('alumnos').doc('zz_aviso_global').get(); _avisoCoach = (_av.exists ? _av.data() : null) || null; }catch(e){ _avisoCoach=null; }
@@ -1881,7 +1889,7 @@ function renderRutina() {
       if (nEj) partes.push(nEj+' ejercicio'+(nEj>1?'s':''));
       if (nBloques) partes.push(nBloques+' bloque'+(nBloques>1?'s':''));
       const sub = partes.join(' · ');
-      const tags = (hoy?'<span class="dr-tag today">HOY</span>':'') + (hasCasa?'<span class="dr-tag">🏠 CASA</span>':'') + (_hasRunDia?'<span class="dr-tag" style="background:rgba(43,143,204,.20);color:#5bb6ea;">RUNNING'+(_hasFuerzaDia?' + FUERZA':'')+'</span>':'');
+      const tags = (hoy?'<span class="dr-tag today">'+(_LANG==='en'?'TODAY':'HOY')+'</span>':'') + (hasCasa?'<span class="dr-tag">🏠 '+(_LANG==='en'?'HOME':'CASA')+'</span>':'') + (_hasRunDia?'<span class="dr-tag" style="background:rgba(43,143,204,.20);color:#5bb6ea;">RUNNING'+(_hasFuerzaDia?(_LANG==='en'?' + STRENGTH':' + FUERZA'):'')+'</span>':'');
       let _diaCol = (sem.diaColores && sem.diaColores[i] && /^#?[0-9a-fA-F]{6}$/.test(String(sem.diaColores[i]).replace('#',''))) ? ('#'+String(sem.diaColores[i]).replace('#','')) : '';
       if(!_diaCol && _hasRunDia && !_hasFuerzaDia) _diaCol = '#2b8fcc';   // día de solo running → celeste (como en el coach)
       const _dcolStyle = _diaCol ? ' style="background:linear-gradient(150deg,'+_diaCol+','+_darkenHex(_diaCol,.62)+');border-color:'+_diaCol+';box-shadow:0 6px 22px -8px '+_diaCol+'99;"' : '';
@@ -8584,7 +8592,7 @@ function renderSesion() {
     'background:'+(active?_ac:'transparent')+';color:'+(active?'#fff':'var(--text)')+';transition:.15s;font-family:inherit;">'+label+'</button>'; };
   const vistaTabs = (hasFuerza && hasRun) ?
     '<div style="display:flex;gap:9px;margin-bottom:14px;">'+
-      _vistaBtn('fuerza','🏋️ Fuerza', _vista==='fuerza')+
+      _vistaBtn('fuerza','🏋️ '+(_LANG==='en'?'Strength':'Fuerza'), _vista==='fuerza')+
       _vistaBtn('running','🏃 Running', _vista==='running')+
     '</div>' : '';
 
@@ -8985,20 +8993,21 @@ function _runDetalleHTML(i){
 function _runBloqueHTML(b){
   const tipoObj = TIPOS_RUN[b.tipo] || {label:b.label||b.tipo||'Sesión'};
   const esc=s=>String(s==null?'':s).replace(/</g,'&lt;');
+  const en=(typeof _LANG!=='undefined'&&_LANG==='en');
   // Entrada en calor (línea celeste, sin emoji)
   const calent = b.calent && (b.calent.tipo||b.calent.duracion) ? (
     '<div style="background:#101826;border:1px solid #233246;border-left:4px solid #5b93cf;border-radius:13px;padding:11px 13px;margin-bottom:12px;">'+
-      '<div style="font-size:9px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:#7fb0e6;">Entrada en calor</div>'+
+      '<div style="font-size:9px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:#7fb0e6;">'+(en?'Warm-up':'Entrada en calor')+'</div>'+
       ((b.calent.tipo||b.calent.duracion)?'<div style="font-size:14px;font-weight:800;color:var(--text);margin-top:3px;">'+esc([b.calent.tipo,b.calent.duracion].filter(Boolean).join(' · '))+'</div>':'')+
-      (b.calent.ritmo?'<div style="font-size:11.5px;color:var(--muted);margin-top:1px;">Ritmo '+esc(b.calent.ritmo)+'</div>':'')+
+      (b.calent.ritmo?'<div style="font-size:11.5px;color:var(--muted);margin-top:1px;">'+(en?'Pace ':'Ritmo ')+esc(b.calent.ritmo)+'</div>':'')+
       (b.calent.ejercicios?'<div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">'+esc(b.calent.ejercicios)+'</div>':'')+
     '</div>') : '';
   // Vuelta a la calma
   const vuelta = b.vuelta && (b.vuelta.tipo||b.vuelta.duracion) ? (
     '<div style="background:#101826;border:1px solid #233246;border-left:4px solid #3A6EA5;border-radius:13px;padding:11px 13px;margin-top:10px;">'+
-      '<div style="font-size:9px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:#7fb0e6;">Vuelta a la calma</div>'+
+      '<div style="font-size:9px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:#7fb0e6;">'+(en?'Cool-down':'Vuelta a la calma')+'</div>'+
       ((b.vuelta.tipo||b.vuelta.duracion)?'<div style="font-size:14px;font-weight:800;color:var(--text);margin-top:3px;">'+esc([b.vuelta.tipo,b.vuelta.duracion].filter(Boolean).join(' · '))+'</div>':'')+
-      (b.vuelta.intensidad?'<div style="font-size:11.5px;color:var(--muted);margin-top:1px;">Intensidad '+esc(b.vuelta.intensidad)+'</div>':'')+
+      (b.vuelta.intensidad?'<div style="font-size:11.5px;color:var(--muted);margin-top:1px;">'+(en?'Intensity ':'Intensidad ')+esc(b.vuelta.intensidad)+'</div>':'')+
       (b.vuelta.obs?'<div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">'+esc(b.vuelta.obs)+'</div>':'')+
     '</div>') : '';
   let resumen='', mainHTML='';
@@ -9008,7 +9017,7 @@ function _runBloqueHTML(b){
     // Resumen grande (celeste)
     resumen='<div style="display:flex;align-items:center;gap:12px;background:#0f1a2e;border:1px solid #27467a;border-radius:13px;padding:12px 14px;margin-bottom:14px;">'+
       '<div style="font-size:20px;font-weight:900;color:#7fb0e6;line-height:1;white-space:nowrap;">'+n+' × '+esc(f.distancia||'?')+(unidad==='tiempo'?'':esc(_uL))+'</div>'+
-      '<div style="font-size:11.5px;color:#c3d2e6;font-weight:600;line-height:1.35;">'+n+' pasadas'+(f.ritmo?' a <b style="color:#fff;">'+esc(f.ritmo)+'/km</b>':'')+(f.pausa?' · recuperación '+esc(f.pausa):'')+'</div></div>';
+      '<div style="font-size:11.5px;color:#c3d2e6;font-weight:600;line-height:1.35;">'+n+(en?' intervals':' pasadas')+(f.ritmo?(en?' at <b style="color:#fff;">':' a <b style="color:#fff;">')+esc(f.ritmo)+'/km</b>':'')+(f.pausa?(en?' · recovery ':' · recuperación ')+esc(f.pausa):'')+'</div></div>';
     // Tabla estilo series de fuerza (banda azul + tabla blanca + pastillas)
     const th='background:#f4f6f8;color:#8a92a1;font-size:8px;font-weight:800;letter-spacing:1px;padding:6px 8px;border:1px solid #eef0f3;text-align:center;';
     const td='background:#fff;padding:7px 6px;text-align:center;border:1px solid #e8e8e8;border-bottom:1.5px solid #b9c2d0;color:#20242c;font-size:13px;font-weight:800;';
@@ -9023,34 +9032,34 @@ function _runBloqueHTML(b){
         (hasRec?'<td style="'+td+'color:#6b7d92;font-weight:700;font-size:12px;">'+(p.ritmoRec?esc(p.ritmoRec):'—')+'</td>':'')+
       '</tr>').join('');
     mainHTML='<div style="margin:4px 0 12px;border-radius:12px;overflow:hidden;box-shadow:0 6px 16px rgba(0,0,0,.30);">'+
-      '<div style="font-size:10px;font-weight:900;letter-spacing:1.8px;color:#fff;background:linear-gradient(180deg,#4179b0,#3A6EA5);padding:9px 13px;">PASADAS</div>'+
+      '<div style="font-size:10px;font-weight:900;letter-spacing:1.8px;color:#fff;background:linear-gradient(180deg,#4179b0,#3A6EA5);padding:9px 13px;">'+(en?'INTERVALS':'PASADAS')+'</div>'+
       '<div style="background:#fff;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>'+
-        '<th style="'+th+'">PASADA</th><th style="'+th+'">'+(unidad==='tiempo'?'TIEMPO':'DISTANCIA')+'</th><th style="'+th+'">RITMO</th><th style="'+th+'">PAUSA</th>'+(hasRec?'<th style="'+th+'">R. RECUP</th>':'')+
+        '<th style="'+th+'">'+(en?'#':'PASADA')+'</th><th style="'+th+'">'+(unidad==='tiempo'?(en?'TIME':'TIEMPO'):(en?'DISTANCE':'DISTANCIA'))+'</th><th style="'+th+'">'+(en?'PACE':'RITMO')+'</th><th style="'+th+'">'+(en?'REST':'PAUSA')+'</th>'+(hasRec?'<th style="'+th+'">'+(en?'REC. PACE':'R. RECUP')+'</th>':'')+
       '</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
   } else if (b.tipo==='fartlek' && (b.reps||b.trabajo||b.recup)){
     const t=b.trabajo||{}, r=b.recup||{}; const unidad=b.unidad||'tiempo'; const _u=unidad==='tiempo'?'':' '+unidad; const reps=b.reps||'';
     resumen='<div style="display:flex;align-items:center;gap:12px;background:#0f1a2e;border:1px solid #27467a;border-radius:13px;padding:12px 14px;margin-bottom:14px;">'+
       '<div style="font-size:20px;font-weight:900;color:#7fb0e6;line-height:1;white-space:nowrap;">'+(reps?esc(reps)+' × ':'')+esc(t.valor||'?')+(unidad==='tiempo'?'':esc(_u))+'</div>'+
-      '<div style="font-size:11.5px;color:#c3d2e6;font-weight:600;line-height:1.35;">trabajo <b style="color:#fff;">'+esc(t.ritmo||'fuerte')+'</b> · recuperación '+esc(r.valor||'?')+(unidad==='tiempo'?'':esc(_u))+' '+esc(r.ritmo||'suave')+'</div></div>';
+      '<div style="font-size:11.5px;color:#c3d2e6;font-weight:600;line-height:1.35;">'+(en?'work ':'trabajo ')+'<b style="color:#fff;">'+esc(t.ritmo||(en?'hard':'fuerte'))+'</b> · '+(en?'recovery ':'recuperación ')+esc(r.valor||'?')+(unidad==='tiempo'?'':esc(_u))+' '+esc(r.ritmo||(en?'easy':'suave'))+'</div></div>';
     mainHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:2px;">'+
       '<div style="background:#101826;border:1px solid #233246;border-left:4px solid #3A6EA5;border-radius:11px;padding:10px 12px;">'+
-        '<div style="font-size:8px;font-weight:900;letter-spacing:1px;color:#7fb0e6;text-transform:uppercase;">Trabajo</div>'+
+        '<div style="font-size:8px;font-weight:900;letter-spacing:1px;color:#7fb0e6;text-transform:uppercase;">'+(en?'Work':'Trabajo')+'</div>'+
         '<div style="font-size:15px;font-weight:900;color:var(--text);margin-top:3px;">'+esc(t.valor||'—')+(unidad==='tiempo'?'':esc(_u))+'</div>'+
-        '<div style="font-size:11px;color:var(--muted);">'+esc(t.ritmo||'fuerte')+'</div></div>'+
+        '<div style="font-size:11px;color:var(--muted);">'+esc(t.ritmo||(en?'hard':'fuerte'))+'</div></div>'+
       '<div style="background:#101826;border:1px solid #233246;border-left:4px solid #5b93cf;border-radius:11px;padding:10px 12px;">'+
-        '<div style="font-size:8px;font-weight:900;letter-spacing:1px;color:#7fb0e6;text-transform:uppercase;">Recuperación</div>'+
+        '<div style="font-size:8px;font-weight:900;letter-spacing:1px;color:#7fb0e6;text-transform:uppercase;">'+(en?'Recovery':'Recuperación')+'</div>'+
         '<div style="font-size:15px;font-weight:900;color:var(--text);margin-top:3px;">'+esc(r.valor||'—')+(unidad==='tiempo'?'':esc(_u))+'</div>'+
-        '<div style="font-size:11px;color:var(--muted);">'+esc(r.ritmo||'suave')+'</div></div>'+
+        '<div style="font-size:11px;color:var(--muted);">'+esc(r.ritmo||(en?'easy':'suave'))+'</div></div>'+
     '</div>';
   } else {
     const fields=[
-      b.distancia?['DISTANCIA',esc(b.distancia)+(b.unidad||'')]:null,
-      b.duracion?['DURACIÓN',esc(b.duracion)]:null,
-      b.ritmo?['RITMO',esc(b.ritmo)+'/km']:null,
-      b.ritmoMin?['RITMO MÍN',esc(b.ritmoMin)+'/km']:null,
-      b.ritmoMax?['RITMO MÁX',esc(b.ritmoMax)+'/km']:null,
-      b.fc?['FC OBJETIVO',esc(b.fc)+' bpm']:null,
-      b.zona?['ZONA',esc(b.zona)]:null,
+      b.distancia?[(en?'DISTANCE':'DISTANCIA'),esc(b.distancia)+(b.unidad||'')]:null,
+      b.duracion?[(en?'DURATION':'DURACIÓN'),esc(b.duracion)]:null,
+      b.ritmo?[(en?'PACE':'RITMO'),esc(b.ritmo)+'/km']:null,
+      b.ritmoMin?[(en?'MIN PACE':'RITMO MÍN'),esc(b.ritmoMin)+'/km']:null,
+      b.ritmoMax?[(en?'MAX PACE':'RITMO MÁX'),esc(b.ritmoMax)+'/km']:null,
+      b.fc?[(en?'TARGET HR':'FC OBJETIVO'),esc(b.fc)+' bpm']:null,
+      b.zona?[(en?'ZONE':'ZONA'),esc(b.zona)]:null,
       b.rpe?['RPE',esc(b.rpe)]:null,
     ].filter(Boolean);
     if (fields.length){
@@ -9064,16 +9073,16 @@ function _runBloqueHTML(b){
   if (b.tipo==='progresivos' && b.tramos?.length){
     mainHTML+='<div style="margin-top:8px;">'+b.tramos.map((t,i)=>
       '<div style="display:flex;justify-content:space-between;padding:9px 12px;background:#101826;border:1px solid #233246;border-radius:9px;margin-bottom:6px;">'+
-        '<span style="font-size:11px;font-weight:800;color:#7fb0e6;">Tramo '+(i+1)+'</span>'+
+        '<span style="font-size:11px;font-weight:800;color:#7fb0e6;">'+(en?'Segment ':'Tramo ')+(i+1)+'</span>'+
         '<span style="font-size:12px;color:var(--text);font-weight:700;">'+esc(t.distancia||'')+(t.ritmo?' · '+esc(t.ritmo)+'/km':'')+'</span>'+
       '</div>').join('')+'</div>';
   }
   const obs = b.obs ? '<div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:10px;padding:10px 12px;background:#101826;border:1px solid #233246;border-radius:10px;">'+esc(b.obs)+'</div>' : '';
-  const rr = (b.tipo==='pasadas'&&b.pasadas?.length)?('<span style="background:rgba(255,255,255,.16);color:#fff;font-size:11px;font-weight:900;padding:4px 11px;border-radius:999px;white-space:nowrap;">'+b.pasadas.length+' pasadas</span>'):'';
+  const rr = (b.tipo==='pasadas'&&b.pasadas?.length)?('<span style="background:rgba(255,255,255,.16);color:#fff;font-size:11px;font-weight:900;padding:4px 11px;border-radius:999px;white-space:nowrap;">'+b.pasadas.length+(en?' intervals':' pasadas')+'</span>'):'';
   // Bloque contenedor (mismo fondo oscuro que los demás) + cabecera azul
   return '<div style="background:#161d30;border:1px solid #2a3550;border-radius:18px;overflow:hidden;margin-bottom:14px;box-shadow:0 14px 34px -20px rgba(0,0,0,.7);">'+
     '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;background:linear-gradient(135deg,#2b8fcc,#1c5f8a);border-bottom:1px solid #3aa0dc;">'+
-      '<span style="font-size:16px;font-weight:900;color:#fff;letter-spacing:.3px;">'+esc(tipoObj.label||b.nombre||'Running')+'</span>'+rr+
+      '<span style="font-size:16px;font-weight:900;color:#fff;letter-spacing:.3px;">'+esc((en&&tipoObj.labelEn)?tipoObj.labelEn:(tipoObj.label||b.nombre||'Running'))+'</span>'+rr+
     '</div>'+
     '<div style="padding:14px 15px;">'+resumen+calent+mainHTML+vuelta+obs+'</div>'+
   '</div>';

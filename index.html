@@ -5348,6 +5348,19 @@ window.addEventListener('load',function(){ try{
           <div class="field"><label>Teléfono</label><input type="text" id="f-telefono" placeholder="+54 ..."></div>
           <div class="field"><label>Email</label><input type="email" id="f-email" placeholder="email@..."></div>
           <div class="field"><label>PIN portal alumno</label><input type="text" id="f-pin" placeholder="Ej: 1234" maxlength="8" style="letter-spacing:4px;font-weight:700;"></div>
+          <div class="field"><label>Nacionalidad / Idioma de la app</label>
+            <select id="f-nacionalidad">
+              <option value="es">Argentina · Español</option>
+              <option value="es">España · Español</option>
+              <option value="es">México · Español</option>
+              <option value="es">Otro (hispanohablante) · Español</option>
+              <option value="en">Estados Unidos · English</option>
+              <option value="en">Reino Unido · English</option>
+              <option value="en">Otro (inglés) · English</option>
+              <option value="it">Italia · Italiano</option>
+              <option value="pt">Brasil · Português</option>
+            </select>
+          </div>
         </div>
         <div>
           <div class="col-label">DATOS DE ENTRENAMIENTO</div>
@@ -14984,6 +14997,8 @@ function openModalEditarAlumno(id) {
   ['nombre','nacimiento','sexo','telefono','email','objetivo','nivel','dias','inicio','lesiones','enfermedades','observaciones']
     .forEach(id => { const el = document.getElementById('f-'+id); if(el) el.value = a[id] || ''; });
   const _tmE=document.getElementById('f-tiempomax'); if(_tmE) _tmE.value=String(a.tiempoMax||120);
+  const _nacE=document.getElementById('f-nacionalidad'); if(_nacE) _nacE.value = a.idioma || 'es';
+  const _pinE=document.getElementById('f-pin'); if(_pinE) _pinE.value = a.pin || '';
   document.getElementById('foto-preview').innerHTML = a.foto ? `<img src="${a.foto}">` : '👤';
   document.getElementById('foto-input').value = '';
   document.getElementById('modal-alumno').classList.add('open');
@@ -15007,6 +15022,8 @@ function guardarAlumno() {
     tiempoMax: parseInt(document.getElementById('f-tiempomax')?.value,10)||120,
     inicio: document.getElementById('f-inicio').value,
     pin: (document.getElementById('f-pin')?.value||''  ).trim(),
+    idioma: (document.getElementById('f-nacionalidad')?.value||'es'),
+    nacionalidad: (()=>{ const s=document.getElementById('f-nacionalidad'); return s&&s.selectedIndex>=0 ? s.options[s.selectedIndex].text : ''; })(),
     lesiones: document.getElementById('f-lesiones').value,
     enfermedades: document.getElementById('f-enfermedades').value,
     observaciones: document.getElementById('f-observaciones').value,
