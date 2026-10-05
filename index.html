@@ -13238,6 +13238,14 @@ function renderPlanDiaEditor(diaIdx) {
             placeholder="Nombre de la sesión  (ej: Piernas · Fuerza, Tren superior · Hipertrofia…)"
             style="width:100%;padding:10px 14px;border:1.5px solid #dde1ea;border-radius:9px;font-size:14px;font-weight:700;color:#1a1a1a;background:#f4f6fb;box-sizing:border-box;outline:none;transition:border .15s;"
             onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='#dde1ea'" />
+          <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+            <span style="font-size:10px;font-weight:800;color:#888;letter-spacing:.5px;white-space:nowrap;">ETIQUETA DEL DÍA</span>
+            <select id="plan-ses-etiqueta" style="flex:1;padding:8px 10px;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px;font-weight:700;background:#f4f6fb;">
+              <option value="">— (muestra día · ejercicios · bloques)</option>
+              <option>Día 1</option><option>Día 2</option><option>Día 3</option><option>Día 4</option><option>Día 5</option><option>Día 6</option>
+              <option>Opcional 1</option><option>Opcional 2</option><option>Opcional 3</option>
+            </select>
+          </div>
           <details style="margin-top:8px;">
             <summary style="cursor:pointer;font-size:11px;font-weight:800;color:#1d4ed8;padding:4px 0;">📷 Portada e info de la sesión (cómo la ve el alumno)</summary>
             <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
@@ -13295,6 +13303,7 @@ function renderPlanDiaEditor(diaIdx) {
   const _si=document.getElementById('plan-ses-imagen'); if(_si) _si.value=sesion.imagen||'';
   const _scz=document.getElementById('plan-ses-imgcat'); if(_scz) _scz.value=sesion.imagenCat||'';
   try{ _sesImgPrev(); }catch(e){}
+  const _set=document.getElementById('plan-ses-etiqueta'); if(_set) _set.value=sesion.etiqueta||'';
   const _sl=document.getElementById('plan-ses-lugar');  if(_sl) _sl.value=sesion.lugar||'';
   const _sd=document.getElementById('plan-ses-dif');    if(_sd) _sd.value=sesion.dificultad||'';
   const _su=document.getElementById('plan-ses-dur');    if(_su) _su.value=sesion.duracion||'';
@@ -13409,6 +13418,7 @@ function _switchEditorTab(tabIdx, diaIdx) {
   const _si=document.getElementById('plan-ses-imagen'); if(_si) _si.value=sesion.imagen||'';
   const _scz=document.getElementById('plan-ses-imgcat'); if(_scz) _scz.value=sesion.imagenCat||'';
   try{ _sesImgPrev(); }catch(e){}
+  const _set=document.getElementById('plan-ses-etiqueta'); if(_set) _set.value=sesion.etiqueta||'';
   const _sl=document.getElementById('plan-ses-lugar');  if(_sl) _sl.value=sesion.lugar||'';
   const _sd=document.getElementById('plan-ses-dif');    if(_sd) _sd.value=sesion.dificultad||'';
   const _su=document.getElementById('plan-ses-dur');    if(_su) _su.value=sesion.duracion||'';
@@ -13847,6 +13857,7 @@ function guardarEstadoDiaActual() {
   const _g = (id, f) => { const e=document.getElementById(id); return e ? (e.value||'').trim() : (_prevSes[f]||''); };
   planSemanasArray[planSemEditando].dias[diaIdx][_editorModTab] = {
     bloques, nombre: _nombreSesion,
+    etiqueta: _g('plan-ses-etiqueta','etiqueta'),
     imagen: _g('plan-ses-imagen','imagen'),
     imagenCat: _g('plan-ses-imgcat','imagenCat'),
     lugar: _g('plan-ses-lugar','lugar'),
