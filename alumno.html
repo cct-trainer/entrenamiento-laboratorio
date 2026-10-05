@@ -954,8 +954,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261005153640 por un timestamp en cada deploy
-const _APP_VERSION = '20261005153640';
+// deploy.bat reemplaza 20261005182428 por un timestamp en cada deploy
+const _APP_VERSION = '20261005182428';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -8622,11 +8622,8 @@ function renderSesion() {
       _vistaBtn('running','🏃 Running', _vista==='running')+
     '</div>' : '';
 
-  const tabs = (_vista==='fuerza' && hasCasa) ?
-    '<div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:14px;">'+
-      _tabBtn(0,'','GYM', _diaModTab===0)+
-      _tabBtn(1,'','CASA', _diaModTab===1)+
-    '</div>' : '';
+  // Las solapas Gym/Casa de arriba se reemplazaron por los botones Gym/Casa del recuadro (abajo)
+  const tabs = '';
 
   const ses = (_vista==='running') ? runSes : (_diaModTab === 0 ? sesGym : sesCasa);
 
@@ -8749,7 +8746,14 @@ function renderSesion() {
     // Rectángulo de fondo (gris topo / tiza) con todo el contenido de la sesión
     '<div style="margin:0 -16px;padding:16px 16px 24px;background:var(--ses-panel);">'+
       _sesDetalleHTML(ses) +
-      '<button onclick="_descargarPlanillaExcel()" style="width:100%;margin:2px 0 14px;padding:12px;border:1px solid rgba(31,122,68,.4);border-radius:12px;background:rgba(31,122,68,.10);color:#1f7a44;font-size:13.5px;font-weight:800;cursor:pointer;">📊 '+(_LANG==='en'?'Download my sheet (Excel)':'Descargar mi planilla (Excel)')+'</button>' +
+      (_vista==='fuerza' ? ((hasGym && hasCasa) ?
+        ('<div style="display:flex;gap:10px;margin:2px 0 14px;">'+
+          '<button onclick="_switchDiaModTab(0)" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:13px;border-radius:13px;border:1.5px solid '+(_diaModTab===0?"#3A6EA5":"#2a3550")+';background:'+(_diaModTab===0?"#3A6EA5":"transparent")+';color:'+(_diaModTab===0?"#fff":"var(--text)")+';font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;"><span style="font-size:19px;">🏋️</span>GYM</button>'+
+          '<button onclick="_switchDiaModTab(1)" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:13px;border-radius:13px;border:1.5px solid '+(_diaModTab===1?"#4aa3e0":"#2a3550")+';background:'+(_diaModTab===1?"#4aa3e0":"transparent")+';color:'+(_diaModTab===1?"#fff":"var(--text)")+';font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;"><span style="font-size:19px;">🏠</span>'+(_LANG==='en'?'HOME':'CASA')+'</button>'+
+        '</div>')
+      : (()=>{ const _isCasa=(hasCasa&&!hasGym); const _ic=_isCasa?'🏠':'🏋️'; const _col=_isCasa?'#4aa3e0':'#3A6EA5'; const _lbl=_isCasa?(_LANG==='en'?'ACTIVE: HOME':'ACTIVO: CASA'):(_LANG==='en'?'ACTIVE: GYM':'ACTIVO: GYM'); return '<div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;border-radius:13px;border:1.5px solid '+_col+';background:'+_col+'22;color:'+_col+';font-size:14px;font-weight:900;letter-spacing:.3px;margin:2px 0 14px;"><span style="font-size:19px;">'+_ic+'</span>'+_lbl+'</div>'; })()
+      ) : '') +
+      '<div style="text-align:center;margin:-6px 0 12px;"><span onclick="_descargarPlanillaExcel()" style="font-size:11px;color:#8aa0b6;font-weight:700;cursor:pointer;text-decoration:underline;">📊 '+(_LANG==='en'?'Download sheet (Excel)':'Descargar planilla (Excel)')+'</span></div>' +
       _bloquesHTML + _devBox + _finBtn + _revBadge +
       // Check-in estructurado (energía/RPE/sueño/dolor) — alimenta el dashboard del coach
       '<div style="margin-top:12px;">'+
