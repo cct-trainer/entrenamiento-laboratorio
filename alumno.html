@@ -967,8 +967,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261006130216 por un timestamp en cada deploy
-const _APP_VERSION = '20261006130216';
+// deploy.bat reemplaza 20261006144543 por un timestamp en cada deploy
+const _APP_VERSION = '20261006144543';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1709,14 +1709,13 @@ function renderPlan() {
     const futuro  = semActual<s0;
     const fMesoObj = new Date(fechaInicio); fMesoObj.setDate(fMesoObj.getDate()+semG*7);
     const fMeso = fMesoObj.toISOString().slice(0,10);
-    html += `<div class="plan-meso${futuro?' plan-meso-locked':''}">
+    html += `<div class="plan-meso">
       <div class="plan-meso-hdr">
         <div class="plan-meso-num">MESO ${mi+1}</div>
         <div class="plan-meso-nombre">${meso.nombre||'Mesociclo '+(mi+1)}</div>
         <div class="plan-meso-fecha">${fmtD(fMeso)}</div>
         ${enCurso?'<div class="plan-meso-badge-now">● EN CURSO</div>':''}
         ${pasado?'<div class="plan-meso-badge-done">✓</div>':''}
-        ${futuro?'<div class="plan-meso-lock">🔒</div>':''}
       </div>`;
     if (sems.length===0) {
       html += `<div class="plan-sem-empty">Sesiones pendientes de diseño</div>`;
@@ -1863,8 +1862,8 @@ function renderRutina() {
           if (s.fechaInicio){ const l=new Date(s.fechaInicio+'T12:00:00'); const d=new Date(l); d.setDate(d.getDate()+6);
             const dd=x=>x.getDate(), mm=x=>x.toLocaleDateString(_LANG==='en'?'en-US':'es-AR',{month:'short'}).replace('.','');
             rango = mm(l)===mm(d) ? (dd(l)+' – '+dd(d)+' '+mm(l)) : (dd(l)+' '+mm(l)+' – '+dd(d)+' '+mm(d)); }
-          const st = on ? ' now' : (rel==='past'?' done':(rel==='future'?' next':''));
-          const attrs = rel==='future' ? ' disabled title="'+(_LANG==='en'?'Future week — not available yet':'Semana futura — todavía no disponible')+'"' : ' onclick="_selSemana('+i+')"';
+          const st = on ? ' now' : (rel==='past'?' done':'');
+          const attrs = ' onclick="_selSemana('+i+')"';
           const nlbl = on ? ((_LANG==='en'?'Week ':'Semana ')+(i+1)) : ((_LANG==='en'?'W':'S')+(i+1));
           return '<button class="wk-s'+st+'"'+attrs+'><span class="ws-n">'+nlbl+'</span>'+(rango?'<span class="ws-d">'+rango+'</span>':'')+'</button>';
         }).join('')

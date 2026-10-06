@@ -12107,9 +12107,18 @@ function renderPlanMes() {
         + '<button class="pm-abtn pm-del" onclick="event.stopPropagation();'+delAction+'" title="Eliminar">'+_PMIC.del+'</button>'
       + '</div>';
       const fCls = f || 'none';
-      // Día de SOLO running → naranja por defecto (se distingue de la fuerza); el 🎨 manda si elegís otro
+      // ── Color y nombre FIJOS por modalidad (sin emoticones) ──
       const _esRunDia = sesiones.length && sesiones.every(s=>s&&s.tipoSesion==='running');
-      const _diaCol = (sem.diaColores && sem.diaColores[i]) || (_esRunDia ? '#2b8fcc' : '#1a1f2b');
+      const _sesF0 = sesiones.filter(s=>s&&s.tipoSesion!=='running')[0] || sesiones[0] || {};
+      const _lug0 = String(_sesF0.lugar||'').toLowerCase();
+      const _etq0 = String(_sesF0.etiqueta||'').toLowerCase();
+      let _modColor, _modName;
+      if(/^opcional/.test(_etq0)){ _modColor='#e8822e'; _modName='OPCIONAL'; }
+      else if(_esRunDia){ _modColor='#7b5cd6'; _modName='RUNNING'; }
+      else if(_lug0.indexOf('casa')>=0){ _modColor='#1b8768'; _modName='CASA'; }
+      else { _modColor='#2f5f95'; _modName='GYM'; }
+      // El 🎨 (color manual) sigue mandando si el coach eligió uno
+      const _diaCol = (sem.diaColores && sem.diaColores[i]) || _modColor;
       const _colStyle = 'background:'+_diaCol+' !important;border:1.5px solid '+_darkenHex(_diaCol,.8)+' !important;box-shadow:0 8px 20px -14px rgba(20,50,90,.45) !important;';
       // ── Día MIXTO (fuerza + running) → casillero dividido a la mitad ──
       const _fuerzaSes = sesiones.filter(s=>s && s.tipoSesion!=='running' && s.bloques && s.bloques.length);
@@ -12134,6 +12143,7 @@ function renderPlanMes() {
       }
       return '<div class="plan-fila plan-dia-card tiene-sesion pm-card pm-fill foco-'+fCls+'" id="plan-dia-card-'+semIdx+'-'+i+'" data-dia="'+i+'" data-sem="'+semIdx+'" draggable="true" style="'+_colStyle+'" onclick="abrirPlanDiaEditor('+i+','+semIdx+')">'
         + '<div class="pm-top">'+topHead+'<span class="pm-dotf foco-'+f+'"></span></div>'
+        + '<div style="font-size:18px;font-weight:900;letter-spacing:.5px;color:#fff;margin:10px 0 2px;">'+_modName+'</div>'
         + acc
       + '</div>';
     };
@@ -14022,7 +14032,10 @@ function addBloqueDia(diaIdx, datosPrevios) {
   div.className = 'bloque-wrap'; div.id = id;
   div.innerHTML = `
     <div class="bloque-head">
-      <span class="drag-handle" draggable="true" data-type="bloque" title="Arrastrar para mover bloque">⠿</span>
+      <span style="display:inline-flex;flex-direction:column;gap:2px;margin-right:4px;flex-shrink:0;">
+        <button type="button" title="Subir bloque" onclick="_moverBloqueDia('${id}',-1)" style="border:none;background:rgba(255,255,255,.14);color:#fff;border-radius:5px;width:22px;height:16px;line-height:1;font-size:10px;cursor:pointer;padding:0;">▲</button>
+        <button type="button" title="Bajar bloque" onclick="_moverBloqueDia('${id}',1)" style="border:none;background:rgba(255,255,255,.14);color:#fff;border-radius:5px;width:22px;height:16px;line-height:1;font-size:10px;cursor:pointer;padding:0;">▼</button>
+      </span>
       <div class="bloque-letra-badge" id="${id}-letra">${letra}</div>
       <input class="bloque-nombre-input" type="text" id="${id}-nombre-input"
         placeholder="Nombre del bloque..."
@@ -20786,6 +20799,16 @@ function addBloque() {
   actualizarLayoutBloque(id);
 }
 
+// Mover un bloque arriba/abajo con flechas (alternativa al arrastre)
+function _moverBloqueDia(id, dir){
+  const el=document.getElementById(id); if(!el) return;
+  const cont=el.parentElement; if(!cont) return;
+  if(dir<0){ const p=el.previousElementSibling; if(p&&p.classList.contains('bloque-wrap')) cont.insertBefore(el,p); }
+  else { const n=el.nextElementSibling; if(n&&n.classList.contains('bloque-wrap')) cont.insertBefore(n,el); }
+  const LB=(typeof LETRAS_BLOQUE!=='undefined')?LETRAS_BLOQUE:'ABCDEFGHIJ'.split('');
+  cont.querySelectorAll('.bloque-wrap').forEach((b,i)=>{ const lb=b.querySelector('.bloque-letra-badge'); if(lb) lb.textContent=LB[i]||(i+1); });
+  try{ if(typeof guardarEstadoDiaActual==='function') guardarEstadoDiaActual(); }catch(e){}
+}
 function actualizarLetrasBloque() {
   // Actualiza letras en #bloques-container (editor clásico)
   document.querySelectorAll('#bloques-container .bloque-wrap').forEach((bEl, i) => {
