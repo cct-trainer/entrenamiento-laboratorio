@@ -278,10 +278,9 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .dayrow.dcol .dr-tag{background:rgba(255,255,255,.22);color:#fff;border-color:rgba(255,255,255,.4);}
 .dr-empty{padding:26px 16px;text-align:center;color:var(--muted);font-size:12px;background:var(--card);border:1px dashed var(--border);border-radius:14px;margin-bottom:16px;}
 /* ── Tarjeta de sesión (diseño v4: cajita de fecha sólida a todo el alto, teñida por modalidad) ── */
-.scard{display:flex;align-items:stretch;border-radius:16px;overflow:hidden;margin-bottom:12px;background:#0f1726;border:1px solid #223049;cursor:pointer;transition:border-color .18s,box-shadow .18s;}
-.scard:hover{border-color:#2f5f95;}
-.scard.on{border-color:#2f5f95;box-shadow:0 10px 30px -14px rgba(47,95,149,.7);}
-.sc-date{flex-shrink:0;width:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#fff;align-self:stretch;margin:-1px 0 -1px -1px;border-radius:16px 0 0 16px;}
+.scard{display:flex;align-items:stretch;border-radius:16px;overflow:hidden;margin-bottom:12px;background:#0f1726;border:none;cursor:pointer;transition:box-shadow .18s;}
+.scard.on{box-shadow:0 10px 30px -14px rgba(47,95,149,.7);}
+.sc-date{flex-shrink:0;width:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#fff;align-self:stretch;}
 .sc-dow{font-size:10px;font-weight:800;letter-spacing:.7px;color:rgba(255,255,255,.82);}
 .sc-num{font-size:25px;font-weight:900;line-height:1;color:#fff;font-variant-numeric:tabular-nums;}
 .sc-body{flex:1;min-width:0;padding:14px 10px 14px 16px;display:flex;flex-direction:column;justify-content:center;}
@@ -967,8 +966,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261005232227 por un timestamp en cada deploy
-const _APP_VERSION = '20261005232227';
+// deploy.bat reemplaza 20261005232607 por un timestamp en cada deploy
+const _APP_VERSION = '20261005232607';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
