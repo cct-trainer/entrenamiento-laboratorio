@@ -277,14 +277,14 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .dayrow.dcol .dr-arr{color:#eaf1fb;}
 .dayrow.dcol .dr-tag{background:rgba(255,255,255,.22);color:#fff;border-color:rgba(255,255,255,.4);}
 .dr-empty{padding:26px 16px;text-align:center;color:var(--muted);font-size:12px;background:var(--card);border:1px dashed var(--border);border-radius:14px;margin-bottom:16px;}
-/* ── Tarjeta de sesión (diseño v4: fecha teñida por modalidad) ── */
-.scard{display:flex;align-items:stretch;border-radius:16px;overflow:hidden;margin-bottom:12px;background:#0f1726;border:1px solid #223049;cursor:pointer;transition:border-color .18s,box-shadow .18s;}
+/* ── Tarjeta de sesión (diseño v4: cajita de fecha flotante teñida por modalidad) ── */
+.scard{display:flex;align-items:center;border-radius:16px;margin-bottom:12px;padding:10px 0 10px 10px;background:#0f1726;border:1px solid #223049;cursor:pointer;transition:border-color .18s,box-shadow .18s;}
 .scard:hover{border-color:#2f5f95;}
 .scard.on{border-color:#2f5f95;box-shadow:0 10px 30px -14px rgba(47,95,149,.7);}
-.sc-date{flex-shrink:0;width:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#fff;}
-.sc-dow{font-size:10px;font-weight:800;letter-spacing:.7px;color:rgba(255,255,255,.82);}
-.sc-num{font-size:25px;font-weight:900;line-height:1;color:#fff;font-variant-numeric:tabular-nums;}
-.sc-body{flex:1;min-width:0;padding:14px 10px 14px 16px;display:flex;flex-direction:column;justify-content:center;}
+.sc-date{flex-shrink:0;width:52px;height:52px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:#fff;}
+.sc-dow{font-size:9px;font-weight:800;letter-spacing:.6px;color:rgba(255,255,255,.82);}
+.sc-num{font-size:22px;font-weight:900;line-height:1;color:#fff;font-variant-numeric:tabular-nums;}
+.sc-body{flex:1;min-width:0;padding:0 10px 0 14px;display:flex;flex-direction:column;justify-content:center;}
 .sc-ttl{font-size:15px;font-weight:900;color:#fff;letter-spacing:.3px;line-height:1.15;text-transform:uppercase;}
 .sc-type{font-size:13.5px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.5px;margin-top:5px;}
 .sc-tag{font-size:12px;font-weight:700;color:#8ea2c4;margin-top:3px;}
@@ -967,8 +967,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261005230339 por un timestamp en cada deploy
-const _APP_VERSION = '20261005230339';
+// deploy.bat reemplaza 20261005230930 por un timestamp en cada deploy
+const _APP_VERSION = '20261005230930';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
