@@ -286,7 +286,7 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .sc-body{flex:1;min-width:0;padding:14px 10px 14px 16px;display:flex;flex-direction:column;justify-content:center;}
 .sc-ttl{font-size:15px;font-weight:900;color:#fff;letter-spacing:.3px;line-height:1.15;text-transform:uppercase;}
 .sc-type{font-size:13.5px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.5px;margin-top:5px;}
-.sc-type.gym{color:#7fb4e6;} .sc-type.casa{color:#5fd3a8;} .sc-type.run{color:#6fc2ef;}
+.sc-type.gym{color:#7fb4e6;} .sc-type.casa{color:#5fd3a8;} .sc-type.run{color:#b49cf0;} .sc-type.opc{color:#f0a45c;}
 .sc-tag{font-size:12px;font-weight:700;color:#8ea2c4;margin-top:3px;}
 .sc-arr{flex-shrink:0;display:flex;align-items:center;padding:0 16px;color:#5a6a85;font-size:13px;transition:transform .2s,color .2s;}
 .daycard.on .sc-arr{transform:rotate(180deg);color:#9fb6d8;}
@@ -967,8 +967,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261005235835 por un timestamp en cada deploy
-const _APP_VERSION = '20261005235835';
+// deploy.bat reemplaza 20261006001047 por un timestamp en cada deploy
+const _APP_VERSION = '20261006001047';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1907,10 +1907,11 @@ function renderRutina() {
       const _lugar = String((ses&&ses.lugar)||'').toLowerCase();
       const _esCasaDia = _lugar.indexOf('casa')>=0 ? true : (_lugar.indexOf('gym')>=0 ? false : hasCasa);
       const _modRun = (_hasRunDia && !_hasFuerzaDia);
-      // Cajita de fecha teñida: Gym azul · Casa verde · Running celeste
-      const _modGrad = _modRun ? 'linear-gradient(160deg,#2f8fc7,#1c5f8a)' : (_esCasaDia ? 'linear-gradient(160deg,#1b8768,#115039)' : 'linear-gradient(160deg,#2f5f95,#1d3c61)');
+      // Cajita de fecha teñida: Gym azul · Casa verde · Running violeta · Opcional naranja (prioridad)
+      const _esOpcional = /^(opcional|optional)\b/i.test(_etq);
+      const _modGrad = _esOpcional ? 'linear-gradient(160deg,#e8822e,#b85c12)' : (_modRun ? 'linear-gradient(160deg,#7b5cd6,#4e35a0)' : (_esCasaDia ? 'linear-gradient(160deg,#1b8768,#115039)' : 'linear-gradient(160deg,#2f5f95,#1d3c61)'));
       const _modName = _modRun ? 'RUNNING' : (_esCasaDia ? (_LANG==='en'?'HOME':'CASA') : 'GYM');
-      const _modCls = _modRun ? 'run' : (_esCasaDia ? 'casa' : 'gym');
+      const _modCls = _esOpcional ? 'opc' : (_modRun ? 'run' : (_esCasaDia ? 'casa' : 'gym'));
       return '<div class="daycard '+(on?'on':'')+'" onclick="selDia('+i+')">'+
         '<div class="sc-date" style="background:'+_modGrad+';"><span class="sc-dow">'+DS[i]+'</span><span class="sc-num">'+dayNum+'</span></div>'+
         '<div class="sc-body">'+
