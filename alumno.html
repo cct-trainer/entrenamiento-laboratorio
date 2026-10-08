@@ -967,8 +967,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261006144543 por un timestamp en cada deploy
-const _APP_VERSION = '20261006144543';
+// deploy.bat reemplaza 20261008082726 por un timestamp en cada deploy
+const _APP_VERSION = '20261008082726';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -7882,6 +7882,32 @@ async function _devPlaySaved(){
 
 // ── Foto de las series (placa para publicar) ──
 function _descargarBlob(url,fname){ const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); setTimeout(function(){ a.remove(); URL.revokeObjectURL(url); },800); try{ if(typeof toast==='function') toast('Imagen guardada 📸'); }catch(e){} }
+
+// Ventana con la imagen generada + botones Descargar / Compartir
+function _cerrarImgResultado(){ const o=document.getElementById('_imgres-ov'); if(o) o.remove(); }
+function _mostrarImgResultado(blob, fname, titulo){
+  try{ const _old=document.getElementById('_imgres-ov'); if(_old) _old.remove(); }catch(e){}
+  const url=URL.createObjectURL(blob);
+  let file=null; try{ file=new File([blob],fname,{type:'image/png'}); }catch(e){}
+  const puedeShare = !!(navigator.share && file && navigator.canShare && navigator.canShare({files:[file]}));
+  const en = (typeof _LANG!=='undefined' && _LANG==='en');
+  const ov=document.createElement('div'); ov.id='_imgres-ov';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px;';
+  ov.addEventListener('click',function(e){ if(e.target===ov) _cerrarImgResultado(); });
+  const box=document.createElement('div');
+  box.style.cssText='background:#0f1726;border:1px solid #243049;border-radius:16px;max-width:420px;width:100%;max-height:90vh;overflow:auto;padding:16px;';
+  box.innerHTML='<div style="display:flex;align-items:center;margin-bottom:10px;"><div style="flex:1;font-size:13px;font-weight:800;color:#fff;">'+(titulo||(en?'Image ready':'Imagen lista'))+'</div><button id="_imgres-x" style="width:28px;height:28px;border:none;border-radius:8px;background:rgba(255,255,255,.12);color:#fff;font-size:15px;cursor:pointer;">×</button></div>'
+    +'<img src="'+url+'" style="width:100%;border-radius:12px;display:block;margin-bottom:14px;">'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap;">'
+      +'<button id="_imgres-dl" style="flex:1;min-width:130px;background:#C9A84C;color:#15202b;border:none;border-radius:11px;padding:13px;font-size:13.5px;font-weight:800;cursor:pointer;">⬇️ '+(en?'Save to gallery':'Descargar a galería')+'</button>'
+      +(puedeShare?'<button id="_imgres-sh" style="flex:1;min-width:130px;background:#2f5f95;color:#fff;border:none;border-radius:11px;padding:13px;font-size:13.5px;font-weight:800;cursor:pointer;">📤 '+(en?'Share':'Compartir')+'</button>':'')
+    +'</div>'
+    +'<div style="font-size:10.5px;color:#8ea2c4;text-align:center;margin-top:11px;line-height:1.45;">'+(en?'Android: it goes to your gallery / Downloads. iPhone: tap Save and choose “Save Image”.':'Android: queda en la galería / Descargas. iPhone: tocá Descargar y elegí “Guardar imagen”.')+'</div>';
+  ov.appendChild(box); document.body.appendChild(ov);
+  document.getElementById('_imgres-x').addEventListener('click',_cerrarImgResultado);
+  document.getElementById('_imgres-dl').addEventListener('click',function(){ _descargarBlob(URL.createObjectURL(blob),fname); });
+  if(puedeShare){ document.getElementById('_imgres-sh').addEventListener('click',function(){ navigator.share({files:[file],title:titulo||''}).catch(function(){}); }); }
+}
 function _capturarSerie(uid){
   const ej=(typeof _ejStore!=='undefined')?_ejStore[uid]:null; if(!ej){ return; }
   if(typeof html2canvas==='undefined'){ try{ if(typeof toast==='function') toast('Un segundo, cargando el módulo de imagen…'); }catch(e){} return; }
@@ -7923,11 +7949,7 @@ function _capturarSerie(uid){
     if(w) w.remove();
     cv.toBlob(function(blob){
       if(!blob){ return; }
-      const url=URL.createObjectURL(blob);
-      let file=null; try{ file=new File([blob],fname,{type:'image/png'}); }catch(e){}
-      if(navigator.share && file && navigator.canShare && navigator.canShare({files:[file]})){
-        navigator.share({files:[file],title:nombre}).catch(function(){ _descargarBlob(url,fname); });
-      } else { _descargarBlob(url,fname); }
+      _mostrarImgResultado(blob, fname, nombre);
     },'image/png');
   }).catch(function(e){ if(w) w.remove(); try{ if(typeof toast==='function') toast('No se pudo generar la imagen'); }catch(_){} });
 }
@@ -8024,11 +8046,7 @@ function _historiaResumen(){
     if(w) w.remove();
     cv.toBlob(function(blob){
       if(!blob){ return; }
-      const url=URL.createObjectURL(blob);
-      let file=null; try{ file=new File([blob],fname,{type:'image/png'}); }catch(e){}
-      if(navigator.share && file && navigator.canShare && navigator.canShare({files:[file]})){
-        navigator.share({files:[file],title:(en?'My workout':'Mi entrenamiento')}).catch(function(){ _descargarBlob(url,fname); });
-      } else { _descargarBlob(url,fname); }
+      _mostrarImgResultado(blob, fname, (en?'My workout':'Mi entrenamiento'));
     },'image/png');
   }).catch(function(e){ if(w) w.remove(); try{ if(typeof toast==='function') toast('No se pudo generar la historia'); }catch(_){} });
 }
