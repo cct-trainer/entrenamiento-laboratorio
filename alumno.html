@@ -967,8 +967,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261008090028 por un timestamp en cada deploy
-const _APP_VERSION = '20261008090028';
+// deploy.bat reemplaza 20261008101345 por un timestamp en cada deploy
+const _APP_VERSION = '20261008101345';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2520,13 +2520,12 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
     // Tabla invertida al tema: oscuro → tabla BLANCA · claro → tabla NEGRA
     const _isLight = document.documentElement.classList.contains('light');
     const _wt = !_isLight;
-    const cellBg  = _wt ? 'background:#ffffff;' : 'background:#050506;';
-    const _cellBd = _wt ? '#eef0f3' : '#1c1e22';
+    const cellBg  = _wt ? 'background:#f5f7fa;' : 'background:#0c1018;';
+    const _cellBd = _wt ? '#e4e9f0' : '#1c222e';   // línea suave inferior de cada franja
     const _ctext  = _wt ? '#20242c' : '#eef1f5';
-    const _thbg   = _wt ? '#f4f6f8' : '#131417';
-    const _thc    = _wt ? '#8a92a1' : '#8891a5';
-    const thStyle  = 'background:'+_thbg+';font-size:8px;font-weight:800;color:'+_thc+';padding:5px 8px;letter-spacing:1px;border:1px solid '+_cellBd+';text-align:center;';
-    const tdBase   = cellBg+'text-align:center;padding:4px 6px;border:1px solid '+_cellBd+';vertical-align:middle;color:'+_ctext+';';
+    const _thc    = _wt ? '#9aa3b2' : '#8891a5';
+    const thStyle  = 'background:transparent;font-size:8.5px;font-weight:800;color:'+_thc+';padding:6px 8px;letter-spacing:.6px;border:none;text-align:center;';
+    const tdBase   = cellBg+'text-align:center;padding:10px 6px;border:none;border-bottom:2px solid '+_cellBd+';vertical-align:middle;color:'+_ctext+';';
     const inpStyle = 'background:transparent;border:none;'+
                      'color:'+_ctext+';font-size:13px;font-weight:700;text-align:center;'+
                      'width:100%;min-width:44px;max-width:70px;outline:none;'+
@@ -2614,12 +2613,12 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
       let _isoSec = 0;
       if(_tecR.tipo==='iso_hold' && _tecP.seg){ const m=String(_tecP.seg).match(/\d+/); if(m) _isoSec=parseInt(m[0]); }
       return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+(done?' s-done':'')+'" data-pausa="'+(window._circLblOn?20:(_segDe(s.pausa)||defPausa))+'" data-rest="'+_restSec+'" data-iso="'+_isoSec+'" '+touch+'>'+
-        '<td style="'+tdBase+'font-size:11px;font-weight:800;cursor:pointer;" onclick="event.stopPropagation();_serieTap(\''+sp+'\')">'+serieLbl+'</td>'+
+        '<td style="'+tdBase+'font-size:11px;font-weight:800;cursor:pointer;border-radius:11px 0 0 11px;" onclick="event.stopPropagation();_serieTap(\''+sp+'\')">'+serieLbl+'</td>'+
         '<td style="'+tdBase+'">'+repsCel+((_uni && !/\blado\b/i.test(String(repsVal)))?'<div style="font-size:8.5px;font-weight:800;color:#8a63c9;margin-top:1px;line-height:1;">c/lado</div>':'')+'</td>'+
         (hasPeso  ? '<td style="'+tdBase+'">'+pesoCel+_cuHtml+'</td>' : '')+
         (hasRir   ? '<td style="'+tdBase+'">'+rirCel+'</td>' : '')+
         (hasPausa ? '<td style="'+tdBase+'font-size:11px;">'+pausaCel+'</td>' : '')+
-        '<td style="'+tdBase+'padding:2px 4px;">'+delBtn+'</td>'+
+        '<td style="'+tdBase+'padding:10px 4px;border-radius:0 11px 11px 0;">'+delBtn+'</td>'+
       '</tr>';
     }
     // Series extra agregadas y borradas por el alumno (persistentes)
@@ -2670,7 +2669,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
     const _wrapStyle = flush
       ? 'overflow:hidden;border:none;border-radius:0;background:'+_wrapBg+';box-shadow:none;margin:0;'
       : 'overflow:hidden;border-radius:14px;border:1px solid '+_wrapBd+';background:'+_wrapBg+';box-shadow:'+_wrapSh+';margin:2px 0 2px;';
-    return '<div style="'+_wrapStyle+'"><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div></div>'+addBtn;
+    return '<div style="'+_wrapStyle+'"><div style="overflow-x:auto;padding:0 8px 4px;"><table style="width:100%;border-collapse:separate;border-spacing:0 6px;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div></div>'+addBtn;
   }
 
   // Grid SERIES / REPS / PAUSA / RIR  (resumen de series efectivas)
@@ -2689,10 +2688,10 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
       cpa ? ['PAUSA',  _ctrlChip(cpa,'p')] : null,
       ci  ? ['RIR',    ci]                 : null,
     ].filter(Boolean);
-    return '<div style="display:grid;grid-template-columns:repeat('+cols.length+',1fr);border:1px solid color-mix(in srgb,var(--gold) 25%,transparent);border-radius:8px;overflow:hidden;margin:10px 0;">'+
+    return '<div style="display:grid;grid-template-columns:repeat('+cols.length+',1fr);border:1px solid rgba(74,134,196,.3);border-radius:8px;overflow:hidden;margin:10px 0;">'+
       cols.map((c,i) =>
-        '<div style="padding:8px 6px;text-align:center;background:color-mix(in srgb,var(--gold) 6%,var(--card));'+(i<cols.length-1?'border-right:1px solid color-mix(in srgb,var(--gold) 15%,transparent);':'')+'">'+
-          '<div style="font-size:8px;font-weight:900;color:var(--gold);letter-spacing:1px;margin-bottom:3px;">'+c[0]+'</div>'+
+        '<div style="padding:8px 6px;text-align:center;background:rgba(58,110,165,.1);'+(i<cols.length-1?'border-right:1px solid rgba(74,134,196,.22);':'')+'">'+
+          '<div style="font-size:8px;font-weight:900;color:#9fc0e6;letter-spacing:1px;margin-bottom:3px;">'+c[0]+'</div>'+
           '<div style="font-size:18px;font-weight:900;color:var(--text);line-height:1;">'+c[1]+'</div>'+
         '</div>'
       ).join('')+
@@ -2921,9 +2920,9 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
           const obj = raw.slice(idx).trim();
           inner = (pre?_esc(pre)+' ':'')+'<span style="color:#9cc6ef;font-weight:800;">🎯 '+_esc(obj)+'</span>';
         } else { inner = _esc(raw); }
-        return '<div style="margin:8px 0 0;padding:9px 12px;background:rgba(201,168,76,.08);border-left:3px solid var(--gold);border-radius:0 9px 9px 0;font-size:12.5px;color:#e7d9ac;line-height:1.5;"><b style="color:#f0d488;">📝 '+(_LANG==='en'?'Execution note:':'Aclaración de ejecución:')+'</b> '+inner+'</div>';
+        return '<div style="margin:8px 0 0;padding:10px 13px;background:#182130;border:1px solid #2a3850;border-radius:12px;font-size:12.5px;color:#d7e2f0;line-height:1.5;"><b style="display:block;font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;color:#9fc0e6;margin-bottom:2px;">✏️ '+(_LANG==='en'?'Execution note':'Aclaración de ejecución')+'</b>'+inner+'</div>';
       })() : '')+
-      (ej.setup ? '<div style="margin:8px 0 0;padding:9px 12px;background:rgba(58,110,165,.14);border-left:3px solid #4a86c4;border-radius:0 9px 9px 0;font-size:12.5px;color:#cfe0f6;line-height:1.5;"><b style="color:#9cc6ef;">🛠️ '+(_LANG==='en'?'Setup:':'Ajuste:')+'</b> '+String(ej.setup).replace(/</g,'&lt;')+'</div>' : '')+
+      (ej.setup ? '<div style="margin:8px 0 0;padding:10px 13px;background:#111f30;border:1px solid #244764;border-radius:12px;font-size:12.5px;color:#cfe0f6;line-height:1.5;"><b style="display:block;font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;color:#9fc0e6;margin-bottom:2px;">🛠️ '+(_LANG==='en'?'Setup':'Ajuste')+'</b>'+String(ej.setup).replace(/</g,'&lt;')+'</div>' : '')+
       _sustNote+
       (ej.unilateral ? '<div style="font-size:10px;color:var(--muted);margin:4px 0 0 12px;">'+(_LANG==='en'?'Unilateral · do each set on both sides':'Unilateral · cada serie se hace de los dos lados')+'</div>' : '')+
       (()=>{ const nq=_notaEquipo(ej); return nq ? '<div style="font-size:10px;color:var(--muted);margin:3px 0 0 12px;line-height:1.45;">💡 '+nq+'</div>' : ''; })()+
