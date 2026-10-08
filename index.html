@@ -21009,12 +21009,18 @@ function addEjercicio(bloqueId) {
     </div>
     <input type="hidden" class="ej-video-input">
     <div id="${ejId}-equipo-note" style="display:none;font-size:11px;color:#8a8f9c;line-height:1.5;margin:2px 0 6px;padding-left:2px;"></div>
-    <input class="ej-nota-input" type="text"
-      placeholder="✏️ Aclaración de ejecución (ej: 8 reps con pausa de 2 seg arriba, excéntrica lenta...)"
-      style="width:100%;box-sizing:border-box;border:1px dashed #d0d0d8;border-radius:7px;padding:6px 12px;font-size:12px;font-style:italic;color:#555;background:#fafafa;margin:2px 0 6px;">
-    <input class="ej-setup-input" type="text"
-      placeholder="🛠️ Ajuste de máquina / posición (ej: banco en posición 2, rodillo en 4, asiento 3...)"
-      style="width:100%;box-sizing:border-box;border:1px dashed #bcd3ea;border-radius:7px;padding:6px 12px;font-size:12px;color:#2b4a6b;background:#f2f7fc;margin:0 0 6px;">
+    <div style="display:flex;align-items:center;gap:8px;margin:2px 0 6px;">
+      <span style="font-size:11px;font-weight:800;color:#555;white-space:nowrap;flex-shrink:0;">✏️ Aclaración de ejecución:</span>
+      <input class="ej-nota-input" type="text"
+        placeholder="lo que quieras aclarar (ej: pausa de 2 seg arriba, excéntrica lenta...)"
+        style="flex:1;min-width:0;box-sizing:border-box;border:1px dashed #d0d0d8;border-radius:7px;padding:6px 12px;font-size:12px;font-style:italic;color:#555;background:#fafafa;">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin:0 0 6px;">
+      <span style="font-size:11px;font-weight:800;color:#2b4a6b;white-space:nowrap;flex-shrink:0;">🛠️ Ajuste:</span>
+      <input class="ej-setup-input" type="text"
+        placeholder="posición de la máquina / pies (ej: banco en posición 2, rodillo en 4...)"
+        style="flex:1;min-width:0;box-sizing:border-box;border:1px dashed #bcd3ea;border-radius:7px;padding:6px 12px;font-size:12px;color:#2b4a6b;background:#f2f7fc;">
+    </div>
 
     <div style="padding: 0 0 4px;">
 
