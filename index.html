@@ -21799,8 +21799,24 @@ function _pausaDefault(ejId){ return _PAUSA_DEFAULT; }
 
 // Tipo de serie (color por función): calentamiento / aproximación / feeder / efectiva / test
 const _SERIE_TIPOS = [['cal','Calent.'],['apr','Aprox.'],['fee','Feeder'],['efec','Efectiva'],['test','Test']];
+// Valores orientativos por tipo de serie (reps / RIR / pausa) · se autocompletan al cambiar el tipo
+const _SERIE_DEFAULTS = {
+  cal:  { reps:'15',   rir:'4',   pausa:'1 min' },
+  apr:  { reps:'6',    rir:'3',   pausa:'1 min 30 seg' },
+  fee:  { reps:'3',    rir:'2',   pausa:'2 min' },
+  efec: { reps:'8-12', rir:'2',   pausa:'2 min 30 seg' },
+  test: { reps:'1',    rir:'0',   pausa:'3 min' }
+};
 function _serieTipoOptions(sel){ return _SERIE_TIPOS.map(t=>'<option value="'+t[0]+'"'+((sel||'efec')===t[0]?' selected':'')+'>'+t[1]+'</option>').join(''); }
-function _serieTipoSel(el){ const tr=el.closest('tr'); if(tr) tr.dataset.tipo=el.value; }
+function _serieTipoSel(el){
+  const tr=el.closest('tr'); if(!tr) return;
+  tr.dataset.tipo=el.value;
+  const d=_SERIE_DEFAULTS[el.value]; if(!d) return;
+  const inps=tr.querySelectorAll('input');   // orden: reps, peso, rir, pausa
+  if(inps[0]) inps[0].value = d.reps;    // reps (orientativas)
+  if(inps[2]) inps[2].value = d.rir;     // RIR
+  if(inps[3]) inps[3].value = d.pausa;   // pausa
+}
 function _makeSerieRow(ejId, tbodyId, prefix, num, defaults) {
   // defaults = { reps:'', peso:'', rir:'', pausa:'', tipo:'' }  (todos opcionales)
   const d = defaults || {};
