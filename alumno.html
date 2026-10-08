@@ -72,9 +72,16 @@ html.light .pt-logo{box-shadow:0 14px 44px -12px rgba(29,78,216,.4);}
 .pt-brand-name{margin-top:12px;font-size:16px;font-weight:900;letter-spacing:3px;color:var(--text);}
 .pt-brand-sub{font-size:9px;font-weight:800;letter-spacing:5px;color:#fff;margin-top:1px;}
 .pt-hero{display:flex;flex-direction:column;align-items:center;flex:1;justify-content:center;gap:5px;}
-.pt-av{width:96px;height:96px;border-radius:50%;background:var(--avatar-grad);display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:900;color:#fff;overflow:hidden;border:3px solid rgba(201,168,76,.35);box-shadow:0 12px 42px -12px rgba(201,168,76,.55);margin-bottom:14px;}
-html.light .pt-av{border-color:rgba(29,78,216,.3);box-shadow:0 12px 42px -12px rgba(29,78,216,.45);}
-.pt-av img{width:100%;height:100%;object-fit:cover;}
+.pt-av{width:96px;height:96px;margin-bottom:14px;perspective:820px;background:none;border:none;box-shadow:none;overflow:visible;}
+.pt-coin{position:relative;width:96px;height:96px;transform-style:preserve-3d;}
+.pt-coin.spin{animation:ptGirar 2.4s cubic-bezier(.3,.85,.25,1) both;}
+@keyframes ptGirar{from{transform:rotateY(0deg);}to{transform:rotateY(1080deg);}}
+.pt-face{position:absolute;inset:0;border-radius:50%;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:900;color:#fff;background:var(--avatar-grad);border:3px solid rgba(201,168,76,.35);box-shadow:0 12px 42px -12px rgba(201,168,76,.55);}
+.pt-face img{width:100%;height:100%;object-fit:cover;}
+.pt-face.back{transform:rotateY(180deg);background:#0b1220;}
+.pt-face.back img{object-fit:contain;padding:12px;}
+html.light .pt-face{border-color:rgba(29,78,216,.3);box-shadow:0 12px 42px -12px rgba(29,78,216,.45);}
+@media (prefers-reduced-motion: reduce){ .pt-coin.spin{animation:none;} }
 .pt-hello{font-size:15px;color:var(--muted);font-weight:600;letter-spacing:.3px;}
 .pt-name{font-size:30px;font-weight:900;color:var(--text);line-height:1.05;letter-spacing:-.5px;}
 .pt-frase{margin-top:10px;font-size:14px;font-weight:700;font-style:italic;color:#fff;line-height:1.4;max-width:270px;}
@@ -971,8 +978,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261008193845 por un timestamp en cada deploy
-const _APP_VERSION = '20261008193845';
+// deploy.bat reemplaza 20261008194854 por un timestamp en cada deploy
+const _APP_VERSION = '20261008194854';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1315,8 +1322,13 @@ function _mostrarPortada(nombre, foto) {
   if (nombre !== undefined) { _ptNombre = nombre; _ptFoto = foto; }
   nombre = _ptNombre; foto = _ptFoto;
   const av = document.getElementById('pt-av');
-  if (foto) { av.innerHTML = '<img src="'+foto+'" alt="'+nombre+'">'; }
-  else { av.textContent = (nombre||'?').charAt(0).toUpperCase(); }
+  const _logoURL = 'https://cct-trainer.github.io/entrenamiento-laboratorio/icon-512.png';
+  const _front = foto ? '<img src="'+foto+'" alt="'+nombre+'">' : (nombre||'?').charAt(0).toUpperCase();
+  av.innerHTML = '<div class="pt-coin" id="pt-coin">'
+    + '<div class="pt-face front">'+_front+'</div>'
+    + '<div class="pt-face back"><img src="'+_logoURL+'" alt="CC"></div>'
+    + '</div>';
+  requestAnimationFrame(function(){ var cn=document.getElementById('pt-coin'); if(cn){ cn.classList.remove('spin'); void cn.offsetWidth; cn.classList.add('spin'); } });
   document.getElementById('pt-name').textContent = nombre;
   const frases = _FRASES_PORTADA[_LANG] || _FRASES_PORTADA.es;
   const frase = frases[Math.floor(Math.random()*frases.length)];
