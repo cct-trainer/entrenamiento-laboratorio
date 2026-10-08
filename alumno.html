@@ -967,8 +967,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261008082726 por un timestamp en cada deploy
-const _APP_VERSION = '20261008082726';
+// deploy.bat reemplaza 20261008085205 por un timestamp en cada deploy
+const _APP_VERSION = '20261008085205';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2923,6 +2923,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
         } else { inner = _esc(raw); }
         return '<div style="margin:8px 0 0;padding:9px 12px;background:rgba(201,168,76,.08);border-left:3px solid var(--gold);border-radius:0 9px 9px 0;font-size:12.5px;color:#e7d9ac;line-height:1.5;"><b style="color:#f0d488;">📝 '+(_LANG==='en'?'How to do it:':'Cómo hacerlo:')+'</b> '+inner+'</div>';
       })() : '')+
+      (ej.setup ? '<div style="margin:8px 0 0;padding:9px 12px;background:rgba(58,110,165,.14);border-left:3px solid #4a86c4;border-radius:0 9px 9px 0;font-size:12.5px;color:#cfe0f6;line-height:1.5;"><b style="color:#9cc6ef;">🛠️ '+(_LANG==='en'?'Machine setup:':'Ajuste de máquina:')+'</b> '+String(ej.setup).replace(/</g,'&lt;')+'</div>' : '')+
       _sustNote+
       (ej.unilateral ? '<div style="font-size:10px;color:var(--muted);margin:4px 0 0 12px;">'+(_LANG==='en'?'Unilateral · do each set on both sides':'Unilateral · cada serie se hace de los dos lados')+'</div>' : '')+
       (()=>{ const nq=_notaEquipo(ej); return nq ? '<div style="font-size:10px;color:var(--muted);margin:3px 0 0 12px;line-height:1.45;">💡 '+nq+'</div>' : ''; })()+

@@ -13876,6 +13876,7 @@ function guardarEstadoDiaActual() {
       };
       const video = eEl.querySelector('.ej-video-input')?.value||'';
       const nota  = eEl.querySelector('.ej-nota-input')?.value.trim()||'';
+      const setup = eEl.querySelector('.ej-setup-input')?.value.trim()||'';
       // Leer ficha
       const fichaEl = eEl.querySelector('.ficha-inline');
       let ficha = null;
@@ -13924,7 +13925,7 @@ function guardarEstadoDiaActual() {
         if(nombre) _pausaItems.push({ nombre, dur, video: vid });
       }); }
       const _pausaActiva = { activo: _pausaItems.length>0, items: _pausaItems };
-      if(eName) ejercicios.push({ nombre:eName, ctrl, video, nota, ficha, series, seriesApro, dropset, tecnica:_tecEj, unilateral:_uniEj2, mancUna:_mancUna, pausaActiva:_pausaActiva });
+      if(eName) ejercicios.push({ nombre:eName, ctrl, video, nota, setup, ficha, series, seriesApro, dropset, tecnica:_tecEj, unilateral:_uniEj2, mancUna:_mancUna, pausaActiva:_pausaActiva });
     });
     // Leer datos cardio si aplica
     let cardioData = null;
@@ -14090,6 +14091,9 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
     // Restaurar aclaración de ejecución
     const notaInp = document.querySelector(`#${ejId} .ej-nota-input`);
     if(notaInp && datosPrevios.nota) notaInp.value = datosPrevios.nota;
+    // Restaurar ajuste de máquina / posición
+    const setupInp = document.querySelector(`#${ejId} .ej-setup-input`);
+    if(setupInp && datosPrevios.setup) setupInp.value = datosPrevios.setup;
     // Restaurar Bilateral/Unilateral
     if(datosPrevios.unilateral !== undefined) _setEjExec(ejId, datosPrevios.unilateral ? 1 : 0);
     if(typeof _setEjManc==='function') _setEjManc(ejId, datosPrevios.mancUna ? 1 : 2);
@@ -21008,6 +21012,9 @@ function addEjercicio(bloqueId) {
     <input class="ej-nota-input" type="text"
       placeholder="✏️ Aclaración de ejecución (ej: 8 reps con pausa de 2 seg arriba, excéntrica lenta...)"
       style="width:100%;box-sizing:border-box;border:1px dashed #d0d0d8;border-radius:7px;padding:6px 12px;font-size:12px;font-style:italic;color:#555;background:#fafafa;margin:2px 0 6px;">
+    <input class="ej-setup-input" type="text"
+      placeholder="🛠️ Ajuste de máquina / posición (ej: banco en posición 2, rodillo en 4, asiento 3...)"
+      style="width:100%;box-sizing:border-box;border:1px dashed #bcd3ea;border-radius:7px;padding:6px 12px;font-size:12px;color:#2b4a6b;background:#f2f7fc;margin:0 0 6px;">
 
     <div style="padding: 0 0 4px;">
 
@@ -21920,6 +21927,7 @@ function leerBloques() {
       const eId = eEl.id;
       const eNombre = eEl.querySelector('.ej-nombre-input')?.value.trim() || '';
       const eNota   = eEl.querySelector('.ej-nota-input')?.value.trim() || '';
+      const eSetup  = eEl.querySelector('.ej-setup-input')?.value.trim() || '';
 
       // Leer controles rápidos (series, reps, pausa, rir del encabezado)
       const ctrlSeries   = document.getElementById(eId+'-ctrl-series')?.value.trim()  || '';
@@ -21981,7 +21989,7 @@ function leerBloques() {
         const tipoEj    = (ficha && ficha['TIPO']) || _lib.tipoTrabajo || _lib.cat || '';
         const _uniEj = (eEl.querySelector('.ej-uni')?.value === '1');
         ejercicios.push({
-          nombre: eNombre, nota: eNota, video, ficha, series, seriesApro, dropset,
+          nombre: eNombre, nota: eNota, setup: eSetup, video, ficha, series, seriesApro, dropset,
           ctrlSeries, ctrlReps, ctrlPeso, ctrlPausa, ctrlRir,
           ejecucion, musculos, tipo: tipoEj, unilateral: _uniEj,
           tecnica: (typeof _readTecnica==='function' ? _readTecnica(eEl) : null)
