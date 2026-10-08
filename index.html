@@ -10077,6 +10077,26 @@ function saveObjetivos(data) {
 function genId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
+// ── Formato global de pausas: 30 seg · 1 min · 1 min 30 seg ──
+function _fmtPausa(v){
+  if(v===null||v===undefined||v==='') return '';
+  var S;
+  if(typeof v==='number') S=Math.round(v);
+  else {
+    var str=String(v).toLowerCase().trim(), m;
+    if(/^\d+$/.test(str)) S=parseInt(str,10);
+    else if((m=str.match(/(\d+)\s*:\s*(\d{1,2})/))) S=parseInt(m[1])*60+parseInt(m[2]);
+    else if((m=str.match(/(\d+)\s*min/))){ S=parseInt(m[1])*60; var s2=str.match(/min[^\d]*(\d+)/); if(s2) S+=parseInt(s2[1]); }
+    else if((m=str.match(/(\d+)\s*"/))) S=parseInt(m[1]);
+    else if((m=str.match(/(\d+)\s*(seg|segundos|sec|s)\b/))) S=parseInt(m[1]);
+    else S=0;
+  }
+  if(!isFinite(S)||S<=0) return String(v);
+  var mm=Math.floor(S/60), ss=S%60;
+  if(mm===0) return ss+' seg';
+  if(ss===0) return mm+' min';
+  return mm+' min '+ss+' seg';
+}
 function limpiarStorageViejo() {
   const permitidas = [DB_ALUMNOS, DB_PLANIFICACIONES, DB_OBJETIVOS, DB_EJERCICIOS_CUSTOM, DB_NOTAS, DB_PLANILLA];
   const borrar = [];
@@ -11056,7 +11076,7 @@ function _buildDiaHTML(diaIdx, bloques, movil) {
         <td style="text-align:center;padding:6px 8px;border:1px solid #e8e8e8;font-weight:600;">${p.distancia||'—'}</td>
         <td style="text-align:center;padding:6px 8px;border:1px solid #e8e8e8;">${p.ritmo||'—'} min/km</td>
         <td style="text-align:center;padding:6px 8px;border:1px solid #e8e8e8;background:#eaf1fb;color:#3A6EA5;font-weight:700;">${calcularTiempoTotal(p.distancia,p.ritmo,false)}</td>
-        <td style="text-align:center;padding:6px 8px;border:1px solid #e8e8e8;">${p.pausa||'—'}</td>
+        <td style="text-align:center;padding:6px 8px;border:1px solid #e8e8e8;">${p.pausa?_fmtPausa(p.pausa):'—'}</td>
         <td style="text-align:left;padding:6px 8px;border:1px solid #e8e8e8;font-size:11px;color:#555;">${p.obs||''}</td>
       </tr>`).join('');
       contenido=`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -14748,7 +14768,7 @@ function _exportarMesExcel(){
               ejs.forEach(ej=>{
                 const series=(ej.series&&ej.series.length)?ej.series:[{reps:(ej.ctrl&&ej.ctrl.reps)||'',peso:(ej.ctrl&&ej.ctrl.peso)||'',rir:(ej.ctrl&&ej.ctrl.rir)||'',pausa:(ej.ctrl&&ej.ctrl.pausa)||''}];
                 series.forEach((s,si)=>{
-                  rows.push(['S'+(w.semana||wi+1),DOW[k],fecha,b.nombre||'',b.serieTipo||b.tipo||'',ej.nombre||'',si+1,s.reps||'',s.peso||'',s.rir||'',s.pausa||'']);
+                  rows.push(['S'+(w.semana||wi+1),DOW[k],fecha,b.nombre||'',b.serieTipo||b.tipo||'',ej.nombre||'',si+1,s.reps||'',s.peso||'',s.rir||'',s.pausa?_fmtPausa(s.pausa):'']);
                 });
               });
             });
@@ -22092,7 +22112,7 @@ function renderPlanHTML(p) {
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid #e8e8e8;border-radius:6px;overflow:hidden;margin-bottom:12px;">
         ${ctrlSeries?`<div style="padding:8px 10px;border-right:1px solid #e8e8e8;"><div style="font-size:8px;font-weight:800;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;">SERIES</div><div style="font-size:16px;font-weight:700;color:#111;">${ctrlSeries}</div></div>`:''}
         ${ctrlReps?`<div style="padding:8px 10px;border-right:1px solid #e8e8e8;"><div style="font-size:8px;font-weight:800;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;">REPS</div><div style="font-size:16px;font-weight:700;color:#111;">${ctrlReps}</div></div>`:''}
-        ${ctrlPausa?`<div style="padding:8px 10px;border-right:1px solid #e8e8e8;"><div style="font-size:8px;font-weight:800;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;">PAUSA</div><div style="font-size:16px;font-weight:700;color:#111;">${ctrlPausa}</div></div>`:''}
+        ${ctrlPausa?`<div style="padding:8px 10px;border-right:1px solid #e8e8e8;"><div style="font-size:8px;font-weight:800;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;">PAUSA</div><div style="font-size:16px;font-weight:700;color:#111;">${_fmtPausa(ctrlPausa)}</div></div>`:''}
         ${ctrlRir?`<div style="padding:8px 10px;"><div style="font-size:8px;font-weight:800;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;">RIR</div><div style="font-size:16px;font-weight:700;color:#111;">${ctrlRir}</div></div>`:''}
       </div>` : '';
 
@@ -22116,7 +22136,7 @@ function renderPlanHTML(p) {
         <td style="background:#f8f8f8;font-weight:700;font-size:10px;text-align:center;padding:5px 6px;border:1px solid #e8e8e8;color:#444;">Serie ${si+1}</td>
         <td style="text-align:center;padding:5px 6px;border:1px solid #e8e8e8;">${s.reps||''}</td>
         <td style="text-align:center;padding:5px 6px;border:1px solid #e8e8e8;">${s.rir||''}</td>
-        <td style="text-align:center;padding:5px 6px;border:1px solid #e8e8e8;">${s.pausa||''}</td>
+        <td style="text-align:center;padding:5px 6px;border:1px solid #e8e8e8;">${s.pausa?_fmtPausa(s.pausa):''}</td>
         <td style="text-align:left;padding:5px 6px;border:1px solid #e8e8e8;font-size:10px;color:#555;">${s.comentarios||''}</td>
       </tr>`).join('');
 
@@ -22134,7 +22154,7 @@ function renderPlanHTML(p) {
         <td style="background:#f8f8f8;font-weight:700;font-size:10px;text-align:center;padding:5px 6px;border:1px solid #e8e8e8;color:#444;">S${si+1}</td>
         <td style="text-align:center;padding:5px 6px;border:1px solid #e8e8e8;">${s.reps||''}</td>
         <td style="text-align:center;padding:5px 6px;border:1px solid #e8e8e8;">${s.rir||''}</td>
-        <td style="text-align:center;padding:5px 6px;border:1px solid #e8e8e8;">${s.pausa||''}</td>
+        <td style="text-align:center;padding:5px 6px;border:1px solid #e8e8e8;">${s.pausa?_fmtPausa(s.pausa):''}</td>
         <td style="padding:5px 6px;border:1px solid #e8e8e8;text-align:center;"><input type="text" class="peso-real-input" placeholder="\u2014" style="width:46px;border:1px solid #e0e0e0;border-radius:4px;padding:3px 4px;font-size:12px;font-weight:700;text-align:center;outline:none;font-family:inherit;color:#333;background:#fffdf5;touch-action:manipulation;"> <span style="font-size:9px;color:#aaa;">kg</span></td>
         <td style="text-align:left;padding:5px 6px;border:1px solid #e8e8e8;font-size:10px;color:#555;">${s.comentarios||''}</td>
       </tr>`).join('');
@@ -22367,7 +22387,7 @@ function generarHTMLExport(p, a, filename) {
         ${ctrlSeries2?`<div style="padding:8px 10px;border-right:1px solid #e8e8e8;"><div style="font-size:8px;font-weight:700;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">SERIES</div><div style="font-size:15px;font-weight:700;color:#111;">${ctrlSeries2}</div></div>`:''}
         ${ctrlReps2?`<div style="padding:8px 10px;border-right:1px solid #e8e8e8;"><div style="font-size:8px;font-weight:700;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">REPS</div><div style="font-size:15px;font-weight:700;color:#111;">${ctrlReps2}</div></div>`:''}
         ${ctrlPeso2?`<div style="padding:8px 10px;border-right:1px solid #e8e8e8;"><div style="font-size:8px;font-weight:700;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">PESO</div><div style="font-size:15px;font-weight:700;color:#111;">${ctrlPeso2}</div></div>`:''}
-        ${ctrlPausa2?`<div style="padding:8px 10px;border-right:1px solid #e8e8e8;"><div style="font-size:8px;font-weight:700;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">PAUSA</div><div style="font-size:15px;font-weight:700;color:#111;">${ctrlPausa2}</div></div>`:''}
+        ${ctrlPausa2?`<div style="padding:8px 10px;border-right:1px solid #e8e8e8;"><div style="font-size:8px;font-weight:700;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">PAUSA</div><div style="font-size:15px;font-weight:700;color:#111;">${_fmtPausa(ctrlPausa2)}</div></div>`:''}
         ${ctrlRir2?`<div style="padding:8px 10px;"><div style="font-size:8px;font-weight:700;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">RIR</div><div style="font-size:15px;font-weight:700;color:#111;">${ctrlRir2}</div></div>`:''}
       </div>` : '';
 
@@ -22392,7 +22412,7 @@ function generarHTMLExport(p, a, filename) {
         <td style="text-align:center;padding:5px 6px;border:1px solid #e8e8e8;">${s.reps||''}</td>
         <td style="text-align:center;padding:5px 6px;border:1px solid #e8e8e8;">${s.peso||''}</td>
         <td style="text-align:center;padding:5px 6px;border:1px solid #e8e8e8;">${s.rir||''}</td>
-        <td style="text-align:center;padding:5px 6px;border:1px solid #e8e8e8;">${s.pausa||''}</td>
+        <td style="text-align:center;padding:5px 6px;border:1px solid #e8e8e8;">${s.pausa?_fmtPausa(s.pausa):''}</td>
         <td style="text-align:left;padding:5px 6px;border:1px solid #e8e8e8;font-size:10px;color:#555;">${s.comentarios||''}</td>
       </tr>`).join('');
 

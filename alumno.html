@@ -967,8 +967,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261008150509 por un timestamp en cada deploy
-const _APP_VERSION = '20261008150509';
+// deploy.bat reemplaza 20261008151116 por un timestamp en cada deploy
+const _APP_VERSION = '20261008151116';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2111,6 +2111,18 @@ function _segDe(v){
   return 0; // número pelado (12, 8-10) = repeticiones
 }
 function _tmrFmt(sec){ sec = Math.max(0, sec|0); return Math.floor(sec/60) + ':' + String(sec%60).padStart(2,'0'); }
+// ── Formato global de pausas: 30 seg · 1 min · 1 min 30 seg ──
+function _fmtPausa(v){
+  if(v===null||v===undefined||v==='') return '';
+  let S;
+  if(typeof v==='number') S=Math.round(v);
+  else { const str=String(v).trim(); S = /^\d+$/.test(str) ? parseInt(str,10) : _segDe(str); }
+  if(!isFinite(S) || S<=0) return (typeof _compEsc==='function' ? _compEsc(String(v)) : String(v));
+  const m=Math.floor(S/60), s=S%60;
+  if(m===0) return s+' seg';
+  if(s===0) return m+' min';
+  return m+' min '+s+' seg';
+}
 
 // ── Unilateral: detección y limpieza de reps ────────────────────────────────
 const _RE_LADO = /(por|c\/?|cada)\s*lado/i;
@@ -2595,7 +2607,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
         : '';
       // La pausa se muestra como dato (el descanso lo maneja el timer automático al marcar la serie)
       // En CIRCUITOS: pasar de un ejercicio a otro = 20 seg automáticos.
-      const pausaCel = window._circLblOn ? '20 seg' : (s.pausa ? _compEsc(s.pausa) : (defPausa>=60?(Math.round(defPausa/60)+' min'):(defPausa+' seg')));
+      const pausaCel = window._circLblOn ? '20 seg' : _fmtPausa(s.pausa || defPausa);
       const serieLbl = '<span class="s-num'+(done?' on':'')+'">'+(window._circLblOn?'V':'S')+labelNum+'</span>' + (lado ? ' <span style="color:var(--muted);font-weight:600;">'+lado+'</span>' : '') + tipoBadge;
       // Serie agregada por el alumno (extra) → se puede eliminar. Serie del coach → ✕ = "no la hice".
       const _esExtra = (keyIdx >= arr.length);
@@ -2685,7 +2697,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
     const cols = [
       cs  ? ['SERIES', cs]                 : null,
       cr  ? ['REPS',   _ctrlChip(cr,'r')]  : null,
-      cpa ? ['PAUSA',  _ctrlChip(cpa,'p')] : null,
+      cpa ? ['PAUSA',  _ctrlChip(_fmtPausa(cpa),'p')] : null,
       ci  ? ['RIR',    ci]                 : null,
     ].filter(Boolean);
     return '<div style="display:grid;grid-template-columns:repeat('+cols.length+',1fr);border:1px solid rgba(74,134,196,.3);border-radius:8px;overflow:hidden;margin:10px 0;">'+
@@ -7926,7 +7938,7 @@ function _capturarSerie(uid){
     const reps=g(key,'reps')||s.reps||'—';
     const peso=g(key,'peso')||norm(s.peso)||'—';
     const rir=s.rir||'—';
-    const pausa=s.pausa||'—';
+    const pausa=s.pausa?_fmtPausa(s.pausa):'—';
     return '<tr><td><span class="ssn">S'+(i+1)+'</span></td><td>'+esc(reps)+'</td><td>'+esc(peso)+'</td><td>'+esc(rir)+'</td><td>'+esc(pausa)+'</td></tr>';
   }).join('');
   if(!rows){ try{ if(typeof toast==='function') toast('Este ejercicio no tiene series para capturar'); }catch(e){} return; }
