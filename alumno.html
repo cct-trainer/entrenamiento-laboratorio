@@ -508,6 +508,19 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
 .plan-sem-ir-btn{margin-left:auto;font-size:10px;font-weight:800;color:var(--gold);background:color-mix(in srgb,var(--gold) 12%,transparent);border:1px solid color-mix(in srgb,var(--gold) 30%,transparent);border-radius:7px;padding:4px 10px;cursor:pointer;white-space:nowrap;}
 .plan-sem-ir-btn:active{opacity:.7;}
 .plan-sem-sin{font-size:10px;color:var(--muted);font-style:italic;}
+/* ── Transición al abrir el día (deslizar + cascada de bloques) ── */
+@keyframes _sesOpen{from{transform:translateY(26px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+@keyframes _blkIn{from{transform:translateY(16px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+#sesion-ctn.anim-open{animation:_sesOpen .34s cubic-bezier(.22,.9,.3,1);}
+#sesion-ctn.anim-open .blk{animation:_blkIn .42s both;}
+#sesion-ctn.anim-open .blk:nth-of-type(1){animation-delay:.05s;}
+#sesion-ctn.anim-open .blk:nth-of-type(2){animation-delay:.11s;}
+#sesion-ctn.anim-open .blk:nth-of-type(3){animation-delay:.17s;}
+#sesion-ctn.anim-open .blk:nth-of-type(4){animation-delay:.23s;}
+#sesion-ctn.anim-open .blk:nth-of-type(5){animation-delay:.29s;}
+#sesion-ctn.anim-open .blk:nth-of-type(6){animation-delay:.35s;}
+#sesion-ctn.anim-open .blk:nth-of-type(n+7){animation-delay:.40s;}
+@media (prefers-reduced-motion: reduce){ #sesion-ctn.anim-open, #sesion-ctn.anim-open .blk{animation:none;} }
 </style>
 </head>
 <body>
@@ -967,8 +980,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261008151626 por un timestamp en cada deploy
-const _APP_VERSION = '20261008151626';
+// deploy.bat reemplaza 20261008191339 por un timestamp en cada deploy
+const _APP_VERSION = '20261008191339';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1939,7 +1952,11 @@ function selDia(i) {
   _diaModTab = 0;
   if (abriendo && _diaIdx !== null) _logActividad(_diaIdx);
   renderRutina();
-  if (abriendo && _diaIdx !== null) window.scrollTo({top:0,behavior:'smooth'});
+  if (abriendo && _diaIdx !== null) {
+    const ctn = document.getElementById('sesion-ctn');
+    if (ctn) { ctn.classList.remove('anim-open'); void ctn.offsetWidth; ctn.classList.add('anim-open'); }
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
 }
 function volverDias() {
   _diaIdx = null; _diaModTab = 0;

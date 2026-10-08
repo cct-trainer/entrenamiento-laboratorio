@@ -1587,10 +1587,14 @@ body.coach-bg-on .nd-chip:not(.on){background:#fff;}
 .series-table tr[data-tipo="fee"]  td:first-child{ box-shadow:inset 4px 0 0 #3A6EA5; }
 .series-table tr[data-tipo="efec"] td:first-child{ box-shadow:inset 4px 0 0 #8bbf9a; }
 .series-table tr[data-tipo="test"] td:first-child{ box-shadow:inset 4px 0 0 #7a4fb0; }
+.series-table tr[data-tipo="movi"] .serie-tipo-sel{ color:#0ea5a5; }
 .series-table tr[data-tipo="cal"]  .serie-tipo-sel{ color:#3A6EA5; }
+.series-table tr[data-tipo="act"]  .serie-tipo-sel{ color:#1f8f66; }
 .series-table tr[data-tipo="apr"]  .serie-tipo-sel{ color:#2f5f90; }
 .series-table tr[data-tipo="fee"]  .serie-tipo-sel{ color:#a67c1e; }
+.series-table tr[data-tipo="pfat"] .serie-tipo-sel{ color:#b5651d; }
 .series-table tr[data-tipo="efec"] .serie-tipo-sel{ color:#3f7a55; }
+.series-table tr[data-tipo="bmb"]  .serie-tipo-sel{ color:#c24b86; }
 .series-table tr[data-tipo="test"] .serie-tipo-sel{ color:#7a4fb0; }
 .btn-del-row {
   background: none; border: none; color: #ddd; cursor: pointer;
@@ -13922,7 +13926,7 @@ function guardarEstadoDiaActual() {
         tb.querySelectorAll('tr').forEach(row => {
           const inputs = row.querySelectorAll('input');
           const tipoSel = row.querySelector('.serie-tipo-sel');
-          if (inputs.length >= 4) result.push({ reps: inputs[0]?.value||'', peso: inputs[1]?.value||'', rir: inputs[2]?.value||'', pausa: inputs[3]?.value||'', tipo: (tipoSel ? tipoSel.value : 'efec'), comentarios: '' });
+          if (inputs.length >= 4){ const _s={ reps: inputs[0]?.value||'', peso: inputs[1]?.value||'', rir: inputs[2]?.value||'', pausa: inputs[3]?.value||'', tipo: (tipoSel ? tipoSel.value : 'efec'), comentarios: '' }; Object.assign(_s, _serieEstructura(_s)); result.push(_s); }
         });
         return result;
       }
@@ -21798,24 +21802,63 @@ const _PAUSA_DEFAULT = '1 min';
 function _pausaDefault(ejId){ return _PAUSA_DEFAULT; }
 
 // Tipo de serie (color por función): calentamiento / aproximación / feeder / efectiva / test
-const _SERIE_TIPOS = [['cal','Calent.'],['apr','Aprox.'],['fee','Feeder'],['efec','Efectiva'],['test','Test']];
-// Valores orientativos por tipo de serie (reps / RIR / pausa) · se autocompletan al cambiar el tipo
+// Orden oficial (tabla maestra v2.0)
+const _SERIE_TIPOS = [['movi','Movilidad'],['act','Activación'],['cal','Calent.'],['apr','Aprox.'],['fee','Feeder'],['pfat','P-Fatiga'],['efec','Efectiva'],['bmb','Bombeo'],['test','Test']];
+// Tabla maestra de configuración (reps / RIR / pausa) + si cuenta como serie efectiva
 const _SERIE_DEFAULTS = {
-  cal:  { reps:'15',   rir:'4',   pausa:'1 min' },
-  apr:  { reps:'6',    rir:'3',   pausa:'1 min 30 seg' },
-  fee:  { reps:'3',    rir:'2',   pausa:'2 min' },
-  efec: { reps:'8-12', rir:'2',   pausa:'2 min 30 seg' },
-  test: { reps:'1',    rir:'0',   pausa:'3 min' }
+  movi: { reps:'8-10',  rir:'',    pausa:'',       efectiva:false },
+  act:  { reps:'10-20', rir:'2',   pausa:'1 min',  efectiva:false },
+  cal:  { reps:'15',    rir:'4',   pausa:'1 min',  efectiva:false },
+  apr:  { reps:'6',     rir:'3',   pausa:'1 min',  efectiva:false },
+  fee:  { reps:'3',     rir:'2',   pausa:'2 min',  efectiva:false },
+  pfat: { reps:'8-12',  rir:'1-3', pausa:'1 min',  efectiva:false },
+  efec: { reps:'8-12',  rir:'2',   pausa:'2 min',  efectiva:true  },
+  bmb:  { reps:'15-30', rir:'1-2', pausa:'30 seg', efectiva:null  },  // configurable
+  test: { reps:'1',     rir:'0',   pausa:'5 min',  efectiva:false }
 };
+// ¿Este tipo de serie cuenta como volumen efectivo? (bombeo = configurable por el coach)
+function _serieEsEfectiva(tipo){ const d=_SERIE_DEFAULTS[tipo]; return d ? d.efectiva===true : false; }
+// Parsea "8-12" → {min:8,max:12} · "10" → {min:10,max:10} · "" → {null,null}
+function _parseRango(str){
+  const s=String(str||'').trim(); if(!s) return {min:null,max:null};
+  let m=s.match(/(\d+(?:\.\d+)?)\s*[-–a]\s*(\d+(?:\.\d+)?)/);
+  if(m) return {min:parseFloat(m[1]),max:parseFloat(m[2])};
+  m=s.match(/(\d+(?:\.\d+)?)/);
+  return m ? {min:parseFloat(m[1]),max:parseFloat(m[1])} : {min:null,max:null};
+}
+// Pausa (texto) → segundos enteros
+function _pausaSegundos(v){
+  if(v===null||v===undefined||v==='') return 0;
+  if(typeof v==='number') return Math.round(v);
+  var str=String(v).toLowerCase().trim(), m;
+  if(/^\d+$/.test(str)) return parseInt(str,10);
+  if((m=str.match(/(\d+)\s*:\s*(\d{1,2})/))) return parseInt(m[1])*60+parseInt(m[2]);
+  if((m=str.match(/(\d+)\s*min/))){ var sec=parseInt(m[1])*60; var s2=str.match(/min[^\d]*(\d+)/); if(s2) sec+=parseInt(s2[1]); return sec; }
+  if((m=str.match(/(\d+)\s*"/))) return parseInt(m[1]);
+  if((m=str.match(/(\d+)\s*(seg|segundos|sec|s)\b/))) return parseInt(m[1]);
+  return 0;
+}
+// Estructura del protocolo v2.0 por serie (aditivo · no reemplaza reps/rir/pausa de texto)
+function _serieEstructura(s){
+  const rr=_parseRango(s.reps), ri=_parseRango(s.rir), tipo=s.tipo||'efec', def=_SERIE_DEFAULTS[tipo]||{};
+  return {
+    series_type: tipo,
+    reps_min: rr.min, reps_max: rr.max,
+    rir_min: ri.min, rir_max: ri.max,
+    rest_seconds: _pausaSegundos(s.pausa),
+    counts_as_effective: (def.efectiva===true),
+    preset_version: '2.0'
+  };
+}
 function _serieTipoOptions(sel){ return _SERIE_TIPOS.map(t=>'<option value="'+t[0]+'"'+((sel||'efec')===t[0]?' selected':'')+'>'+t[1]+'</option>').join(''); }
 function _serieTipoSel(el){
   const tr=el.closest('tr'); if(!tr) return;
   tr.dataset.tipo=el.value;
-  const d=_SERIE_DEFAULTS[el.value]; if(!d) return;
+  const nd=_SERIE_DEFAULTS[el.value]; if(!nd) return;
   const inps=tr.querySelectorAll('input');   // orden: reps, peso, rir, pausa
-  if(inps[0]) inps[0].value = d.reps;    // reps (orientativas)
-  if(inps[2]) inps[2].value = d.rir;     // RIR
-  if(inps[3]) inps[3].value = d.pausa;   // pausa
+  if(inps[0]) inps[0].value = nd.reps;    // reps orientativas (rango o valor único)
+  if(inps[2]) inps[2].value = nd.rir;     // RIR (valor o rango)
+  if(inps[3]) inps[3].value = nd.pausa;   // pausa en formato texto
 }
 function _makeSerieRow(ejId, tbodyId, prefix, num, defaults) {
   // defaults = { reps:'', peso:'', rir:'', pausa:'', tipo:'' }  (todos opcionales)
