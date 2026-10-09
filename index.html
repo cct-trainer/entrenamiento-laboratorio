@@ -1581,6 +1581,9 @@ body.coach-bg-on .nd-chip:not(.on){background:#fff;}
 .series-table .comments-input { text-align: left; }
 /* Tipo de serie · filo de color a la izquierda (opción B) */
 .serie-tipo-sel{ border:none;background:transparent;font-size:11px;font-weight:800;font-family:inherit;cursor:pointer;color:#6b7280;padding:2px;outline:none;text-align:center; }
+.reps-pick{ border:1px solid #d5deea;background:#fff;border-radius:8px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;color:#1a2a4a;padding:6px 6px;outline:none;text-align:center;max-width:94px; }
+.reps-pick:focus{ border-color:#3A6EA5; }
+.reps-val{ margin-top:5px;width:88px; }
 .series-table tr[data-tipo] td:first-child{ position:relative; }
 .series-table tr[data-tipo="cal"]  td:first-child{ box-shadow:inset 4px 0 0 #3A6EA5; }
 .series-table tr[data-tipo="apr"]  td:first-child{ box-shadow:inset 4px 0 0 #2f5f90; }
@@ -1590,6 +1593,7 @@ body.coach-bg-on .nd-chip:not(.on){background:#fff;}
 .series-table tr[data-tipo="movi"] .serie-tipo-sel{ color:#0ea5a5; }
 .series-table tr[data-tipo="cal"]  .serie-tipo-sel{ color:#3A6EA5; }
 .series-table tr[data-tipo="act"]  .serie-tipo-sel{ color:#1f8f66; }
+.series-table tr[data-tipo="iso"]  .serie-tipo-sel{ color:#0d9488; }
 .series-table tr[data-tipo="apr"]  .serie-tipo-sel{ color:#2f5f90; }
 .series-table tr[data-tipo="fee"]  .serie-tipo-sel{ color:#a67c1e; }
 .series-table tr[data-tipo="pfat"] .serie-tipo-sel{ color:#b5651d; }
@@ -14141,7 +14145,7 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
         const tipo = s.tipo || 'efec'; tr.dataset.tipo = tipo;
         tr.innerHTML = `<td class="serie-num-cell">${prefix} ${si+1}</td>
           <td class="serie-tipo-cell"><select class="serie-tipo-sel" onchange="_serieTipoSel(this)">${_serieTipoOptions(tipo)}</select></td>
-          <td><input type="text" value="${s.reps||''}"></td>
+          <td class="serie-reps-cell">${_repsCell(tipo, s.reps||'')}</td>
           <td><input type="text" value="${s.peso||''}" onfocus="_abrirPesoPicker(this,'${ejId}')"></td>
           <td><input type="text" value="${s.rir||''}"></td>
           <td><input type="text" value="${s.pausa||''}"></td>
@@ -21803,17 +21807,18 @@ function _pausaDefault(ejId){ return _PAUSA_DEFAULT; }
 
 // Tipo de serie (color por función): calentamiento / aproximación / feeder / efectiva / test
 // Orden oficial (tabla maestra v2.0)
-const _SERIE_TIPOS = [['movi','Movilidad'],['act','Activación'],['cal','Calent.'],['apr','Aprox.'],['fee','Feeder'],['pfat','P-Fatiga'],['efec','Efectiva'],['bmb','Bombeo'],['test','Test']];
+const _SERIE_TIPOS = [['movi','Movilidad'],['act','Activación'],['iso','Isométrico'],['cal','Calent.'],['apr','Aprox.'],['fee','Feeder'],['pfat','P-Fatiga'],['efec','Efectiva'],['bmb','Bombeo'],['test','Test']];
 // Tabla maestra de configuración (reps / RIR / pausa) + si cuenta como serie efectiva
 const _SERIE_DEFAULTS = {
-  movi: { reps:'8-10',  rir:'',    pausa:'',       efectiva:false },
-  act:  { reps:'10-20', rir:'2',   pausa:'1 min',  efectiva:false },
+  movi: { reps:'10',    rir:'',    pausa:'',       efectiva:false },
+  act:  { reps:'15',    rir:'2',   pausa:'1 min',  efectiva:false },
+  iso:  { reps:'30 seg',rir:'',    pausa:'1 min',  efectiva:false, tiempo:true },
   cal:  { reps:'15',    rir:'4',   pausa:'1 min',  efectiva:false },
   apr:  { reps:'6',     rir:'3',   pausa:'1 min',  efectiva:false },
   fee:  { reps:'3',     rir:'2',   pausa:'2 min',  efectiva:false },
-  pfat: { reps:'8-12',  rir:'1-3', pausa:'1 min',  efectiva:false },
-  efec: { reps:'8-12',  rir:'2',   pausa:'2 min',  efectiva:true  },
-  bmb:  { reps:'15-30', rir:'1-2', pausa:'30 seg', efectiva:null  },  // configurable
+  pfat: { reps:'10',    rir:'1-3', pausa:'1 min',  efectiva:false },
+  efec: { reps:'10',    rir:'2',   pausa:'2 min',  efectiva:true  },
+  bmb:  { reps:'20',    rir:'1-2', pausa:'30 seg', efectiva:null  },  // configurable
   test: { reps:'1',     rir:'0',   pausa:'5 min',  efectiva:false }
 };
 // ¿Este tipo de serie cuenta como volumen efectivo? (bombeo = configurable por el coach)
@@ -21841,9 +21846,12 @@ function _pausaSegundos(v){
 // Estructura del protocolo v2.0 por serie (aditivo · no reemplaza reps/rir/pausa de texto)
 function _serieEstructura(s){
   const rr=_parseRango(s.reps), ri=_parseRango(s.rir), tipo=s.tipo||'efec', def=_SERIE_DEFAULTS[tipo]||{};
+  const esTiempo = def.tiempo===true || /seg|min|"|''/.test(String(s.reps||'').toLowerCase());
   return {
     series_type: tipo,
-    reps_min: rr.min, reps_max: rr.max,
+    is_time_based: esTiempo,
+    reps_min: esTiempo ? null : rr.min, reps_max: esTiempo ? null : rr.max,
+    work_seconds: esTiempo ? _pausaSegundos(s.reps) : null,
     rir_min: ri.min, rir_max: ri.max,
     rest_seconds: _pausaSegundos(s.pausa),
     counts_as_effective: (def.efectiva===true),
@@ -21851,14 +21859,60 @@ function _serieEstructura(s){
   };
 }
 function _serieTipoOptions(sel){ return _SERIE_TIPOS.map(t=>'<option value="'+t[0]+'"'+((sel||'efec')===t[0]?' selected':'')+'>'+t[1]+'</option>').join(''); }
+
+// Opciones de reps/tiempo según el tipo de serie (modo "elegir de una lista")
+const _REPS_OPC = {
+  movi:['8','10','12'],
+  act:['10','12','15','20'],
+  iso:['25 seg','30 seg','35 seg','40 seg','1 min'],
+  cal:['10','12','15','20'],
+  apr:['3','4','5','6'],
+  fee:['2','3','5'],
+  pfat:['8','10','12','15'],
+  efec:['6','8','10','12'],
+  bmb:['15','20','25','30'],
+  test:['1','2','3']
+};
+function _repsOptions(tipo,cur){
+  const list=_REPS_OPC[tipo]||[];
+  const isCustom = cur && list.indexOf(cur)<0;
+  let o=list.map(v=>'<option'+(v===cur?' selected':'')+'>'+v+'</option>').join('');
+  o+='<option value="__otro"'+(isCustom?' selected':'')+'>Otro…</option>';
+  return o;
+}
+function _repsCell(tipo,cur){
+  if(!cur){ cur=(_SERIE_DEFAULTS[tipo]&&_SERIE_DEFAULTS[tipo].reps)||''; }
+  cur=String(cur).replace(/"/g,'&quot;');
+  const list=_REPS_OPC[tipo]||[];
+  const isCustom = cur && list.indexOf(cur)<0;
+  return '<select class="reps-pick" onchange="_repsPick(this)">'+_repsOptions(tipo,cur)+'</select>'
+       + '<input type="text" class="reps-val" placeholder="Reps" value="'+cur+'" style="'+(isCustom?'':'display:none;')+'">';
+}
+// Al elegir una opción del desplegable, vuelca el valor al input (o lo muestra para escribir "Otro…")
+function _repsPick(sel){
+  const tr=sel.closest('tr'); if(!tr) return;
+  const rv=tr.querySelector('.reps-val'); if(!rv) return;
+  if(sel.value==='__otro'){ rv.style.display=''; rv.value=''; rv.focus(); }
+  else { rv.value=sel.value; rv.style.display='none'; }
+}
+// Reconstruye el desplegable + input de reps para un tipo y valor dados
+function _repsApply(tr,tipo,val){
+  const rp=tr.querySelector('.reps-pick'), rv=tr.querySelector('.reps-val');
+  if(!rp||!rv) return;
+  rp.innerHTML=_repsOptions(tipo,val);
+  const list=_REPS_OPC[tipo]||[];
+  const custom = val && list.indexOf(val)<0;
+  rv.value=val||'';
+  rv.style.display = custom ? '' : 'none';
+}
 function _serieTipoSel(el){
   const tr=el.closest('tr'); if(!tr) return;
   tr.dataset.tipo=el.value;
   const nd=_SERIE_DEFAULTS[el.value]; if(!nd) return;
-  const inps=tr.querySelectorAll('input');   // orden: reps, peso, rir, pausa
-  if(inps[0]) inps[0].value = nd.reps;    // reps orientativas (rango o valor único)
-  if(inps[2]) inps[2].value = nd.rir;     // RIR (valor o rango)
-  if(inps[3]) inps[3].value = nd.pausa;   // pausa en formato texto
+  const inps=tr.querySelectorAll('input');   // orden: reps(hidden), peso, rir, pausa
+  if(inps[2]) inps[2].value = nd.rir;     // RIR
+  if(inps[3]) inps[3].value = nd.pausa;   // pausa
+  _repsApply(tr, el.value, nd.reps);      // reps/tiempo desde el desplegable
 }
 function _makeSerieRow(ejId, tbodyId, prefix, num, defaults) {
   // defaults = { reps:'', peso:'', rir:'', pausa:'', tipo:'' }  (todos opcionales)
@@ -21869,7 +21923,7 @@ function _makeSerieRow(ejId, tbodyId, prefix, num, defaults) {
   tr.innerHTML = `
     <td class="serie-num-cell">${prefix} ${num}</td>
     <td class="serie-tipo-cell"><select class="serie-tipo-sel" onchange="_serieTipoSel(this)">${_serieTipoOptions(tipo)}</select></td>
-    <td><input type="text" placeholder="Reps" value="${d.reps||''}"></td>
+    <td class="serie-reps-cell">${_repsCell(tipo, d.reps||'')}</td>
     <td><input type="text" placeholder="Kg"   value="${d.peso||''}" onfocus="_abrirPesoPicker(this,'${ejId}')"></td>
     <td><input type="text" placeholder="RIR"  value="${d.rir||''}"></td>
     <td><input type="text" placeholder="Pausa" value="${d.pausa||_pausaDefault(ejId)}"></td>
