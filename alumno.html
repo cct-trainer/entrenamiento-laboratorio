@@ -6,7 +6,7 @@
 <title>Mi Portal — Christian Cattaneo</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link rel="manifest" id="pwa-manifest">
-<meta name="theme-color" content="#C9A84C" id="meta-theme-color">
+<meta name="theme-color" content="#8FB0D6" id="meta-theme-color">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -25,15 +25,15 @@
 /* ── TEMA OSCURO (default) ─────────────────────────────────────────── */
 :root{
   --bg:#0d0d1a;--card:#13132a;--card2:#0b0c0e;
-  --gold:#C9A84C;--gold-d:#9A7A28;--green:#3A6EA5;
+  --gold:#8FB0D6;--gold-d:#3A6EA5;--green:#3A6EA5;
   --text:#e8e8f0;--muted:#8888aa;--border:rgba(255,255,255,.08);
   --hdr-bg:linear-gradient(180deg,#1a1a3a 0%,transparent 100%);
   --nav-bg:#13132a;--nav-border:rgba(255,255,255,.08);
   --blk-hdr:rgba(255,255,255,.04);--row-odd:rgba(255,255,255,.025);
   --input-bg:rgba(255,255,255,.04);--input-border:rgba(255,255,255,.1);
-  --ctx-bg:#14142b;--ctx-border:rgba(201,168,76,.3);--ctx-text:#e8e8f0;
+  --ctx-bg:#14142b;--ctx-border:rgba(143,176,214,.3);--ctx-text:#e8e8f0;
   --letra-text:#0d0d1a;
-  --avatar-grad:linear-gradient(135deg,#C9A84C,#7a5a10);
+  --avatar-grad:linear-gradient(135deg,#8FB0D6,#1f3b5c);
   --ses-panel:#000000; /* negro total (fondo de la sesión, tema oscuro) */
 }
 
@@ -56,7 +56,7 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 
 #loading,#error-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:14px;padding:24px;text-align:center;}
 #error-screen{display:none;}
-.spinner{width:36px;height:36px;border:3px solid rgba(201,168,76,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .75s linear infinite;}
+.spinner{width:36px;height:36px;border:3px solid rgba(143,176,214,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .75s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
 #app{display:none;flex-direction:column;max-width:480px;margin:0 auto;min-height:100vh;}
@@ -81,7 +81,7 @@ html.light .pt-logo{filter:brightness(1) drop-shadow(0 3px 3px rgba(0,0,0,.35)) 
 .pt-coin{position:relative;width:96px;height:96px;transform-style:preserve-3d;}
 .pt-coin.spin{animation:ptGirar 2.4s cubic-bezier(.3,.85,.25,1) both;}
 @keyframes ptGirar{from{transform:rotateY(0deg);}to{transform:rotateY(1080deg);}}
-.pt-face{position:absolute;inset:0;border-radius:50%;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:900;color:#fff;background:var(--avatar-grad);border:3px solid rgba(201,168,76,.35);box-shadow:0 12px 42px -12px rgba(201,168,76,.55);}
+.pt-face{position:absolute;inset:0;border-radius:50%;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:900;color:#fff;background:var(--avatar-grad);border:3px solid rgba(143,176,214,.35);box-shadow:0 12px 42px -12px rgba(143,176,214,.55);}
 .pt-face img{width:100%;height:100%;object-fit:cover;}
 .pt-face.back{transform:rotateY(180deg);background:#0b1220;}
 .pt-face.back img{object-fit:contain;padding:12px;}
@@ -196,17 +196,17 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .ag-day-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
 .ag-day-name{font-size:12px;font-weight:900;color:var(--text);letter-spacing:.3px;}
 .ag-day-num{font-size:10px;color:var(--muted);margin-left:4px;}
-.ag-badge{font-size:8px;font-weight:800;letter-spacing:.5px;color:var(--gold);border:1px solid rgba(201,168,76,.4);border-radius:20px;padding:2px 7px;}
+.ag-badge{font-size:8px;font-weight:800;letter-spacing:.5px;color:var(--gold);border:1px solid rgba(143,176,214,.4);border-radius:20px;padding:2px 7px;}
 .ag-badge.hoy{color:#111;background:var(--gold);border-color:var(--gold);}
 .ag-acts{display:flex;flex-direction:column;gap:7px;}
 .ag-act{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:11px;cursor:pointer;border-left:3px solid;}
-.ag-act.fz{background:rgba(201,168,76,.08);border-color:var(--gold);}
+.ag-act.fz{background:rgba(143,176,214,.08);border-color:var(--gold);}
 .ag-act.rn{background:rgba(79,176,198,.08);border-color:#4fb0c6;}
 .ag-act .tx{flex:1;min-width:0;}
 .ag-act .tt{font-size:13px;font-weight:800;color:var(--text);}
 .ag-act .ds{font-size:10.5px;color:var(--muted);margin-top:1px;}
 .ag-act .tag{font-size:8px;font-weight:900;letter-spacing:.5px;padding:2px 7px;border-radius:20px;flex-shrink:0;}
-.ag-act .tag.fz{background:rgba(201,168,76,.18);color:#e0bd63;}
+.ag-act .tag.fz{background:rgba(143,176,214,.18);color:#e0bd63;}
 .ag-act .tag.rn{background:rgba(79,176,198,.18);color:#8fd6e6;}
 .ag-act .go{color:var(--muted);font-size:15px;flex-shrink:0;}
 .ag-rest{font-size:12px;color:var(--muted);text-align:center;padding:4px 0;font-weight:700;}
@@ -218,7 +218,7 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .mc-cards{display:flex;flex-direction:column;gap:16px;}
 .mc-card{position:relative;border-radius:20px;overflow:hidden;cursor:pointer;min-height:172px;display:flex;flex-direction:column;justify-content:flex-end;padding:18px;border:1px solid var(--border);box-shadow:0 14px 34px -14px rgba(0,0,0,.65);transition:transform .15s;}
 .mc-card:active{transform:scale(.99);}
-.mc-fuerza{background:linear-gradient(135deg,#C9A84C,#1a1018);}
+.mc-fuerza{background:linear-gradient(135deg,#8FB0D6,#1a1018);}
 .mc-running{background:linear-gradient(135deg,#1D4ED8,#0a1024);}
 .mc-card::before{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.6),rgba(0,0,0,.03) 60%,rgba(0,0,0,.15));}
 .mc-ico{position:absolute;top:15px;right:18px;font-size:42px;opacity:.92;}
@@ -244,7 +244,7 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .rd-hint{margin-top:10px;font-size:11px;color:var(--muted);}
 .dgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px;}
 .dchip{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;background:var(--card);border:1.5px solid var(--border);cursor:pointer;transition:all .15s;position:relative;user-select:none;}
-.dchip.has{border-color:rgba(201,168,76,.4);}
+.dchip.has{border-color:rgba(143,176,214,.4);}
 .dchip.on{background:var(--gold);border-color:var(--gold);}
 .dchip.today{box-shadow:0 0 0 2px rgba(58,110,165,.35);border-color:var(--green);}
 .dchip .dl{font-size:8px;font-weight:800;color:var(--muted);letter-spacing:.5px;}
@@ -258,9 +258,9 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 /* ── Lista de días en formato renglón (plan de fuerza) ── */
 .dlist{display:flex;flex-direction:column;gap:9px;margin-bottom:16px;}
 .dayrow{display:flex;align-items:center;gap:13px;padding:13px 15px;border-radius:14px;background:var(--card);border:1px solid var(--border);cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,border-color .15s,background .15s,box-shadow .15s;}
-.dayrow::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:rgba(201,168,76,.45);transition:width .15s,background .15s;}
-.dayrow:hover{border-color:rgba(201,168,76,.45);transform:translateX(2px);}
-.dayrow.on{background:color-mix(in srgb,var(--gold) 8%,var(--card));border-color:var(--gold);box-shadow:0 4px 18px -8px rgba(201,168,76,.5);}
+.dayrow::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:rgba(143,176,214,.45);transition:width .15s,background .15s;}
+.dayrow:hover{border-color:rgba(143,176,214,.45);transform:translateX(2px);}
+.dayrow.on{background:color-mix(in srgb,var(--gold) 8%,var(--card));border-color:var(--gold);box-shadow:0 4px 18px -8px rgba(143,176,214,.5);}
 .dayrow.on::before{width:5px;background:var(--gold);}
 .dayrow.today{border-color:#4a86c4;background:#3A6EA5;box-shadow:0 6px 22px -8px rgba(58,110,165,.7);}
 .dayrow.today::before{width:0;background:#3A6EA5;}
@@ -280,7 +280,7 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .dr-title{font-size:14px;font-weight:800;color:var(--text);letter-spacing:.3px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;}
 .dr-sub{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dr-tags{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;}
-.dr-tag{font-size:8.5px;font-weight:800;letter-spacing:.5px;padding:2px 8px;border-radius:20px;background:rgba(201,168,76,.12);color:var(--gold);border:1px solid rgba(201,168,76,.25);}
+.dr-tag{font-size:8.5px;font-weight:800;letter-spacing:.5px;padding:2px 8px;border-radius:20px;background:rgba(143,176,214,.12);color:var(--gold);border:1px solid rgba(143,176,214,.25);}
 .dayrow.today .dr-tag{background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.4);}
 .dr-arr{font-size:11px;color:var(--muted);transition:transform .2s,color .2s;flex-shrink:0;}
 .dayrow.on .dr-arr{transform:rotate(180deg);color:var(--gold);}
@@ -339,7 +339,7 @@ html.light .blk-body{padding:0 2px 4px;}
 /* Borde de bloque: 1 ejercicio → dorado · 2+ ejercicios → azul · pausa activa → gris (default) con su zona azul */
 .blk.solo-gold{border:1.5px solid #a98a3f;}
 .blk.combo-blue{border:1.5px solid #4a86c4;}
-html.light .blk.solo-gold{border:1.5px solid #C9A84C;border-radius:12px;padding:8px 8px 2px;}
+html.light .blk.solo-gold{border:1.5px solid #8FB0D6;border-radius:12px;padding:8px 8px 2px;}
 html.light .blk.combo-blue{border:1.5px solid #4a86c4;border-radius:12px;padding:8px 8px 2px;}
 /* Panel lleno uniforme (Estilo B) para todos los bloques */
 .blk.pfill{background:#161d30;border:1px solid #2a3550;border-radius:16px;padding:14px;box-shadow:0 10px 26px -18px rgba(0,0,0,.7);}
@@ -358,7 +358,7 @@ html.light .blk.pfill{background:#eef2f8;border:1px solid #d7dfec;border-radius:
 .sparkrow{display:flex;align-items:flex-end;gap:3px;height:42px;}
 .spark-grp{flex:1;display:flex;gap:1px;align-items:flex-end;height:42px;}
 .sp-bar{flex:1;border-radius:2px 2px 0 0;min-height:3px;}
-.sp-plan{background:rgba(201,168,76,.35);border:1px solid rgba(201,168,76,.6);}
+.sp-plan{background:rgba(143,176,214,.35);border:1px solid rgba(143,176,214,.6);}
 .sp-real{background:rgba(58,110,165,.5);border:1px solid rgba(58,110,165,.7);}
 .spark-labels{display:flex;gap:3px;margin-top:3px;}
 .spark-lbl{flex:1;text-align:center;font-size:8px;color:var(--muted);font-weight:700;}
@@ -395,7 +395,7 @@ html.light .blk.pfill{background:#eef2f8;border:1px solid #d7dfec;border-radius:
 /* ── SERIE TYPE BADGE ─────────────────────────────────────────────── */
 .s-tipo{display:inline-block;font-size:8px;font-weight:800;padding:1px 5px;border-radius:4px;margin-left:3px;vertical-align:middle;letter-spacing:.3px;cursor:pointer;user-select:none;}
 .serie-row{cursor:pointer;transition:background .1s;}
-.serie-row.lp-active{background:rgba(201,168,76,.12)!important;}
+.serie-row.lp-active{background:rgba(143,176,214,.12)!important;}
 /* Tabla BLANCA en tema oscuro (default): estilos claros */
 .serie-row.s-omitida td{background:#fdecec!important;color:#c0392b!important;text-decoration:line-through;}
 .s-del.on{color:#fff;background:#ef4444;border-radius:6px;}
@@ -481,7 +481,7 @@ html.light .scard table th { background: color-mix(in srgb, var(--gold) 8%, whit
 html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, transparent) !important; }
 
 /* ── PLAN TAB ─────────────────────────────────────────────────────── */
-.plan-macro-hdr{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid rgba(201,168,76,.2);}
+.plan-macro-hdr{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid rgba(143,176,214,.2);}
 .plan-macro-badge{font-size:9px;font-weight:900;letter-spacing:1.5px;color:var(--gold);margin-bottom:6px;}
 .plan-macro-nombre{font-size:17px;font-weight:900;color:var(--text);line-height:1.2;margin-bottom:4px;}
 .plan-macro-dates{font-size:11px;color:var(--muted);margin-bottom:12px;}
@@ -606,8 +606,8 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
         <a id="btn-coach-panel" href="./coach.html" title="Panel Coach"
-          style="display:none;background:rgba(201,168,76,.1);border:1.5px solid rgba(201,168,76,.3);border-radius:22px;padding:7px 11px;font-size:15px;text-decoration:none;align-items:center;transition:all .2s;"
-          onmouseover="this.style.background='rgba(201,168,76,.2)'" onmouseout="this.style.background='rgba(201,168,76,.1)'">🏋️</a>
+          style="display:none;background:rgba(143,176,214,.1);border:1.5px solid rgba(143,176,214,.3);border-radius:22px;padding:7px 11px;font-size:15px;text-decoration:none;align-items:center;transition:all .2s;"
+          onmouseover="this.style.background='rgba(143,176,214,.2)'" onmouseout="this.style.background='rgba(143,176,214,.1)'">🏋️</a>
         <button id="btn-modo" onclick="_volverChooser()" title="Cambiar Fuerza / Running"
           style="display:none;background:var(--card);border:1.5px solid var(--border);border-radius:22px;padding:7px 12px;cursor:pointer;font-size:15px;flex-shrink:0;transition:all .2s;color:#5b93cf;align-items:center;">⇄</button>
         <button id="btn-tuto" onclick="_abrirTutorial()" title="Cómo usar la app"
@@ -725,7 +725,7 @@ const SERIE_TIPOS = {
   calentamiento: { icon:'🔥', label:'Calentamiento',    color:'#f97316' },
   aproximacion:  { icon:'🎯', label:'Aproximación',     color:'#eab308' },
   regular:       { icon:'⚡', label:'Regular',           color:'#94a3b8' },
-  topset:        { icon:'👑', label:'Top Set',           color:'#C9A84C' },
+  topset:        { icon:'👑', label:'Top Set',           color:'#8FB0D6' },
   backoff:       { icon:'📉', label:'Back Off',          color:'#60a5fa' },
   dropset:       { icon:'⬇️', label:'Drop Set',          color:'#f87171' },
   restpause:     { icon:'⏸', label:'Rest Pause',        color:'#c084fc' },
@@ -986,8 +986,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261009143749 por un timestamp en cada deploy
-const _APP_VERSION = '20261009143749';
+// deploy.bat reemplaza 20261009161506 por un timestamp en cada deploy
+const _APP_VERSION = '20261009161506';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1081,7 +1081,7 @@ const TIPOS_RUN = {
   'progresivos': {icon:'📈', label:'Progresivos', labelEn:'Progressions', color:'#8b5cf6'},
   'recuperacion':{icon:'⚪', label:'Trote suave / Recuperación', labelEn:'Easy / Recovery', color:'#94a3b8'},
   'descanso':    {icon:'😴', label:'Descanso activo', labelEn:'Active rest', color:'#64748b'},
-  'custom':      {icon:'✏️', label:'Personalizado', labelEn:'Custom', color:'#C9A84C'},
+  'custom':      {icon:'✏️', label:'Personalizado', labelEn:'Custom', color:'#8FB0D6'},
 };
 
 (async function(){
@@ -1115,7 +1115,7 @@ const TIPOS_RUN = {
       start_url: _startUrl,
       display: 'standalone',
       background_color: '#0d0d1a',
-      theme_color: '#C9A84C',
+      theme_color: '#8FB0D6',
       orientation: 'portrait',
       icons: [
         { src: 'https://cct-trainer.github.io/entrenamiento-laboratorio/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
@@ -1226,22 +1226,22 @@ async function _showAccesoBloqueado(hasta) {
   const planesHTML = planes.length ? planes.map(p=>{
     const link = p.link || cfg.mpLink || '';
     const btn = link
-      ? '<a href="'+String(link).replace(/"/g,'&quot;')+'" target="_blank" style="display:block;margin-top:10px;background:linear-gradient(135deg,#C9A84C,#9A7A28);color:#0d0d1a;border-radius:10px;padding:11px;font-size:13px;font-weight:900;text-decoration:none;">Suscribirme</a>'
+      ? '<a href="'+String(link).replace(/"/g,'&quot;')+'" target="_blank" style="display:block;margin-top:10px;background:linear-gradient(135deg,#8FB0D6,#3A6EA5);color:#0d0d1a;border-radius:10px;padding:11px;font-size:13px;font-weight:900;text-decoration:none;">Suscribirme</a>'
       : '';
     return '<div style="background:#13132a;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:15px;margin-bottom:10px;text-align:left;">'
-      + '<div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="color:#e8e8f0;font-size:15px;font-weight:800;">'+p.nombre+'</span><span style="color:#C9A84C;font-size:15px;font-weight:900;">'+(p.precio||'')+'</span></div>'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="color:#e8e8f0;font-size:15px;font-weight:800;">'+p.nombre+'</span><span style="color:#8FB0D6;font-size:15px;font-weight:900;">'+(p.precio||'')+'</span></div>'
       + (p.detalle?'<div style="color:#8888aa;font-size:12px;margin-top:5px;line-height:1.5;">'+p.detalle+'</div>':'')
       + btn + '</div>';
   }).join('') : '';
 
   const pagoDirecto = (!planes.length && cfg.mpLink)
-    ? '<a href="'+String(cfg.mpLink).replace(/"/g,'&quot;')+'" target="_blank" style="display:block;background:linear-gradient(135deg,#C9A84C,#9A7A28);color:#0d0d1a;border-radius:14px;padding:16px;font-size:15px;font-weight:900;text-decoration:none;margin-bottom:12px;">Suscribirme y seguir entrenando</a>' : '';
+    ? '<a href="'+String(cfg.mpLink).replace(/"/g,'&quot;')+'" target="_blank" style="display:block;background:linear-gradient(135deg,#8FB0D6,#3A6EA5);color:#0d0d1a;border-radius:14px;padding:16px;font-size:15px;font-weight:900;text-decoration:none;margin-bottom:12px;">Suscribirme y seguir entrenando</a>' : '';
 
   document.body.innerHTML = `
     <div style="min-height:100vh;background:#0d0d1a;display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,sans-serif;">
       <div style="max-width:360px;width:100%;text-align:center;">
         <div style="font-size:48px;margin-bottom:14px;">🔒</div>
-        <div style="color:#C9A84C;font-size:12px;font-weight:900;letter-spacing:1.5px;margin-bottom:8px;">TU PRUEBA TERMINÓ</div>
+        <div style="color:#8FB0D6;font-size:12px;font-weight:900;letter-spacing:1.5px;margin-bottom:8px;">TU PRUEBA TERMINÓ</div>
         <div style="color:#fff;font-size:17px;font-weight:800;margin-bottom:6px;">${nombre?('¡'+nombre+', seguí entrenando!'):'Seguí entrenando'}</div>
         <div style="color:#888;font-size:13px;line-height:1.6;margin-bottom:22px;">Tu acceso venció el ${fmtHasta}. Elegí un plan para continuar — tu perfil e historial quedan guardados.</div>
         ${planesHTML}
@@ -1267,7 +1267,7 @@ function _toggleTheme() {
   if (btn) btn.textContent = isLight ? '☀️' : '🌙';
   // Actualizar meta theme-color
   const meta = document.getElementById('meta-theme-color');
-  if (meta) meta.content = isLight ? '#1d4ed8' : '#C9A84C';
+  if (meta) meta.content = isLight ? '#1d4ed8' : '#8FB0D6';
   // Re-dibujar la sesión abierta para que la tabla tome los colores del tema nuevo
   try { if (typeof _diaIdx !== 'undefined' && _diaIdx !== null && typeof renderSesion === 'function') renderSesion(); } catch(e) {}
 }
@@ -1410,7 +1410,7 @@ function _tutBannerMaybe(){
   const b=document.getElementById('tut-banner'); if(!b) return;
   if(seen){ b.style.display='none'; return; }
   b.style.display='block';
-  b.innerHTML='<div style="margin:12px 12px 0;padding:11px 13px;background:linear-gradient(120deg,rgba(201,168,76,.16),rgba(201,168,76,.05));border:1px solid rgba(201,168,76,.4);border-radius:12px;display:flex;align-items:center;gap:10px;">'
+  b.innerHTML='<div style="margin:12px 12px 0;padding:11px 13px;background:linear-gradient(120deg,rgba(143,176,214,.16),rgba(143,176,214,.05));border:1px solid rgba(143,176,214,.4);border-radius:12px;display:flex;align-items:center;gap:10px;">'
     +'<div style="font-size:20px;">👋</div>'
     +'<div style="flex:1;"><div style="color:#f0d488;font-size:12.5px;font-weight:800;">¿Primera vez?</div><div style="color:#c9b98a;font-size:10.5px;margin-top:1px;">Mirá cómo usar la app en 1 minuto.</div></div>'
     +'<button onclick="_abrirTutorial()" style="font-size:10px;font-weight:800;color:#fff;background:#3A6EA5;border:none;border-radius:20px;padding:7px 12px;cursor:pointer;white-space:nowrap;">Ver tutorial</button>'
@@ -1432,23 +1432,23 @@ function _tutorialHTML(){
   #tutorial-overlay{color:#eef1f5;}
   #tutorial-overlay .tut-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:16px;background:linear-gradient(160deg,#171820,#0c0d11);border-bottom:1px solid #1c1e22;}
   #tutorial-overlay .tut-top .t{flex:1;font-size:17px;font-weight:900;color:#fff;}
-  #tutorial-overlay .tut-top .t small{display:block;font-size:11px;color:#C9A84C;font-weight:700;margin-top:1px;}
+  #tutorial-overlay .tut-top .t small{display:block;font-size:11px;color:#8FB0D6;font-weight:700;margin-top:1px;}
   #tutorial-overlay .tut-top .x{background:none;border:none;color:#9aa0ab;font-size:26px;cursor:pointer;line-height:1;}
   #tutorial-overlay .tut-body{padding:16px 16px 44px;max-width:520px;margin:0 auto;}
   #tutorial-overlay .tut-intro{font-size:13px;color:#c5cad3;line-height:1.6;}
   #tutorial-overlay .tut-tabs{display:flex;gap:7px;margin:12px 0 4px;}
   #tutorial-overlay .tut-tab{flex:1;text-align:center;background:#141519;border:1px solid #23252c;border-radius:9px;padding:9px 4px;font-size:9px;font-weight:800;letter-spacing:.5px;color:#8b93a0;}
-  #tutorial-overlay .tut-tab.on{color:#C9A84C;border-color:rgba(201,168,76,.4);}
+  #tutorial-overlay .tut-tab.on{color:#8FB0D6;border-color:rgba(143,176,214,.4);}
   #tutorial-overlay .tut-step{margin-top:22px;}
   #tutorial-overlay .tut-sh{display:flex;align-items:center;gap:10px;}
-  #tutorial-overlay .tut-sn{width:26px;height:26px;border-radius:50%;background:#C9A84C;color:#111;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  #tutorial-overlay .tut-sn{width:26px;height:26px;border-radius:50%;background:#8FB0D6;color:#111;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   #tutorial-overlay .tut-st{font-size:15px;font-weight:800;color:#fff;}
   #tutorial-overlay .tut-sx{font-size:12.5px;color:#b6bcc6;line-height:1.6;margin:8px 0 0;}
   #tutorial-overlay .tut-sx b{color:#e7ebf1;}
   #tutorial-overlay .tut-shot{background:#0d0e12;border:1px solid #23252c;border-radius:13px;padding:12px;margin-top:11px;}
-  #tutorial-overlay .tut-nom{font-size:14px;font-weight:900;color:#fff;border-left:3px solid #C9A84C;padding-left:8px;}
+  #tutorial-overlay .tut-nom{font-size:14px;font-weight:900;color:#fff;border-left:3px solid #8FB0D6;padding-left:8px;}
   #tutorial-overlay .tut-musc{font-size:9px;color:#8b93a0;margin:3px 0 0 11px;}
-  #tutorial-overlay .tut-note{margin:8px 0 0;padding:8px 11px;background:rgba(201,168,76,.12);border-left:3px solid #C9A84C;border-radius:0 8px 8px 0;font-size:11px;color:#e7d9ac;line-height:1.45;}
+  #tutorial-overlay .tut-note{margin:8px 0 0;padding:8px 11px;background:rgba(143,176,214,.12);border-left:3px solid #8FB0D6;border-radius:0 8px 8px 0;font-size:11px;color:#e7d9ac;line-height:1.45;}
   #tutorial-overlay .tut-note b{color:#f0d488;} #tutorial-overlay .tg{color:#7fe0a0;font-weight:700;}
   #tutorial-overlay .wtt{width:100%;border-collapse:collapse;margin-top:9px;background:#fff;border-radius:8px;overflow:hidden;}
   #tutorial-overlay .wtt th{font-size:8px;font-weight:800;color:#8a92a1;background:#f4f6f8;padding:6px 3px;border:1px solid #eef0f3;}
@@ -1461,10 +1461,10 @@ function _tutorialHTML(){
   #tutorial-overlay .vthumb2{margin-top:9px;height:64px;border-radius:9px;background:#15171d;border:1px solid #23252c;position:relative;}
   #tutorial-overlay .vplay2{position:absolute;left:50%;top:50%;margin:-12px 0 0 -7px;width:0;height:0;border-left:18px solid #fff;border-top:12px solid transparent;border-bottom:12px solid transparent;}
   #tutorial-overlay .tut-cap{font-size:9px;color:#71767f;margin-top:7px;}
-  #tutorial-overlay .tkv{display:flex;gap:9px;margin:6px 0;font-size:12px;} #tutorial-overlay .tkv .k{flex:0 0 82px;font-weight:800;color:#C9A84C;} #tutorial-overlay .tkv .v{flex:1;color:#c2c8d2;line-height:1.5;}
+  #tutorial-overlay .tkv{display:flex;gap:9px;margin:6px 0;font-size:12px;} #tutorial-overlay .tkv .k{flex:0 0 82px;font-weight:800;color:#8FB0D6;} #tutorial-overlay .tkv .v{flex:1;color:#c2c8d2;line-height:1.5;}
   #tutorial-overlay .ttag{display:inline-block;font-size:9px;font-weight:800;padding:1px 7px;border-radius:20px;background:#e9eff9;color:#3a5bb0;}
-  #tutorial-overlay .tut-btn{margin-top:9px;text-align:center;background:#C9A84C;color:#111;font-weight:800;font-size:12px;border-radius:10px;padding:11px;}
-  #tutorial-overlay .tut-res{background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:12px 14px;margin-top:24px;font-size:12.5px;color:#d9cfa8;line-height:1.6;}
+  #tutorial-overlay .tut-btn{margin-top:9px;text-align:center;background:#8FB0D6;color:#111;font-weight:800;font-size:12px;border-radius:10px;padding:11px;}
+  #tutorial-overlay .tut-res{background:rgba(143,176,214,.07);border:1px solid rgba(143,176,214,.2);border-radius:12px;padding:12px 14px;margin-top:24px;font-size:12.5px;color:#d9cfa8;line-height:1.6;}
   #tutorial-overlay .tut-res b{color:#f0d488;}
   #tutorial-overlay .tut-close2{width:100%;margin-top:16px;background:#141519;border:1px solid #23252c;color:#eef1f5;border-radius:12px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;}
 </style>
@@ -1478,13 +1478,13 @@ function _tutorialHTML(){
     <div class="tut-sh"><span class="tut-sn">1</span><span class="tut-st">Elegí la semana y el día</span></div>
     <div class="tut-sx">La <b>semana actual</b> aparece resaltada; las que pasaron y las que vienen se ven distintas. Tocá el <b>día</b> que te toca. El día de hoy dice "HOY".</div>
     <div class="tut-shot">
-      <div style="font-size:8px;font-weight:800;color:#C9A84C;letter-spacing:1px;">SEMANAS</div>
+      <div style="font-size:8px;font-weight:800;color:#8FB0D6;letter-spacing:1px;">SEMANAS</div>
       <div style="display:flex;gap:5px;margin:6px 0 12px;">
         <div style="flex:1;text-align:center;border:1px solid #e0554e;border-radius:9px;padding:6px 2px;font-size:8px;color:#e0554e;font-weight:800;">Sem 1</div>
-        <div style="flex:1;text-align:center;border:1px solid #C9A84C;background:rgba(201,168,76,.12);border-radius:9px;padding:6px 2px;font-size:8px;color:#C9A84C;font-weight:900;">Sem 2</div>
+        <div style="flex:1;text-align:center;border:1px solid #8FB0D6;background:rgba(143,176,214,.12);border-radius:9px;padding:6px 2px;font-size:8px;color:#8FB0D6;font-weight:900;">Sem 2</div>
         <div style="flex:1;text-align:center;border:1px solid #3a3a2a;border-radius:9px;padding:6px 2px;font-size:8px;color:#c99a2e;font-weight:800;">Sem 3</div>
       </div>
-      <div style="background:#141519;border-radius:9px;padding:9px 11px;font-size:11px;font-weight:800;">LUN · Tren superior <span style="float:right;color:#C9A84C;">HOY</span></div>
+      <div style="background:#141519;border-radius:9px;padding:9px 11px;font-size:11px;font-weight:800;">LUN · Tren superior <span style="float:right;color:#8FB0D6;">HOY</span></div>
     </div>
   </div>
 
@@ -1531,7 +1531,7 @@ function _tutorialHTML(){
     <div class="tut-shot">
       <div style="font-size:8px;font-weight:800;color:#8b93a0;">DEVOLUCIÓN FINAL (OPCIONAL)</div>
       <div style="background:#141519;border:1px solid #23252c;border-radius:9px;padding:9px;margin-top:5px;font-size:9px;color:#8b93a0;height:30px;">Contame cómo te sentiste…</div>
-      <div style="border:1px dashed rgba(201,168,76,.5);border-radius:9px;padding:8px;text-align:center;color:#C9A84C;font-size:9px;font-weight:800;margin-top:7px;">&#9654; Grabar audio en vez de escribir</div>
+      <div style="border:1px dashed rgba(143,176,214,.5);border-radius:9px;padding:8px;text-align:center;color:#8FB0D6;font-size:9px;font-weight:800;margin-top:7px;">&#9654; Grabar audio en vez de escribir</div>
       <div class="tut-btn">Terminé mi entrenamiento</div>
     </div>
   </div>
@@ -1540,7 +1540,7 @@ function _tutorialHTML(){
     <div class="tut-sh"><span class="tut-sn">6</span><span class="tut-st">La pestaña DATOS</span></div>
     <div class="tut-sx">Cargás una vez tu <b>altura</b> y <b>talle</b>, y la app te arma tu tabla de <b>posición de pies</b> para sentadillas (cuántos pasos y cm entre talones). También cargás tus medidas corporales.</div>
     <div class="tut-shot">
-      <div style="font-size:8px;font-weight:800;color:#C9A84C;">MIS REFERENCIAS · PIERNAS</div>
+      <div style="font-size:8px;font-weight:800;color:#8FB0D6;">MIS REFERENCIAS · PIERNAS</div>
       <table class="wtt" style="margin-top:6px;"><tr><th>Ejercicio</th><th>Pasos</th><th>Distancia</th></tr>
         <tr><td style="text-align:left;">Sentadilla</td><td>2 pasos</td><td>≈48 cm</td></tr>
         <tr><td style="text-align:left;">Sentadilla sumo</td><td>3 pasos</td><td>≈69 cm</td></tr></table>
@@ -1831,8 +1831,8 @@ function _avisoBanner(){
   const ic = _icMap[a.tipo] || '📢';
   const rango = (a.desde&&a.hasta) ? (_avisoFecha(a.desde)+' al '+_avisoFecha(a.hasta)) : (a.desde?('desde el '+_avisoFecha(a.desde)):'');
   const msg = String(a.mensaje).replace(/</g,'&lt;');
-  return '<div style="background:linear-gradient(160deg,#2a2410,#191408);border:1px solid #6b5a1f;border-left:4px solid #C9A84C;border-radius:12px;padding:13px 14px;margin-bottom:14px;display:flex;gap:11px;box-shadow:0 8px 20px rgba(0,0,0,.35);">'
-    +'<span style="width:30px;height:30px;border-radius:8px;background:rgba(201,168,76,.18);color:#e6c26a;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">'+ic+'</span>'
+  return '<div style="background:linear-gradient(160deg,#2a2410,#191408);border:1px solid #6b5a1f;border-left:4px solid #8FB0D6;border-radius:12px;padding:13px 14px;margin-bottom:14px;display:flex;gap:11px;box-shadow:0 8px 20px rgba(0,0,0,.35);">'
+    +'<span style="width:30px;height:30px;border-radius:8px;background:rgba(143,176,214,.18);color:#e6c26a;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">'+ic+'</span>'
     +'<div style="min-width:0;"><div style="font-size:9px;font-weight:900;letter-spacing:.8px;color:#e6c26a;text-transform:uppercase;margin-bottom:3px;">'+(_LANG==='en'?'Notice from your coach':'Aviso de tu coach')+(rango?' · '+rango:'')+'</div>'
     +'<div style="font-size:13px;font-weight:700;color:#f2ead6;line-height:1.4;">'+msg+'</div></div></div>';
 }
@@ -2513,11 +2513,11 @@ function _porqueBloqueHTML(b){
   return '<div class="wb-wrap" style="margin-top:12px;padding-top:11px;border-top:1px dashed #2a3140;">'
     +'<div onclick="_toggleWb(this)" style="display:flex;align-items:center;gap:8px;cursor:pointer;">'
       +'<span style="width:24px;height:24px;border-radius:7px;background:rgba(214,168,84,.14);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">💡</span>'
-      +'<span style="flex:1;font-size:12px;font-weight:700;color:#C9A84C;letter-spacing:.2px;">'+(en?'Why this block?':'¿Por qué armé este bloque así?')+'</span>'
+      +'<span style="flex:1;font-size:12px;font-weight:700;color:#8FB0D6;letter-spacing:.2px;">'+(en?'Why this block?':'¿Por qué armé este bloque así?')+'</span>'
       +'<span class="wb-arr" style="color:#8a7b52;font-size:13px;transition:transform .2s;">›</span>'
     +'</div>'
     +'<div class="wb-body" style="max-height:0;overflow:hidden;transition:max-height .3s;">'
-      +'<p style="margin-top:10px;font-size:12.5px;line-height:1.6;color:#d9c79a;background:#15130c;border:1px solid #2b2410;border-left:3px solid #C9A84C;border-radius:9px;padding:11px 13px;">'+esc(txt)+'</p>'
+      +'<p style="margin-top:10px;font-size:12.5px;line-height:1.6;color:#d9c79a;background:#15130c;border:1px solid #2b2410;border-left:3px solid #8FB0D6;border-radius:9px;padding:11px 13px;">'+esc(txt)+'</p>'
     +'</div>'
   +'</div>';
 }
@@ -2767,7 +2767,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
 
   // Sección de aproximación (solo planes viejos que aún la tengan)
   const aproSection = sApro ? (
-    '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin:10px 0 4px;">'+_t('series_apro')+'</div>'+
+    '<div style="font-size:9px;font-weight:800;color:#8FB0D6;letter-spacing:1px;margin:10px 0 4px;">'+_t('series_apro')+'</div>'+
     _seriesTable(sApro, 'S', _sp+'_apro', uid, 0)
   ) : '';
 
@@ -2791,7 +2791,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
   if(_dropTbl && _sisTipo){ const _dr=_tecDescRows(_sisTipo); if(_dr){ const _i=_dropTbl.lastIndexOf('</tbody>'); if(_i>-1) _dropTbl=_dropTbl.slice(0,_i)+_dr+_dropTbl.slice(_i); } }
   const _sisInfoIco = _sisTipo ? '<span onclick="_tecInfo(\''+_sisTipo+'\')" title="¿Para qué sirve?" style="cursor:pointer;margin-left:7px;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:rgba(96,165,224,.18);border:1px solid rgba(96,165,224,.5);color:#8fb7e6;font-size:11px;font-weight:900;font-style:italic;vertical-align:middle;">i</span>' : '';
   const dropSection = sDrop ? (
-    '<div style="font-size:9px;font-weight:800;color:'+(_sisTipo?'#7fb0e6':'#C9A84C')+';letter-spacing:1px;margin:12px 0 4px;">'+_sisLbl+_sisInfoIco+'</div>'+
+    '<div style="font-size:9px;font-weight:800;color:'+(_sisTipo?'#7fb0e6':'#8FB0D6')+';letter-spacing:1px;margin:12px 0 4px;">'+_sisLbl+_sisInfoIco+'</div>'+
     _dropTbl
   ) : '';
 
@@ -2817,7 +2817,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
       const lbl = single ? (_LANG==='en'?'All':'Todas') : ('S'+(ix+1));
       const clk = yt ? ' onclick="_playPausa(\''+yt+'\')"' : '';
       const cur = yt ? 'cursor:pointer;' : '';
-      const border = ix < pa.items.length-1 ? 'border-bottom:1px solid rgba(201,168,76,.16);' : '';
+      const border = ix < pa.items.length-1 ? 'border-bottom:1px solid rgba(143,176,214,.16);' : '';
       return '<div'+clk+' style="'+cur+'display:flex;align-items:center;gap:12px;padding:11px 13px;'+border+'">'+
         '<span style="font-size:10px;font-weight:600;color:#e6c979;min-width:18px;letter-spacing:.5px;flex-shrink:0;">'+lbl+'</span>'+
         thumb+
@@ -2826,7 +2826,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
       '</div>';
     }).join('');
     const _paLight = document.documentElement.classList.contains('light');
-    const _paSh = (_paLight ? '0 10px 26px rgba(0,0,0,.7)' : '0 10px 26px rgba(0,0,0,.6)') + ', 0 0 0 1px rgba(201,168,76,.22)';
+    const _paSh = (_paLight ? '0 10px 26px rgba(0,0,0,.7)' : '0 10px 26px rgba(0,0,0,.6)') + ', 0 0 0 1px rgba(143,176,214,.22)';
     return '<div style="margin-top:12px;margin-bottom:16px;">'+
       '<div style="font-size:9px;font-weight:800;letter-spacing:1.2px;color:#f0d488;margin-bottom:7px;display:flex;align-items:center;gap:6px;">⏸ '+(_LANG==='en'?'DURING EACH REST':'EN LA PAUSA DE CADA SERIE')+'</div>'+
       '<div style="background:linear-gradient(160deg,#16181d,#101115);border:1px solid #b08a34;border-radius:12px;overflow:hidden;box-shadow:'+_paSh+';">'+rows+'</div>'+
@@ -2855,7 +2855,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
   // Inputs REAL + comentario + estado
   const feedbackHTML =
     '<div style="border-top:1px solid rgba(255,255,255,.06);margin-top:10px;padding:10px 0 4px;">'+
-      '<div style="font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin-bottom:5px;text-transform:uppercase;">'+(_LANG==='en'?'Feedback':'Feedback')+'</div>'+
+      '<div style="font-size:9px;font-weight:800;color:#8FB0D6;letter-spacing:1px;margin-bottom:5px;text-transform:uppercase;">'+(_LANG==='en'?'Feedback':'Feedback')+'</div>'+
       '<textarea id="'+uid+'-cm" placeholder="'+(_LANG==='en'?'Note / correction for your coach…':'Comentario para tu coach sobre este ejercicio…')+'" rows="2" onchange="_guardarEdit(\''+_sp+'\',\'coment\',this.value)" style="width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text);font-size:12px;resize:none;outline:none;font-family:inherit;">'+String(_getEdit(_sp,'coment')||'').replace(/</g,'&lt;')+'</textarea>'+
     '</div>';
 
@@ -2887,13 +2887,13 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
 
     const rowsHTML = rows.map(([k, v]) =>
       '<div style="margin-bottom:10px;">'+
-        '<div style="font-size:8px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin-bottom:3px;">'+k+'</div>'+
+        '<div style="font-size:8px;font-weight:800;color:#8FB0D6;letter-spacing:1px;margin-bottom:3px;">'+k+'</div>'+
         '<div style="font-size:12px;color:#d1d5db;line-height:1.55;">'+v+'</div>'+
       '</div>'
     ).join('');
 
     // Solo el panel (el botón para abrirlo vive en la fila del pie)
-    return '<div id="'+uid+'-fich" style="display:none;margin-top:8px;padding:12px;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.12);border-radius:8px;">'+rowsHTML+'</div>';
+    return '<div id="'+uid+'-fich" style="display:none;margin-top:8px;padding:12px;background:rgba(143,176,214,.05);border:1px solid rgba(143,176,214,.12);border-radius:8px;">'+rowsHTML+'</div>';
   })();
   const _hasFicha = !!fichaHTML;
 
@@ -2907,7 +2907,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
   const _uniEj = (_data && _data.perfil && _data.perfil.unidadPeso==='lb') ? 'lb' : 'kg';
   const _stEj = _statsDe(ej.nombre||_nomOrig);
   const _maxLine = (_stEj && _stEj.max)
-    ? '<div style="display:inline-block;font-size:11px;font-weight:800;color:#e0bd63;background:rgba(201,168,76,.10);border:1px solid rgba(201,168,76,.25);border-radius:7px;padding:4px 9px;margin:10px 0 2px;">🏆 '+(_LANG==='en'?'Max':'Máximo')+': '+_stEj.max+' '+_uniEj+'</div>'
+    ? '<div style="display:inline-block;font-size:11px;font-weight:800;color:#e0bd63;background:rgba(143,176,214,.10);border:1px solid rgba(143,176,214,.25);border-radius:7px;padding:4px 9px;margin:10px 0 2px;">🏆 '+(_LANG==='en'?'Max':'Máximo')+': '+_stEj.max+' '+_uniEj+'</div>'
     : '';
   // "La última vez" (historial del propio alumno · Etapa 4)
   const _ult = _ultimaVez(uid);
@@ -3020,12 +3020,12 @@ function _ensureStatsUI(){
     '.stats-overlay{position:fixed;inset:0;z-index:9000;background:#0d1220;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;}'+
     '.stx-top{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #243150;position:sticky;top:0;background:#0d1220;z-index:2;}'+
     '.stx-back{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#9fb0cf;background:rgba(255,255,255,.05);border:1px solid #243150;border-radius:20px;padding:8px 14px;cursor:pointer;font-family:inherit;}'+
-    '.stx-back:hover{color:#fff;border-color:#C9A84C;}'+
+    '.stx-back:hover{color:#fff;border-color:#8FB0D6;}'+
     '.stx-body{padding:16px;max-width:520px;margin:0 auto;}'+
     '.stx-title{font-size:18px;font-weight:900;color:#fff;line-height:1.15;}'+
     '.stx-sub{font-size:12px;color:#9fb0cf;margin-top:3px;}'+
     '.stx-hero{margin-top:16px;background:linear-gradient(135deg,#20305a,#141c30);border:1px solid #243150;border-radius:14px;padding:22px 18px;text-align:center;}'+
-    '.stx-hero .lbl{font-size:11px;font-weight:800;letter-spacing:1px;color:#C9A84C;text-transform:uppercase;}'+
+    '.stx-hero .lbl{font-size:11px;font-weight:800;letter-spacing:1px;color:#8FB0D6;text-transform:uppercase;}'+
     '.stx-hero .big{font-size:50px;font-weight:900;color:#fff;line-height:1;margin:10px 0 4px;}'+
     '.stx-hero .big small{font-size:20px;color:#9fb0cf;font-weight:700;}'+
     '.stx-hero .date{font-size:12px;color:#9fb0cf;}'+
@@ -3034,10 +3034,10 @@ function _ensureStatsUI(){
     '.stx-row{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid rgba(36,49,80,.5);font-size:14px;}'+
     '.stx-row:last-child{border-bottom:none;}'+
     '.stx-row .d{color:#9fb0cf;} .stx-row .w{font-weight:800;color:#fff;} .stx-row .w2{font-weight:700;color:#cdd7ea;}'+
-    '.stx-row .pr{font-size:10px;font-weight:800;color:#241d07;background:#C9A84C;border-radius:5px;padding:2px 7px;margin-left:8px;}'+
+    '.stx-row .pr{font-size:10px;font-weight:800;color:#241d07;background:#8FB0D6;border-radius:5px;padding:2px 7px;margin-left:8px;}'+
     '.stx-empty{padding:16px;text-align:center;color:#6b7c9e;font-size:13px;}'+
     '.stx-empty2{margin-top:26px;text-align:center;color:#9fb0cf;font-size:14px;line-height:1.7;background:#141c30;border:1px solid #243150;border-radius:14px;padding:30px 20px;}'+
-    '.stx-backbig{width:100%;margin-top:18px;background:linear-gradient(135deg,#C9A84C,#a8862f);color:#241d07;border:none;border-radius:11px;padding:14px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;}';
+    '.stx-backbig{width:100%;margin-top:18px;background:linear-gradient(135deg,#8FB0D6,#a8862f);color:#241d07;border:none;border-radius:11px;padding:14px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;}';
   document.head.appendChild(st);
 }
 // 1RM Epley (reps 1 = peso real), redondeo a 0,5 · protocolo fijo de 7 series
@@ -7560,7 +7560,7 @@ function _ensureCambiarUI(){
     '.cmb-search .ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#6b7c9e;}'+
     '.cmb-sec{font-size:10px;font-weight:800;letter-spacing:.8px;color:#6b7c9e;text-transform:uppercase;margin:4px 0 8px;}'+
     '.cmb-opt{display:flex;align-items:center;gap:11px;padding:11px 12px;background:#0f1626;border:1px solid #243150;border-radius:10px;margin-bottom:8px;cursor:pointer;transition:.15s;}'+
-    '.cmb-opt:hover{border-color:#C9A84C;}'+
+    '.cmb-opt:hover{border-color:#8FB0D6;}'+
     '.cmb-oi{width:34px;height:34px;border-radius:8px;background:#1b2540;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}'+
     '.cmb-on{flex:1;min-width:0;} .cmb-ont{font-size:13px;font-weight:700;color:#fff;} .cmb-osub{font-size:10.5px;color:#6b7c9e;margin-top:1px;}'+
     '.cmb-go{color:#6b7c9e;font-size:16px;} .cmb-empty{color:#6b7c9e;font-size:12.5px;text-align:center;padding:16px;}';
@@ -7791,7 +7791,7 @@ function _compiladoVideosHTML(ses){
   let panel='<div style="margin-top:12px;background:#0c0f16;border:1px solid #1e2430;border-radius:14px;overflow:hidden;">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid #1a2130;"><div style="font-size:12px;font-weight:900;color:#fff;letter-spacing:.3px;">🎬 '+vids.length+' '+(en?'exercises':'ejercicios')+'</div><button onclick="_vsPlay(0)" style="background:#171e2b;border:1px solid #2c3750;color:#cfe0f6;font-size:11px;font-weight:800;border-radius:8px;padding:7px 11px;cursor:pointer;font-family:inherit;">▶ '+(en?'Play in order':'Ver en orden')+'</button></div>';
   grupos.forEach(g=>{
-    panel+='<div style="padding:12px 14px 2px;"><div style="font-size:10px;font-weight:900;letter-spacing:1.4px;color:#C9A84C;text-transform:uppercase;margin-bottom:10px;">'+esc((typeof _tc==='function')?_tc(g.nombre):g.nombre)+'</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:6px;">';
+    panel+='<div style="padding:12px 14px 2px;"><div style="font-size:10px;font-weight:900;letter-spacing:1.4px;color:#8FB0D6;text-transform:uppercase;margin-bottom:10px;">'+esc((typeof _tc==='function')?_tc(g.nombre):g.nombre)+'</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:6px;">';
     g.items.forEach(v=>{
       panel+='<div onclick="_vsPlay('+v._i+')" style="background:#12151d;border:1px solid #232838;border-radius:12px;overflow:hidden;cursor:pointer;">'
         +'<div style="position:relative;aspect-ratio:16/9;background:linear-gradient(135deg,#1c2740,#0f1626);display:flex;align-items:center;justify-content:center;">'+_vsThumb(v.ytid)
@@ -7939,7 +7939,7 @@ function _mostrarImgResultado(blob, fname, titulo){
   box.innerHTML='<div style="display:flex;align-items:center;margin-bottom:10px;"><div style="flex:1;font-size:13px;font-weight:800;color:#fff;">'+(titulo||(en?'Image ready':'Imagen lista'))+'</div><button id="_imgres-x" style="width:28px;height:28px;border:none;border-radius:8px;background:rgba(255,255,255,.12);color:#fff;font-size:15px;cursor:pointer;">×</button></div>'
     +'<img src="'+url+'" style="width:100%;border-radius:12px;display:block;margin-bottom:14px;">'
     +'<div style="display:flex;gap:10px;flex-wrap:wrap;">'
-      +'<button id="_imgres-dl" style="flex:1;min-width:130px;background:#C9A84C;color:#15202b;border:none;border-radius:11px;padding:13px;font-size:13.5px;font-weight:800;cursor:pointer;">⬇️ '+(en?'Save to gallery':'Descargar a galería')+'</button>'
+      +'<button id="_imgres-dl" style="flex:1;min-width:130px;background:#8FB0D6;color:#15202b;border:none;border-radius:11px;padding:13px;font-size:13.5px;font-weight:800;cursor:pointer;">⬇️ '+(en?'Save to gallery':'Descargar a galería')+'</button>'
       +(puedeShare?'<button id="_imgres-sh" style="flex:1;min-width:130px;background:#2f5f95;color:#fff;border:none;border-radius:11px;padding:13px;font-size:13.5px;font-weight:800;cursor:pointer;">📤 '+(en?'Share':'Compartir')+'</button>':'')
     +'</div>'
     +'<div style="font-size:10.5px;color:#8ea2c4;text-align:center;margin-top:11px;line-height:1.45;">'+(en?'Android: it goes to your gallery / Downloads. iPhone: tap Save and choose “Save Image”.':'Android: queda en la galería / Descargas. iPhone: tocá Descargar y elegí “Guardar imagen”.')+'</div>';
@@ -7978,7 +7978,7 @@ function _capturarSerie(uid){
     +'<style>#shotnode td{color:#20242c;font-size:17px;font-weight:800;text-align:center;padding:13px;border-top:1px solid #eef0f3;background:#fff;}#shotnode .ssn{display:inline-block;min-width:30px;padding:5px 11px;border-radius:20px;background:#3A6EA5;color:#fff;font-size:14px;}</style>'
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;"><div style="width:34px;height:34px;border-radius:9px;background:#3A6EA5;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#fff;">CC</div><div style="font-size:11px;font-weight:800;letter-spacing:2px;color:#9fb0cf;">CHRISTIAN CATTANEO · ENTRENAMIENTO</div></div>'
     +'<div style="font-size:30px;font-weight:900;line-height:1.1;text-transform:uppercase;letter-spacing:-.5px;">'+esc(nombre)+'</div>'
-    +(musStr?'<div style="font-size:14px;font-weight:600;color:#C9A84C;margin-top:8px;">'+esc(musStr)+'</div>':'')
+    +(musStr?'<div style="font-size:14px;font-weight:600;color:#8FB0D6;margin-top:8px;">'+esc(musStr)+'</div>':'')
     +'<div style="font-size:12px;font-weight:900;letter-spacing:2px;color:#fff;background:#3A6EA5;padding:11px 16px;border-radius:12px 12px 0 0;margin-top:22px;">'+(_LANG==='en'?'SETS':'SERIES')+'</div>'
     +'<table style="width:100%;border-collapse:collapse;background:#fff;border-radius:0 0 12px 12px;overflow:hidden;"><tr><th style="'+th+'">SERIE</th><th style="'+th+'">REPS</th><th style="'+th+'">PESO (KG)</th><th style="'+th+'">RIR</th><th style="'+th+'">PAUSA</th></tr>'+rows+'</table>'
     +'<div style="margin-top:18px;font-size:12px;color:#7b89a5;text-align:center;letter-spacing:1px;">Entrená con seguimiento · @christiancattaneo</div>'
@@ -8115,7 +8115,7 @@ function _cerrarCelebra(){ const ov=document.getElementById('celebra-ov'); if(!o
 function _celebraConfetti(){
   const cv=document.getElementById('celebra-cf'); if(!cv) return; const ctx=cv.getContext('2d');
   cv.width=innerWidth; cv.height=innerHeight;
-  const COL=['#3A6EA5','#6aa0dc','#ffffff','#C9A84C','#8fd39a']; let parts=[];
+  const COL=['#3A6EA5','#6aa0dc','#ffffff','#8FB0D6','#8fd39a']; let parts=[];
   function burst(){ const cx=innerWidth/2, cy=innerHeight*0.42;
     for(let i=0;i<150;i++){ const a=Math.random()*Math.PI*2, sp=4+Math.random()*9;
       parts.push({x:cx,y:cy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-3,g:.18+Math.random()*.12,s:5+Math.random()*7,rot:Math.random()*6,vr:(Math.random()-.5)*.4,c:COL[i%COL.length],life:60+Math.random()*40,t:0}); } }
@@ -8292,7 +8292,7 @@ function _isoStart(sec, thenRest){
   _isoTotal=sec; _isoLeft=sec; _isoThen=thenRest||0;
   let bar=document.getElementById('rest-bar');
   if(!bar){ bar=document.createElement('div'); bar.id='rest-bar'; bar.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom,0px));width:calc(100% - 24px);max-width:452px;z-index:300;border-radius:16px;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.5);'; document.body.appendChild(bar); }
-  bar.style.background='linear-gradient(135deg,#3a2c10,#241a08)'; bar.style.border='1px solid #C9A84C'; bar.style.display='block';
+  bar.style.background='linear-gradient(135deg,#3a2c10,#241a08)'; bar.style.border='1px solid #8FB0D6'; bar.style.display='block';
   clearInterval(_restInt); clearInterval(_isoInt);
   _isoRender();
   _isoInt=setInterval(function(){ _isoLeft--; if(_isoLeft<=0){ _isoLeft=0; _isoRender(); _isoDone(); } else _isoRender(); },1000);
@@ -8348,7 +8348,7 @@ function _restDone(){
     if(AC){ const ac=new AC(); const o=ac.createOscillator(), g=ac.createGain(); o.type='sine'; o.frequency.value=880; o.connect(g); g.connect(ac.destination); g.gain.setValueAtTime(.001,ac.currentTime); g.gain.exponentialRampToValueAtTime(.4,ac.currentTime+.02); g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.5); o.start(); o.stop(ac.currentTime+.55); }
   }catch(e){}
   const bar=document.getElementById('rest-bar');
-  if(bar){ bar.style.borderColor='#C9A84C'; setTimeout(function(){ bar.style.display='none'; bar.style.borderColor='#24406e'; },1400); }
+  if(bar){ bar.style.borderColor='#8FB0D6'; setTimeout(function(){ bar.style.display='none'; bar.style.borderColor='#24406e'; },1400); }
 }
 function _updProgreso(){
   const el=document.getElementById('sesion-progreso'); if(!el) return;
@@ -8839,7 +8839,7 @@ function _renderDiaRunning_LEGACY() {
   if (!bloques.length) return '<div class="empty" style="padding:20px"><div class="empty-txt">Descanso — '+DN[_runDiaIdx]+'</div></div>';
 
   return bloques.map((b,bi) => {
-    const tipoObj = TIPOS_RUN[b.tipo] || {icon:'🏃', label: b.label||b.tipo||'Sesión', color:'#C9A84C'};
+    const tipoObj = TIPOS_RUN[b.tipo] || {icon:'🏃', label: b.label||b.tipo||'Sesión', color:'#8FB0D6'};
 
     // Warmup
     const calent = b.calent && (b.calent.tipo||b.calent.duracion) ? (
@@ -8871,7 +8871,7 @@ function _renderDiaRunning_LEGACY() {
         '<tr>'+
           '<td style="background:rgba(245,158,11,.1);color:#f59e0b;font-size:10px;font-weight:800;text-align:center;padding:7px 8px;border:1px solid rgba(255,255,255,.06);">'+(pi+1)+'</td>'+
           '<td style="text-align:center;padding:7px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:#fff;">'+(p.distancia||'—')+_uL+'</td>'+
-          '<td style="text-align:center;padding:7px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:#C9A84C;">'+(p.ritmo||'—')+'/km</td>'+
+          '<td style="text-align:center;padding:7px 8px;border:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:#8FB0D6;">'+(p.ritmo||'—')+'/km</td>'+
           '<td style="text-align:center;padding:7px 8px;border:1px solid rgba(255,255,255,.06);font-size:11px;color:#888;">'+(p.pausa||'—')+'</td>'+
         '</tr>'
       ).join('');
@@ -8897,7 +8897,7 @@ function _renderDiaRunning_LEGACY() {
         mainHTML = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0;">'+
           fields.map(([k,v]) =>
             '<div style="background:rgba(255,255,255,.04);border-radius:8px;padding:10px 12px;">'+
-              '<div style="font-size:8px;font-weight:800;color:#C9A84C;letter-spacing:1px;margin-bottom:4px;">'+k+'</div>'+
+              '<div style="font-size:8px;font-weight:800;color:#8FB0D6;letter-spacing:1px;margin-bottom:4px;">'+k+'</div>'+
               '<div style="font-size:16px;font-weight:900;color:#fff;">'+v+'</div>'+
             '</div>'
           ).join('')+
@@ -8920,7 +8920,7 @@ function _renderDiaRunning_LEGACY() {
     // Observaciones
     const obs = b.obs ? '<div style="font-size:11px;color:#aaa;line-height:1.5;margin-top:8px;padding:10px 12px;background:rgba(255,255,255,.03);border-radius:8px;">'+b.obs+'</div>' : '';
 
-    return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-left:3px solid '+(tipoObj.color||'#C9A84C')+';border-radius:0 10px 10px 0;margin-bottom:12px;overflow:hidden;">'+
+    return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-left:3px solid '+(tipoObj.color||'#8FB0D6')+';border-radius:0 10px 10px 0;margin-bottom:12px;overflow:hidden;">'+
       '<div style="padding:12px 14px;">'+
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'+
           '<span style="font-size:20px;">'+tipoObj.icon+'</span>'+
@@ -9259,7 +9259,7 @@ async function _exportarRunReloj(){
 
 // ── INFO / BLOG ───────────────────────────────────────────────────────────
 const _INFO_COLORS = {
-  'Hipertrofia':'#C9A84C','Fuerza':'#ef4444','Running':'#22c55e',
+  'Hipertrofia':'#8FB0D6','Fuerza':'#ef4444','Running':'#22c55e',
   'Nutrición':'#f97316','Recuperación':'#3b82f6','Movilidad':'#a78bfa',
   'Ciencia del entrenamiento':'#06b6d4','Mental / Hábitos':'#ec4899','General':'#94a3b8'
 };
@@ -9318,7 +9318,7 @@ async function renderCharlas(){
       const cover = portada
         ? '<div style="height:170px;background:#0a0a12 url(\''+String(portada).replace(/'/g,'%27')+'\') center/cover no-repeat;position:relative;">'+
             '<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55),transparent 55%);"></div>'+
-            '<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:54px;height:54px;border-radius:50%;background:rgba(201,168,76,.92);display:flex;align-items:center;justify-content:center;font-size:20px;color:#0d0d1a;">▶</div>'+
+            '<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:54px;height:54px;border-radius:50%;background:rgba(143,176,214,.92);display:flex;align-items:center;justify-content:center;font-size:20px;color:#0d0d1a;">▶</div>'+
           '</div>'
         : '<div style="height:110px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:34px;">🎙️</div>';
       return '<div onclick="_charlaAbrir('+i+')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;cursor:pointer;box-shadow:0 8px 24px -16px rgba(0,0,0,.5);">'+
@@ -9422,7 +9422,7 @@ function _renderInfoLista(arts, ctn) {
       : '';
     const linkLabel = a.tipo === 'link' ? '<div style="font-size:11px;color:#60a5fa;margin-top:6px;">🔗 Artículo externo</div>' : '';
     const videoLabel = a.tipo === 'video' ? '<div style="font-size:11px;color:#f87171;margin-top:6px;">▶ Video</div>' : '';
-    return '<div onclick="_abrirInfoArt('+i+')" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 14px 12px;margin-bottom:10px;cursor:pointer;transition:border-color .15s;" onmouseenter="this.style.borderColor=\'rgba(201,168,76,.4)\'" onmouseleave="this.style.borderColor=\'rgba(255,255,255,.08)\'">'+
+    return '<div onclick="_abrirInfoArt('+i+')" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 14px 12px;margin-bottom:10px;cursor:pointer;transition:border-color .15s;" onmouseenter="this.style.borderColor=\'rgba(143,176,214,.4)\'" onmouseleave="this.style.borderColor=\'rgba(255,255,255,.08)\'">'+
       portadaHTML+
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">'+
         '<span style="background:'+color+'22;color:'+color+';border:1px solid '+color+'44;font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:.5px;">'+( a.categoria||'General')+'</span>'+
@@ -9430,7 +9430,7 @@ function _renderInfoLista(arts, ctn) {
       '</div>'+
       '<div style="font-size:14px;font-weight:800;color:#fff;line-height:1.3;">'+a.titulo+'</div>'+
       preview + linkLabel + videoLabel +
-      '<div style="text-align:right;margin-top:8px;font-size:11px;color:#C9A84C;font-weight:700;">Leer →</div>'+
+      '<div style="text-align:right;margin-top:8px;font-size:11px;color:#8FB0D6;font-weight:700;">Leer →</div>'+
     '</div>';
   }).join('') + '<div style="height:20px;"></div>';
 }
@@ -9565,7 +9565,7 @@ function _compToggleFiltros() {
 function _compFChip(campo, val, label, on) {
   return '<button onclick="_compSetF(\''+campo+'\',\''+_compJsEsc(val)+'\')" '+
     'style="padding:7px 13px;border-radius:18px;border:1px solid '+(on?'var(--gold)':'var(--border)')+';'+
-    'background:'+(on?'rgba(201,168,76,.14)':'transparent')+';color:'+(on?'var(--gold)':'var(--muted)')+';'+
+    'background:'+(on?'rgba(143,176,214,.14)':'transparent')+';color:'+(on?'var(--gold)':'var(--muted)')+';'+
     'font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">'+_compEsc(label)+'</button>';
 }
 function _compGrp(label, opts) {
@@ -9670,7 +9670,7 @@ function _abrirCompDetalle(id) {
         '<div style="font-size:14px;font-weight:800;color:var(--text);border-left:3px solid var(--gold);padding-left:9px;line-height:1.25;">'+_compEsc(_nomEj(ej)||'')+'</div>'+
         (ej.detalle?'<div style="font-size:13px;font-weight:800;color:var(--gold);white-space:nowrap;flex-shrink:0;">'+_compEsc(ej.detalle)+'</div>':'')+
       '</div>'+
-      (ej.nota?'<div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.45;background:rgba(201,168,76,.07);border-radius:8px;padding:8px 10px;">📝 '+_compEsc(ej.nota)+'</div>':'')+
+      (ej.nota?'<div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.45;background:rgba(143,176,214,.07);border-radius:8px;padding:8px 10px;">📝 '+_compEsc(ej.nota)+'</div>':'')+
       (ytId?(
         '<div style="margin-top:10px;border-radius:10px;overflow:hidden;">'+
           '<div id="yt-thumb-'+cuid+'" style="cursor:pointer;position:relative;" onclick="_playYt(\''+cuid+'\',\''+ytId+'\')">'+
@@ -10128,7 +10128,7 @@ function _renderMedidasTecnicas(ctn){
   const en=_LANG==='en';
   const tm=_data.trainingMeasurements||{};
   const cat='<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">'
-    +'<div style="display:flex;align-items:center;gap:10px;background:linear-gradient(160deg,#1a1a12,#111);border:1px solid var(--gold);border-radius:12px;padding:12px 13px;"><span style="font-size:18px;">🦶</span><span style="flex:1;font-size:13px;font-weight:800;color:var(--text);">'+(en?'Foot position · Legs':'Posición de pies · Piernas')+'<small style="display:block;font-size:10px;font-weight:600;color:var(--muted);margin-top:2px;">'+(en?'Squat, sumo, split, bulgarian':'Sentadillas, sumo, split, búlgara')+'</small></span><span style="font-size:8px;font-weight:800;color:#c9a84c;border:1px solid #5a4d24;border-radius:20px;padding:2px 7px;">'+(en?'ACTIVE':'ACTIVO')+'</span></div>'
+    +'<div style="display:flex;align-items:center;gap:10px;background:linear-gradient(160deg,#1a1a12,#111);border:1px solid var(--gold);border-radius:12px;padding:12px 13px;"><span style="font-size:18px;">🦶</span><span style="flex:1;font-size:13px;font-weight:800;color:var(--text);">'+(en?'Foot position · Legs':'Posición de pies · Piernas')+'<small style="display:block;font-size:10px;font-weight:600;color:var(--muted);margin-top:2px;">'+(en?'Squat, sumo, split, bulgarian':'Sentadillas, sumo, split, búlgara')+'</small></span><span style="font-size:8px;font-weight:800;color:#8fb0d6;border:1px solid #5a4d24;border-radius:20px;padding:2px 7px;">'+(en?'ACTIVE':'ACTIVO')+'</span></div>'
     +'<div style="display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid #23262d;border-radius:12px;padding:12px 13px;opacity:.5;"><span style="font-size:18px;">✋</span><span style="flex:1;font-size:13px;font-weight:800;color:var(--text);">'+(en?'Press grips':'Agarres para press')+'<small style="display:block;font-size:10px;color:var(--muted);margin-top:2px;">'+(en?'Coming soon':'Próximamente')+'</small></span><span style="font-size:8px;font-weight:800;color:var(--muted);border:1px solid #2a2d33;border-radius:20px;padding:2px 7px;">'+(en?'SOON':'PRONTO')+'</span></div>'
     +'<div style="display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid #23262d;border-radius:12px;padding:12px 13px;opacity:.5;"><span style="font-size:18px;">🔙</span><span style="flex:1;font-size:13px;font-weight:800;color:var(--text);">'+(en?'Back setup':'Configuración de espalda')+'<small style="display:block;font-size:10px;color:var(--muted);margin-top:2px;">'+(en?'Coming soon':'Próximamente')+'</small></span><span style="font-size:8px;font-weight:800;color:var(--muted);border:1px solid #2a2d33;border-radius:20px;padding:2px 7px;">'+(en?'SOON':'PRONTO')+'</span></div>'
     +'</div>';
@@ -10154,7 +10154,7 @@ function _renderMedidasTecnicas(ctn){
     +'<div style="font-size:10px;font-weight:900;color:var(--gold);letter-spacing:1px;margin:16px 0 8px;">'+(en?'MY REFERENCES · LEGS':'MIS REFERENCIAS · PIERNAS')+'</div>'
     +'<div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin:-2px 0 8px;">'+(en?'1 step = 1 length of your foot (heel against toe).':'1 paso = 1 largo de tu pie (talón contra punta). Contá los pasos apoyando un pie delante del otro.')+'</div>'
     +'<div id="tm-tbl" style="background:#eaf1fe;border:1px solid #bcd3f5;border-radius:14px;overflow:hidden;box-shadow:0 8px 20px rgba(20,40,90,.35);"><table><thead><tr><th>'+(en?'Exercise':'Ejercicio')+'</th><th>'+(en?'Steps':'Pasos')+'</th><th style="text-align:right;">'+(en?'Distance':'Distancia')+'</th></tr></thead><tbody id="tm-tbody"></tbody></table></div>'
-    +'<div style="font-size:11px;color:var(--muted);line-height:1.55;margin-top:10px;padding:10px 12px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.18);border-radius:10px;"><b style="color:#e0bd63;">'+(en?'Suggested starting position.':'Posición inicial sugerida.')+'</b> '+(en?'Adjust it slightly if needed for comfort, mobility, stability and technique. It is a reproducible starting point, not a replacement for your coach\'s assessment.':'Ajustá ligeramente la posición si fuera necesario según comodidad, movilidad, estabilidad y técnica. Es un punto de partida reproducible, no reemplaza la evaluación de tu coach.')+'</div>';
+    +'<div style="font-size:11px;color:var(--muted);line-height:1.55;margin-top:10px;padding:10px 12px;background:rgba(143,176,214,.06);border:1px solid rgba(143,176,214,.18);border-radius:10px;"><b style="color:#e0bd63;">'+(en?'Suggested starting position.':'Posición inicial sugerida.')+'</b> '+(en?'Adjust it slightly if needed for comfort, mobility, stability and technique. It is a reproducible starting point, not a replacement for your coach\'s assessment.':'Ajustá ligeramente la posición si fuera necesario según comodidad, movilidad, estabilidad y técnica. Es un punto de partida reproducible, no reemplaza la evaluación de tu coach.')+'</div>';
   ctn.insertAdjacentHTML('beforeend', cat+form+datos+tbl);
   _tmPreview();
 }
