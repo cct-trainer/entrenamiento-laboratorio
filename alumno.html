@@ -62,9 +62,10 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 #app{display:none;flex-direction:column;max-width:480px;margin:0 auto;min-height:100vh;}
 
 /* ── PORTADA / bienvenida ─────────────────────────────────────────── */
-#portada{display:none;position:relative;flex-direction:column;min-height:100vh;min-height:100dvh;max-width:480px;margin:0 auto;padding:38px 26px calc(30px + env(safe-area-inset-bottom));text-align:center;overflow:hidden;}
-#portada::before{content:'';position:absolute;top:-140px;left:50%;transform:translateX(-50%);width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,.16),transparent 70%);pointer-events:none;}
-html.light #portada::before{background:radial-gradient(circle,rgba(29,78,216,.12),transparent 70%);}
+#portada{display:none;position:relative;flex-direction:column;min-height:100vh;min-height:100dvh;max-width:480px;margin:0 auto;padding:38px 26px calc(30px + env(safe-area-inset-bottom));text-align:center;overflow:hidden;background:radial-gradient(120% 68% at 50% 0%,#0b111c 0%,#070a11 45%,#030406 100%);}
+html.light #portada{background:radial-gradient(120% 68% at 50% 0%,#eef2f8,#e4ebf4 55%,#dde5f0);}
+#portada::before{content:'';position:absolute;top:-150px;left:50%;transform:translateX(-50%);width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(120,150,210,.08),transparent 70%);pointer-events:none;}
+html.light #portada::before{background:radial-gradient(circle,rgba(29,78,216,.1),transparent 70%);}
 .pt-inner{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:space-between;width:100%;gap:18px;}
 .pt-brand{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:2px;}
 .pt-logo{width:160px;height:160px;object-fit:contain;
@@ -88,9 +89,12 @@ html.light .pt-face{border-color:rgba(29,78,216,.3);box-shadow:0 12px 42px -12px
 @media (prefers-reduced-motion: reduce){ .pt-coin.spin{animation:none;} }
 .pt-hello{font-size:15px;color:var(--muted);font-weight:600;letter-spacing:.3px;}
 .pt-name{font-size:30px;font-weight:900;color:var(--text);line-height:1.05;letter-spacing:-.5px;}
-.pt-frase{margin-top:10px;font-size:14px;font-weight:700;font-style:italic;color:#fff;line-height:1.4;max-width:270px;}
-.pt-plan{margin-top:14px;font-size:10.5px;font-weight:800;letter-spacing:1.2px;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.28);padding:7px 16px;border-radius:22px;}
-html.light .pt-plan{background:rgba(58,110,165,.1);border-color:rgba(58,110,165,.3);color:#3A6EA5;}
+.pt-frase{margin-top:16px;font-size:13.5px;font-weight:600;font-style:normal;color:#aebdd0;line-height:1.5;letter-spacing:.3px;max-width:270px;}
+.pt-frase::before{content:"";display:block;width:42px;height:1px;background:rgba(255,255,255,.2);margin:0 auto 16px;}
+html.light .pt-frase{color:#4a5a73;}
+html.light .pt-frase::before{background:rgba(0,0,0,.15);}
+.pt-plan{margin-top:16px;font-size:10px;font-weight:800;letter-spacing:2px;color:#9fb4d2;background:transparent;border:1px solid rgba(255,255,255,.2);padding:8px 18px;border-radius:22px;}
+html.light .pt-plan{background:transparent;border-color:rgba(58,110,165,.35);color:#3A6EA5;}
 .pt-foot{display:flex;flex-direction:column;align-items:center;gap:15px;width:100%;}
 .pt-coach{font-size:12px;color:var(--muted);letter-spacing:.2px;}
 .pt-enter{width:100%;max-width:350px;padding:17px;border:none;border-radius:16px;background:#3A6EA5;color:#fff;font-size:15px;font-weight:900;letter-spacing:.3px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 12px 34px -12px rgba(58,110,165,.55);transition:transform .12s,box-shadow .12s;}
@@ -982,8 +986,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261009142842 por un timestamp en cada deploy
-const _APP_VERSION = '20261009142842';
+// deploy.bat reemplaza 20261009143749 por un timestamp en cada deploy
+const _APP_VERSION = '20261009143749';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
