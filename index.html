@@ -1581,9 +1581,11 @@ body.coach-bg-on .nd-chip:not(.on){background:#fff;}
 .series-table .comments-input { text-align: left; }
 /* Tipo de serie · filo de color a la izquierda (opción B) */
 .serie-tipo-sel{ border:none;background:transparent;font-size:11px;font-weight:800;font-family:inherit;cursor:pointer;color:#6b7280;padding:2px;outline:none;text-align:center; }
-.reps-pick{ border:1px solid #d5deea;background:#fff;border-radius:8px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;color:#1a2a4a;padding:6px 6px;outline:none;text-align:center;max-width:94px; }
+.repsbox{ position:relative;display:inline-block;width:96px; }
+.reps-pick{ width:100%;border:1px solid #d5deea;background:#fff;border-radius:8px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;color:#1a2a4a;padding:7px 6px;outline:none;text-align:center; }
 .reps-pick:focus{ border-color:#3A6EA5; }
-.reps-val{ margin-top:5px;width:88px; }
+.repsbox .reps-val{ width:100%;border:1.5px solid #3A6EA5;background:#fff;border-radius:8px;font-size:13px;font-weight:800;font-family:inherit;color:#1a2a4a;padding:7px 22px 7px 8px;outline:none;text-align:center;margin:0; }
+.reps-volver{ position:absolute;right:5px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:#8795ab;font-size:13px;font-weight:900;cursor:pointer;line-height:1;padding:2px; }
 .series-table tr[data-tipo] td:first-child{ position:relative; }
 .series-table tr[data-tipo="cal"]  td:first-child{ box-shadow:inset 4px 0 0 #3A6EA5; }
 .series-table tr[data-tipo="apr"]  td:first-child{ box-shadow:inset 4px 0 0 #2f5f90; }
@@ -21885,25 +21887,47 @@ function _repsCell(tipo,cur){
   cur=String(cur).replace(/"/g,'&quot;');
   const list=_REPS_OPC[tipo]||[];
   const isCustom = cur && list.indexOf(cur)<0;
-  return '<select class="reps-pick" onchange="_repsPick(this)">'+_repsOptions(tipo,cur)+'</select>'
-       + '<input type="text" class="reps-val" placeholder="Reps" value="'+cur+'" style="'+(isCustom?'':'display:none;')+'">';
+  return '<div class="repsbox">'
+       + '<select class="reps-pick" onchange="_repsPick(this)"'+(isCustom?' style="display:none;"':'')+'>'+_repsOptions(tipo,cur)+'</select>'
+       + '<input type="text" class="reps-val" placeholder="Escribí…" value="'+cur+'" onblur="_repsBlur(this)" style="'+(isCustom?'':'display:none;')+'">'
+       + '<button type="button" class="reps-volver" title="Volver a la lista" onclick="_repsVolver(this)" style="'+(isCustom?'':'display:none;')+'">&#9662;</button>'
+       + '</div>';
 }
-// Al elegir una opción del desplegable, vuelca el valor al input (o lo muestra para escribir "Otro…")
+// Al elegir "Otro…" el mismo recuadro se vuelve escribible (sin cajita abajo)
 function _repsPick(sel){
-  const tr=sel.closest('tr'); if(!tr) return;
-  const rv=tr.querySelector('.reps-val'); if(!rv) return;
-  if(sel.value==='__otro'){ rv.style.display=''; rv.value=''; rv.focus(); }
-  else { rv.value=sel.value; rv.style.display='none'; }
+  const box=sel.closest('.repsbox'); if(!box) return;
+  const rv=box.querySelector('.reps-val'), bk=box.querySelector('.reps-volver');
+  if(sel.value==='__otro'){
+    sel.style.display='none';
+    if(rv){ rv.style.display=''; rv.value=''; rv.focus(); }
+    if(bk) bk.style.display='';
+  } else {
+    if(rv){ rv.value=sel.value; rv.style.display='none'; }
+    if(bk) bk.style.display='none';
+  }
 }
-// Reconstruye el desplegable + input de reps para un tipo y valor dados
+// Flechita: volver del campo libre a la lista de opciones
+function _repsVolver(btn){
+  const box=btn.closest('.repsbox'), tr=btn.closest('tr'); if(!box||!tr) return;
+  const tipo=tr.dataset.tipo||'efec';
+  _repsApply(tr, tipo, (_SERIE_DEFAULTS[tipo]&&_SERIE_DEFAULTS[tipo].reps)||'');
+}
+// Si deja el campo libre vacío, vuelve solo a la lista
+function _repsBlur(inp){
+  if(!inp.value.trim()){ const btn=inp.closest('.repsbox')?.querySelector('.reps-volver'); if(btn) _repsVolver(btn); }
+}
+// Reconstruye el desplegable + campo de reps para un tipo y valor dados
 function _repsApply(tr,tipo,val){
-  const rp=tr.querySelector('.reps-pick'), rv=tr.querySelector('.reps-val');
+  const box=tr.querySelector('.repsbox'); if(!box) return;
+  const rp=box.querySelector('.reps-pick'), rv=box.querySelector('.reps-val'), bk=box.querySelector('.reps-volver');
   if(!rp||!rv) return;
   rp.innerHTML=_repsOptions(tipo,val);
   const list=_REPS_OPC[tipo]||[];
   const custom = val && list.indexOf(val)<0;
   rv.value=val||'';
+  rp.style.display = custom ? 'none' : '';
   rv.style.display = custom ? '' : 'none';
+  if(bk) bk.style.display = custom ? '' : 'none';
 }
 function _serieTipoSel(el){
   const tr=el.closest('tr'); if(!tr) return;
