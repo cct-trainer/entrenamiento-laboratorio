@@ -531,6 +531,11 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
 </head>
 <body>
 
+<script>
+  window._deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); window._deferredPrompt = e; });
+</script>
+
 <div id="loading">
   <div class="spinner"></div>
   <div style="font-size:12px;color:#666;">Cargando tu portal...</div>
@@ -565,6 +570,7 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
     <div class="pt-foot">
       <button onclick="_abrirTutorial()" style="width:100%;background:rgba(58,110,165,.14);border:1px solid rgba(58,110,165,.45);color:#5b93cf;border-radius:14px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:11px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;"><span style="width:20px;height:20px;border-radius:50%;background:#3A6EA5;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;">?</span> Mirá cómo se usa la app en 1 minuto</button>
       <button class="pt-enter" onclick="entrarApp()"><span data-i18n="entrar_app">Entrar a mi entrenamiento</span> <span>›</span></button>
+      <button id="pt-install-btn" onclick="_instalarApp()" style="display:none;width:100%;margin-top:11px;background:rgba(143,176,214,.12);border:1px solid rgba(143,176,214,.4);color:#9fb4d2;border-radius:14px;padding:12px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;align-items:center;justify-content:center;gap:8px;">↓ Agregar a mi celular</button>
       <button id="pt-coach-btn" onclick="_abrirModoEntrenador()" style="display:none;width:100%;margin-top:11px;background:transparent;border:1px solid rgba(143,176,214,.4);color:#9fb4d2;border-radius:14px;padding:12px;font-size:12.5px;font-weight:800;letter-spacing:.5px;cursor:pointer;font-family:inherit;display:none;align-items:center;justify-content:center;gap:8px;">Modo Entrenador</button>
       <div class="pt-date" id="pt-date"></div>
     </div>
@@ -583,6 +589,14 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
       <button onclick="_cerrarModoEntrenador()" style="flex:1;background:#141d2e;border:1px solid #28344a;color:#9fb4d2;border-radius:11px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">Cancelar</button>
       <button onclick="_validarModoEntrenador()" style="flex:1;background:#2f5f95;border:none;color:#fff;border-radius:11px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">Entrar</button>
     </div>
+  </div>
+</div>
+
+<div id="install-modal" style="display:none;position:fixed;inset:0;z-index:21000;background:rgba(4,7,12,.86);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:24px;">
+  <div style="width:100%;max-width:340px;background:#0e1626;border:1px solid rgba(143,176,214,.25);border-radius:18px;padding:22px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.7);">
+    <div style="font-size:16px;font-weight:900;color:#eef1f5;">Agregar a tu celular</div>
+    <div id="install-steps" style="font-size:13px;color:#c3d1e4;margin-top:14px;line-height:1.7;text-align:left;"></div>
+    <button onclick="_cerrarInstall()" style="width:100%;margin-top:18px;background:#2f5f95;border:none;color:#fff;border-radius:11px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">Entendido</button>
   </div>
 </div>
 
@@ -1002,8 +1016,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261010145605 por un timestamp en cada deploy
-const _APP_VERSION = '20261010145605';
+// deploy.bat reemplaza 20261010150606 por un timestamp en cada deploy
+const _APP_VERSION = '20261010150606';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1345,6 +1359,38 @@ const _FRASES_PORTADA = {
   ]
 };
 let _ptNombre = '', _ptFoto = '';
+// ── Instalar app en el celular (iPhone / Android) ──
+function _esStandalone(){ try{ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }catch(e){ return false; } }
+function _esIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent||''); }
+function _mostrarBotonInstalar(){
+  const b=document.getElementById('pt-install-btn'); if(!b) return;
+  b.style.display = _esStandalone() ? 'none' : 'flex';
+}
+function _cerrarInstall(){ const m=document.getElementById('install-modal'); if(m) m.style.display='none'; }
+function _instalarApp(){
+  // Android / Chrome: instalación nativa
+  if(window._deferredPrompt){
+    window._deferredPrompt.prompt();
+    window._deferredPrompt.userChoice.finally(()=>{ window._deferredPrompt=null; const b=document.getElementById('pt-install-btn'); if(b)b.style.display='none'; });
+    return;
+  }
+  // iPhone (Safari) o fallback: instrucciones
+  const steps=document.getElementById('install-steps');
+  if(steps){
+    if(_esIOS()){
+      steps.innerHTML = '1. Tocá el botón <b>Compartir</b> (el cuadrito con la flecha hacia arriba, abajo en Safari).<br><br>'
+        + '2. Deslizá y tocá <b>“Agregar a inicio”</b> (Add to Home Screen).<br><br>'
+        + '3. Tocá <b>Agregar</b>. ¡Listo! Te queda el ícono en la pantalla.';
+    } else {
+      steps.innerHTML = '1. Abrí el menú del navegador (los <b>tres puntos ⋮</b>, arriba a la derecha).<br><br>'
+        + '2. Tocá <b>“Agregar a pantalla de inicio”</b> o <b>“Instalar aplicación”</b>.<br><br>'
+        + '3. Confirmá. ¡Listo! Te queda el ícono en la pantalla.';
+    }
+  }
+  const m=document.getElementById('install-modal'); if(m) m.style.display='flex';
+}
+window.addEventListener('appinstalled', function(){ const b=document.getElementById('pt-install-btn'); if(b)b.style.display='none'; });
+
 // ── Modo Entrenador (acceso al creador con clave) ──
 const _ME_CLAVE = '1234';
 function _abrirModoEntrenador(){
@@ -1371,6 +1417,7 @@ function _mostrarPortada(nombre, foto) {
     + '<div class="pt-face back"><img src="'+_logoURL+'" alt="CC"></div>'
     + '</div>';
   requestAnimationFrame(function(){ var cn=document.getElementById('pt-coin'); if(cn){ cn.classList.remove('spin'); void cn.offsetWidth; cn.classList.add('spin'); } });
+  _mostrarBotonInstalar();
   document.getElementById('pt-name').textContent = nombre;
   const frases = _FRASES_PORTADA[_LANG] || _FRASES_PORTADA.es;
   const frase = frases[Math.floor(Math.random()*frases.length)];
