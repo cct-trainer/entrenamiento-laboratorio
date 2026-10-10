@@ -565,7 +565,23 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
     <div class="pt-foot">
       <button onclick="_abrirTutorial()" style="width:100%;background:rgba(58,110,165,.14);border:1px solid rgba(58,110,165,.45);color:#5b93cf;border-radius:14px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:11px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;"><span style="width:20px;height:20px;border-radius:50%;background:#3A6EA5;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;">?</span> Mirá cómo se usa la app en 1 minuto</button>
       <button class="pt-enter" onclick="entrarApp()"><span data-i18n="entrar_app">Entrar a mi entrenamiento</span> <span>›</span></button>
+      <button id="pt-coach-btn" onclick="_abrirModoEntrenador()" style="display:none;width:100%;margin-top:11px;background:transparent;border:1px solid rgba(143,176,214,.4);color:#9fb4d2;border-radius:14px;padding:12px;font-size:12.5px;font-weight:800;letter-spacing:.5px;cursor:pointer;font-family:inherit;display:none;align-items:center;justify-content:center;gap:8px;">Modo Entrenador</button>
       <div class="pt-date" id="pt-date"></div>
+    </div>
+  </div>
+</div>
+
+<div id="modo-entrenador-modal" style="display:none;position:fixed;inset:0;z-index:21000;background:rgba(4,7,12,.86);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:24px;">
+  <div style="width:100%;max-width:320px;background:#0e1626;border:1px solid rgba(143,176,214,.25);border-radius:18px;padding:24px 22px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.7);">
+    <div style="font-size:16px;font-weight:900;color:#eef1f5;letter-spacing:.3px;">Modo Entrenador</div>
+    <div style="font-size:12.5px;color:#9fb4d2;margin-top:6px;">Ingresá tu clave para entrar al creador.</div>
+    <input id="me-clave" type="password" inputmode="numeric" placeholder="Clave" autocomplete="off"
+      onkeydown="if(event.key==='Enter')_validarModoEntrenador()"
+      style="width:100%;margin-top:16px;background:#070b13;border:1.5px solid #2a3a56;border-radius:11px;padding:13px;font-size:18px;font-weight:800;text-align:center;letter-spacing:6px;color:#fff;outline:none;font-family:inherit;">
+    <div id="me-error" style="display:none;font-size:11.5px;color:#e07a7a;margin-top:8px;font-weight:700;">Clave incorrecta.</div>
+    <div style="display:flex;gap:9px;margin-top:16px;">
+      <button onclick="_cerrarModoEntrenador()" style="flex:1;background:#141d2e;border:1px solid #28344a;color:#9fb4d2;border-radius:11px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">Cancelar</button>
+      <button onclick="_validarModoEntrenador()" style="flex:1;background:#2f5f95;border:none;color:#fff;border-radius:11px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">Entrar</button>
     </div>
   </div>
 </div>
@@ -986,8 +1002,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261009161506 por un timestamp en cada deploy
-const _APP_VERSION = '20261009161506';
+// deploy.bat reemplaza 20261010145605 por un timestamp en cada deploy
+const _APP_VERSION = '20261010145605';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1289,6 +1305,9 @@ function render() {
   const esChristian = (_alumnoId === 'mqcxctmkrucidy326rn') || /christian\s+cattaneo/i.test(nombre);
   const coachBtn = document.getElementById('btn-coach-panel');
   if (coachBtn) coachBtn.style.display = esChristian ? 'inline-flex' : 'none';
+  window._esCoach = esChristian;
+  const ptCoach = document.getElementById('pt-coach-btn');
+  if (ptCoach) ptCoach.style.display = esChristian ? 'flex' : 'none';
   if (_plan) document.getElementById('al-plan').textContent = (_plan.nombre||'Plan activo').toUpperCase();
   // Actualizar ícono del botón de tema según preferencia guardada
   const isLight = document.documentElement.classList.contains('light');
@@ -1326,6 +1345,21 @@ const _FRASES_PORTADA = {
   ]
 };
 let _ptNombre = '', _ptFoto = '';
+// ── Modo Entrenador (acceso al creador con clave) ──
+const _ME_CLAVE = '1234';
+function _abrirModoEntrenador(){
+  const m=document.getElementById('modo-entrenador-modal'); if(!m) return;
+  m.style.display='flex';
+  const i=document.getElementById('me-clave'); if(i){ i.value=''; setTimeout(()=>i.focus(),50); }
+  const e=document.getElementById('me-error'); if(e) e.style.display='none';
+}
+function _cerrarModoEntrenador(){ const m=document.getElementById('modo-entrenador-modal'); if(m) m.style.display='none'; }
+function _validarModoEntrenador(){
+  const i=document.getElementById('me-clave'); const e=document.getElementById('me-error');
+  if(i && i.value.trim()===_ME_CLAVE){ window.location.href='index.html'; }
+  else { if(e) e.style.display='block'; if(i){ i.value=''; i.focus(); } }
+}
+
 function _mostrarPortada(nombre, foto) {
   if (nombre !== undefined) { _ptNombre = nombre; _ptFoto = foto; }
   nombre = _ptNombre; foto = _ptFoto;

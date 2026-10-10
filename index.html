@@ -2560,6 +2560,23 @@ select.toolbox-input option:disabled { color: #888; }
 .nbp-tile-icon { font-size:20px; flex-shrink:0; }
 .nbp-tile-label { font-size:12px; font-weight:700; color:#222; line-height:1.3; }
 .nbp-tile.personalizado { grid-column:1/-1; }
+/* selector nuevo por sistema */
+#nbp-cat { max-height:46vh; overflow-y:auto; padding-right:4px; }
+.nbp-sec { margin-bottom:4px; }
+.nbp-grp { font-size:10px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; color:rgb(var(--c)); padding:0 0 7px 11px; margin:16px 0 9px; border-bottom:1px solid #eef1f6; position:relative; }
+.nbp-sec:first-child .nbp-grp { margin-top:0; }
+.nbp-grp::before { content:""; position:absolute; left:0; top:0; width:4px; height:12px; border-radius:2px; background:rgb(var(--c)); }
+.nbp-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.nbp-ctile { border:none; border-radius:9px; padding:13px 14px; cursor:pointer; background:rgb(var(--c)); box-shadow:0 4px 12px -5px rgba(var(--c),.8); transition:filter .14s,box-shadow .14s,transform .1s; }
+.nbp-ctile:hover { filter:brightness(1.08); }
+.nbp-ctile:active { transform:scale(.98); }
+.nbp-ctile.sel { box-shadow:0 0 0 3px #fff,0 0 0 5px rgb(var(--c)); filter:brightness(1.05); }
+.nbp-ctile .lb { font-size:12.5px; font-weight:700; color:#fff; line-height:1.3; letter-spacing:.2px; }
+.nbp-ctile.full { grid-column:1/-1; }
+.nbp-exp { margin:16px 0 4px; border:1px solid #e6ebf2; border-left:4px solid #2f5f95; background:#f8fafc; border-radius:10px; padding:14px 15px; min-height:64px; }
+.nbp-exp.empty { display:flex; align-items:center; justify-content:center; color:#a2abbb; font-size:12.5px; font-style:italic; text-align:center; }
+.nbp-exp .t { font-size:13.5px; font-weight:800; color:#1e2a3c; }
+.nbp-exp .d { font-size:12px; color:#4a5568; line-height:1.55; margin-top:6px; }
 #nuevo-bloque-nombre-wrap { margin-top:12px; }
 #nuevo-bloque-nombre { width:100%; border:1.5px solid #1a2a4a; border-radius:8px; padding:10px 12px; font-size:13px; font-weight:600; box-sizing:border-box; outline:none; }
 
@@ -11337,6 +11354,61 @@ const BLOQUES_SOCC_PICKER = [
 ];
 const TIPOS_SERIE_F  = ['Serie Simple','Biserie','Triserie','Superserie','Serie Gigante','Circuito'];
 
+// ── Catálogo de bloques por SISTEMA de entrenamiento (selector nuevo) ────────
+// n: nombre visible · tipo: fase (para color/compatibilidad) · serie: sistema de serie si aplica · d: explicación
+const BLOQUES_CAT = [
+  { grupo:'Fases de la sesión', color:'47,95,149', items:[
+    {n:'Movilidad y Entrada en Calor', tipo:'Movilidad y Calentamiento', serie:'Serie Simple', d:'Prepara articulaciones y tejidos, mejora el rango de movimiento y predispone al sistema nervioso antes del trabajo principal.'},
+    {n:'Activación y Core', tipo:'Activación y Core', serie:'Serie Simple', d:'Activa los músculos objetivo y la zona media para mejorar el reclutamiento antes de las cargas altas.'},
+    {n:'Fuerza / Potencia (Principal)', tipo:'Fuerza Principal / Potencia', serie:'Serie Simple', d:'Trabajo principal con cargas altas y pocas repeticiones. Foco en fuerza máxima y producción de potencia, con pausas largas.'},
+    {n:'Desarrollo / Hipertrofia', tipo:'Desarrollo / Hipertrofia', serie:'Serie Simple', d:'Volumen efectivo en rangos moderados de repeticiones. Es el principal motor del crecimiento muscular.'},
+    {n:'Enfriamiento / Vuelta a la calma', tipo:'Enfriamiento Final', serie:'Serie Simple', d:'Baja la intensidad con respiración y movilidad suave para iniciar la recuperación.'},
+    {n:'Cardio', tipo:'Cardio', serie:'Serie Simple', d:'Trabajo cardiovascular, continuo o por intervalos, según el objetivo de la sesión.'},
+  ]},
+  { grupo:'Métodos / Sistemas', color:'21,122,110', items:[
+    {n:'Serie Simple (recta)', tipo:'Desarrollo / Hipertrofia', serie:'Serie Simple', d:'Series rectas de un ejercicio con descanso completo entre ellas. Es la base del trabajo de fuerza e hipertrofia.'},
+    {n:'Superserie', tipo:'Desarrollo / Hipertrofia', serie:'Superserie', d:'Dos ejercicios seguidos con poco o nada de descanso entre ellos. Suelen combinarse músculos opuestos o el mismo desde otro ángulo.'},
+    {n:'Biserie', tipo:'Desarrollo / Hipertrofia', serie:'Biserie', d:'Dos ejercicios seguidos del mismo grupo muscular, sin descanso entre ellos. Aumenta el estrés metabólico y el volumen en menos tiempo.'},
+    {n:'Triserie', tipo:'Desarrollo / Hipertrofia', serie:'Triserie', d:'Tres ejercicios encadenados sin descanso. Descansás al terminar los tres; eso es una vuelta. Alta densidad y congestión.'},
+    {n:'Serie Gigante', tipo:'Desarrollo / Hipertrofia', serie:'Serie Gigante', d:'Cuatro o más ejercicios encadenados sin descanso. Muy demandante; conviene usarla de forma puntual.'},
+    {n:'Circuito', tipo:'Cardio', serie:'Circuito', d:'Recorrés todas las estaciones una tras otra con poco descanso. Densidad alta con fuerte componente metabólico y de acondicionamiento.'},
+    {n:'Pre-Fatiga', tipo:'Desarrollo / Hipertrofia', serie:'Serie Simple', d:'Aislamiento del músculo objetivo antes del ejercicio compuesto, para que llegue más fatigado al principal.'},
+    {n:'Post-Fatiga', tipo:'Desarrollo / Hipertrofia', serie:'Serie Simple', d:'Aislamiento del músculo objetivo después del compuesto, para rematarlo al final.'},
+    {n:'Drop Set (descendentes)', tipo:'Desarrollo / Hipertrofia', serie:'Serie Simple', d:'Al llegar al fallo se baja la carga y se continúa sin descanso para extender la serie.'},
+    {n:'Rest-Pause', tipo:'Desarrollo / Hipertrofia', serie:'Serie Simple', d:'Tras el fallo, micro-pausas de 10 a 20 segundos para sumar algunas repeticiones más con la misma carga.'},
+    {n:'Myo-Reps', tipo:'Desarrollo / Hipertrofia', serie:'Serie Simple', d:'Una serie de activación cercana al fallo seguida de mini-series con descansos muy cortos. Mucho estímulo en poco tiempo.'},
+    {n:'Cluster', tipo:'Fuerza Principal / Potencia', serie:'Serie Simple', d:'La serie se divide en mini-bloques con pausas breves intra-serie; permite sostener cargas altas con más repeticiones de calidad.'},
+    {n:'Bombeo / Metabólico', tipo:'Desarrollo / Hipertrofia', serie:'Serie Simple', d:'Altas repeticiones y pausas cortas, con foco en la congestión y el estrés metabólico.'},
+    {n:'Pirámide', tipo:'Desarrollo / Hipertrofia', serie:'Serie Simple', d:'Se modifica la carga serie a serie (ascendente o descendente), combinando trabajo de fuerza y de volumen.'},
+  ]},
+  { grupo:'Organización · Mesociclo', color:'98,80,158', items:[
+    {n:'Acumulación', tipo:'Desarrollo / Hipertrofia', serie:'Serie Simple', d:'Fase de alto volumen con intensidad moderada; se acumula trabajo y fatiga controlada como base del progreso.'},
+    {n:'Intensificación', tipo:'Fuerza Principal / Potencia', serie:'Serie Simple', d:'Menos volumen y más intensidad o carga; se expresa lo construido durante la acumulación.'},
+    {n:'Descarga (Deload)', tipo:'Desarrollo / Hipertrofia', serie:'Serie Simple', d:'Semana de menor volumen e intensidad para recuperar y supercompensar.'},
+  ]},
+  { grupo:'Otro', color:'90,103,124', items:[
+    {n:'Personalizado (nombre libre)', tipo:'Personalizado', serie:'Serie Simple', d:'Creás un bloque con el nombre que vos quieras.', custom:true},
+  ]},
+];
+function _catItem(g,i){ return BLOQUES_CAT[g] && BLOQUES_CAT[g].items[i]; }
+// Sistemas encadenados que dependen de la cantidad de ejercicios
+const _CHAIN_DEF = { 'Superserie':2, 'Biserie':2, 'Triserie':3, 'Serie Gigante':4, 'Circuito':4 };
+function _esChain(serie){ return Object.prototype.hasOwnProperty.call(_CHAIN_DEF, serie); }
+function _numPalabra(n){ return ['cero','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez'][n] || String(n); }
+// Descripción que se adapta a la cantidad de ejercicios
+function _descSistema(serie, n){
+  n = Math.max(2, parseInt(n,10) || _CHAIN_DEF[serie] || 2);
+  const N = _numPalabra(n); const Nc = N.charAt(0).toUpperCase()+N.slice(1);
+  switch(serie){
+    case 'Superserie':   return Nc+' ejercicios seguidos con poco o nada de descanso entre ellos. Al terminar el último recién descansás; eso es una vuelta. Suelen combinarse músculos opuestos o el mismo desde otro ángulo.';
+    case 'Biserie':      return Nc+' ejercicios seguidos del mismo grupo muscular, sin descanso entre ellos. Descansás al terminar los '+N+'; eso es una vuelta.';
+    case 'Triserie':     return Nc+' ejercicios encadenados sin descanso entre ellos. Descansás al terminar los '+N+'; eso es una vuelta.';
+    case 'Serie Gigante':return Nc+' ejercicios encadenados sin descanso. Recorrés los '+N+' y recién al final descansás; eso es una vuelta.';
+    case 'Circuito':     return 'Recorrés las '+N+' estaciones una tras otra con poco descanso. Al terminar la última volvés al inicio y repetís el recorrido por la cantidad de vueltas indicada.';
+    default:             return '';
+  }
+}
+
 // ── Abrir / inicializar ──────────────────────────────────────────────────────
 function abrirPlanFuerzaSemanal() {
   planSemActualId  = null;
@@ -14005,49 +14077,73 @@ function guardarEstadoDiaActual() {
 // ── Modal nuevo bloque ────────────────────────────────────────────────────────
 let _nuevoBloqueDiaIdx = null;
 
+let _nbpSel = null;  // {g, i}
 function abrirModalNuevoBloque(diaIdx) {
   _nuevoBloqueDiaIdx = diaIdx;
-  // Generar tiles
-  const grid = document.getElementById('nbp-grid');
-  if(grid) {
-    grid.innerHTML = BLOQUES_SOCC_PICKER.map((b,i) => `
-      <div class="nbp-tile${b.tipo==='Personalizado'?' personalizado':''}" data-idx="${i}" onclick="nbpSeleccionar(${i})">
-        <span class="nbp-tile-icon">${b.icon}</span>
-        <span class="nbp-tile-label">${b.tipo==='Personalizado'?'Personalizado (nombre libre)':b.nombre}</span>
+  _nbpSel = null;
+  const cont = document.getElementById('nbp-cat');
+  if(cont) {
+    cont.innerHTML = BLOQUES_CAT.map((grp,g) => `
+      <div class="nbp-sec" style="--c:${grp.color};">
+        <div class="nbp-grp">${grp.grupo}</div>
+        <div class="nbp-grid2">
+          ${grp.items.map((b,i)=>`<div class="nbp-ctile${b.custom?' full':''}" data-g="${g}" data-i="${i}" onclick="nbpSeleccionar(${g},${i})"><span class="lb">${b.n}</span></div>`).join('')}
+        </div>
       </div>`).join('');
   }
-  // Reset
+  const exp = document.getElementById('nbp-exp');
+  if(exp){ exp.className='nbp-exp empty'; exp.textContent='Seleccioná un sistema para ver su explicación.'; }
   const inp = document.getElementById('nuevo-bloque-nombre');
   if(inp) inp.value = '';
   const wrap = document.getElementById('nuevo-bloque-nombre-wrap');
   if(wrap) wrap.style.display = 'none';
+  const addb = document.getElementById('nbp-add'); if(addb) addb.disabled = true;
   document.getElementById('modal-nuevo-bloque').classList.add('open');
 }
 
-function nbpSeleccionar(idx) {
-  const bloque = BLOQUES_SOCC_PICKER[idx];
-  document.querySelectorAll('.nbp-tile').forEach((t,i) => t.classList.toggle('selected', i===idx));
+function nbpSeleccionar(g, i) {
+  const b = _catItem(g,i); if(!b) return;
+  _nbpSel = { g, i };
+  document.querySelectorAll('.nbp-ctile').forEach(t => t.classList.remove('sel'));
+  const tile = document.querySelector('.nbp-ctile[data-g="'+g+'"][data-i="'+i+'"]');
+  if(tile) tile.classList.add('sel');
+  // Control de cantidad de ejercicios (solo sistemas encadenados)
+  const chain = _esChain(b.serie);
+  const cw = document.getElementById('nbp-cant-wrap');
+  const ci = document.getElementById('nbp-cant');
+  if(cw) cw.style.display = chain ? 'flex' : 'none';
+  if(chain && ci) ci.value = _CHAIN_DEF[b.serie] || 2;
+  _nbpPintarExp();
   const inp = document.getElementById('nuevo-bloque-nombre');
   const wrap = document.getElementById('nuevo-bloque-nombre-wrap');
-  if(bloque.tipo === 'Personalizado') {
-    if(inp) inp.value = '';
-    if(wrap) wrap.style.display = 'block';
-    setTimeout(()=>{ if(inp) inp.focus(); }, 50);
-  } else {
-    if(inp) inp.value = bloque.nombre;
-    if(wrap) wrap.style.display = 'none';
-  }
+  if(b.custom){ if(inp) inp.value=''; if(wrap) wrap.style.display='block'; setTimeout(()=>{ if(inp) inp.focus(); },50); }
+  else { if(inp) inp.value=b.n; if(wrap) wrap.style.display='none'; }
+  const addb = document.getElementById('nbp-add'); if(addb) addb.disabled = false;
 }
 
+function _nbpPintarExp(){
+  if(!_nbpSel) return;
+  const b = _catItem(_nbpSel.g, _nbpSel.i); if(!b) return;
+  const col = BLOQUES_CAT[_nbpSel.g].color;
+  const chain = _esChain(b.serie);
+  const n = chain ? (parseInt(document.getElementById('nbp-cant')?.value,10) || _CHAIN_DEF[b.serie]) : null;
+  const desc = chain ? _descSistema(b.serie, n) : b.d;
+  const exp = document.getElementById('nbp-exp');
+  if(exp){ exp.className='nbp-exp'; exp.style.borderLeftColor='rgb('+col+')';
+    exp.innerHTML = '<div class="t" style="color:rgb('+col+');">'+b.n+'</div><div class="d">'+desc+'</div>'; }
+}
+function nbpCantChange(){ _nbpPintarExp(); }
+
 function confirmarNuevoBloque() {
-  const selectedTile = document.querySelector('.nbp-tile.selected');
-  if(!selectedTile) return;
-  const idx = parseInt(selectedTile.dataset.idx);
-  const bloque = BLOQUES_SOCC_PICKER[idx];
+  if(!_nbpSel) return;
+  const b = _catItem(_nbpSel.g, _nbpSel.i); if(!b) return;
   const inp = document.getElementById('nuevo-bloque-nombre');
-  const nombre = (bloque.tipo === 'Personalizado') ? (inp?.value?.trim() || 'Bloque') : bloque.nombre;
+  const nombre = b.custom ? (inp?.value?.trim() || 'Bloque') : b.n;
+  const chain = _esChain(b.serie);
+  const n = chain ? Math.max(2, parseInt(document.getElementById('nbp-cant')?.value,10) || _CHAIN_DEF[b.serie]) : 1;
+  const desc = b.custom ? '' : (chain ? _descSistema(b.serie, n) : (b.d||''));
   closeModal('modal-nuevo-bloque');
-  addBloqueDia(_nuevoBloqueDiaIdx, { nombre, tipo: bloque.tipo, serieTipo: 'Serie Simple', ejercicios: [] });
+  addBloqueDia(_nuevoBloqueDiaIdx, { nombre, tipo: b.tipo, serieTipo: b.serie||'Serie Simple', serieDesc: desc, nEjercicios: n, ejercicios: [] });
 }
 
 function addBloqueDia(diaIdx, datosPrevios) {
@@ -14100,7 +14196,8 @@ function addBloqueDia(diaIdx, datosPrevios) {
   } else if(datosPrevios?.ejercicios?.length) {
     datosPrevios.ejercicios.forEach(ej => addEjercicioEnDia(id, diaIdx, ej));
   } else {
-    addEjercicioEnDia(id, diaIdx);
+    const _n = Math.max(1, parseInt(datosPrevios?.nEjercicios,10) || 1);
+    for(let _k=0; _k<_n; _k++) addEjercicioEnDia(id, diaIdx);
   }
   actualizarLayoutBloque(id);
 }
@@ -20951,12 +21048,13 @@ function _renderSysbox(bloqueId, prev){
                   : (_esDescDefault(curDesc) ? (_SYS_DESC[tipo]||'') : curDesc);
   var vueltas = prev ? (prev.vueltas||3) : (curV||3);
   if(!circ && !desc){ box.innerHTML=''; return; }
-  var ic=_SYS_IC[tipo]||'🔁';
   var esc=function(s){ return String(s==null?'':s).replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+  var nombreEl=document.getElementById(bloqueId+'-nombre-input');
+  var titulo=(!circ && nombreEl && nombreEl.value.trim()) ? nombreEl.value.trim() : tipo;
   box.innerHTML =
     '<div style="border:1px solid #e3e9f3;border-left:4px solid #3A6EA5;border-radius:10px;background:#f7faff;padding:12px 13px;margin:10px 0 4px;">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">'
-      +'<span style="font-size:13px;font-weight:800;color:#3A6EA5;">'+ic+' '+esc(tipo)+'</span>'
+      +'<span style="font-size:13px;font-weight:800;color:#3A6EA5;">'+esc(titulo)+'</span>'
       +(circ?'<span style="font-size:12px;font-weight:700;color:#0B1739;display:inline-flex;align-items:center;gap:6px;">Vueltas: <input type="number" min="1" max="12" id="'+bloqueId+'-vueltas" value="'+esc(vueltas)+'" style="width:54px;text-align:center;font-size:14px;font-weight:800;color:#0B1739;border:1.5px solid #bcd0ee;border-radius:8px;padding:5px;font-family:inherit;"></span>':'')
     +'</div>'
     +'<div style="font-size:10.5px;font-weight:800;letter-spacing:.5px;color:#8a97ac;text-transform:uppercase;margin-bottom:5px;">Cómo se ejecuta (lo verá el alumno)</div>'
@@ -30830,15 +30928,20 @@ async function macroGuardar() {
       <button class="modal-close" onclick="closeModal('modal-nuevo-bloque')">×</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:12px;font-weight:700;color:#555;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Elegí el tipo de bloque</p>
-      <div class="nbp-grid" id="nbp-grid"></div>
+      <p style="font-size:12px;font-weight:700;color:#555;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Elegí el sistema de entrenamiento</p>
+      <div id="nbp-cat"></div>
+      <div id="nbp-cant-wrap" style="display:none;margin:14px 0 2px;align-items:center;gap:10px;">
+        <span style="font-size:12.5px;font-weight:700;color:#33415a;">¿Cuántos ejercicios tiene este sistema?</span>
+        <input id="nbp-cant" type="number" min="2" max="8" value="2" onchange="nbpCantChange()" oninput="nbpCantChange()" style="width:62px;text-align:center;font-size:15px;font-weight:800;color:#0B1739;border:1.5px solid #bcd0ee;border-radius:8px;padding:7px;font-family:inherit;">
+      </div>
+      <div id="nbp-exp" class="nbp-exp empty">Seleccioná un sistema para ver su explicación.</div>
       <div id="nuevo-bloque-nombre-wrap" style="display:none;">
         <input id="nuevo-bloque-nombre" type="text" placeholder="Nombre del bloque personalizado..." onkeydown="if(event.key==='Enter') confirmarNuevoBloque()">
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-nuevo-bloque')">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmarNuevoBloque()">Agregar bloque</button>
+      <button class="btn btn-primary" id="nbp-add" onclick="confirmarNuevoBloque()" disabled>Agregar bloque</button>
     </div>
   </div>
 </div>
