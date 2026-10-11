@@ -1016,8 +1016,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261010150606 por un timestamp en cada deploy
-const _APP_VERSION = '20261010150606';
+// deploy.bat reemplaza 20261011114518 por un timestamp en cada deploy
+const _APP_VERSION = '20261011114518';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1044,9 +1044,41 @@ function _initEdits(alumnoId) {
 function _hoyISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function _dISO(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function _darkenHex(hex,f){ try{ hex=String(hex).replace('#',''); if(hex.length!==6) return '#'+hex; const n=parseInt(hex,16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255; r=Math.round(r*f);g=Math.round(g*f);b=Math.round(b*f); return 'rgb('+r+','+g+','+b+')'; }catch(e){ return '#'+hex; } }
+// ── Bitácora append-only: cada cambio queda registrado y no se pisa ──
+function _nomEjDeSlot(key){
+  try{ var m=String(key).match(/^\d+_\d+_(b\d+e\d+)/); if(m && _ejStore[m[1]]) return _ejStore[m[1]].nombre||''; }catch(e){}
+  return '';
+}
+function _logRegistro(ev){
+  try{
+    if(!_db || !_alumnoId) return;
+    var _nomAl = ''; try{ _nomAl = (_data && _data.perfil && (_data.perfil.nombre||_data.perfil.name)) || ''; }catch(e){}
+    var base = {
+      autor: 'alumno',
+      alumnoId: _alumnoId,
+      alumno: _nomAl,
+      fecha: _hoyISO(),
+      tsLocal: new Date().toISOString(),
+      ts: (firebase && firebase.firestore && firebase.firestore.FieldValue)
+            ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
+    };
+    for(var k in ev){ if(ev[k]!==undefined && ev[k]!==null) base[k]=ev[k]; }
+    _db.collection('alumnos').doc(_alumnoId).collection('registros').add(base).catch(function(){});
+  }catch(e){}
+}
+const _CAMPO_LBL = { peso:'Peso', reps:'Reps', rir:'RIR', coment:'Comentario', sust:'Sustitución', done:'Serie hecha', omitida:'Omitida', tipo:'Tipo' };
+
 function _guardarEdit(key, campo, val) {
   if (!_pesoEdits[key]) _pesoEdits[key] = {};
+  const _antes = (_pesoEdits[key] && _pesoEdits[key][campo] != null) ? _pesoEdits[key][campo] : '';
   _pesoEdits[key][campo] = String(val).replace(/kg$/i,'').trim();
+  const _despues = _pesoEdits[key][campo];
+  // Registrar en la bitácora solo cambios reales de campos con significado (no metadatos _sig/_del/_extra)
+  if (campo.charAt(0) !== '_' && String(_antes) !== String(_despues)) {
+    _logRegistro({ tipo:'edit', slot:key, campo:campo, campoLbl:(_CAMPO_LBL[campo]||campo),
+      ejercicio:_nomEjDeSlot(key), antes:String(_antes), despues:String(_despues),
+      sem:(typeof _semIdx!=='undefined'?_semIdx:''), dia:(typeof _diaIdx!=='undefined'?_diaIdx:'') });
+  }
   // Sellar la "firma" de la prescripción del coach en este lugar (bloque+ejercicio).
   // Si el coach cambia el ejercicio de ese lugar, la firma no coincidirá y lo viejo se descarta solo.
   try {
