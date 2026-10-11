@@ -728,6 +728,10 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
       <span data-i18n="nav_complementos">COMPLEMENTOS</span>
     </button>
+    <button class="nb" id="nb-evol" onclick="_abrirEvolucion()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M19 9l-5 5l-4-4l-3 3"/></svg>
+      <span>EVOLUCIÓN</span>
+    </button>
   </nav>
 </div>
 
@@ -1016,8 +1020,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261011114518 por un timestamp en cada deploy
-const _APP_VERSION = '20261011114518';
+// deploy.bat reemplaza 20261011165817 por un timestamp en cada deploy
+const _APP_VERSION = '20261011165817';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3126,6 +3130,144 @@ function _fmtFechaStx(f){
   const m = String(f).match(/^(\d{4})-(\d{2})-(\d{2})/);
   return m ? (m[3]+'/'+m[2]+'/'+m[1]) : String(f);
 }
+// ═══════════════════════════════════════════════════════════════════════════
+// EVOLUCIÓN POR EJERCICIO (lee los partes de sesión guardados)
+// ═══════════════════════════════════════════════════════════════════════════
+function _evP(x){ var p=parseFloat(String(x==null?'':x).replace(',','.')); return isNaN(p)?0:p; }
+// Junta todos los partes → { ejKey: {nombre, pts:[{fecha,peso,reps,e1rm}]} }  (mejor set efectivo por día)
+function _evolRecolectar(){
+  var out={}; var arr=(_data&&_data.sesionesCompletadas)||[];
+  arr.forEach(function(s){
+    var r=s.resultados||{}; var nombres=s.ejerciciosNombres||{};
+    var fecha=s.fecha||(s.at?String(s.at).slice(0,10):''); if(!fecha) return;
+    var uids={}; Object.keys(nombres).forEach(function(u){ uids[u]=true; });
+    Object.keys(r).forEach(function(k){ var m=k.match(/_(b\d+e\d+)_efec_/); if(m) uids[m[1]]=true; });
+    Object.keys(uids).forEach(function(uid){
+      var best=null;
+      Object.keys(r).forEach(function(k){
+        if(k.indexOf('_'+uid+'_efec_')>=0){ var v=r[k]||{}; var p=_evP(v.peso); if(p>0){ if(!best||p>best.peso) best={peso:p, reps:(parseInt(v.reps)||1)}; } }
+      });
+      if(!best) return;
+      var nombre=nombres[uid]||uid; var key=_ejKey(nombre);
+      if(!out[key]) out[key]={nombre:nombre, pts:[]};
+      out[key].pts.push({fecha:fecha, peso:best.peso, reps:best.reps, e1rm:(_stxEpley(best.peso,best.reps)||best.peso)});
+    });
+  });
+  Object.keys(out).forEach(function(k){
+    var byDate={}; out[k].pts.forEach(function(p){ if(!byDate[p.fecha] || p.e1rm>byDate[p.fecha].e1rm) byDate[p.fecha]=p; });
+    out[k].pts=Object.keys(byDate).sort().map(function(f){ return byDate[f]; });
+  });
+  return out;
+}
+function _evolMeses(pts){
+  var m={}; pts.forEach(function(p){ var ym=p.fecha.slice(0,7);
+    if(!m[ym]) m[ym]={ym:ym, first:p, last:p, bestPeso:p.peso, bestE:p.e1rm};
+    else { m[ym].last=p; if(p.peso>m[ym].bestPeso)m[ym].bestPeso=p.peso; if(p.e1rm>m[ym].bestE)m[ym].bestE=p.e1rm; } });
+  return Object.keys(m).sort().map(function(k){ return m[k]; });
+}
+var _MESNOM=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function _evolMesLargo(ym){ var p=ym.split('-'); var mi=(parseInt(p[1])||1)-1; var nom=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][mi]||ym; return nom+' '+p[0]; }
+function _evolFechaCorta(f){ var m=String(f).match(/^(\d{4})-(\d{2})-(\d{2})/); return m?(m[3]+'/'+m[2]):f; }
+function _evolDelta(a,b){ // de a → b
+  var d=Math.round((b-a)*10)/10; var pct=a>0?Math.round((b-a)/a*1000)/10:0;
+  var cls = d>0.0001?'up':(d<-0.0001?'down':'eq');
+  var sig = d>0?'+':''; var ar = cls==='up'?'▲':(cls==='down'?'▼':'=');
+  return {d:d, pct:pct, cls:cls, txt:ar+' '+sig+_stxFmt(d)+' kg'+(a>0?(' ('+sig+pct+'%)'):'')};
+}
+function _ensureEvolUI(){
+  if(document.getElementById('evol-css')) return;
+  var st=document.createElement('style'); st.id='evol-css';
+  st.textContent=
+    '.evol-overlay{position:fixed;inset:0;z-index:9000;background:#0d1220;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;}'+
+    '.evol-top{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #243150;position:sticky;top:0;background:#0d1220;z-index:2;}'+
+    '.evol-back{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#9fb0cf;background:rgba(255,255,255,.05);border:1px solid #243150;border-radius:20px;padding:8px 14px;cursor:pointer;font-family:inherit;}'+
+    '.evol-back:hover{color:#fff;border-color:#8FB0D6;}'+
+    '.evol-h{font-size:17px;font-weight:900;color:#fff;}'+
+    '.evol-body{padding:16px;max-width:560px;margin:0 auto;}'+
+    '.evol-card{background:#141c30;border:1px solid #243150;border-radius:13px;padding:14px 15px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:border-color .15s;}'+
+    '.evol-card:hover{border-color:#8FB0D6;}'+
+    '.evol-card .nm{font-size:14.5px;font-weight:800;color:#eaf0fa;flex:1;line-height:1.25;}'+
+    '.evol-card .vl{font-size:13px;font-weight:800;color:#cdd7ea;text-align:right;}'+
+    '.evol-card .vl small{color:#8ea3c4;font-weight:600;}'+
+    '.evol-pill{font-size:11px;font-weight:800;border-radius:7px;padding:3px 8px;margin-top:3px;display:inline-block;}'+
+    '.evol-up{color:#7ee0a7;background:rgba(40,160,90,.14);} .evol-down{color:#e59090;background:rgba(190,70,70,.14);} .evol-eq{color:#9fb0cf;background:rgba(120,140,170,.14);}'+
+    '.evol-sec{font-size:11px;font-weight:800;letter-spacing:1px;color:#6b7c9e;margin:20px 0 9px;text-transform:uppercase;}'+
+    '.evol-mes{background:#141c30;border:1px solid #243150;border-radius:12px;padding:13px 15px;margin-bottom:9px;}'+
+    '.evol-mes .mt{font-size:13px;font-weight:900;color:#fff;}'+
+    '.evol-mes .mr{display:flex;gap:16px;margin-top:7px;flex-wrap:wrap;}'+
+    '.evol-mes .mk{font-size:11px;color:#8ea3c4;font-weight:700;} .evol-mes .mv{font-size:15px;color:#eaf0fa;font-weight:800;}'+
+    '.evol-tl{background:#141c30;border:1px solid #243150;border-radius:12px;overflow:hidden;}'+
+    '.evol-tr{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid rgba(36,49,80,.5);font-size:13.5px;}'+
+    '.evol-tr:last-child{border-bottom:none;} .evol-tr .d{color:#9fb0cf;font-weight:700;} .evol-tr .w{font-weight:800;color:#fff;} .evol-tr .e{font-size:11px;color:#8ea3c4;font-weight:700;}'+
+    '.evol-tr .pr{font-size:10px;font-weight:800;color:#0d1220;background:#8FB0D6;border-radius:5px;padding:2px 6px;margin-left:6px;}'+
+    '.evol-empty{margin-top:40px;text-align:center;color:#9fb0cf;font-size:14px;line-height:1.7;background:#141c30;border:1px solid #243150;border-radius:14px;padding:34px 22px;}'+
+    '.evol-ver{font-size:13px;font-weight:800;line-height:1.6;}';
+  document.head.appendChild(st);
+  var ov=document.createElement('div'); ov.className='evol-overlay'; ov.id='evol-overlay';
+  ov.innerHTML='<div class="evol-top"><button class="evol-back" onclick="_cerrarEvolucion()">‹ Volver</button><div class="evol-h" id="evol-h">Mi evolución</div></div><div class="evol-body" id="evol-body"></div>';
+  document.body.appendChild(ov);
+}
+function _cerrarEvolucion(){ var o=document.getElementById('evol-overlay'); if(o) o.style.display='none'; }
+function _abrirEvolucion(){
+  _ensureEvolUI();
+  var o=document.getElementById('evol-overlay'); o.style.display='block'; o.scrollTop=0;
+  document.getElementById('evol-h').textContent='Mi evolución';
+  var cont=document.getElementById('evol-body');
+  var data=_evolRecolectar();
+  var keys=Object.keys(data).sort(function(a,b){ return data[a].nombre.localeCompare(data[b].nombre); });
+  if(!keys.length){ cont.innerHTML='<div class="evol-empty"><b>Todavía no hay evolución para mostrar.</b><br>Se arma sola cuando completás entrenamientos con el botón <b>“Terminé mi entrenamiento”</b>. Cada sesión terminada va sumando tus cargas por fecha.</div>'; return; }
+  var uni=(_data&&_data.perfil&&_data.perfil.unidadPeso==='lb')?'lb':'kg';
+  var html='<div class="evol-sec">Tus ejercicios ('+keys.length+')</div>';
+  keys.forEach(function(k){
+    var ex=data[k]; var pts=ex.pts; var ultimo=pts[pts.length-1];
+    var meses=_evolMeses(pts); var trend='';
+    if(meses.length>=2){ var dv=_evolDelta(meses[meses.length-2].bestE, meses[meses.length-1].bestE); trend='<div class="evol-pill evol-'+dv.cls+'">'+dv.txt+' vs mes anterior</div>'; }
+    else if(pts.length>=2){ var dv2=_evolDelta(pts[0].e1rm, ultimo.e1rm); trend='<div class="evol-pill evol-'+dv2.cls+'">'+dv2.txt+'</div>'; }
+    html+='<div class="evol-card" onclick="_abrirEvolucionEj(\''+k.replace(/'/g,"\\'")+'\')">'
+      +'<div style="flex:1;"><div class="nm">'+String(ex.nombre).replace(/</g,'&lt;')+'</div>'+trend+'</div>'
+      +'<div class="vl">'+_stxFmt(ultimo.peso)+' <small>'+uni+'</small><br><small>×'+ultimo.reps+' · '+_evolFechaCorta(ultimo.fecha)+'</small></div></div>';
+  });
+  cont.innerHTML=html;
+}
+function _abrirEvolucionEj(key){
+  _ensureEvolUI();
+  var data=_evolRecolectar(); var ex=data[key]; if(!ex) return;
+  var o=document.getElementById('evol-overlay'); o.style.display='block'; o.scrollTop=0;
+  document.getElementById('evol-h').textContent=ex.nombre;
+  var uni=(_data&&_data.perfil&&_data.perfil.unidadPeso==='lb')?'lb':'kg';
+  var pts=ex.pts, meses=_evolMeses(pts);
+  var html='<button class="evol-back" style="margin-bottom:14px;" onclick="_abrirEvolucion()">‹ Todos los ejercicios</button>';
+  // Veredicto general
+  if(pts.length>=2){
+    var g=_evolDelta(pts[0].e1rm, pts[pts.length-1].e1rm);
+    var palabra = g.cls==='up'?'Mejoraste':(g.cls==='down'?'Bajaste':'Te mantuviste');
+    html+='<div class="evol-mes" style="border-color:'+(g.cls==='up'?'#2f6e46':(g.cls==='down'?'#7a3b3b':'#243150'))+';"><div class="evol-ver evol-'+g.cls+'">'+palabra+' desde que empezaste: '+g.txt+' en fuerza estimada (1RM).</div><div style="font-size:11.5px;color:#8ea3c4;margin-top:4px;">De '+_stxFmt(pts[0].peso)+' '+uni+'×'+pts[0].reps+' ('+_evolFechaCorta(pts[0].fecha)+') a '+_stxFmt(pts[pts.length-1].peso)+' '+uni+'×'+pts[pts.length-1].reps+' ('+_evolFechaCorta(pts[pts.length-1].fecha)+').</div></div>';
+  }
+  // Resumen por mes
+  html+='<div class="evol-sec">Mes a mes</div>';
+  meses.forEach(function(m,i){
+    var dentro=_evolDelta(m.first.e1rm, m.last.e1rm);
+    var vsPrev = i>0 ? _evolDelta(meses[i-1].bestE, m.bestE) : null;
+    html+='<div class="evol-mes"><div class="mt">'+_evolMesLargo(m.ym)+'</div>'
+      +'<div class="mr"><div><div class="mk">Mejor peso</div><div class="mv">'+_stxFmt(m.bestPeso)+' '+uni+'</div></div>'
+      +'<div><div class="mk">Mejor 1RM est.</div><div class="mv">'+_stxFmt(m.bestE)+' '+uni+'</div></div></div>'
+      +'<div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap;">'
+      +'<span class="evol-pill evol-'+dentro.cls+'">Dentro del mes: '+dentro.txt+'</span>'
+      +(vsPrev?('<span class="evol-pill evol-'+vsPrev.cls+'">vs mes anterior: '+vsPrev.txt+'</span>'):'')
+      +'</div></div>';
+  });
+  // Línea de tiempo
+  html+='<div class="evol-sec">Historial por fecha</div><div class="evol-tl">';
+  var maxE=0; pts.forEach(function(p){ if(p.e1rm>maxE)maxE=p.e1rm; });
+  pts.slice().reverse().forEach(function(p){
+    var esPR=(p.e1rm>=maxE-0.001);
+    html+='<div class="evol-tr"><span class="d">'+_evolFechaCorta(p.fecha)+(esPR?'<span class="pr">PR</span>':'')+'</span>'
+      +'<span><span class="w">'+_stxFmt(p.peso)+' '+uni+'</span> <span class="e">× '+p.reps+'  ·  1RM '+_stxFmt(p.e1rm)+'</span></span></div>';
+  });
+  html+='</div>';
+  document.getElementById('evol-body').innerHTML=html;
+}
+
 function _ensureStatsUI(){
   if(document.getElementById('stx-css')) return;
   const st=document.createElement('style'); st.id='stx-css';
