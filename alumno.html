@@ -1020,8 +1020,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261011223722 por un timestamp en cada deploy
-const _APP_VERSION = '20261011223722';
+// deploy.bat reemplaza 20261011224437 por un timestamp en cada deploy
+const _APP_VERSION = '20261011224437';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3173,11 +3173,41 @@ function _evolRecolectar(){
       out[key].pts.push({fecha:fecha, peso:best.peso, reps:best.reps, e1rm:(_stxEpley(best.peso,best.reps)||best.peso)});
     });
   });
+  _evolPuntosPlan(out);   // sumar lo cargado en el plan activo (aunque no se haya "terminado")
   Object.keys(out).forEach(function(k){
     var byDate={}; out[k].pts.forEach(function(p){ if(!byDate[p.fecha] || p.e1rm>byDate[p.fecha].e1rm) byDate[p.fecha]=p; });
     out[k].pts=Object.keys(byDate).sort().map(function(f){ return byDate[f]; });
   });
   return out;
+}
+function _evolAddDias(fechaISO, n){ try{ var p=String(fechaISO).split('-'); var d=new Date(+p[0],(+p[1])-1,+p[2]); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }catch(e){ return fechaISO; } }
+function _evolPuntosPlan(out){
+  var pl=_plan || (_planesFuerza||[]).filter(function(p){return p&&p.activo;})[0] || (_planesFuerza||[])[ (_planesFuerza||[]).length-1 ];
+  if(!pl||!pl.semanasArray) return;
+  var pe=_pesoEdits||{};
+  pl.semanasArray.forEach(function(sem, wi){
+    var fIni=sem&&sem.fechaInicio; if(!fIni) return;
+    var dias=sem.dias||{};
+    Object.keys(dias).forEach(function(diKey){
+      var di=parseInt(diKey,10); if(isNaN(di)) return;
+      var mods=dias[diKey]; if(!Array.isArray(mods)) mods=[mods];
+      mods.forEach(function(ses){
+        if(!ses||!ses.bloques) return;
+        ses.bloques.forEach(function(b,bi){ (b.ejercicios||[]).forEach(function(ej,ei){
+          var uid='b'+bi+'e'+ei;
+          var slot=pe[wi+'_'+di+'_'+uid]||{};
+          var nombre=(slot.sust)||(typeof _nomEj==='function'?_nomEj(ej):(ej&&ej.nombre))||'';
+          if(!nombre || /^b\d+e\d+$/.test(String(nombre).trim())) return;
+          var best=null;
+          for(var k=0;k<14;k++){ var v=pe[wi+'_'+di+'_'+uid+'_efec_'+k]; if(v&&v.peso){ var p=_evP(v.peso); if(p>0 && (!best||p>best.peso)) best={peso:p,reps:(parseInt(v.reps)||1)}; } }
+          if(!best) return;
+          var fecha=_evolAddDias(fIni, di);
+          var key=_ejKey(nombre); if(!out[key]) out[key]={nombre:nombre, pts:[]};
+          out[key].pts.push({fecha:fecha, peso:best.peso, reps:best.reps, e1rm:(_stxEpley(best.peso,best.reps)||best.peso)});
+        }); });
+      });
+    });
+  });
 }
 function _evolMeses(pts){
   var m={}; pts.forEach(function(p){ var ym=p.fecha.slice(0,7);
