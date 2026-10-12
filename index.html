@@ -14157,61 +14157,57 @@ function _cevPuntosPlan(data, out){
 }
 function _cevMeses(pts){ var m={}; pts.forEach(function(p){ var ym=p.fecha.slice(0,7); if(!m[ym]) m[ym]={ym:ym,first:p,last:p,bestPeso:p.peso,bestE:p.e1rm}; else { m[ym].last=p; if(p.peso>m[ym].bestPeso)m[ym].bestPeso=p.peso; if(p.e1rm>m[ym].bestE)m[ym].bestE=p.e1rm; } }); return Object.keys(m).sort().map(function(k){ return m[k]; }); }
 
-var _cevData=null, _cevNombre='';
+// ── PLANILLA POR DÍA: ejercicios (filas) × sesiones por fecha (columnas) ──────
+var _cevData=null, _cevNombre='', _cevDiaSel=null, _cevDias=[];
+function _cevSeriesEfec(ej){ var arr=(ej&&ej.series)||[]; return arr.filter(function(s){ return s && (s.counts_as_effective===true || /efec/i.test(s.tipo||'') || /efec/i.test(s.series_type||'')); }); }
+function _cevSesionDia(pl, wi, dayIdx){ var sem=pl.semanasArray[wi]; if(!sem||!sem.dias) return null; var mods=sem.dias[dayIdx]; if(mods==null) mods=sem.dias[String(dayIdx)]; if(!mods) return null; if(!Array.isArray(mods)) mods=[mods]; for(var i=0;i<mods.length;i++){ if(mods[i]&&mods[i].bloques&&mods[i].bloques.length) return mods[i]; } return null; }
+function _cevBuscarEjPorNombre(ses, key){ if(!ses||!ses.bloques) return null; for(var bi=0;bi<ses.bloques.length;bi++){ var ejs=(ses.bloques[bi].ejercicios)||[]; for(var ei=0;ei<ejs.length;ei++){ var n=ejs[ei].nombre||ejs[ei].ejercicio||''; if(_cevKey(n)===key) return {ej:ejs[ei], uid:'b'+bi+'e'+ei}; } } return null; }
+function _cevDiasDelPlan(pl){ var found={},order=[]; (pl.semanasArray||[]).forEach(function(sem,wi){ var dias=sem.dias||{}; Object.keys(dias).forEach(function(dk){ var di=parseInt(dk,10); if(isNaN(di)||found[di])return; if(_cevSesionDia(pl,wi,di)){ found[di]=true; order.push(di);} }); }); order.sort(function(a,b){return a-b;}); var DOW=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']; return order.map(function(di,i){ return {dayIdx:di,label:'Día '+(i+1),wd:DOW[di]||''}; }); }
+function _cevEjerciciosDia(pl, dayIdx){ var list=[],seen={}; (pl.semanasArray||[]).forEach(function(sem,wi){ var ses=_cevSesionDia(pl,wi,dayIdx); if(!ses)return; (ses.bloques||[]).forEach(function(b){ (b.ejercicios||[]).forEach(function(ej){ if(!_cevSeriesEfec(ej).length)return; var nombre=ej.nombre||ej.ejercicio||''; if(!nombre)return; var key=_cevKey(nombre); if(!seen[key]){ seen[key]=true; list.push({key:key,nombre:nombre,nEf:_cevSeriesEfec(ej).length}); } }); }); }); return list; }
+function _cevCeldaVals(pe, wi, dayIdx, uid, ej){ var efs=_cevSeriesEfec(ej); var out=[]; efs.forEach(function(s,k){ var rec=pe[wi+'_'+dayIdx+'_'+uid+'_efec_'+k]; var peso=(rec&&rec.peso!=null&&String(rec.peso).trim()!=='')?rec.peso:(s.peso!=null?s.peso:''); var reps=(rec&&rec.reps!=null&&String(rec.reps).trim()!=='')?rec.reps:(s.reps!=null?s.reps:''); if(String(peso).trim()!=='') out.push({peso:peso,reps:reps,rec:!!(rec&&rec.peso)}); }); return out; }
+function _cevSelDia(di){ _cevDiaSel=di; _cevPlanilla(); }
+
 function abrirEvolucionCoach(){
   var modal=document.getElementById('modal-evolucion'); if(modal) modal.classList.add('open');
   var cont=document.getElementById('cev-body'); if(!cont) return;
   document.getElementById('cev-title').textContent='Evolución del alumno';
   if(typeof currentAlumnoId==='undefined' || !currentAlumnoId){ cont.innerHTML='<div style="padding:22px;text-align:center;color:#8795ab;">Primero abrí el perfil de un alumno (en la lista de alumnos) y después tocá <b>Evolución</b>.</div>'; return; }
   if(!window._db){ cont.innerHTML='<div style="color:#b00;">No hay conexión con la base.</div>'; return; }
-  cont.innerHTML='Cargando…';
+  cont.innerHTML='Cargando…'; _cevDiaSel=null;
   window._db.collection('alumnos').doc(currentAlumnoId).get().then(function(doc){
     var data=doc.exists?(doc.data()||{}):{};
     _cevData=data; _cevNombre=(data.perfil&&(data.perfil.nombre||data.perfil.name))||'Alumno';
     document.getElementById('cev-title').textContent='Evolución · '+_cevNombre;
-    _cevRenderLista();
+    _cevPlanilla();
   }).catch(function(e){ cont.innerHTML='<div style="color:#b06a00;">No se pudo cargar: '+(e&&e.message?String(e.message).replace(/</g,'&lt;'):'')+'</div>'; });
 }
-function _cevRenderLista(){
+function _cevPlanilla(){
   var cont=document.getElementById('cev-body'); if(!cont) return;
-  var data=_cevRecolectar(_cevData);
-  var keys=Object.keys(data).sort(function(a,b){ return data[a].nombre.localeCompare(data[b].nombre); });
-  if(!keys.length){ cont.innerHTML='<div style="padding:22px;text-align:center;color:#8795ab;line-height:1.6;">Todavía no hay evolución para este alumno.<br>Se arma con las sesiones que cierre con <b>"Terminé mi entrenamiento"</b>.</div>'; return; }
-  var html='<div style="font-size:11px;font-weight:800;letter-spacing:.7px;color:#8795ab;text-transform:uppercase;margin:2px 0 10px;">Ejercicios ('+keys.length+')</div>';
-  keys.forEach(function(k){
-    var ex=data[k]; var pts=ex.pts; var ult=pts[pts.length-1]; var meses=_cevMeses(pts); var trend='';
-    if(meses.length>=2){ var dv=_cevDelta(meses[meses.length-2].bestE, meses[meses.length-1].bestE); trend='<span style="font-size:11px;font-weight:800;border-radius:6px;padding:3px 8px;color:'+_cevColor(dv.cls)+';background:'+_cevBg(dv.cls)+';">'+dv.txt+' vs mes ant.</span>'; }
-    else if(pts.length>=2){ var dv2=_cevDelta(pts[0].e1rm, ult.e1rm); trend='<span style="font-size:11px;font-weight:800;border-radius:6px;padding:3px 8px;color:'+_cevColor(dv2.cls)+';background:'+_cevBg(dv2.cls)+';">'+dv2.txt+'</span>'; }
-    html+='<div onclick="_cevDetalle(\''+k.replace(/'/g,"\\'")+'\')" style="display:flex;align-items:center;gap:12px;border:1px solid #e4e8ef;border-radius:11px;padding:12px 14px;margin-bottom:8px;cursor:pointer;background:#fff;">'
-      +'<div style="flex:1;"><div style="font-size:14px;font-weight:800;color:#26303f;">'+String(ex.nombre).replace(/</g,'&lt;')+'</div><div style="margin-top:4px;">'+trend+'</div></div>'
-      +'<div style="text-align:right;font-size:13px;font-weight:800;color:#2f3b4e;">'+_cevFmt(ult.peso)+' kg<br><span style="font-size:11px;color:#8795ab;font-weight:600;">×'+ult.reps+' · '+_cevFechaCorta(ult.fecha)+'</span></div></div>';
+  var pl=_cevPlanActivo(_cevData);
+  if(!pl||!pl.semanasArray||!pl.semanasArray.length){ cont.innerHTML='<div style="padding:22px;text-align:center;color:#8795ab;">Este alumno no tiene un plan activo con semanas cargadas.</div>'; return; }
+  _cevDias=_cevDiasDelPlan(pl);
+  if(!_cevDias.length){ cont.innerHTML='<div style="padding:22px;text-align:center;color:#8795ab;">No hay días con ejercicios en el plan.</div>'; return; }
+  if(_cevDiaSel==null || !_cevDias.some(function(d){return d.dayIdx===_cevDiaSel;})) _cevDiaSel=_cevDias[0].dayIdx;
+  var tabs=_cevDias.map(function(d){ var on=d.dayIdx===_cevDiaSel; return '<button onclick="_cevSelDia('+d.dayIdx+')" style="border:1px solid '+(on?'#2f5f95':'#d5deea')+';background:'+(on?'#2f5f95':'#fff')+';color:'+(on?'#fff':'#33415a')+';font-size:12.5px;font-weight:800;padding:9px 14px;border-radius:9px;cursor:pointer;font-family:inherit;">'+d.label+' · '+d.wd+'</button>'; }).join('');
+  var pe=(_cevData&&_cevData.pesoEdits)||{};
+  var cols=[]; pl.semanasArray.forEach(function(sem,wi){ var ses=_cevSesionDia(pl,wi,_cevDiaSel); if(ses) cols.push({wi:wi, fecha:_cevAddDias(sem.fechaInicio,_cevDiaSel), ses:ses}); });
+  var ejs=_cevEjerciciosDia(pl,_cevDiaSel);
+  var th='<th style="position:sticky;left:0;background:#0f1726;color:#fff;text-align:left;padding:11px 12px;font-size:11px;font-weight:800;min-width:170px;z-index:1;">Ejercicio</th>';
+  cols.forEach(function(c){ th+='<th style="background:#0f1726;color:#cfe0ff;padding:11px 12px;font-size:11.5px;font-weight:800;text-align:center;white-space:nowrap;">'+_cevFechaCorta(c.fecha)+'</th>'; });
+  var rows='';
+  ejs.forEach(function(row){
+    var tds='<td style="position:sticky;left:0;background:#fff;border-right:1px solid #e4e8ef;padding:10px 12px;font-size:12.5px;font-weight:700;color:#26303f;">'+String(row.nombre).replace(/</g,'&lt;')+'<div style="font-size:10px;color:#8795ab;font-weight:600;">'+row.nEf+' efectiva'+(row.nEf>1?'s':'')+'</div></td>';
+    cols.forEach(function(c){
+      var found=_cevBuscarEjPorNombre(c.ses,row.key); var txt='<span style="color:#c4ccd8;">—</span>';
+      if(found){ var vals=_cevCeldaVals(pe,c.wi,_cevDiaSel,found.uid,found.ej); if(vals.length){ var pesos=vals.map(function(v){return _cevFmt(_cevP(v.peso));}).join(' / '); var reps=vals.map(function(v){return v.reps;}).filter(Boolean); var algunRec=vals.some(function(v){return v.rec;}); txt='<b style="color:'+(algunRec?'#1f8f5a':'#26303f')+';">'+pesos+'</b> <span style="color:#8795ab;font-size:10px;">kg</span>'+(reps.length?('<div style="font-size:10px;color:#8795ab;">×'+reps.join(' / ')+'</div>'):''); } }
+      tds+='<td style="text-align:center;padding:10px 12px;border-bottom:1px solid #f1f4f9;font-size:12.5px;white-space:nowrap;">'+txt+'</td>';
+    });
+    rows+='<tr>'+tds+'</tr>';
   });
-  cont.innerHTML=html;
-}
-function _cevDetalle(key){
-  var data=_cevRecolectar(_cevData); var ex=data[key]; if(!ex) return;
-  var cont=document.getElementById('cev-body'); if(!cont) return;
-  var pts=ex.pts, meses=_cevMeses(pts);
-  var html='<button onclick="_cevRenderLista()" style="background:#eef2f8;border:1px solid #d5deea;color:#33415a;font-size:12px;font-weight:800;padding:8px 13px;border-radius:9px;cursor:pointer;font-family:inherit;margin-bottom:14px;">‹ Todos los ejercicios</button>'
-    +'<div style="font-size:16px;font-weight:900;color:#1e2a3c;margin-bottom:10px;">'+String(ex.nombre).replace(/</g,'&lt;')+'</div>';
-  if(pts.length>=2){ var g=_cevDelta(pts[0].e1rm, pts[pts.length-1].e1rm); var palabra=g.cls==='up'?'Mejoró':(g.cls==='down'?'Bajó':'Se mantuvo');
-    html+='<div style="border:1px solid '+_cevColor(g.cls)+';background:'+_cevBg(g.cls)+';border-radius:11px;padding:13px 15px;margin-bottom:14px;"><div style="font-size:13.5px;font-weight:800;color:'+_cevColor(g.cls)+';">'+palabra+' desde el inicio: '+g.txt+' en 1RM estimado.</div><div style="font-size:11.5px;color:#55607a;margin-top:4px;">De '+_cevFmt(pts[0].peso)+' kg×'+pts[0].reps+' ('+_cevFechaCorta(pts[0].fecha)+') a '+_cevFmt(pts[pts.length-1].peso)+' kg×'+pts[pts.length-1].reps+' ('+_cevFechaCorta(pts[pts.length-1].fecha)+').</div></div>';
-  }
-  html+='<div style="font-size:11px;font-weight:800;letter-spacing:.7px;color:#8795ab;text-transform:uppercase;margin:4px 0 9px;">Mes a mes</div>';
-  meses.forEach(function(m,i){ var dentro=_cevDelta(m.first.e1rm,m.last.e1rm); var vsPrev=i>0?_cevDelta(meses[i-1].bestE,m.bestE):null;
-    html+='<div style="border:1px solid #e4e8ef;border-radius:11px;padding:12px 14px;margin-bottom:8px;background:#fff;"><div style="font-size:13px;font-weight:900;color:#26303f;">'+_cevMesLargo(m.ym)+'</div>'
-      +'<div style="display:flex;gap:20px;margin-top:6px;"><div><div style="font-size:11px;color:#8795ab;font-weight:700;">Mejor peso</div><div style="font-size:15px;font-weight:800;color:#2f3b4e;">'+_cevFmt(m.bestPeso)+' kg</div></div>'
-      +'<div><div style="font-size:11px;color:#8795ab;font-weight:700;">Mejor 1RM est.</div><div style="font-size:15px;font-weight:800;color:#2f3b4e;">'+_cevFmt(m.bestE)+' kg</div></div></div>'
-      +'<div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap;"><span style="font-size:11px;font-weight:800;border-radius:6px;padding:3px 8px;color:'+_cevColor(dentro.cls)+';background:'+_cevBg(dentro.cls)+';">Dentro del mes: '+dentro.txt+'</span>'
-      +(vsPrev?('<span style="font-size:11px;font-weight:800;border-radius:6px;padding:3px 8px;color:'+_cevColor(vsPrev.cls)+';background:'+_cevBg(vsPrev.cls)+';">vs mes anterior: '+vsPrev.txt+'</span>'):'')+'</div></div>';
-  });
-  html+='<div style="font-size:11px;font-weight:800;letter-spacing:.7px;color:#8795ab;text-transform:uppercase;margin:14px 0 9px;">Historial por fecha</div><div style="border:1px solid #e4e8ef;border-radius:11px;overflow:hidden;">';
-  var maxE=0; pts.forEach(function(p){ if(p.e1rm>maxE)maxE=p.e1rm; });
-  pts.slice().reverse().forEach(function(p){ var pr=(p.e1rm>=maxE-0.001);
-    html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #f1f4f9;font-size:13px;"><span style="color:#55607a;font-weight:700;">'+_cevFechaCorta(p.fecha)+(pr?' <span style="font-size:10px;font-weight:800;color:#fff;background:#2f5f95;border-radius:5px;padding:2px 6px;">PR</span>':'')+'</span><span><b style="color:#26303f;">'+_cevFmt(p.peso)+' kg</b> <span style="font-size:11px;color:#8795ab;">× '+p.reps+' · 1RM '+_cevFmt(p.e1rm)+'</span></span></div>';
-  });
-  html+='</div>';
-  cont.innerHTML=html;
+  if(!ejs.length) rows='<tr><td colspan="'+(cols.length+1)+'" style="padding:22px;text-align:center;color:#8795ab;">Este día no tiene ejercicios con series efectivas cargadas.</td></tr>';
+  cont.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">'+tabs+'</div>'
+    +'<div style="overflow-x:auto;border:1px solid #e4e8ef;border-radius:11px;"><table style="border-collapse:collapse;width:100%;"><thead><tr>'+th+'</tr></thead><tbody>'+rows+'</tbody></table></div>'
+    +'<div style="font-size:11px;color:#8795ab;margin-top:10px;line-height:1.55;">Cada columna es una sesión de ese día (por fecha). Se muestran solo las series <b>efectivas</b>. En <span style="color:#1f8f5a;font-weight:800;">verde</span>, lo que el alumno registró; en gris, la carga que prescribiste (si todavía no registró).</div>';
 }
 
 // ── Feed de actividad (bitácora de los alumnos) ──────────────────────────────
