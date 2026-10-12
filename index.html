@@ -14164,7 +14164,7 @@ function _cevSesionDia(pl, wi, dayIdx){ var sem=pl.semanasArray[wi]; if(!sem||!s
 function _cevBuscarEjPorNombre(ses, key){ if(!ses||!ses.bloques) return null; for(var bi=0;bi<ses.bloques.length;bi++){ var ejs=(ses.bloques[bi].ejercicios)||[]; for(var ei=0;ei<ejs.length;ei++){ var n=ejs[ei].nombre||ejs[ei].ejercicio||''; if(_cevKey(n)===key) return {ej:ejs[ei], uid:'b'+bi+'e'+ei}; } } return null; }
 function _cevDiasDelPlan(pl){ var found={},order=[]; (pl.semanasArray||[]).forEach(function(sem,wi){ var dias=sem.dias||{}; Object.keys(dias).forEach(function(dk){ var di=parseInt(dk,10); if(isNaN(di)||found[di])return; if(_cevSesionDia(pl,wi,di)){ found[di]=true; order.push(di);} }); }); order.sort(function(a,b){return a-b;}); var DOW=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']; return order.map(function(di,i){ return {dayIdx:di,label:'Día '+(i+1),wd:DOW[di]||''}; }); }
 function _cevEjerciciosDia(pl, dayIdx){ var list=[],seen={}; (pl.semanasArray||[]).forEach(function(sem,wi){ var ses=_cevSesionDia(pl,wi,dayIdx); if(!ses)return; (ses.bloques||[]).forEach(function(b){ (b.ejercicios||[]).forEach(function(ej){ if(!_cevSeriesEfec(ej).length)return; var nombre=ej.nombre||ej.ejercicio||''; if(!nombre)return; var key=_cevKey(nombre); if(!seen[key]){ seen[key]=true; list.push({key:key,nombre:nombre,nEf:_cevSeriesEfec(ej).length}); } }); }); }); return list; }
-function _cevCeldaVals(pe, wi, dayIdx, uid, ej){ var efs=_cevSeriesEfec(ej); var out=[]; efs.forEach(function(s,k){ var rec=pe[wi+'_'+dayIdx+'_'+uid+'_efec_'+k]; var peso=(rec&&rec.peso!=null&&String(rec.peso).trim()!=='')?rec.peso:(s.peso!=null?s.peso:''); var reps=(rec&&rec.reps!=null&&String(rec.reps).trim()!=='')?rec.reps:(s.reps!=null?s.reps:''); if(String(peso).trim()!=='') out.push({peso:peso,reps:reps,rec:!!(rec&&rec.peso)}); }); return out; }
+function _cevCeldaVals(pe, wi, dayIdx, uid, ej){ var efs=_cevSeriesEfec(ej); var out=[]; efs.forEach(function(s,k){ var rec=pe[wi+'_'+dayIdx+'_'+uid+'_efec_'+k]; var peso=(rec&&rec.peso!=null&&String(rec.peso).trim()!=='')?rec.peso:(s.peso!=null?s.peso:''); var reps=(rec&&rec.reps!=null&&String(rec.reps).trim()!=='')?rec.reps:(s.reps!=null?s.reps:''); if(_cevP(peso)>0) out.push({peso:peso,reps:reps,rec:!!(rec&&rec.peso)}); }); return out; }
 function _cevSelDia(di){ _cevDiaSel=di; _cevPlanilla(); }
 
 function abrirEvolucionCoach(){
@@ -14194,17 +14194,22 @@ function _cevPlanilla(){
   var ejs=_cevEjerciciosDia(pl,_cevDiaSel);
   var th='<th style="position:sticky;left:0;background:#0f1726;color:#fff;text-align:left;padding:11px 12px;font-size:11px;font-weight:800;min-width:170px;z-index:1;">Ejercicio</th>';
   cols.forEach(function(c){ th+='<th style="background:#0f1726;color:#cfe0ff;padding:11px 12px;font-size:11.5px;font-weight:800;text-align:center;white-space:nowrap;">'+_cevFechaCorta(c.fecha)+'</th>'; });
-  var rows='';
+  var rows=''; var mostradas=0;
   ejs.forEach(function(row){
+    // Calcular las celdas; si el ejercicio no tiene peso en ninguna fecha, no se muestra
+    var celdas=cols.map(function(c){ var found=_cevBuscarEjPorNombre(c.ses,row.key); return found?_cevCeldaVals(pe,c.wi,_cevDiaSel,found.uid,found.ej):[]; });
+    var tieneAlgo=celdas.some(function(v){ return v.length>0; });
+    if(!tieneAlgo) return;   // ejercicio sin peso (movilidad / peso corporal) → fuera
+    mostradas++;
     var tds='<td style="position:sticky;left:0;background:#fff;border-right:1px solid #e4e8ef;padding:10px 12px;font-size:12.5px;font-weight:700;color:#26303f;">'+String(row.nombre).replace(/</g,'&lt;')+'<div style="font-size:10px;color:#8795ab;font-weight:600;">'+row.nEf+' efectiva'+(row.nEf>1?'s':'')+'</div></td>';
-    cols.forEach(function(c){
-      var found=_cevBuscarEjPorNombre(c.ses,row.key); var txt='<span style="color:#c4ccd8;">—</span>';
-      if(found){ var vals=_cevCeldaVals(pe,c.wi,_cevDiaSel,found.uid,found.ej); if(vals.length){ var pesos=vals.map(function(v){return _cevFmt(_cevP(v.peso));}).join(' / '); var reps=vals.map(function(v){return v.reps;}).filter(Boolean); var algunRec=vals.some(function(v){return v.rec;}); txt='<b style="color:'+(algunRec?'#1f8f5a':'#26303f')+';">'+pesos+'</b> <span style="color:#8795ab;font-size:10px;">kg</span>'+(reps.length?('<div style="font-size:10px;color:#8795ab;">×'+reps.join(' / ')+'</div>'):''); } }
+    celdas.forEach(function(vals){
+      var txt='<span style="color:#c4ccd8;">—</span>';
+      if(vals.length){ var pesos=vals.map(function(v){return _cevFmt(_cevP(v.peso));}).join(' / '); var reps=vals.map(function(v){return v.reps;}).filter(Boolean); var algunRec=vals.some(function(v){return v.rec;}); txt='<b style="color:'+(algunRec?'#1f8f5a':'#26303f')+';">'+pesos+'</b> <span style="color:#8795ab;font-size:10px;">kg</span>'+(reps.length?('<div style="font-size:10px;color:#8795ab;">×'+reps.join(' / ')+'</div>'):''); }
       tds+='<td style="text-align:center;padding:10px 12px;border-bottom:1px solid #f1f4f9;font-size:12.5px;white-space:nowrap;">'+txt+'</td>';
     });
     rows+='<tr>'+tds+'</tr>';
   });
-  if(!ejs.length) rows='<tr><td colspan="'+(cols.length+1)+'" style="padding:22px;text-align:center;color:#8795ab;">Este día no tiene ejercicios con series efectivas cargadas.</td></tr>';
+  if(!mostradas) rows='<tr><td colspan="'+(cols.length+1)+'" style="padding:22px;text-align:center;color:#8795ab;">Este día no tiene ejercicios con peso cargado.</td></tr>';
   cont.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">'+tabs+'</div>'
     +'<div style="overflow-x:auto;border:1px solid #e4e8ef;border-radius:11px;"><table style="border-collapse:collapse;width:100%;"><thead><tr>'+th+'</tr></thead><tbody>'+rows+'</tbody></table></div>'
     +'<div style="font-size:11px;color:#8795ab;margin-top:10px;line-height:1.55;">Cada columna es una sesión de ese día (por fecha). Se muestran solo las series <b>efectivas</b>. En <span style="color:#1f8f5a;font-weight:800;">verde</span>, lo que el alumno registró; en gris, la carga que prescribiste (si todavía no registró).</div>';
