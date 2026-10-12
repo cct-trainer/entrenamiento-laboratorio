@@ -1020,8 +1020,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261011230730 por un timestamp en cada deploy
-const _APP_VERSION = '20261011230730';
+// deploy.bat reemplaza 20261011235030 por un timestamp en cada deploy
+const _APP_VERSION = '20261011235030';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3258,64 +3258,48 @@ function _ensureEvolUI(){
   document.body.appendChild(ov);
 }
 function _cerrarEvolucion(){ var o=document.getElementById('evol-overlay'); if(o) o.style.display='none'; }
-function _abrirEvolucion(){
+// ── Planilla por día GYM: ejercicios (filas) × sesiones por fecha (columnas) ──
+var _evolDiaSel=null, _evolDiasArr=[];
+function _evolEsGym(ses){ if(!ses) return false; if(ses.tipoSesion==='running') return false; var lug=String(ses.lugar||'').toLowerCase(); if(lug.indexOf('casa')>=0) return false; var etq=String(ses.etiqueta||'').toLowerCase(); if(/^opcional/.test(etq)) return false; return true; }
+function _evolSesionDia(pl,wi,di){ var sem=pl.semanasArray[wi]; if(!sem||!sem.dias) return null; var mods=sem.dias[di]; if(mods==null) mods=sem.dias[String(di)]; if(!mods) return null; if(!Array.isArray(mods)) mods=[mods]; for(var i=0;i<mods.length;i++){ if(mods[i]&&mods[i].bloques&&mods[i].bloques.length) return mods[i]; } return null; }
+function _evolSesionGym(pl,wi,di){ var sem=pl.semanasArray[wi]; if(!sem||!sem.dias) return null; var mods=sem.dias[di]; if(mods==null) mods=sem.dias[String(di)]; if(!mods) return null; if(!Array.isArray(mods)) mods=[mods]; for(var i=0;i<mods.length;i++){ var s=mods[i]; if(s && s.bloques && s.bloques.length && _evolEsGym(s)) return s; } return null; }
+function _evolSeriesEfec(ej){ var arr=(ej&&ej.series)||[]; return arr.filter(function(s){ return s && (s.counts_as_effective===true || /efec/i.test(s.tipo||'') || /efec/i.test(s.series_type||'')); }); }
+function _evolBuscarEj(ses,key){ if(!ses||!ses.bloques) return null; for(var bi=0;bi<ses.bloques.length;bi++){ var ejs=(ses.bloques[bi].ejercicios)||[]; for(var ei=0;ei<ejs.length;ei++){ var n=ejs[ei].nombre||ejs[ei].ejercicio||''; if(_ejKey(n)===key) return {ej:ejs[ei],uid:'b'+bi+'e'+ei}; } } return null; }
+function _evolPlanAct(){ return _plan || (_planesFuerza||[]).filter(function(p){return p&&p.activo;})[0] || (_planesFuerza||[])[(_planesFuerza||[]).length-1]; }
+function _evolDiasPlan(pl){ var found={},order=[]; (pl.semanasArray||[]).forEach(function(sem,wi){ var dias=sem.dias||{}; Object.keys(dias).forEach(function(dk){ var di=parseInt(dk,10); if(isNaN(di)||found[di])return; if(_evolSesionGym(pl,wi,di)){ found[di]=true; order.push(di);} }); }); order.sort(function(a,b){return a-b;}); var DOW=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']; return order.map(function(di,i){ return {dayIdx:di,label:'Día '+(i+1),wd:DOW[di]||''}; }); }
+function _evolEjsDia(pl,di){ var list=[],seen={}; (pl.semanasArray||[]).forEach(function(sem,wi){ var ses=_evolSesionGym(pl,wi,di); if(!ses)return; (ses.bloques||[]).forEach(function(b){ (b.ejercicios||[]).forEach(function(ej){ if(!_evolSeriesEfec(ej).length)return; var nombre=ej.nombre||ej.ejercicio||''; if(!nombre)return; var key=_ejKey(nombre); if(!seen[key]){ seen[key]=true; list.push({key:key,nombre:nombre,nEf:_evolSeriesEfec(ej).length}); } }); }); }); return list; }
+function _evolCelda(pe,wi,di,uid,ej){ var efs=_evolSeriesEfec(ej); var out=[]; efs.forEach(function(s,k){ var rec=pe[wi+'_'+di+'_'+uid+'_efec_'+k]; var peso=(rec&&rec.peso!=null&&String(rec.peso).trim()!=='')?rec.peso:(s.peso!=null?s.peso:''); var reps=(rec&&rec.reps!=null&&String(rec.reps).trim()!=='')?rec.reps:(s.reps!=null?s.reps:''); if(_evP(peso)>0) out.push({peso:peso,reps:reps,rec:!!(rec&&rec.peso)}); }); return out; }
+function _evolSelDia(di){ _evolDiaSel=di; _abrirEvolucion(true); }
+function _abrirEvolucion(keep){
   _ensureEvolUI();
-  var o=document.getElementById('evol-overlay'); o.style.display='block'; o.scrollTop=0;
+  var o=document.getElementById('evol-overlay'); o.style.display='block'; if(!keep) o.scrollTop=0;
   document.getElementById('evol-h').textContent='Mi evolución';
   var cont=document.getElementById('evol-body');
-  var data=_evolRecolectar();
-  var keys=Object.keys(data).sort(function(a,b){ return data[a].nombre.localeCompare(data[b].nombre); });
-  if(!keys.length){ cont.innerHTML='<div class="evol-empty"><b>Todavía no hay evolución para mostrar.</b><br>Se arma sola cuando completás entrenamientos con el botón <b>“Terminé mi entrenamiento”</b>. Cada sesión terminada va sumando tus cargas por fecha.</div>'; return; }
+  var pl=_evolPlanAct();
+  if(!pl||!pl.semanasArray||!pl.semanasArray.length){ cont.innerHTML='<div class="evol-empty"><b>Todavía no hay un plan con semanas cargadas.</b></div>'; return; }
+  _evolDiasArr=_evolDiasPlan(pl);
+  if(!_evolDiasArr.length){ cont.innerHTML='<div class="evol-empty"><b>No hay días de gimnasio en tu plan.</b></div>'; return; }
+  if(_evolDiaSel==null || !_evolDiasArr.some(function(d){return d.dayIdx===_evolDiaSel;})) _evolDiaSel=_evolDiasArr[0].dayIdx;
   var uni=(_data&&_data.perfil&&_data.perfil.unidadPeso==='lb')?'lb':'kg';
-  var html='<div class="evol-sec">Tus ejercicios ('+keys.length+')</div>';
-  keys.forEach(function(k){
-    var ex=data[k]; var pts=ex.pts; var ultimo=pts[pts.length-1];
-    var meses=_evolMeses(pts); var trend='';
-    if(meses.length>=2){ var dv=_evolDelta(meses[meses.length-2].bestE, meses[meses.length-1].bestE); trend='<div class="evol-pill evol-'+dv.cls+'">'+dv.txt+' vs mes anterior</div>'; }
-    else if(pts.length>=2){ var dv2=_evolDelta(pts[0].e1rm, ultimo.e1rm); trend='<div class="evol-pill evol-'+dv2.cls+'">'+dv2.txt+'</div>'; }
-    html+='<div class="evol-card" onclick="_abrirEvolucionEj(\''+k.replace(/'/g,"\\'")+'\')">'
-      +'<div style="flex:1;"><div class="nm">'+String(ex.nombre).replace(/</g,'&lt;')+'</div>'+trend+'</div>'
-      +'<div class="vl">'+_stxFmt(ultimo.peso)+' <small>'+uni+'</small><br><small>×'+ultimo.reps+' · '+_evolFechaCorta(ultimo.fecha)+'</small></div></div>';
+  var pe=_pesoEdits||{};
+  var tabs=_evolDiasArr.map(function(d){ var on=d.dayIdx===_evolDiaSel; return '<button onclick="_evolSelDia('+d.dayIdx+')" style="border:1px solid '+(on?'#4a86c4':'#2a3a56')+';background:'+(on?'#2f5f95':'transparent')+';color:'+(on?'#fff':'#9fb4d2')+';font-size:12.5px;font-weight:800;padding:9px 13px;border-radius:9px;cursor:pointer;font-family:inherit;">'+d.label+' · '+d.wd+'</button>'; }).join('');
+  var cols=[]; pl.semanasArray.forEach(function(sem,wi){ var ses=_evolSesionGym(pl,wi,_evolDiaSel); if(ses) cols.push({wi:wi,fecha:_evolAddDias(sem.fechaInicio,_evolDiaSel),ses:ses}); });
+  var ejs=_evolEjsDia(pl,_evolDiaSel);
+  var th='<th style="position:sticky;left:0;background:#111c2e;color:#fff;text-align:left;padding:10px 11px;font-size:11px;font-weight:800;min-width:150px;z-index:1;">Ejercicio</th>';
+  cols.forEach(function(c){ th+='<th style="background:#111c2e;color:#cfe0ff;padding:10px 11px;font-size:11.5px;font-weight:800;text-align:center;white-space:nowrap;">'+_evolFechaCorta(c.fecha)+'</th>'; });
+  var rows=''; var mostradas=0;
+  ejs.forEach(function(row){
+    var celdas=cols.map(function(c){ var f=_evolBuscarEj(c.ses,row.key); return f?_evolCelda(pe,c.wi,_evolDiaSel,f.uid,f.ej):[]; });
+    if(!celdas.some(function(v){return v.length>0;})) return;
+    mostradas++;
+    var tds='<td style="position:sticky;left:0;background:#141c30;border-right:1px solid #243150;padding:10px 11px;font-size:12.5px;font-weight:700;color:#eaf0fa;">'+String(row.nombre).replace(/</g,'&lt;')+'<div style="font-size:10px;color:#8ea3c4;font-weight:600;">'+row.nEf+' efectiva'+(row.nEf>1?'s':'')+'</div></td>';
+    celdas.forEach(function(vals){ var txt='<span style="color:#55627a;">—</span>'; if(vals.length){ var pesos=vals.map(function(v){return _stxFmt(_evP(v.peso));}).join(' / '); var reps=vals.map(function(v){return v.reps;}).filter(Boolean); var rec=vals.some(function(v){return v.rec;}); txt='<b style="color:'+(rec?'#7ee0a7':'#eaf0fa')+';">'+pesos+'</b> <span style="color:#8ea3c4;font-size:10px;">'+uni+'</span>'+(reps.length?('<div style="font-size:10px;color:#8ea3c4;">×'+reps.join(' / ')+'</div>'):''); } tds+='<td style="text-align:center;padding:10px 11px;border-bottom:1px solid #1e2a3d;font-size:12.5px;white-space:nowrap;">'+txt+'</td>'; });
+    rows+='<tr>'+tds+'</tr>';
   });
-  cont.innerHTML=html;
-}
-function _abrirEvolucionEj(key){
-  _ensureEvolUI();
-  var data=_evolRecolectar(); var ex=data[key]; if(!ex) return;
-  var o=document.getElementById('evol-overlay'); o.style.display='block'; o.scrollTop=0;
-  document.getElementById('evol-h').textContent=ex.nombre;
-  var uni=(_data&&_data.perfil&&_data.perfil.unidadPeso==='lb')?'lb':'kg';
-  var pts=ex.pts, meses=_evolMeses(pts);
-  var html='<button class="evol-back" style="margin-bottom:14px;" onclick="_abrirEvolucion()">‹ Todos los ejercicios</button>';
-  // Veredicto general
-  if(pts.length>=2){
-    var g=_evolDelta(pts[0].e1rm, pts[pts.length-1].e1rm);
-    var palabra = g.cls==='up'?'Mejoraste':(g.cls==='down'?'Bajaste':'Te mantuviste');
-    html+='<div class="evol-mes" style="border-color:'+(g.cls==='up'?'#2f6e46':(g.cls==='down'?'#7a3b3b':'#243150'))+';"><div class="evol-ver evol-'+g.cls+'">'+palabra+' desde que empezaste: '+g.txt+' en fuerza estimada (1RM).</div><div style="font-size:11.5px;color:#8ea3c4;margin-top:4px;">De '+_stxFmt(pts[0].peso)+' '+uni+'×'+pts[0].reps+' ('+_evolFechaCorta(pts[0].fecha)+') a '+_stxFmt(pts[pts.length-1].peso)+' '+uni+'×'+pts[pts.length-1].reps+' ('+_evolFechaCorta(pts[pts.length-1].fecha)+').</div></div>';
-  }
-  // Resumen por mes
-  html+='<div class="evol-sec">Mes a mes</div>';
-  meses.forEach(function(m,i){
-    var dentro=_evolDelta(m.first.e1rm, m.last.e1rm);
-    var vsPrev = i>0 ? _evolDelta(meses[i-1].bestE, m.bestE) : null;
-    html+='<div class="evol-mes"><div class="mt">'+_evolMesLargo(m.ym)+'</div>'
-      +'<div class="mr"><div><div class="mk">Mejor peso</div><div class="mv">'+_stxFmt(m.bestPeso)+' '+uni+'</div></div>'
-      +'<div><div class="mk">Mejor 1RM est.</div><div class="mv">'+_stxFmt(m.bestE)+' '+uni+'</div></div></div>'
-      +'<div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap;">'
-      +'<span class="evol-pill evol-'+dentro.cls+'">Dentro del mes: '+dentro.txt+'</span>'
-      +(vsPrev?('<span class="evol-pill evol-'+vsPrev.cls+'">vs mes anterior: '+vsPrev.txt+'</span>'):'')
-      +'</div></div>';
-  });
-  // Línea de tiempo
-  html+='<div class="evol-sec">Historial por fecha</div><div class="evol-tl">';
-  var maxE=0; pts.forEach(function(p){ if(p.e1rm>maxE)maxE=p.e1rm; });
-  pts.slice().reverse().forEach(function(p){
-    var esPR=(p.e1rm>=maxE-0.001);
-    html+='<div class="evol-tr"><span class="d">'+_evolFechaCorta(p.fecha)+(esPR?'<span class="pr">PR</span>':'')+'</span>'
-      +'<span><span class="w">'+_stxFmt(p.peso)+' '+uni+'</span> <span class="e">× '+p.reps+'  ·  1RM '+_stxFmt(p.e1rm)+'</span></span></div>';
-  });
-  html+='</div>';
-  document.getElementById('evol-body').innerHTML=html;
+  if(!mostradas) rows='<tr><td colspan="'+(cols.length+1)+'" style="padding:22px;text-align:center;color:#8ea3c4;">Este día no tiene ejercicios con peso cargado.</td></tr>';
+  cont.innerHTML='<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;">'+tabs+'</div>'
+    +'<div style="overflow-x:auto;border:1px solid #243150;border-radius:12px;"><table style="border-collapse:collapse;width:100%;"><thead><tr>'+th+'</tr></thead><tbody>'+rows+'</tbody></table></div>'
+    +'<div style="font-size:11px;color:#8ea3c4;margin-top:10px;line-height:1.55;">Cada columna es una sesión de ese día (por fecha). En <span style="color:#7ee0a7;font-weight:800;">verde</span>, lo que registraste; en gris, la carga que te pautó el coach.</div>';
 }
 
 function _ensureStatsUI(){
