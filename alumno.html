@@ -1020,8 +1020,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261012143439 por un timestamp en cada deploy
-const _APP_VERSION = '20261012143439';
+// deploy.bat reemplaza 20261012194431 por un timestamp en cada deploy
+const _APP_VERSION = '20261012194431';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3309,7 +3309,7 @@ function _aevVerFecha(id){
   (d.ejercicios||[]).forEach(function(e){
     html+='<div style="background:#141c30;border:1px solid #243150;border-radius:11px;padding:11px 13px;margin-bottom:9px;"><div style="font-weight:800;color:#eaf0fa;margin-bottom:7px;">'+_aevEsc(e.nombre)+'</div>'
       +'<table style="width:100%;border-collapse:collapse;font-size:12.5px;"><tr style="color:#8ea3c4;font-weight:700;"><td style="padding:3px 6px;">Serie</td><td>Reps</td><td>Carga</td></tr>';
-    (e.series||[]).forEach(function(s){ var carga=(s.cargaReal&&String(s.cargaReal).trim()!=='')?s.cargaReal:s.cargaPlan; var reps=(s.repsReal&&String(s.repsReal).trim()!=='')?s.repsReal:s.reps; var real=!!(s.cargaReal&&String(s.cargaReal).trim()!==''); html+='<tr><td style="padding:5px 6px;font-weight:700;color:#eaf0fa;">'+_aevEsc(s.num)+'</td><td style="color:#cdd7ea;">'+_aevEsc(reps||'—')+'</td><td><b style="color:'+(real?'#7ee0a7':'#eaf0fa')+';">'+_aevEsc(carga||'—')+(carga?(' '+uni):'')+'</b></td></tr>'; });
+    (e.series||[]).forEach(function(s){ var carga=(s.cargaReal&&String(s.cargaReal).trim()!=='')?s.cargaReal:s.cargaPlan; var reps=(s.repsReal&&String(s.repsReal).trim()!=='')?s.repsReal:s.reps; var real=!!(s.cargaReal&&String(s.cargaReal).trim()!==''); html+='<tr><td style="padding:5px 6px;font-weight:700;color:#eaf0fa;">'+_aevEsc(s.num)+(s.extra?' <span style="font-size:9px;font-weight:800;color:#7ee0a7;">extra</span>':'')+'</td><td style="color:#cdd7ea;">'+_aevEsc(reps||'—')+'</td><td><b style="color:'+(real?'#7ee0a7':'#eaf0fa')+';">'+_aevEsc(carga||'—')+(carga?(' '+uni):'')+'</b></td></tr>'; });
     html+='</table></div>';
   });
   c.innerHTML=html;
@@ -8543,8 +8543,49 @@ async function _terminarEntrenamiento(){
     }
   } catch(e){ console.warn('terminar entrenamiento:', e); }
 
+  // Volcar lo REALMENTE hecho a Evolución (si el coach imprimió este día)
+  try { _evolSyncReal(resultados); } catch(e){}
+
   renderSesion();   // pasa a estado "Completado"
   try { _celebrarFin(); } catch(e){ try { if (typeof toast === 'function') toast(_t('terminar_ok')); } catch(_){} }
+}
+// Encuentra el uid (b#e#) del ejercicio por nombre en la sesión actual
+function _evolUidDeNombre(nombre){
+  try{
+    var sem=_plan&&_plan.semanasArray?_plan.semanasArray[_semIdx]:null;
+    var ses=sem&&sem.dias&&sem.dias[_diaIdx]?sem.dias[_diaIdx][_diaModTab]:null;
+    if(!ses||!ses.bloques) return '';
+    var key=_ejKey(nombre);
+    for(var bi=0;bi<ses.bloques.length;bi++){ var ejs=ses.bloques[bi].ejercicios||[]; for(var ei=0;ei<ejs.length;ei++){ var n=ejs[ei].nombre||ejs[ei].ejercicio||''; if(_ejKey(n)===key) return 'b'+bi+'e'+ei; } }
+  }catch(e){}
+  return '';
+}
+// Completa en Evolución la carga/reps REAL de cada serie impresa, y agrega series extra
+async function _evolSyncReal(resultados){
+  if(!_db || !_alumnoId || !_plan || !_plan.id) return;
+  var docId=_plan.id+'_'+_semIdx+'_'+_diaIdx+'_'+_diaModTab;
+  var ref=_db.collection('alumnos').doc(_alumnoId).collection('evolucion').doc(docId);
+  var doc=await ref.get(); if(!doc.exists) return;   // el coach no imprimió este día → nada que sincronizar
+  var data=doc.data()||{}; var pref=_semIdx+'_'+_diaIdx+'_';
+  (data.ejercicios||[]).forEach(function(e){
+    var uid=_evolUidDeNombre(e.nombre); if(!uid) return;
+    // 1) completar las series planificadas con lo real
+    var maxNum=0;
+    (e.series||[]).forEach(function(s){
+      var i=parseInt(s.num,10)-1; var n=parseInt(s.num,10)||0; if(n>maxNum)maxNum=n;
+      if(isNaN(i)||i<0) return;
+      var rec=resultados[pref+uid+'_efec_'+i];
+      if(rec){ if(rec.peso!=null&&String(rec.peso).trim()!=='') s.cargaReal=String(rec.peso).trim(); if(rec.reps!=null&&String(rec.reps).trim()!=='') s.repsReal=String(rec.reps).trim(); }
+    });
+    // 2) series EXTRA (más de lo planificado)
+    for(var k=maxNum;k<maxNum+12;k++){
+      var rec2=resultados[pref+uid+'_efec_'+k];
+      if(rec2 && rec2.peso!=null && String(rec2.peso).trim()!==''){
+        e.series.push({ num:String(k+1), reps:'', cargaPlan:'', cargaReal:String(rec2.peso).trim(), repsReal:(rec2.reps?String(rec2.reps).trim():''), extra:true });
+      }
+    }
+  });
+  await ref.set({ ejercicios:data.ejercicios, updatedAt:new Date().toISOString() },{merge:true});
 }
 
 // Reabrir una sesión ya completada para poder editarla (por si se tocó sin querer)

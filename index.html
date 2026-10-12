@@ -14223,7 +14223,7 @@ function _cevVerFecha(id){
     html+='<div style="border:1px solid #e4e8ef;border-radius:10px;padding:11px 13px;margin-bottom:9px;"><div style="font-weight:800;color:#26303f;margin-bottom:7px;">'+_cevEsc(e.nombre)+'</div>'
       +'<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><tr style="color:#8795ab;font-weight:700;"><td style="padding:3px 6px;">Serie</td><td>Reps plan</td><td>Carga plan</td><td>Reps real</td><td>Carga real (kg)</td></tr>';
     (e.series||[]).forEach(function(s,si){
-      html+='<tr><td style="padding:4px 6px;font-weight:700;">'+_cevEsc(s.num)+'</td><td>'+_cevEsc(s.reps||'—')+'</td><td>'+_cevEsc(s.cargaPlan||'—')+'</td>'
+      html+='<tr><td style="padding:4px 6px;font-weight:700;">'+_cevEsc(s.num)+(s.extra?' <span style="font-size:9px;font-weight:800;color:#2f5f95;">extra</span>':'')+'</td><td>'+_cevEsc(s.reps||'—')+'</td><td>'+_cevEsc(s.cargaPlan||'—')+'</td>'
         +'<td><input class="cev-rr" data-e="'+ei+'" data-s="'+si+'" value="'+_cevEsc(s.repsReal||'')+'" placeholder="'+_cevEsc(s.reps||'')+'" style="width:58px;border:1px solid #d5deea;border-radius:6px;padding:5px;font-size:12px;text-align:center;"></td>'
         +'<td><input class="cev-cr" data-e="'+ei+'" data-s="'+si+'" value="'+_cevEsc(s.cargaReal||'')+'" placeholder="'+_cevEsc(s.cargaPlan||'')+'" style="width:68px;border:1px solid #d5deea;border-radius:6px;padding:5px;font-size:12px;text-align:center;"></td></tr>';
     });
