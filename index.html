@@ -14091,8 +14091,19 @@ function _cevMesLargo(ym){ var p=String(ym).split('-'); var mi=(parseInt(p[1])||
 function _cevDelta(a,b){ var d=Math.round((b-a)*10)/10; var pct=a>0?Math.round((b-a)/a*1000)/10:0; var cls=d>0.0001?'up':(d<-0.0001?'down':'eq'); var sig=d>0?'+':''; var ar=cls==='up'?'▲':(cls==='down'?'▼':'='); return {d:d,pct:pct,cls:cls,txt:ar+' '+sig+_cevFmt(d)+' kg'+(a>0?(' ('+sig+pct+'%)'):'')}; }
 function _cevColor(cls){ return cls==='up'?'#1f8f5a':(cls==='down'?'#c0504d':'#8795ab'); }
 function _cevBg(cls){ return cls==='up'?'#e7f6ee':(cls==='down'?'#fcebea':'#eef1f6'); }
-function _cevNombreEj(s, uid, nombres){
+function _cevNombreEj(s, uid, nombres, data){
   if(nombres && nombres[uid] && !/^b\d+e\d+$/.test(String(nombres[uid]).trim())) return nombres[uid];
+  try{
+    var m=String(uid).match(/^b(\d+)e(\d+)$/); if(!m) return '';
+    var bi=+m[1], ei=+m[2];
+    var planes=(data&&data.planificaciones)||[];
+    var pl=null; if(s && s.planId){ pl=planes.filter(function(p){ return p&&p.id===s.planId; })[0]; }
+    if(!pl) pl=planes[0];
+    if(!pl||!pl.semanasArray) return '';
+    var sem=pl.semanasArray[s.sem]; var dia=sem&&sem.dias?sem.dias[s.dia]:null; var ses=dia?dia[s.mod||0]:null;
+    var ej=ses&&ses.bloques&&ses.bloques[bi]&&ses.bloques[bi].ejercicios?ses.bloques[bi].ejercicios[ei]:null;
+    if(ej){ var n=ej.nombre||ej.ejercicio||''; if(n && !/^b\d+e\d+$/.test(String(n).trim())) return n; }
+  }catch(e){}
   return '';
 }
 function _cevRecolectar(data){
@@ -14106,7 +14117,7 @@ function _cevRecolectar(data){
       var best=null;
       Object.keys(r).forEach(function(k){ if(k.indexOf('_'+uid+'_efec_')>=0){ var v=r[k]||{}; var p=_cevP(v.peso); if(p>0){ if(!best||p>best.peso) best={peso:p,reps:(parseInt(v.reps)||1)}; } } });
       if(!best) return;
-      var nombre=_cevNombreEj(s, uid, nombres); if(!nombre) return;
+      var nombre=_cevNombreEj(s, uid, nombres, data); if(!nombre) return;
       var key=_cevKey(nombre); if(!out[key]) out[key]={nombre:nombre, pts:[]};
       out[key].pts.push({fecha:fecha, peso:best.peso, reps:best.reps, e1rm:(_cevEpley(best.peso,best.reps)||best.peso)});
     });

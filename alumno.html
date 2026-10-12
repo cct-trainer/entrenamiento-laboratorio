@@ -1020,8 +1020,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261011222701 por un timestamp en cada deploy
-const _APP_VERSION = '20261011222701';
+// deploy.bat reemplaza 20261011223722 por un timestamp en cada deploy
+const _APP_VERSION = '20261011223722';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3138,9 +3138,14 @@ function _evP(x){ var p=parseFloat(String(x==null?'':x).replace(',','.')); retur
 function _evolNombreEj(s, uid, nombres){
   try{
     if(nombres && nombres[uid] && !/^b\d+e\d+$/.test(String(nombres[uid]).trim())) return nombres[uid];
-    var m=String(uid).match(/^b(\d+)e(\d+)$/); if(!m) return (nombres&&nombres[uid])||'';
+    var m=String(uid).match(/^b(\d+)e(\d+)$/); if(!m) return '';
     var bi=+m[1], ei=+m[2];
-    var sem=(_plan && _plan.semanasArray)?_plan.semanasArray[s.sem]:null;
+    // Buscar el plan exacto de esa sesión (por planId) entre todas las planificaciones
+    var planes=(_data&&_data.planificaciones)||[];
+    var pl=null; if(s && s.planId){ pl=planes.filter(function(p){ return p&&p.id===s.planId; })[0]; }
+    if(!pl && _plan) pl=_plan;
+    if(!pl) pl=planes[0];
+    var sem=(pl && pl.semanasArray)?pl.semanasArray[s.sem]:null;
     var ses=sem && sem.dias && sem.dias[s.dia] ? sem.dias[s.dia][s.mod||0] : null;
     var ej=ses && ses.bloques && ses.bloques[bi] && ses.bloques[bi].ejercicios ? ses.bloques[bi].ejercicios[ei] : null;
     if(ej){ var n=(typeof _nomEj==='function'?_nomEj(ej):(ej.nombre||'')); if(n && !/^b\d+e\d+$/.test(String(n).trim())) return n; }
