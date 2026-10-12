@@ -1586,8 +1586,14 @@ body.coach-bg-on .nd-chip:not(.on){background:#fff;}
 .reps-pick:focus{ border-color:#3A6EA5; }
 .repsbox .reps-val{ width:100%;border:1.5px solid #3A6EA5;background:#fff;border-radius:8px;font-size:13px;font-weight:800;font-family:inherit;color:#1a2a4a;padding:7px 22px 7px 8px;outline:none;text-align:center;margin:0; }
 .reps-volver{ position:absolute;right:5px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:#8795ab;font-size:13px;font-weight:900;cursor:pointer;line-height:1;padding:2px; }
-.evo-ej-chk{ width:17px;height:17px;cursor:pointer;accent-color:#2f5f95;flex-shrink:0;margin-right:2px; }
-.evo-serie-chk{ width:15px;height:15px;cursor:pointer;accent-color:#2f5f95;vertical-align:middle;margin-right:4px; }
+.evo-ej-chk,.evo-serie-chk{ display:inline-block;box-sizing:border-box;border:1.5px solid #9fb0c6;border-radius:4px;cursor:pointer;vertical-align:middle;position:relative;background:#fff;flex-shrink:0; }
+.evo-ej-chk{ width:17px;height:17px;margin-right:4px; }
+.evo-serie-chk{ width:15px;height:15px;margin-right:5px; }
+.evo-ej-chk.on,.evo-serie-chk.on{ background:#2f5f95;border-color:#2f5f95; }
+.evo-ej-chk.on::after,.evo-serie-chk.on::after{ content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg); }
+.evo-serie-chk.on::after{ left:3px;top:1px; }
+.evo-ej-chk.mixed{ background:#2f5f95;border-color:#2f5f95; }
+.evo-ej-chk.mixed::after{ content:"";position:absolute;left:3px;top:7px;width:9px;height:0;border-top:2px solid #fff; }
 .series-table tr[data-tipo] td:first-child{ position:relative; }
 .series-table tr[data-tipo="cal"]  td:first-child{ box-shadow:inset 4px 0 0 #3A6EA5; }
 .series-table tr[data-tipo="apr"]  td:first-child{ box-shadow:inset 4px 0 0 #2f5f90; }
@@ -14225,8 +14231,8 @@ function _cevPlanilla(){
 }
 
 // ── Selección para Evolución (casilleros) + IMPRIMIR ─────────────────────────
-function _evoTogEj(chk){ var card=chk.closest('.ej-card'); if(!card) return; card.querySelectorAll('.evo-serie-chk').forEach(function(c){ c.checked=chk.checked; }); chk.indeterminate=false; }
-function _evoTogSerie(chk){ var card=chk.closest('.ej-card'); if(!card) return; var all=card.querySelectorAll('.evo-serie-chk'); var ejc=card.querySelector('.evo-ej-chk'); var n=0; all.forEach(function(c){ if(c.checked)n++; }); if(ejc){ ejc.checked=(n===all.length&&n>0); ejc.indeterminate=(n>0&&n<all.length); } }
+function _evoTogEj(el){ var card=el.closest('.ej-card'); if(!card) return; var on=!el.classList.contains('on'); el.classList.remove('mixed'); el.classList.toggle('on',on); card.querySelectorAll('.evo-serie-chk').forEach(function(c){ c.classList.toggle('on',on); }); }
+function _evoTogSerie(el){ el.classList.toggle('on'); var card=el.closest('.ej-card'); if(!card) return; var all=card.querySelectorAll('.evo-serie-chk'); var ejc=card.querySelector('.evo-ej-chk'); var n=0; all.forEach(function(c){ if(c.classList.contains('on'))n++; }); if(ejc){ ejc.classList.remove('on','mixed'); if(n>0&&n===all.length) ejc.classList.add('on'); else if(n>0) ejc.classList.add('mixed'); } }
 function _evoAddDiasISO(f,n){ try{ var p=String(f).split('-'); var d=new Date(+p[0],(+p[1])-1,+p[2]); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }catch(e){ return ''; } }
 async function _evoImprimir(){
   if(typeof currentAlumnoId==='undefined' || !currentAlumnoId){ alert('Abrí primero el perfil de un alumno.'); return; }
@@ -14242,7 +14248,7 @@ async function _evoImprimir(){
     var nombre=((card.querySelector('.ej-nombre-input')||{}).value||'').trim();
     var series=[];
     card.querySelectorAll('.evo-serie-chk').forEach(function(chk,ri){
-      if(!chk.checked) return;
+      if(!chk.classList.contains('on')) return;
       var row=chk.closest('tr'); if(!row) return;
       var numTxt=((row.querySelector('.serie-num-cell')||{}).textContent||'').trim();
       var num=(numTxt.match(/(\d+)\s*$/)||[])[1]||String(ri+1);
@@ -14481,7 +14487,7 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
       seriesArr.forEach((s,si) => {
         const tr = document.createElement('tr');
         const tipo = s.tipo || 'efec'; tr.dataset.tipo = tipo;
-        tr.innerHTML = `<td class="serie-num-cell"><input type="checkbox" class="evo-serie-chk" title="Incluir esta serie en Evolución" onchange="_evoTogSerie(this)"> ${prefix} ${si+1}</td>
+        tr.innerHTML = `<td class="serie-num-cell"><span class="evo-serie-chk" title="Incluir esta serie en Evolución" onclick="_evoTogSerie(this)"></span> ${prefix} ${si+1}</td>
           <td class="serie-tipo-cell"><select class="serie-tipo-sel" onchange="_serieTipoSel(this)">${_serieTipoOptions(tipo)}</select></td>
           <td class="serie-reps-cell">${_repsCell(tipo, s.reps||'')}</td>
           <td><input type="text" value="${s.peso||''}" onfocus="_abrirPesoPicker(this,'${ejId}')"></td>
@@ -21348,7 +21354,7 @@ function addEjercicio(bloqueId) {
   div.className = 'ej-card'; div.id = ejId;
   div.innerHTML = `
     <div class="ej-head">
-      <input type="checkbox" class="evo-ej-chk" title="Incluir este ejercicio en Evolución" onchange="_evoTogEj(this)">
+      <span class="evo-ej-chk" title="Incluir este ejercicio en Evolución" onclick="_evoTogEj(this)"></span>
       <span class="drag-handle" draggable="true" data-type="ej" title="Arrastrar para mover ejercicio">⠿</span>
       <span class="ej-letra" style="display:${letra?'inline-block':'none'}">${letra}</span>
       <div class="ej-nombre-wrap">
@@ -22283,7 +22289,7 @@ function _makeSerieRow(ejId, tbodyId, prefix, num, defaults) {
   const tr = document.createElement('tr');
   tr.dataset.tipo = tipo;
   tr.innerHTML = `
-    <td class="serie-num-cell"><input type="checkbox" class="evo-serie-chk" title="Incluir esta serie en Evolución" onchange="_evoTogSerie(this)"> ${prefix} ${num}</td>
+    <td class="serie-num-cell"><span class="evo-serie-chk" title="Incluir esta serie en Evolución" onclick="_evoTogSerie(this)"></span> ${prefix} ${num}</td>
     <td class="serie-tipo-cell"><select class="serie-tipo-sel" onchange="_serieTipoSel(this)">${_serieTipoOptions(tipo)}</select></td>
     <td class="serie-reps-cell">${_repsCell(tipo, d.reps||'')}</td>
     <td><input type="text" placeholder="Kg"   value="${d.peso||''}" onfocus="_abrirPesoPicker(this,'${ejId}')"></td>
