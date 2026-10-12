@@ -13529,6 +13529,8 @@ function renderPlanDiaEditor(diaIdx) {
   const _se=document.getElementById('plan-ses-desc');   if(_se) _se.value=sesion.descripcion||'';
   _sesImgPrev();
   _sesActualizarDuracion(sesion.bloques||[]);
+  // Restaurar tildes de lo ya impreso a Evolución (para saber qué ya se usó)
+  try{ setTimeout(_evoRestaurarTildesDia, 250); }catch(e){}
   // Día vacío: se deja en blanco. El coach arma los bloques con "＋ AGREGAR BLOQUE".
 }
 // ── Portada + duración estimada de la sesión ──
@@ -14234,14 +14236,11 @@ function _cevPlanilla(){
 function _evoTogEj(el){ var card=el.closest('.ej-card'); if(!card) return; var on=!el.classList.contains('on'); el.classList.remove('mixed'); el.classList.toggle('on',on); card.querySelectorAll('.evo-serie-chk').forEach(function(c){ c.classList.toggle('on',on); }); }
 function _evoTogSerie(el){ el.classList.toggle('on'); var card=el.closest('.ej-card'); if(!card) return; var all=card.querySelectorAll('.evo-serie-chk'); var ejc=card.querySelector('.evo-ej-chk'); var n=0; all.forEach(function(c){ if(c.classList.contains('on'))n++; }); if(ejc){ ejc.classList.remove('on','mixed'); if(n>0&&n===all.length) ejc.classList.add('on'); else if(n>0) ejc.classList.add('mixed'); } }
 function _evoAddDiasISO(f,n){ try{ var p=String(f).split('-'); var d=new Date(+p[0],(+p[1])-1,+p[2]); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }catch(e){ return ''; } }
-async function _evoImprimir(){
-  if(typeof currentAlumnoId==='undefined' || !currentAlumnoId){ alert('Abrí primero el perfil de un alumno.'); return; }
-  if(!window._db){ alert('No hay conexión con la base.'); return; }
-  var cont=document.getElementById('plan-dia-bloques-'+planDiaAbierto); if(!cont){ alert('Abrí el día de entrenamiento.'); return; }
-  // Fecha real del entrenamiento (fecha de inicio de la semana + día). Si no hay, se pide.
+var _evoPendiente=null;
+function _evoGather(){
+  var cont=document.getElementById('plan-dia-bloques-'+planDiaAbierto); if(!cont) return null;
   var wk=planSemanasArray[planSemEditando]; var fecha='';
   if(wk && wk.fechaInicio){ fecha=_evoAddDiasISO(wk.fechaInicio, planDiaAbierto); }
-  if(!fecha){ fecha=prompt('Fecha del entrenamiento (AAAA-MM-DD):',''); if(!fecha) return; }
   var diaLabel=(document.getElementById('plan-ses-etiqueta')&&document.getElementById('plan-ses-etiqueta').value)||('Día '+(planDiaAbierto+1));
   var ejercicios=[];
   cont.querySelectorAll('.ej-card').forEach(function(card){
@@ -14259,18 +14258,64 @@ async function _evoImprimir(){
     });
     if(nombre && series.length) ejercicios.push({nombre:nombre, series:series});
   });
-  if(!ejercicios.length){ alert('No tildaste ninguna serie. Marcá las series (o el ejercicio) que querés incluir en Evolución.'); return; }
   var planId=(typeof planSemActualId!=='undefined' && planSemActualId)?planSemActualId:'plan';
-  var docId=planId+'_'+planSemEditando+'_'+planDiaAbierto+'_'+(_editorModTab||0);
-  var ref=window._db.collection('alumnos').doc(currentAlumnoId).collection('evolucion').doc(docId);
+  return { fecha:fecha, diaLabel:diaLabel, ejercicios:ejercicios, planId:planId, sem:planSemEditando, dia:planDiaAbierto, mod:(_editorModTab||0),
+           docId:planId+'_'+planSemEditando+'_'+planDiaAbierto+'_'+(_editorModTab||0) };
+}
+function _evoImprimir(){
+  if(typeof currentAlumnoId==='undefined' || !currentAlumnoId){ alert('Abrí primero el perfil de un alumno.'); return; }
+  if(!window._db){ alert('No hay conexión con la base.'); return; }
+  var d=_evoGather(); if(!d){ alert('Abrí el día de entrenamiento.'); return; }
+  if(!d.ejercicios.length){ alert('No tildaste ninguna serie. Marcá las series (o el ejercicio) que querés incluir en Evolución.'); return; }
+  if(!d.fecha){ var f=prompt('Fecha del entrenamiento (AAAA-MM-DD):',''); if(!f) return; d.fecha=f; }
+  _evoPendiente=d;
+  // Ventana de muestra
+  var esc=function(s){ return String(s==null?'':s).replace(/</g,'&lt;'); };
+  var nSeries=0; d.ejercicios.forEach(function(e){ nSeries+=e.series.length; });
+  var html='<div style="font-size:12.5px;color:#55607a;margin-bottom:12px;">Fecha: <b>'+esc(d.fecha)+'</b> · '+esc(d.diaLabel)+' · <b>'+d.ejercicios.length+'</b> ejercicios, <b>'+nSeries+'</b> series.</div>';
+  d.ejercicios.forEach(function(e){
+    html+='<div style="border:1px solid #e4e8ef;border-radius:10px;padding:10px 12px;margin-bottom:8px;">'
+      +'<div style="font-size:13px;font-weight:800;color:#26303f;margin-bottom:6px;">'+esc(e.nombre)+'</div>'
+      +'<table style="width:100%;border-collapse:collapse;font-size:12px;"><tr style="color:#8795ab;font-weight:700;"><td style="padding:3px 6px;">Serie</td><td style="padding:3px 6px;">Reps</td><td style="padding:3px 6px;">Carga plan.</td></tr>';
+    e.series.forEach(function(s){ html+='<tr><td style="padding:3px 6px;font-weight:700;">'+esc(s.num)+'</td><td style="padding:3px 6px;">'+esc(s.reps||'—')+'</td><td style="padding:3px 6px;">'+esc(s.cargaPlan||'—')+(s.cargaPlan?' kg':'')+'</td></tr>'; });
+    html+='</table></div>';
+  });
+  document.getElementById('evop-body').innerHTML=html;
+  document.getElementById('modal-evo-preview').classList.add('open');
+}
+async function _evoConfirmarImprimir(){
+  var d=_evoPendiente; if(!d) return;
+  var ref=window._db.collection('alumnos').doc(currentAlumnoId).collection('evolucion').doc(d.docId);
   try{
     var prev=await ref.get(); var reales={}; var createdAt=new Date().toISOString();
     if(prev.exists){ var pd=prev.data()||{}; createdAt=pd.createdAt||createdAt; (pd.ejercicios||[]).forEach(function(e){ (e.series||[]).forEach(function(s){ reales[(e.nombre||'')+'#'+s.num]={cargaReal:s.cargaReal||'', repsReal:s.repsReal||''}; }); }); }
-    // Preservar cargas reales ya guardadas (inmutabilidad del histórico)
-    ejercicios.forEach(function(e){ e.series.forEach(function(s){ var r=reales[(e.nombre||'')+'#'+s.num]; if(r){ s.cargaReal=r.cargaReal; s.repsReal=r.repsReal; } }); });
-    await ref.set({ alumnoId:currentAlumnoId, planId:planId, sem:planSemEditando, dia:planDiaAbierto, mod:(_editorModTab||0), fecha:fecha, diaLabel:diaLabel, ejercicios:ejercicios, createdAt:createdAt, updatedAt:new Date().toISOString() });
-    if(typeof toast==='function') toast('🖨 Impreso a Evolución: '+fecha+' · '+diaLabel+' ('+ejercicios.length+' ejercicios)'); else alert('Impreso a Evolución: '+fecha+' · '+diaLabel);
+    d.ejercicios.forEach(function(e){ e.series.forEach(function(s){ var r=reales[(e.nombre||'')+'#'+s.num]; if(r){ s.cargaReal=r.cargaReal; s.repsReal=r.repsReal; } }); });
+    await ref.set({ alumnoId:currentAlumnoId, planId:d.planId, sem:d.sem, dia:d.dia, mod:d.mod, fecha:d.fecha, diaLabel:d.diaLabel, ejercicios:d.ejercicios, createdAt:createdAt, updatedAt:new Date().toISOString() });
+    closeModal('modal-evo-preview');
+    if(typeof toast==='function') toast('🖨 Impreso a Evolución: '+d.fecha+' · '+d.diaLabel); else alert('Impreso a Evolución: '+d.fecha);
+    _evoMarcarImpreso(d.ejercicios);  // deja los tildes marcados
   }catch(e){ alert('No se pudo imprimir a Evolución: '+(e&&e.message?e.message:e)); }
+}
+// Re-aplica los tildes según lo impreso (para saber qué ya se usó)
+function _evoMarcarImpreso(ejercicios){
+  var cont=document.getElementById('plan-dia-bloques-'+planDiaAbierto); if(!cont) return;
+  var mapa={}; (ejercicios||[]).forEach(function(e){ var set={}; (e.series||[]).forEach(function(s){ set[String(s.num)]=true; }); mapa[_cevKey(e.nombre)]=set; });
+  cont.querySelectorAll('.ej-card').forEach(function(card){
+    var nombre=((card.querySelector('.ej-nombre-input')||{}).value||'').trim(); var set=mapa[_cevKey(nombre)]; if(!set) return;
+    card.querySelectorAll('.evo-serie-chk').forEach(function(chk){ var row=chk.closest('tr'); var numTxt=((row&&row.querySelector('.serie-num-cell'))||{}).textContent||''; var num=(numTxt.match(/(\d+)\s*$/)||[])[1]; if(num && set[num]) chk.classList.add('on'); });
+    var all=card.querySelectorAll('.evo-serie-chk'); var ejc=card.querySelector('.evo-ej-chk'); var n=0; all.forEach(function(c){ if(c.classList.contains('on'))n++; }); if(ejc){ ejc.classList.remove('on','mixed'); if(n>0&&n===all.length) ejc.classList.add('on'); else if(n>0) ejc.classList.add('mixed'); }
+  });
+}
+// Al abrir un día, restaurar los tildes de lo ya impreso (desde Firebase)
+function _evoRestaurarTildesDia(){
+  try{
+    if(!window._db || typeof currentAlumnoId==='undefined' || !currentAlumnoId) return;
+    var planId=(typeof planSemActualId!=='undefined' && planSemActualId)?planSemActualId:'plan';
+    var docId=planId+'_'+planSemEditando+'_'+planDiaAbierto+'_'+(_editorModTab||0);
+    window._db.collection('alumnos').doc(currentAlumnoId).collection('evolucion').doc(docId).get().then(function(doc){
+      if(doc.exists){ var pd=doc.data()||{}; _evoMarcarImpreso(pd.ejercicios||[]); }
+    }).catch(function(){});
+  }catch(e){}
 }
 
 // ── Feed de actividad (bitácora de los alumnos) ──────────────────────────────
@@ -31167,6 +31212,20 @@ async function macroGuardar() {
 </div>
 
 <!-- MODAL NUEVO BLOQUE -->
+<div class="modal-overlay" id="modal-evo-preview">
+  <div class="modal" style="width:520px;max-width:94vw;">
+    <div class="modal-header">
+      <h2>Confirmar impresión a Evolución</h2>
+      <button class="modal-close" onclick="closeModal('modal-evo-preview')">×</button>
+    </div>
+    <div class="modal-body" style="max-height:70vh;overflow-y:auto;"><div id="evop-body"></div></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-evo-preview')">Cancelar</button>
+      <button class="btn btn-primary" onclick="_evoConfirmarImprimir()">Confirmar e imprimir</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-evolucion">
   <div class="modal" style="width:600px;max-width:94vw;">
     <div class="modal-header">
