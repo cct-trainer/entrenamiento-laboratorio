@@ -1586,6 +1586,8 @@ body.coach-bg-on .nd-chip:not(.on){background:#fff;}
 .reps-pick:focus{ border-color:#3A6EA5; }
 .repsbox .reps-val{ width:100%;border:1.5px solid #3A6EA5;background:#fff;border-radius:8px;font-size:13px;font-weight:800;font-family:inherit;color:#1a2a4a;padding:7px 22px 7px 8px;outline:none;text-align:center;margin:0; }
 .reps-volver{ position:absolute;right:5px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:#8795ab;font-size:13px;font-weight:900;cursor:pointer;line-height:1;padding:2px; }
+.evo-ej-chk{ width:17px;height:17px;cursor:pointer;accent-color:#2f5f95;flex-shrink:0;margin-right:2px; }
+.evo-serie-chk{ width:15px;height:15px;cursor:pointer;accent-color:#2f5f95;vertical-align:middle;margin-right:4px; }
 .series-table tr[data-tipo] td:first-child{ position:relative; }
 .series-table tr[data-tipo="cal"]  td:first-child{ box-shadow:inset 4px 0 0 #3A6EA5; }
 .series-table tr[data-tipo="apr"]  td:first-child{ box-shadow:inset 4px 0 0 #2f5f90; }
@@ -13496,6 +13498,9 @@ function renderPlanDiaEditor(diaIdx) {
         <div class="plan-add-bloque-zone" onclick="abrirModalNuevoBloque(${diaIdx})">
           ＋ AGREGAR BLOQUE
         </div>
+        <div style="display:flex;justify-content:flex-end;margin:12px 2px 2px;">
+          <button onclick="_evoImprimir()" title="Incorporar a Evolución los ejercicios/series tildados" style="background:#2f5f95;color:#fff;border:none;border-radius:9px;padding:11px 20px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:8px;">🖨 IMPRIMIR a Evolución</button>
+        </div>
       </div>
     </div>`;
 
@@ -14219,6 +14224,49 @@ function _cevPlanilla(){
     +'<div style="font-size:11px;color:#8795ab;margin-top:10px;line-height:1.55;">Cada columna es una sesión de ese día (por fecha). Se muestran solo las series <b>efectivas</b>. En <span style="color:#1f8f5a;font-weight:800;">verde</span>, lo que el alumno registró; en gris, la carga que prescribiste (si todavía no registró).</div>';
 }
 
+// ── Selección para Evolución (casilleros) + IMPRIMIR ─────────────────────────
+function _evoTogEj(chk){ var card=chk.closest('.ej-card'); if(!card) return; card.querySelectorAll('.evo-serie-chk').forEach(function(c){ c.checked=chk.checked; }); chk.indeterminate=false; }
+function _evoTogSerie(chk){ var card=chk.closest('.ej-card'); if(!card) return; var all=card.querySelectorAll('.evo-serie-chk'); var ejc=card.querySelector('.evo-ej-chk'); var n=0; all.forEach(function(c){ if(c.checked)n++; }); if(ejc){ ejc.checked=(n===all.length&&n>0); ejc.indeterminate=(n>0&&n<all.length); } }
+function _evoAddDiasISO(f,n){ try{ var p=String(f).split('-'); var d=new Date(+p[0],(+p[1])-1,+p[2]); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }catch(e){ return ''; } }
+async function _evoImprimir(){
+  if(typeof currentAlumnoId==='undefined' || !currentAlumnoId){ alert('Abrí primero el perfil de un alumno.'); return; }
+  if(!window._db){ alert('No hay conexión con la base.'); return; }
+  var cont=document.getElementById('plan-dia-bloques-'+planDiaAbierto); if(!cont){ alert('Abrí el día de entrenamiento.'); return; }
+  // Fecha real del entrenamiento (fecha de inicio de la semana + día). Si no hay, se pide.
+  var wk=planSemanasArray[planSemEditando]; var fecha='';
+  if(wk && wk.fechaInicio){ fecha=_evoAddDiasISO(wk.fechaInicio, planDiaAbierto); }
+  if(!fecha){ fecha=prompt('Fecha del entrenamiento (AAAA-MM-DD):',''); if(!fecha) return; }
+  var diaLabel=(document.getElementById('plan-ses-etiqueta')&&document.getElementById('plan-ses-etiqueta').value)||('Día '+(planDiaAbierto+1));
+  var ejercicios=[];
+  cont.querySelectorAll('.ej-card').forEach(function(card){
+    var nombre=((card.querySelector('.ej-nombre-input')||{}).value||'').trim();
+    var series=[];
+    card.querySelectorAll('.evo-serie-chk').forEach(function(chk,ri){
+      if(!chk.checked) return;
+      var row=chk.closest('tr'); if(!row) return;
+      var numTxt=((row.querySelector('.serie-num-cell')||{}).textContent||'').trim();
+      var num=(numTxt.match(/(\d+)\s*$/)||[])[1]||String(ri+1);
+      var inps=row.querySelectorAll('input');
+      var reps=((row.querySelector('.reps-val')||{}).value||(inps[0]&&inps[0].value)||'').trim();
+      var peso=((inps[1]&&inps[1].value)||'').trim();
+      series.push({num:num, reps:reps, cargaPlan:peso, cargaReal:'', repsReal:''});
+    });
+    if(nombre && series.length) ejercicios.push({nombre:nombre, series:series});
+  });
+  if(!ejercicios.length){ alert('No tildaste ninguna serie. Marcá las series (o el ejercicio) que querés incluir en Evolución.'); return; }
+  var planId=(typeof planSemActualId!=='undefined' && planSemActualId)?planSemActualId:'plan';
+  var docId=planId+'_'+planSemEditando+'_'+planDiaAbierto+'_'+(_editorModTab||0);
+  var ref=window._db.collection('alumnos').doc(currentAlumnoId).collection('evolucion').doc(docId);
+  try{
+    var prev=await ref.get(); var reales={}; var createdAt=new Date().toISOString();
+    if(prev.exists){ var pd=prev.data()||{}; createdAt=pd.createdAt||createdAt; (pd.ejercicios||[]).forEach(function(e){ (e.series||[]).forEach(function(s){ reales[(e.nombre||'')+'#'+s.num]={cargaReal:s.cargaReal||'', repsReal:s.repsReal||''}; }); }); }
+    // Preservar cargas reales ya guardadas (inmutabilidad del histórico)
+    ejercicios.forEach(function(e){ e.series.forEach(function(s){ var r=reales[(e.nombre||'')+'#'+s.num]; if(r){ s.cargaReal=r.cargaReal; s.repsReal=r.repsReal; } }); });
+    await ref.set({ alumnoId:currentAlumnoId, planId:planId, sem:planSemEditando, dia:planDiaAbierto, mod:(_editorModTab||0), fecha:fecha, diaLabel:diaLabel, ejercicios:ejercicios, createdAt:createdAt, updatedAt:new Date().toISOString() });
+    if(typeof toast==='function') toast('🖨 Impreso a Evolución: '+fecha+' · '+diaLabel+' ('+ejercicios.length+' ejercicios)'); else alert('Impreso a Evolución: '+fecha+' · '+diaLabel);
+  }catch(e){ alert('No se pudo imprimir a Evolución: '+(e&&e.message?e.message:e)); }
+}
+
 // ── Feed de actividad (bitácora de los alumnos) ──────────────────────────────
 function _fechaLargaAct(iso){ try{ var p=String(iso).split('-'); if(p.length!==3) return iso; var d=new Date(+p[0],+p[1]-1,+p[2]); return d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}); }catch(e){ return iso; } }
 function abrirActividad(soloRefrescar){
@@ -14433,7 +14481,7 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
       seriesArr.forEach((s,si) => {
         const tr = document.createElement('tr');
         const tipo = s.tipo || 'efec'; tr.dataset.tipo = tipo;
-        tr.innerHTML = `<td class="serie-num-cell">${prefix} ${si+1}</td>
+        tr.innerHTML = `<td class="serie-num-cell"><input type="checkbox" class="evo-serie-chk" title="Incluir esta serie en Evolución" onchange="_evoTogSerie(this)"> ${prefix} ${si+1}</td>
           <td class="serie-tipo-cell"><select class="serie-tipo-sel" onchange="_serieTipoSel(this)">${_serieTipoOptions(tipo)}</select></td>
           <td class="serie-reps-cell">${_repsCell(tipo, s.reps||'')}</td>
           <td><input type="text" value="${s.peso||''}" onfocus="_abrirPesoPicker(this,'${ejId}')"></td>
@@ -21300,6 +21348,7 @@ function addEjercicio(bloqueId) {
   div.className = 'ej-card'; div.id = ejId;
   div.innerHTML = `
     <div class="ej-head">
+      <input type="checkbox" class="evo-ej-chk" title="Incluir este ejercicio en Evolución" onchange="_evoTogEj(this)">
       <span class="drag-handle" draggable="true" data-type="ej" title="Arrastrar para mover ejercicio">⠿</span>
       <span class="ej-letra" style="display:${letra?'inline-block':'none'}">${letra}</span>
       <div class="ej-nombre-wrap">
@@ -22234,7 +22283,7 @@ function _makeSerieRow(ejId, tbodyId, prefix, num, defaults) {
   const tr = document.createElement('tr');
   tr.dataset.tipo = tipo;
   tr.innerHTML = `
-    <td class="serie-num-cell">${prefix} ${num}</td>
+    <td class="serie-num-cell"><input type="checkbox" class="evo-serie-chk" title="Incluir esta serie en Evolución" onchange="_evoTogSerie(this)"> ${prefix} ${num}</td>
     <td class="serie-tipo-cell"><select class="serie-tipo-sel" onchange="_serieTipoSel(this)">${_serieTipoOptions(tipo)}</select></td>
     <td class="serie-reps-cell">${_repsCell(tipo, d.reps||'')}</td>
     <td><input type="text" placeholder="Kg"   value="${d.peso||''}" onfocus="_abrirPesoPicker(this,'${ejId}')"></td>
