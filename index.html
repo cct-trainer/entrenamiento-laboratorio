@@ -13498,6 +13498,9 @@ function renderPlanDiaEditor(diaIdx) {
             <div id="plan-ses-durcalc" style="font-size:11px;color:#059669;font-weight:700;margin-top:6px;"></div>
           </details>
         </div>
+        <div style="display:flex;justify-content:flex-end;margin:2px 2px 8px;">
+          <button onclick="_evoSelTodas(this)" style="background:#eef2f8;border:1px solid #cdd9ea;color:#2f5f95;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">☑ Seleccionar todas las series</button>
+        </div>
         <div id="plan-dia-bloques-${diaIdx}"></div>
         <div class="plan-add-bloque-zone" onclick="abrirModalNuevoBloque(${diaIdx})">
           ＋ AGREGAR BLOQUE
@@ -14278,6 +14281,15 @@ function _cevDibujarGrafico(filas){
 }
 
 // ── Selección para Evolución (casilleros) + IMPRIMIR ─────────────────────────
+function _evoSelTodas(btn){
+  var cont=document.getElementById('plan-dia-bloques-'+planDiaAbierto); if(!cont) return;
+  var all=cont.querySelectorAll('.evo-serie-chk');
+  var allOn = all.length>0 && Array.prototype.every.call(all,function(c){ return c.classList.contains('on'); });
+  var on=!allOn;
+  all.forEach(function(c){ c.classList.toggle('on',on); });
+  cont.querySelectorAll('.ej-card').forEach(function(card){ var s=card.querySelectorAll('.evo-serie-chk'); var ejc=card.querySelector('.evo-ej-chk'); var n=0; s.forEach(function(c){ if(c.classList.contains('on'))n++; }); if(ejc){ ejc.classList.remove('on','mixed'); if(n>0&&n===s.length) ejc.classList.add('on'); else if(n>0) ejc.classList.add('mixed'); } });
+  if(btn) btn.textContent = on ? '☑ Quitar selección' : '☑ Seleccionar todas las series';
+}
 function _evoTogEj(el){ var card=el.closest('.ej-card'); if(!card) return; var on=!el.classList.contains('on'); el.classList.remove('mixed'); el.classList.toggle('on',on); card.querySelectorAll('.evo-serie-chk').forEach(function(c){ c.classList.toggle('on',on); }); }
 function _evoTogSerie(el){ el.classList.toggle('on'); var card=el.closest('.ej-card'); if(!card) return; var all=card.querySelectorAll('.evo-serie-chk'); var ejc=card.querySelector('.evo-ej-chk'); var n=0; all.forEach(function(c){ if(c.classList.contains('on'))n++; }); if(ejc){ ejc.classList.remove('on','mixed'); if(n>0&&n===all.length) ejc.classList.add('on'); else if(n>0) ejc.classList.add('mixed'); } }
 function _evoAddDiasISO(f,n){ try{ var p=String(f).split('-'); var d=new Date(+p[0],(+p[1])-1,+p[2]); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }catch(e){ return ''; } }
