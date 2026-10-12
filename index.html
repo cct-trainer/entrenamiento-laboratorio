@@ -14182,54 +14182,101 @@ function _cevBuscarEjPorNombre(ses, key){ if(!ses||!ses.bloques) return null; fo
 function _cevDiasDelPlan(pl){ var found={},order=[]; (pl.semanasArray||[]).forEach(function(sem,wi){ var dias=sem.dias||{}; Object.keys(dias).forEach(function(dk){ var di=parseInt(dk,10); if(isNaN(di)||found[di])return; if(_cevSesionGym(pl,wi,di)){ found[di]=true; order.push(di);} }); }); order.sort(function(a,b){return a-b;}); var DOW=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']; return order.map(function(di,i){ return {dayIdx:di,label:'Día '+(i+1),wd:DOW[di]||''}; }); }
 function _cevEjerciciosDia(pl, dayIdx){ var list=[],seen={}; (pl.semanasArray||[]).forEach(function(sem,wi){ var ses=_cevSesionDia(pl,wi,dayIdx); if(!ses)return; (ses.bloques||[]).forEach(function(b){ (b.ejercicios||[]).forEach(function(ej){ if(!_cevSeriesEfec(ej).length)return; var nombre=ej.nombre||ej.ejercicio||''; if(!nombre)return; var key=_cevKey(nombre); if(!seen[key]){ seen[key]=true; list.push({key:key,nombre:nombre,nEf:_cevSeriesEfec(ej).length}); } }); }); }); return list; }
 function _cevCeldaVals(pe, wi, dayIdx, uid, ej){ var efs=_cevSeriesEfec(ej); var out=[]; efs.forEach(function(s,k){ var rec=pe[wi+'_'+dayIdx+'_'+uid+'_efec_'+k]; var peso=(rec&&rec.peso!=null&&String(rec.peso).trim()!=='')?rec.peso:(s.peso!=null?s.peso:''); var reps=(rec&&rec.reps!=null&&String(rec.reps).trim()!=='')?rec.reps:(s.reps!=null?s.reps:''); if(_cevP(peso)>0) out.push({peso:peso,reps:reps,rec:!!(rec&&rec.peso)}); }); return out; }
-function _cevSelDia(di){ _cevDiaSel=di; _cevPlanilla(); }
-
+// ═══ EVOLUCIÓN (sistema nuevo: registros impresos) ═══
+var _cevTab='fecha', _cevDocs=[], _cevNombre='';
+function _cevEsc(s){ return String(s==null?'':s).replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+function _cevFechaLarga(iso){ try{ var p=String(iso).split('-'); if(p.length!==3) return iso; var d=new Date(+p[0],+p[1]-1,+p[2]); return d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }catch(e){ return iso; } }
 function abrirEvolucionCoach(){
   var modal=document.getElementById('modal-evolucion'); if(modal) modal.classList.add('open');
   var cont=document.getElementById('cev-body'); if(!cont) return;
   document.getElementById('cev-title').textContent='Evolución del alumno';
-  if(typeof currentAlumnoId==='undefined' || !currentAlumnoId){ cont.innerHTML='<div style="padding:22px;text-align:center;color:#8795ab;">Primero abrí el perfil de un alumno (en la lista de alumnos) y después tocá <b>Evolución</b>.</div>'; return; }
+  if(typeof currentAlumnoId==='undefined' || !currentAlumnoId){ cont.innerHTML='<div style="padding:22px;text-align:center;color:#8795ab;">Primero abrí el perfil de un alumno y después tocá <b>Evolución</b>.</div>'; return; }
   if(!window._db){ cont.innerHTML='<div style="color:#b00;">No hay conexión con la base.</div>'; return; }
-  cont.innerHTML='Cargando…'; _cevDiaSel=null;
-  window._db.collection('alumnos').doc(currentAlumnoId).get().then(function(doc){
-    var data=doc.exists?(doc.data()||{}):{};
-    _cevData=data; _cevNombre=(data.perfil&&(data.perfil.nombre||data.perfil.name))||'Alumno';
-    document.getElementById('cev-title').textContent='Evolución · '+_cevNombre;
-    _cevPlanilla();
-  }).catch(function(e){ cont.innerHTML='<div style="color:#b06a00;">No se pudo cargar: '+(e&&e.message?String(e.message).replace(/</g,'&lt;'):'')+'</div>'; });
+  cont.innerHTML='Cargando…';
+  window._db.collection('alumnos').doc(currentAlumnoId).collection('evolucion').get().then(function(snap){
+    _cevDocs=[]; snap.forEach(function(x){ var o=x.data()||{}; o._id=x.id; _cevDocs.push(o); });
+    _cevDocs.sort(function(a,b){ return String(b.fecha||'').localeCompare(String(a.fecha||'')); });
+    window._db.collection('alumnos').doc(currentAlumnoId).get().then(function(doc){ var data=doc.exists?doc.data():{}; _cevNombre=(data.perfil&&(data.perfil.nombre||data.perfil.name))||'Alumno'; var t=document.getElementById('cev-title'); if(t) t.textContent='Evolución · '+_cevNombre; }).catch(function(){});
+    _cevRenderTabs();
+  }).catch(function(e){ cont.innerHTML='<div style="color:#b06a00;">No se pudo cargar: '+_cevEsc(e&&e.message)+'</div>'; });
 }
-function _cevPlanilla(){
+function _cevTabSel(t){ _cevTab=t; _cevRenderTabs(); }
+function _cevRenderTabs(){
   var cont=document.getElementById('cev-body'); if(!cont) return;
-  var pl=_cevPlanActivo(_cevData);
-  if(!pl||!pl.semanasArray||!pl.semanasArray.length){ cont.innerHTML='<div style="padding:22px;text-align:center;color:#8795ab;">Este alumno no tiene un plan activo con semanas cargadas.</div>'; return; }
-  _cevDias=_cevDiasDelPlan(pl);
-  if(!_cevDias.length){ cont.innerHTML='<div style="padding:22px;text-align:center;color:#8795ab;">No hay días con ejercicios en el plan.</div>'; return; }
-  if(_cevDiaSel==null || !_cevDias.some(function(d){return d.dayIdx===_cevDiaSel;})) _cevDiaSel=_cevDias[0].dayIdx;
-  var tabs=_cevDias.map(function(d){ var on=d.dayIdx===_cevDiaSel; return '<button onclick="_cevSelDia('+d.dayIdx+')" style="border:1px solid '+(on?'#2f5f95':'#d5deea')+';background:'+(on?'#2f5f95':'#fff')+';color:'+(on?'#fff':'#33415a')+';font-size:12.5px;font-weight:800;padding:9px 14px;border-radius:9px;cursor:pointer;font-family:inherit;">'+d.label+' · '+d.wd+'</button>'; }).join('');
-  var pe=(_cevData&&_cevData.pesoEdits)||{};
-  var cols=[]; pl.semanasArray.forEach(function(sem,wi){ var ses=_cevSesionGym(pl,wi,_cevDiaSel); if(ses) cols.push({wi:wi, fecha:_cevAddDias(sem.fechaInicio,_cevDiaSel), ses:ses}); });
-  var ejs=_cevEjerciciosDia(pl,_cevDiaSel);
-  var th='<th style="position:sticky;left:0;background:#0f1726;color:#fff;text-align:left;padding:11px 12px;font-size:11px;font-weight:800;min-width:170px;z-index:1;">Ejercicio</th>';
-  cols.forEach(function(c){ th+='<th style="background:#0f1726;color:#cfe0ff;padding:11px 12px;font-size:11.5px;font-weight:800;text-align:center;white-space:nowrap;">'+_cevFechaCorta(c.fecha)+'</th>'; });
-  var rows=''; var mostradas=0;
-  ejs.forEach(function(row){
-    // Calcular las celdas; si el ejercicio no tiene peso en ninguna fecha, no se muestra
-    var celdas=cols.map(function(c){ var found=_cevBuscarEjPorNombre(c.ses,row.key); return found?_cevCeldaVals(pe,c.wi,_cevDiaSel,found.uid,found.ej):[]; });
-    var tieneAlgo=celdas.some(function(v){ return v.length>0; });
-    if(!tieneAlgo) return;   // ejercicio sin peso (movilidad / peso corporal) → fuera
-    mostradas++;
-    var tds='<td style="position:sticky;left:0;background:#fff;border-right:1px solid #e4e8ef;padding:10px 12px;font-size:12.5px;font-weight:700;color:#26303f;">'+String(row.nombre).replace(/</g,'&lt;')+'<div style="font-size:10px;color:#8795ab;font-weight:600;">'+row.nEf+' efectiva'+(row.nEf>1?'s':'')+'</div></td>';
-    celdas.forEach(function(vals){
-      var txt='<span style="color:#c4ccd8;">—</span>';
-      if(vals.length){ var pesos=vals.map(function(v){return _cevFmt(_cevP(v.peso));}).join(' / '); var reps=vals.map(function(v){return v.reps;}).filter(Boolean); var algunRec=vals.some(function(v){return v.rec;}); txt='<b style="color:'+(algunRec?'#1f8f5a':'#26303f')+';">'+pesos+'</b> <span style="color:#8795ab;font-size:10px;">kg</span>'+(reps.length?('<div style="font-size:10px;color:#8795ab;">×'+reps.join(' / ')+'</div>'):''); }
-      tds+='<td style="text-align:center;padding:10px 12px;border-bottom:1px solid #f1f4f9;font-size:12.5px;white-space:nowrap;">'+txt+'</td>';
+  var tb=function(id,label){ var on=_cevTab===id; return '<button onclick="_cevTabSel(\''+id+'\')" style="border:none;border-bottom:3px solid '+(on?'#2f5f95':'transparent')+';background:transparent;color:'+(on?'#2f5f95':'#8795ab')+';font-size:13px;font-weight:800;padding:10px 18px;cursor:pointer;font-family:inherit;">'+label+'</button>'; };
+  cont.innerHTML='<div style="display:flex;gap:2px;border-bottom:1px solid #eef1f6;margin-bottom:16px;">'+tb('fecha','POR FECHA')+tb('ejercicio','POR EJERCICIO')+'</div><div id="cev-tabc"></div>';
+  if(_cevTab==='fecha') _cevRenderFechas(); else _cevRenderEjercicio();
+}
+// ── POR FECHA ──
+function _cevRenderFechas(){
+  var c=document.getElementById('cev-tabc'); if(!c) return;
+  if(!_cevDocs.length){ c.innerHTML='<div style="padding:22px;text-align:center;color:#8795ab;line-height:1.6;">Todavía no hay entrenamientos impresos.<br>Usá <b>🖨 IMPRIMIR a Evolución</b> desde la planificación del día.</div>'; return; }
+  var html='<div style="font-size:11px;font-weight:800;letter-spacing:.7px;color:#8795ab;text-transform:uppercase;margin:0 2px 10px;">Historial de entrenamientos</div>';
+  _cevDocs.forEach(function(d){ html+='<div onclick="_cevVerFecha(\''+d._id+'\')" style="display:flex;justify-content:space-between;align-items:center;border:1px solid #e4e8ef;border-radius:10px;padding:12px 14px;margin-bottom:7px;cursor:pointer;background:#fff;"><div><b style="color:#26303f;text-transform:capitalize;">'+_cevFechaLarga(d.fecha)+'</b> <span style="color:#8795ab;">· '+_cevEsc(d.diaLabel||'')+'</span></div><div style="font-size:11px;color:#8795ab;">'+((d.ejercicios||[]).length)+' ej. ›</div></div>'; });
+  c.innerHTML=html;
+}
+function _cevVerFecha(id){
+  var d=_cevDocs.filter(function(x){return x._id===id;})[0]; if(!d) return;
+  var c=document.getElementById('cev-tabc'); if(!c) return;
+  var html='<button onclick="_cevRenderFechas()" style="background:#eef2f8;border:1px solid #d5deea;color:#33415a;font-size:12px;font-weight:800;padding:8px 13px;border-radius:9px;cursor:pointer;font-family:inherit;margin-bottom:12px;">‹ Volver al historial</button>'
+    +'<div style="font-size:15px;font-weight:900;color:#1e2a3c;text-transform:capitalize;">'+_cevFechaLarga(d.fecha)+'</div>'
+    +'<div style="font-size:12px;color:#8795ab;margin-bottom:14px;">'+_cevEsc(d.diaLabel||'')+'</div>';
+  (d.ejercicios||[]).forEach(function(e,ei){
+    html+='<div style="border:1px solid #e4e8ef;border-radius:10px;padding:11px 13px;margin-bottom:9px;"><div style="font-weight:800;color:#26303f;margin-bottom:7px;">'+_cevEsc(e.nombre)+'</div>'
+      +'<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><tr style="color:#8795ab;font-weight:700;"><td style="padding:3px 6px;">Serie</td><td>Reps plan</td><td>Carga plan</td><td>Reps real</td><td>Carga real (kg)</td></tr>';
+    (e.series||[]).forEach(function(s,si){
+      html+='<tr><td style="padding:4px 6px;font-weight:700;">'+_cevEsc(s.num)+'</td><td>'+_cevEsc(s.reps||'—')+'</td><td>'+_cevEsc(s.cargaPlan||'—')+'</td>'
+        +'<td><input class="cev-rr" data-e="'+ei+'" data-s="'+si+'" value="'+_cevEsc(s.repsReal||'')+'" placeholder="'+_cevEsc(s.reps||'')+'" style="width:58px;border:1px solid #d5deea;border-radius:6px;padding:5px;font-size:12px;text-align:center;"></td>'
+        +'<td><input class="cev-cr" data-e="'+ei+'" data-s="'+si+'" value="'+_cevEsc(s.cargaReal||'')+'" placeholder="'+_cevEsc(s.cargaPlan||'')+'" style="width:68px;border:1px solid #d5deea;border-radius:6px;padding:5px;font-size:12px;text-align:center;"></td></tr>';
     });
-    rows+='<tr>'+tds+'</tr>';
+    html+='</table></div></div>';
   });
-  if(!mostradas) rows='<tr><td colspan="'+(cols.length+1)+'" style="padding:22px;text-align:center;color:#8795ab;">Este día no tiene ejercicios con peso cargado.</td></tr>';
-  cont.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">'+tabs+'</div>'
-    +'<div style="overflow-x:auto;border:1px solid #e4e8ef;border-radius:11px;"><table style="border-collapse:collapse;width:100%;"><thead><tr>'+th+'</tr></thead><tbody>'+rows+'</tbody></table></div>'
-    +'<div style="font-size:11px;color:#8795ab;margin-top:10px;line-height:1.55;">Cada columna es una sesión de ese día (por fecha). Se muestran solo las series <b>efectivas</b>. En <span style="color:#1f8f5a;font-weight:800;">verde</span>, lo que el alumno registró; en gris, la carga que prescribiste (si todavía no registró).</div>';
+  html+='<div style="display:flex;justify-content:flex-end;margin-top:4px;"><button onclick="_cevGuardarReal(\''+id+'\')" style="background:#1f8f5a;color:#fff;border:none;border-radius:9px;padding:11px 24px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">GUARDAR cargas reales</button></div>';
+  c.innerHTML=html;
+}
+function _cevGuardarReal(id){
+  var d=_cevDocs.filter(function(x){return x._id===id;})[0]; if(!d) return;
+  document.querySelectorAll('.cev-cr').forEach(function(inp){ var e=+inp.dataset.e, s=+inp.dataset.s; if(d.ejercicios[e]&&d.ejercicios[e].series[s]) d.ejercicios[e].series[s].cargaReal=inp.value.trim(); });
+  document.querySelectorAll('.cev-rr').forEach(function(inp){ var e=+inp.dataset.e, s=+inp.dataset.s; if(d.ejercicios[e]&&d.ejercicios[e].series[s]) d.ejercicios[e].series[s].repsReal=inp.value.trim(); });
+  window._db.collection('alumnos').doc(currentAlumnoId).collection('evolucion').doc(id).set({ ejercicios:d.ejercicios, updatedAt:new Date().toISOString() },{merge:true})
+    .then(function(){ if(typeof toast==='function') toast('✓ Cargas reales guardadas'); else alert('Guardado'); })
+    .catch(function(e){ alert('No se pudo guardar: '+(e&&e.message?e.message:e)); });
+}
+// ── POR EJERCICIO ──
+function _cevRenderEjercicio(){
+  var c=document.getElementById('cev-tabc'); if(!c) return;
+  var nombres={}; _cevDocs.forEach(function(d){ (d.ejercicios||[]).forEach(function(e){ if(e.nombre) nombres[_cevKey(e.nombre)]=e.nombre; }); });
+  var keys=Object.keys(nombres).sort(function(a,b){return nombres[a].localeCompare(nombres[b]);});
+  if(!keys.length){ c.innerHTML='<div style="padding:22px;text-align:center;color:#8795ab;">Todavía no hay ejercicios impresos para analizar.</div>'; return; }
+  var opts=keys.map(function(k){ return '<option value="'+_cevEsc(nombres[k])+'">'; }).join('');
+  c.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">'
+    +'<div><div style="font-size:10px;font-weight:800;color:#8795ab;margin-bottom:3px;">EJERCICIO</div><input list="cev-ejlist" id="cev-buscar" placeholder="Escribí o elegí…" style="border:1px solid #d5deea;border-radius:8px;padding:8px 10px;font-size:13px;min-width:200px;font-family:inherit;"><datalist id="cev-ejlist">'+opts+'</datalist></div>'
+    +'<div><div style="font-size:10px;font-weight:800;color:#8795ab;margin-bottom:3px;">DESDE</div><input type="date" id="cev-desde" style="border:1px solid #d5deea;border-radius:8px;padding:7px;font-size:13px;font-family:inherit;"></div>'
+    +'<div><div style="font-size:10px;font-weight:800;color:#8795ab;margin-bottom:3px;">HASTA</div><input type="date" id="cev-hasta" style="border:1px solid #d5deea;border-radius:8px;padding:7px;font-size:13px;font-family:inherit;"></div>'
+    +'<button onclick="_cevBuscarEj()" style="background:#2f5f95;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">BUSCAR</button></div>'
+    +'<div id="cev-ejres"></div>';
+}
+function _cevBuscarEj(){
+  var q=_cevKey((document.getElementById('cev-buscar')||{}).value||'');
+  var desde=(document.getElementById('cev-desde')||{}).value||'', hasta=(document.getElementById('cev-hasta')||{}).value||'';
+  var res=document.getElementById('cev-ejres'); if(!res) return;
+  if(!q){ res.innerHTML='<div style="color:#8795ab;padding:10px;">Elegí un ejercicio.</div>'; return; }
+  var nombreShow='';
+  var filas=[];
+  _cevDocs.forEach(function(d){ if(desde && d.fecha<desde) return; if(hasta && d.fecha>hasta) return; (d.ejercicios||[]).forEach(function(e){ if(_cevKey(e.nombre)!==q) return; nombreShow=e.nombre; (e.series||[]).forEach(function(s){ var carga=(s.cargaReal&&String(s.cargaReal).trim()!=='')?s.cargaReal:s.cargaPlan; var reps=(s.repsReal&&String(s.repsReal).trim()!=='')?s.repsReal:s.reps; var p=_cevP(carga); if(p>0) filas.push({fecha:d.fecha, num:s.num, reps:reps, carga:p, real:!!(s.cargaReal&&String(s.cargaReal).trim()!=='')}); }); }); });
+  filas.sort(function(a,b){ return String(a.fecha).localeCompare(String(b.fecha)) || (parseInt(a.num)-parseInt(b.num)); });
+  var rows=filas.map(function(f){ return '<tr><td style="padding:6px 9px;">'+_cevFechaCorta(f.fecha)+'</td><td style="text-align:center;">'+_cevEsc(f.num)+'</td><td style="text-align:center;">'+_cevEsc(f.reps||'')+'</td><td style="text-align:center;"><b style="color:'+(f.real?'#1f8f5a':'#26303f')+';">'+_cevFmt(f.carga)+' kg</b></td></tr>'; }).join('');
+  var html='<div style="font-size:14px;font-weight:900;color:#1e2a3c;margin-bottom:8px;">'+_cevEsc(nombreShow||document.getElementById('cev-buscar').value)+'</div>'
+    +'<div style="overflow-x:auto;border:1px solid #e4e8ef;border-radius:10px;margin-bottom:16px;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;"><thead><tr style="background:#0f1726;color:#cfe0ff;"><th style="padding:9px;text-align:left;">Fecha</th><th>Serie</th><th>Reps</th><th>Carga</th></tr></thead><tbody>'+(rows||'<tr><td colspan="4" style="padding:16px;text-align:center;color:#8795ab;">Sin registros en ese período.</td></tr>')+'</tbody></table></div>';
+  if(filas.length){ html+='<div style="font-size:11px;font-weight:800;color:#8795ab;text-transform:uppercase;margin-bottom:6px;">Gráfico de carga</div><div style="border:1px solid #e4e8ef;border-radius:10px;padding:12px;"><canvas id="cev-chart" height="150"></canvas></div><div style="font-size:11px;color:#8795ab;margin-top:8px;line-height:1.5;">El gráfico muestra la carga máxima de cada fecha. Como las reps pueden cambiar, no interpreta automáticamente más kilos como más fuerza: mirá también las reps en la tabla.</div>'; }
+  res.innerHTML=html;
+  if(filas.length) _cevDibujarGrafico(filas);
+}
+function _cevDibujarGrafico(filas){
+  var byF={}; filas.forEach(function(f){ if(!byF[f.fecha]||f.carga>byF[f.fecha]) byF[f.fecha]=f.carga; });
+  var labels=Object.keys(byF).sort(); var data=labels.map(function(l){return byF[l];});
+  var draw=function(){ try{ var ctx=document.getElementById('cev-chart'); if(!ctx||!window.Chart) return; if(window._cevChartObj){ try{window._cevChartObj.destroy();}catch(e){} } window._cevChartObj=new Chart(ctx,{type:'line',data:{labels:labels.map(_cevFechaCorta),datasets:[{label:'Carga (kg)',data:data,borderColor:'#2f5f95',backgroundColor:'rgba(47,95,149,.12)',tension:.25,fill:true,pointRadius:4,pointBackgroundColor:'#2f5f95'}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false,ticks:{callback:function(v){return v+' kg';}}}}}); }catch(e){} };
+  if(window.Chart){ draw(); } else { var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js'; s.onload=draw; document.head.appendChild(s); }
 }
 
 // ── Selección para Evolución (casilleros) + IMPRIMIR ─────────────────────────
