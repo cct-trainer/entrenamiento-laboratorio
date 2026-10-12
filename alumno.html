@@ -1020,8 +1020,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261012132109 por un timestamp en cada deploy
-const _APP_VERSION = '20261012132109';
+// deploy.bat reemplaza 20261012141104 por un timestamp en cada deploy
+const _APP_VERSION = '20261012141104';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3269,37 +3269,84 @@ function _evolPlanAct(){ return _plan || (_planesFuerza||[]).filter(function(p){
 function _evolDiasPlan(pl){ var found={},order=[]; (pl.semanasArray||[]).forEach(function(sem,wi){ var dias=sem.dias||{}; Object.keys(dias).forEach(function(dk){ var di=parseInt(dk,10); if(isNaN(di)||found[di])return; if(_evolSesionGym(pl,wi,di)){ found[di]=true; order.push(di);} }); }); order.sort(function(a,b){return a-b;}); var DOW=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']; return order.map(function(di,i){ return {dayIdx:di,label:'Día '+(i+1),wd:DOW[di]||''}; }); }
 function _evolEjsDia(pl,di){ var list=[],seen={}; (pl.semanasArray||[]).forEach(function(sem,wi){ var ses=_evolSesionGym(pl,wi,di); if(!ses)return; (ses.bloques||[]).forEach(function(b){ (b.ejercicios||[]).forEach(function(ej){ if(!_evolSeriesEfec(ej).length)return; var nombre=ej.nombre||ej.ejercicio||''; if(!nombre)return; var key=_ejKey(nombre); if(!seen[key]){ seen[key]=true; list.push({key:key,nombre:nombre,nEf:_evolSeriesEfec(ej).length}); } }); }); }); return list; }
 function _evolCelda(pe,wi,di,uid,ej){ var efs=_evolSeriesEfec(ej); var out=[]; efs.forEach(function(s,k){ var rec=pe[wi+'_'+di+'_'+uid+'_efec_'+k]; var peso=(rec&&rec.peso!=null&&String(rec.peso).trim()!=='')?rec.peso:(s.peso!=null?s.peso:''); var reps=(rec&&rec.reps!=null&&String(rec.reps).trim()!=='')?rec.reps:(s.reps!=null?s.reps:''); if(_evP(peso)>0) out.push({peso:peso,reps:reps,rec:!!(rec&&rec.peso)}); }); return out; }
-function _evolSelDia(di){ _evolDiaSel=di; _abrirEvolucion(true); }
-function _abrirEvolucion(keep){
+// ═══ EVOLUCIÓN (app alumno · solo lectura · lee registros impresos) ═══
+var _aevTab='fecha', _aevDocs=[];
+function _aevEsc(s){ return String(s==null?'':s).replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+function _aevFechaLarga(iso){ try{ var p=String(iso).split('-'); if(p.length!==3) return iso; var d=new Date(+p[0],+p[1]-1,+p[2]); return d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }catch(e){ return iso; } }
+function _abrirEvolucion(){
   _ensureEvolUI();
-  var o=document.getElementById('evol-overlay'); o.style.display='block'; if(!keep) o.scrollTop=0;
+  var o=document.getElementById('evol-overlay'); o.style.display='block'; o.scrollTop=0;
   document.getElementById('evol-h').textContent='Mi evolución';
   var cont=document.getElementById('evol-body');
-  var pl=_evolPlanAct();
-  if(!pl||!pl.semanasArray||!pl.semanasArray.length){ cont.innerHTML='<div class="evol-empty"><b>Todavía no hay un plan con semanas cargadas.</b></div>'; return; }
-  _evolDiasArr=_evolDiasPlan(pl);
-  if(!_evolDiasArr.length){ cont.innerHTML='<div class="evol-empty"><b>No hay días de gimnasio en tu plan.</b></div>'; return; }
-  if(_evolDiaSel==null || !_evolDiasArr.some(function(d){return d.dayIdx===_evolDiaSel;})) _evolDiaSel=_evolDiasArr[0].dayIdx;
+  if(!_db || !_alumnoId){ cont.innerHTML='<div class="evol-empty"><b>No se pudo cargar tu evolución.</b></div>'; return; }
+  cont.innerHTML='<div style="color:#9fb4d2;padding:16px;">Cargando…</div>';
+  _db.collection('alumnos').doc(_alumnoId).collection('evolucion').get().then(function(snap){
+    _aevDocs=[]; snap.forEach(function(x){ var d=x.data()||{}; d._id=x.id; _aevDocs.push(d); });
+    _aevDocs.sort(function(a,b){ return String(b.fecha||'').localeCompare(String(a.fecha||'')); });
+    _aevTabs();
+  }).catch(function(e){ cont.innerHTML='<div class="evol-empty"><b>No se pudo cargar.</b><br><span style="font-size:11px;color:#8ea3c4;">'+_aevEsc(e&&e.message)+'</span></div>'; });
+}
+function _aevTabSel(t){ _aevTab=t; _aevTabs(); }
+function _aevTabs(){
+  var cont=document.getElementById('evol-body'); if(!cont) return;
+  var tb=function(id,label){ var on=_aevTab===id; return '<button onclick="_aevTabSel(\''+id+'\')" style="border:none;border-bottom:3px solid '+(on?'#4a86c4':'transparent')+';background:transparent;color:'+(on?'#fff':'#8ea3c4')+';font-size:12.5px;font-weight:800;padding:10px 16px;cursor:pointer;font-family:inherit;">'+label+'</button>'; };
+  cont.innerHTML='<div style="display:flex;gap:2px;border-bottom:1px solid #243150;margin-bottom:14px;">'+tb('fecha','POR FECHA')+tb('ejercicio','POR EJERCICIO')+'</div><div id="aev-tabc"></div>';
+  if(_aevTab==='fecha') _aevFechas(); else _aevEjercicio();
+}
+function _aevFechas(){
+  var c=document.getElementById('aev-tabc'); if(!c) return;
+  if(!_aevDocs.length){ c.innerHTML='<div class="evol-empty"><b>Todavía no hay entrenamientos en tu evolución.</b><br>Tu coach los va cargando.</div>'; return; }
+  var html='<div style="font-size:11px;font-weight:800;letter-spacing:.6px;color:#8ea3c4;text-transform:uppercase;margin:0 2px 10px;">Historial de entrenamientos</div>';
+  _aevDocs.forEach(function(d){ html+='<div onclick="_aevVerFecha(\''+d._id+'\')" style="display:flex;justify-content:space-between;align-items:center;background:#141c30;border:1px solid #243150;border-radius:11px;padding:12px 14px;margin-bottom:8px;cursor:pointer;"><div><b style="color:#eaf0fa;text-transform:capitalize;">'+_aevFechaLarga(d.fecha)+'</b> <span style="color:#8ea3c4;">· '+_aevEsc(d.diaLabel||'')+'</span></div><div style="color:#8ea3c4;font-size:11px;">'+((d.ejercicios||[]).length)+' ej. ›</div></div>'; });
+  c.innerHTML=html;
+}
+function _aevVerFecha(id){
+  var d=_aevDocs.filter(function(x){return x._id===id;})[0]; if(!d) return;
+  var c=document.getElementById('aev-tabc'); if(!c) return;
   var uni=(_data&&_data.perfil&&_data.perfil.unidadPeso==='lb')?'lb':'kg';
-  var pe=_pesoEdits||{};
-  var tabs=_evolDiasArr.map(function(d){ var on=d.dayIdx===_evolDiaSel; return '<button onclick="_evolSelDia('+d.dayIdx+')" style="border:1px solid '+(on?'#4a86c4':'#2a3a56')+';background:'+(on?'#2f5f95':'transparent')+';color:'+(on?'#fff':'#9fb4d2')+';font-size:12.5px;font-weight:800;padding:9px 13px;border-radius:9px;cursor:pointer;font-family:inherit;">'+d.label+' · '+d.wd+'</button>'; }).join('');
-  var cols=[]; pl.semanasArray.forEach(function(sem,wi){ var ses=_evolSesionGym(pl,wi,_evolDiaSel); if(ses) cols.push({wi:wi,fecha:_evolAddDias(sem.fechaInicio,_evolDiaSel),ses:ses}); });
-  var ejs=_evolEjsDia(pl,_evolDiaSel);
-  var th='<th style="position:sticky;left:0;background:#111c2e;color:#fff;text-align:left;padding:10px 11px;font-size:11px;font-weight:800;min-width:150px;z-index:1;">Ejercicio</th>';
-  cols.forEach(function(c){ th+='<th style="background:#111c2e;color:#cfe0ff;padding:10px 11px;font-size:11.5px;font-weight:800;text-align:center;white-space:nowrap;">'+_evolFechaCorta(c.fecha)+'</th>'; });
-  var rows=''; var mostradas=0;
-  ejs.forEach(function(row){
-    var celdas=cols.map(function(c){ var f=_evolBuscarEj(c.ses,row.key); return f?_evolCelda(pe,c.wi,_evolDiaSel,f.uid,f.ej):[]; });
-    if(!celdas.some(function(v){return v.length>0;})) return;
-    mostradas++;
-    var tds='<td style="position:sticky;left:0;background:#141c30;border-right:1px solid #243150;padding:10px 11px;font-size:12.5px;font-weight:700;color:#eaf0fa;">'+String(row.nombre).replace(/</g,'&lt;')+'<div style="font-size:10px;color:#8ea3c4;font-weight:600;">'+row.nEf+' efectiva'+(row.nEf>1?'s':'')+'</div></td>';
-    celdas.forEach(function(vals){ var txt='<span style="color:#55627a;">—</span>'; if(vals.length){ var pesos=vals.map(function(v){return _stxFmt(_evP(v.peso));}).join(' / '); var reps=vals.map(function(v){return v.reps;}).filter(Boolean); var rec=vals.some(function(v){return v.rec;}); txt='<b style="color:'+(rec?'#7ee0a7':'#eaf0fa')+';">'+pesos+'</b> <span style="color:#8ea3c4;font-size:10px;">'+uni+'</span>'+(reps.length?('<div style="font-size:10px;color:#8ea3c4;">×'+reps.join(' / ')+'</div>'):''); } tds+='<td style="text-align:center;padding:10px 11px;border-bottom:1px solid #1e2a3d;font-size:12.5px;white-space:nowrap;">'+txt+'</td>'; });
-    rows+='<tr>'+tds+'</tr>';
+  var html='<button onclick="_aevFechas()" style="background:#141c30;border:1px solid #243150;color:#9fb4d2;font-size:12px;font-weight:800;padding:8px 13px;border-radius:9px;cursor:pointer;font-family:inherit;margin-bottom:12px;">‹ Volver</button>'
+    +'<div style="font-size:15px;font-weight:900;color:#fff;text-transform:capitalize;">'+_aevFechaLarga(d.fecha)+'</div><div style="font-size:12px;color:#8ea3c4;margin-bottom:13px;">'+_aevEsc(d.diaLabel||'')+'</div>';
+  (d.ejercicios||[]).forEach(function(e){
+    html+='<div style="background:#141c30;border:1px solid #243150;border-radius:11px;padding:11px 13px;margin-bottom:9px;"><div style="font-weight:800;color:#eaf0fa;margin-bottom:7px;">'+_aevEsc(e.nombre)+'</div>'
+      +'<table style="width:100%;border-collapse:collapse;font-size:12.5px;"><tr style="color:#8ea3c4;font-weight:700;"><td style="padding:3px 6px;">Serie</td><td>Reps</td><td>Carga</td></tr>';
+    (e.series||[]).forEach(function(s){ var carga=(s.cargaReal&&String(s.cargaReal).trim()!=='')?s.cargaReal:s.cargaPlan; var reps=(s.repsReal&&String(s.repsReal).trim()!=='')?s.repsReal:s.reps; var real=!!(s.cargaReal&&String(s.cargaReal).trim()!==''); html+='<tr><td style="padding:5px 6px;font-weight:700;color:#eaf0fa;">'+_aevEsc(s.num)+'</td><td style="color:#cdd7ea;">'+_aevEsc(reps||'—')+'</td><td><b style="color:'+(real?'#7ee0a7':'#eaf0fa')+';">'+_aevEsc(carga||'—')+(carga?(' '+uni):'')+'</b></td></tr>'; });
+    html+='</table></div>';
   });
-  if(!mostradas) rows='<tr><td colspan="'+(cols.length+1)+'" style="padding:22px;text-align:center;color:#8ea3c4;">Este día no tiene ejercicios con peso cargado.</td></tr>';
-  cont.innerHTML='<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;">'+tabs+'</div>'
-    +'<div style="overflow-x:auto;border:1px solid #243150;border-radius:12px;"><table style="border-collapse:collapse;width:100%;"><thead><tr>'+th+'</tr></thead><tbody>'+rows+'</tbody></table></div>'
-    +'<div style="font-size:11px;color:#8ea3c4;margin-top:10px;line-height:1.55;">Cada columna es una sesión de ese día (por fecha). En <span style="color:#7ee0a7;font-weight:800;">verde</span>, lo que registraste; en gris, la carga que te pautó el coach.</div>';
+  c.innerHTML=html;
+}
+function _aevEjercicio(){
+  var c=document.getElementById('aev-tabc'); if(!c) return;
+  var nombres={}; _aevDocs.forEach(function(d){ (d.ejercicios||[]).forEach(function(e){ if(e.nombre) nombres[_ejKey(e.nombre)]=e.nombre; }); });
+  var keys=Object.keys(nombres).sort(function(a,b){return nombres[a].localeCompare(nombres[b]);});
+  if(!keys.length){ c.innerHTML='<div class="evol-empty"><b>Todavía no hay ejercicios para analizar.</b></div>'; return; }
+  var opts=keys.map(function(k){ return '<option value="'+_aevEsc(nombres[k])+'">'; }).join('');
+  c.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">'
+    +'<div style="flex:1;min-width:150px;"><div style="font-size:10px;font-weight:800;color:#8ea3c4;margin-bottom:3px;">EJERCICIO</div><input list="aev-list" id="aev-buscar" placeholder="Escribí o elegí…" style="width:100%;background:#0c1018;border:1px solid #2a3a56;border-radius:8px;padding:9px 10px;font-size:13px;color:#fff;font-family:inherit;"><datalist id="aev-list">'+opts+'</datalist></div>'
+    +'<div><div style="font-size:10px;font-weight:800;color:#8ea3c4;margin-bottom:3px;">DESDE</div><input type="date" id="aev-desde" style="background:#0c1018;border:1px solid #2a3a56;border-radius:8px;padding:8px;font-size:12px;color:#fff;font-family:inherit;"></div>'
+    +'<div><div style="font-size:10px;font-weight:800;color:#8ea3c4;margin-bottom:3px;">HASTA</div><input type="date" id="aev-hasta" style="background:#0c1018;border:1px solid #2a3a56;border-radius:8px;padding:8px;font-size:12px;color:#fff;font-family:inherit;"></div>'
+    +'<button onclick="_aevBuscar()" style="background:#2f5f95;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">BUSCAR</button></div>'
+    +'<div id="aev-res"></div>';
+}
+function _aevBuscar(){
+  var q=_ejKey((document.getElementById('aev-buscar')||{}).value||'');
+  var desde=(document.getElementById('aev-desde')||{}).value||'', hasta=(document.getElementById('aev-hasta')||{}).value||'';
+  var res=document.getElementById('aev-res'); if(!res) return;
+  if(!q){ res.innerHTML='<div style="color:#8ea3c4;padding:10px;">Elegí un ejercicio.</div>'; return; }
+  var uni=(_data&&_data.perfil&&_data.perfil.unidadPeso==='lb')?'lb':'kg'; var nombreShow=''; var filas=[];
+  _aevDocs.forEach(function(d){ if(desde&&d.fecha<desde)return; if(hasta&&d.fecha>hasta)return; (d.ejercicios||[]).forEach(function(e){ if(_ejKey(e.nombre)!==q)return; nombreShow=e.nombre; (e.series||[]).forEach(function(s){ var carga=(s.cargaReal&&String(s.cargaReal).trim()!=='')?s.cargaReal:s.cargaPlan; var reps=(s.repsReal&&String(s.repsReal).trim()!=='')?s.repsReal:s.reps; var p=_evP(carga); if(p>0) filas.push({fecha:d.fecha,num:s.num,reps:reps,carga:p,real:!!(s.cargaReal&&String(s.cargaReal).trim()!=='')}); }); }); });
+  filas.sort(function(a,b){ return String(a.fecha).localeCompare(String(b.fecha))||(parseInt(a.num)-parseInt(b.num)); });
+  var rows=filas.map(function(f){ return '<tr><td style="padding:6px 9px;color:#cdd7ea;">'+_evolFechaCorta(f.fecha)+'</td><td style="text-align:center;color:#cdd7ea;">'+_aevEsc(f.num)+'</td><td style="text-align:center;color:#cdd7ea;">'+_aevEsc(f.reps||'')+'</td><td style="text-align:center;"><b style="color:'+(f.real?'#7ee0a7':'#eaf0fa')+';">'+_stxFmt(f.carga)+' '+uni+'</b></td></tr>'; }).join('');
+  var html='<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:8px;">'+_aevEsc(nombreShow||document.getElementById('aev-buscar').value)+'</div>'
+    +'<div style="overflow-x:auto;border:1px solid #243150;border-radius:11px;margin-bottom:14px;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;"><thead><tr style="background:#111c2e;color:#cfe0ff;"><th style="padding:9px;text-align:left;">Fecha</th><th>Serie</th><th>Reps</th><th>Carga</th></tr></thead><tbody>'+(rows||'<tr><td colspan="4" style="padding:16px;text-align:center;color:#8ea3c4;">Sin registros en ese período.</td></tr>')+'</tbody></table></div>';
+  if(filas.length) html+='<div style="background:#141c30;border:1px solid #243150;border-radius:11px;padding:12px;"><canvas id="aev-chart" height="150"></canvas></div>';
+  res.innerHTML=html;
+  if(filas.length) _aevChart(filas);
+}
+function _aevChart(filas){
+  var byF={}; filas.forEach(function(f){ if(!byF[f.fecha]||f.carga>byF[f.fecha]) byF[f.fecha]=f.carga; });
+  var labels=Object.keys(byF).sort(); var data=labels.map(function(l){return byF[l];});
+  var draw=function(){ try{ var ctx=document.getElementById('aev-chart'); if(!ctx||!window.Chart) return; if(window._aevChartObj){ try{window._aevChartObj.destroy();}catch(e){} } window._aevChartObj=new Chart(ctx,{type:'line',data:{labels:labels.map(_evolFechaCorta),datasets:[{label:'Carga',data:data,borderColor:'#4a86c4',backgroundColor:'rgba(74,134,196,.18)',tension:.25,fill:true,pointRadius:4,pointBackgroundColor:'#4a86c4'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8ea3c4'},grid:{color:'#243150'}},y:{beginAtZero:false,ticks:{color:'#8ea3c4'},grid:{color:'#243150'}}}}); }catch(e){} };
+  if(window.Chart){ draw(); } else { var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js'; s.onload=draw; document.head.appendChild(s); }
 }
 
 function _ensureStatsUI(){

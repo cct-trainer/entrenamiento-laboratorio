@@ -3772,8 +3772,6 @@ window.addEventListener('load',function(){ try{
   <div class="nav-sep"></div>
   <button id="nav-btn-actividad" class="nav-btn" onclick="abrirActividad()">Actividad</button>
   <div class="nav-sep"></div>
-  <button id="nav-btn-evolucion" class="nav-btn" onclick="abrirEvolucionCoach()">Evolución</button>
-  <div class="nav-sep"></div>
   <div class="nav-dropdown-wrap">
     <button id="nav-btn-planificador" class="nav-dropdown-trigger" onclick="toggleNavDropdown()">
       Planificador <span class="nav-chevron">▾</span>
@@ -14275,7 +14273,7 @@ function _cevBuscarEj(){
 function _cevDibujarGrafico(filas){
   var byF={}; filas.forEach(function(f){ if(!byF[f.fecha]||f.carga>byF[f.fecha]) byF[f.fecha]=f.carga; });
   var labels=Object.keys(byF).sort(); var data=labels.map(function(l){return byF[l];});
-  var draw=function(){ try{ var ctx=document.getElementById('cev-chart'); if(!ctx||!window.Chart) return; if(window._cevChartObj){ try{window._cevChartObj.destroy();}catch(e){} } window._cevChartObj=new Chart(ctx,{type:'line',data:{labels:labels.map(_cevFechaCorta),datasets:[{label:'Carga (kg)',data:data,borderColor:'#2f5f95',backgroundColor:'rgba(47,95,149,.12)',tension:.25,fill:true,pointRadius:4,pointBackgroundColor:'#2f5f95'}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false,ticks:{callback:function(v){return v+' kg';}}}}}); }catch(e){} };
+  var draw=function(){ try{ var ctx=document.getElementById('cev-chart'); if(!ctx||!window.Chart) return; if(window._cevChartObj){ try{window._cevChartObj.destroy();}catch(e){} } window._cevChartObj=new Chart(ctx,{type:'line',data:{labels:labels.map(_cevFechaCorta),datasets:[{label:'Carga (kg)',data:data,borderColor:'#2f5f95',backgroundColor:'rgba(47,95,149,.12)',tension:.25,fill:true,pointRadius:4,pointBackgroundColor:'#2f5f95'}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false,ticks:{callback:function(v){return v+' kg';}}}}}}); }catch(e){} };
   if(window.Chart){ draw(); } else { var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js'; s.onload=draw; document.head.appendChild(s); }
 }
 
@@ -17307,6 +17305,13 @@ function renderSidebarAlumno(id) {
              letter-spacing:0.3px;font-family:inherit;transition:background .15s;"
       onmouseover="this.style.background='#2b3547'" onmouseout="this.style.background='#222B3A'">
       ⇄ Sustituciones de ejercicios
+    </button>
+    <button onclick="currentAlumnoId='${id}';abrirEvolucionCoach()"
+      style="width:100%;margin-top:8px;background:#2f5f95;border:1px solid #3d72ad;border-radius:9px;
+             color:#fff;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
+             letter-spacing:0.3px;font-family:inherit;transition:background .15s;"
+      onmouseover="this.style.background='#386bab'" onmouseout="this.style.background='#2f5f95'">
+      📈 Evolución
     </button>
     ${(a.checkins&&a.checkins.length)?`<button onclick="verHistorialCheckins('${id}')"
       style="width:100%;margin-top:8px;background:#222B3A;border:1px solid #283142;border-radius:9px;
