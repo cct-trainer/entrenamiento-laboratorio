@@ -1020,8 +1020,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261012142518 por un timestamp en cada deploy
-const _APP_VERSION = '20261012142518';
+// deploy.bat reemplaza 20261012143439 por un timestamp en cada deploy
+const _APP_VERSION = '20261012143439';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3345,7 +3345,7 @@ function _aevBuscar(){
 function _aevChart(filas){
   var byF={}; filas.forEach(function(f){ if(!byF[f.fecha]||f.carga>byF[f.fecha]) byF[f.fecha]=f.carga; });
   var labels=Object.keys(byF).sort(); var data=labels.map(function(l){return byF[l];});
-  var draw=function(){ try{ var ctx=document.getElementById('aev-chart'); if(!ctx||!window.Chart) return; if(window._aevChartObj){ try{window._aevChartObj.destroy();}catch(e){} } window._aevChartObj=new Chart(ctx,{type:'line',data:{labels:labels.map(_evolFechaCorta),datasets:[{label:'Carga',data:data,borderColor:'#4a86c4',backgroundColor:'rgba(74,134,196,.18)',tension:.25,fill:true,pointRadius:4,pointBackgroundColor:'#4a86c4'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8ea3c4'},grid:{color:'#243150'}},y:{beginAtZero:false,ticks:{color:'#8ea3c4'},grid:{color:'#243150'}}}}); }catch(e){} };
+  var draw=function(){ try{ var ctx=document.getElementById('aev-chart'); if(!ctx||!window.Chart) return; if(window._aevChartObj){ try{window._aevChartObj.destroy();}catch(e){} } window._aevChartObj=new Chart(ctx,{type:'line',data:{labels:labels.map(_evolFechaCorta),datasets:[{label:'Carga',data:data,borderColor:'#4a86c4',backgroundColor:'rgba(74,134,196,.18)',tension:.25,fill:true,pointRadius:4,pointBackgroundColor:'#4a86c4'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8ea3c4'},grid:{color:'#243150'}},y:{beginAtZero:false,ticks:{color:'#8ea3c4'},grid:{color:'#243150'}}}}}); }catch(e){} };
   if(window.Chart){ draw(); } else { var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js'; s.onload=draw; document.head.appendChild(s); }
 }
 
