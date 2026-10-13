@@ -3315,8 +3315,6 @@ select.toolbox-input option:disabled { color: #888; }
 <!-- Firebase (compat v10) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<!-- Módulo Modalidad de ejercicios (datos + motor resolverModalidad) -->
-<script src="socc_modalidad.js"></script>
 </head>
 <body>
 
@@ -13534,7 +13532,6 @@ function renderPlanDiaEditor(diaIdx) {
   _sesActualizarDuracion(sesion.bloques||[]);
   // Restaurar tildes de lo ya impreso a Evolución (para saber qué ya se usó)
   try{ setTimeout(_evoRestaurarTildesDia, 250); }catch(e){}
-  try{ setTimeout(function(){ document.querySelectorAll('#plan-dia-bloques-'+diaIdx+' .ej-card').forEach(function(c){ if(typeof _sccBadgeEj==='function') _sccBadgeEj(c.id); }); }, 300); }catch(e){}
   // Día vacío: se deja en blanco. El coach arma los bloques con "＋ AGREGAR BLOQUE".
 }
 // ── Portada + duración estimada de la sesión ──
@@ -16360,8 +16357,6 @@ function openPerfilAlumno(id) {
   const chip = document.getElementById('nav-alumno-chip');
   if (chip) chip.textContent = a.nombre.split(' ')[0].toUpperCase();
 
-  try{ setTimeout(function(){ if(typeof _sccRenderSelector==='function') _sccRenderSelector(id); }, 150); }catch(e){}
-
   document.getElementById('perfil-nombre').textContent = a.nombre;
   document.getElementById('perfil-objetivo').textContent = [a.objetivo, a.nivel].filter(Boolean).join(' · ');
   document.getElementById('perfil-avatar').innerHTML = a.foto ? `<img src="${a.foto}">` : '👤';
@@ -17330,7 +17325,6 @@ function renderSidebarAlumno(id) {
       onmouseover="this.style.background='#386bab'" onmouseout="this.style.background='#2f5f95'">
       📈 Evolución
     </button>
-    <div id="scc-sel-wrap" style="margin-top:10px;background:#171f2e;border:1px solid #283142;border-radius:10px;padding:11px;"></div>
     ${(a.checkins&&a.checkins.length)?`<button onclick="verHistorialCheckins('${id}')"
       style="width:100%;margin-top:8px;background:#222B3A;border:1px solid #283142;border-radius:9px;
              color:#F2F4F7;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;font-family:inherit;transition:background .15s;"
@@ -21470,7 +21464,6 @@ function addEjercicio(bloqueId) {
   div.innerHTML = `
     <div class="ej-head">
       <span class="evo-ej-chk" title="Incluir este ejercicio en Evolución" onclick="_evoTogEj(this)"></span>
-      <span class="scc-badge" id="${ejId}-scc" title="Modalidad" style="font-size:15px;cursor:help;flex-shrink:0;" onclick="_sccBadgeInfo('${ejId}')"></span>
       <span class="drag-handle" draggable="true" data-type="ej" title="Arrastrar para mover ejercicio">⠿</span>
       <span class="ej-letra" style="display:${letra?'inline-block':'none'}">${letra}</span>
       <div class="ej-nombre-wrap">
@@ -22140,8 +22133,6 @@ function seleccionarEjercicio(ejId, bloqueId, nombreOIdx) {
   _setEquipoNote(ejId, ex.equipo || '');
   // Auto-popular video si el ejercicio tiene uno en la biblioteca
   setVideoEj(ejId, ex.video || '');
-  // Badge de modalidad (apto/no apto para la modalidad del alumno)
-  try{ _sccBadgeEj(ejId); }catch(e){}
   // Auto-prescripción de MOVILIDAD: 1 serie efectiva · 8 reps por lado (unilateral) / 10 reps (bilateral)
   const _catEx = ex.cat || ex.tipoTrabajo || '';
   if (/movilidad/i.test(_catEx)) {
@@ -32145,55 +32136,6 @@ function _kpi(ico, label, val, unit) {
 function _fechaCort(f) {
   if (!f) return '';
   try { return new Date(f+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}); } catch(e){return f.slice(0,10);}
-}
-</script>
-<script>
-/* ── Módulo Modalidad · integración en el coach (perfil + badges) ── */
-function _sccPerfil(id){
-  var a=(getAlumnos()||[]).filter(function(x){return x.id===id;})[0]||{};
-  var p=a.perfil_modalidad||{};
-  return {
-    modalidad_servicio:p.modalidad_servicio||'app',
-    principiante:!!p.principiante, fecha_inicio:p.fecha_inicio||a.fechaInicio||a.fecha_inicio||'',
-    adulto_mayor_fragil:!!p.adulto_mayor_fragil, osteoporosis:!!p.osteoporosis,
-    dolor_zonas:p.dolor_zonas||[], perinatal:!!p.perinatal, corredor:!!p.corredor,
-    casa_solo:!!p.casa_solo, avanzado_verificado:!!p.avanzado_verificado,
-    jaula_con_topes:!!p.jaula_con_topes, video_check_activo:(p.video_check_activo!==false)
-  };
-}
-function _sccSetMod(id,campo,val){
-  var arr=getAlumnos()||[]; var a=arr.filter(function(x){return x.id===id;})[0]; if(!a) return;
-  if(!a.perfil_modalidad) a.perfil_modalidad={};
-  a.perfil_modalidad[campo]=val;
-  try{ saveAlumnos(arr); }catch(e){}
-  try{ if(window._db) window._db.collection('alumnos').doc(id).set({perfil_modalidad:a.perfil_modalidad},{merge:true}); }catch(e){}
-  try{ document.querySelectorAll('.ej-card').forEach(function(c){ _sccBadgeEj(c.id); }); }catch(e){}
-}
-function _sccBadgeEj(ejId){
-  if(typeof resolverModalidad!=='function' || typeof window.sccFindModalidad!=='function') return;
-  var el=document.getElementById(ejId+'-scc'); if(!el) return;
-  var inp=document.querySelector('#'+ejId+' .ej-nombre-input'); var nombre=inp?inp.value.trim():'';
-  if(!nombre){ el.textContent=''; el.dataset.motivos=''; return; }
-  var em=window.sccFindModalidad(nombre);
-  if(!em){ el.textContent='⚪'; el.title='Sin datos de modalidad'; el.dataset.motivos='Este ejercicio todavía no está en el catálogo de modalidad.'; return; }
-  var perfil=_sccPerfil(typeof currentAlumnoId!=='undefined'?currentAlumnoId:'');
-  var r=resolverModalidad(em, perfil, new Date());
-  el.textContent=window.sccBadge(r.estado);
-  var apt=r.apto?('Apto para '+perfil.modalidad_servicio.toUpperCase()):('NO apto para '+perfil.modalidad_servicio.toUpperCase());
-  var txt=apt+'\nModalidad del ejercicio: '+String(r.modalidad_efectiva).toUpperCase()+(r.motivos.length?('\n\nMotivos:\n- '+r.motivos.join('\n- ')):'');
-  el.title=apt+' · '+String(r.modalidad_efectiva).toUpperCase()+(r.motivos.length?(' · '+r.motivos.join(' · ')):'');
-  el.dataset.motivos=txt;
-}
-function _sccBadgeInfo(ejId){ var el=document.getElementById(ejId+'-scc'); if(el&&el.dataset.motivos) alert(el.dataset.motivos); }
-function _sccRenderSelector(id){
-  var w=document.getElementById('scc-sel-wrap'); if(!w) return;
-  var p=_sccPerfil(id);
-  var opt=function(v,l){ return '<option value="'+v+'"'+(p.modalidad_servicio===v?' selected':'')+'>'+l+'</option>'; };
-  var chk=function(k,l){ return '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#cdd7ea;cursor:pointer;"><input type="checkbox" '+(p[k]?'checked':'')+' onchange="_sccSetMod(\''+id+'\',\''+k+'\',this.checked)"> '+l+'</label>'; };
-  w.innerHTML='<div style="font-size:10px;font-weight:800;letter-spacing:.5px;color:#8fa1bd;margin-bottom:6px;">MODALIDAD DE SERVICIO</div>'
-    +'<select onchange="_sccSetMod(\''+id+'\',\'modalidad_servicio\',this.value)" style="width:100%;background:#222B3A;border:1px solid #283142;color:#F2F4F7;border-radius:8px;padding:8px;font-size:12px;font-weight:700;font-family:inherit;">'+opt('app','App · a distancia')+opt('vivo','Online · en vivo')+opt('presencial','Presencial')+'</select>'
-    +'<div style="font-size:9px;font-weight:800;letter-spacing:.5px;color:#8fa1bd;margin:10px 0 5px;">PERFIL (para los avisos)</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;">'+chk('principiante','Principiante')+chk('adulto_mayor_fragil','Adulto mayor')+chk('osteoporosis','Osteoporosis')+chk('corredor','Corredor')+chk('casa_solo','Solo en casa')+chk('perinatal','Embarazo/posp.')+chk('avanzado_verificado','Avanzado ver.')+chk('jaula_con_topes','Jaula c/topes')+'</div>';
 }
 </script>
 </body>
