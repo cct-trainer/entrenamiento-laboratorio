@@ -1020,8 +1020,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261013194347 por un timestamp en cada deploy
-const _APP_VERSION = '20261013194347';
+// deploy.bat reemplaza 20261014122826 por un timestamp en cada deploy
+const _APP_VERSION = '20261014122826';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3336,11 +3336,11 @@ function _aevEjercicio(){
   var nombres={}; _aevDocs.forEach(function(d){ (d.ejercicios||[]).forEach(function(e){ if(e.nombre) nombres[_ejKey(e.nombre)]=e.nombre; }); });
   var keys=Object.keys(nombres).sort(function(a,b){return nombres[a].localeCompare(nombres[b]);});
   if(!keys.length){ c.innerHTML='<div class="evol-empty"><b>Todavía no hay ejercicios para analizar.</b></div>'; return; }
-  var opts=keys.map(function(k){ return '<option value="'+_aevEsc(nombres[k])+'">'; }).join('');
+  var opts=keys.map(function(k){ return '<option value="'+_aevEsc(nombres[k])+'">'+_aevEsc(nombres[k])+'</option>'; }).join('');
   c.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">'
-    +'<div style="flex:1;min-width:150px;"><div style="font-size:10px;font-weight:800;color:#8ea3c4;margin-bottom:3px;">EJERCICIO</div><input list="aev-list" id="aev-buscar" placeholder="Escribí o elegí…" style="width:100%;background:#0c1018;border:1px solid #2a3a56;border-radius:8px;padding:9px 10px;font-size:13px;color:#fff;font-family:inherit;"><datalist id="aev-list">'+opts+'</datalist></div>'
-    +'<div><div style="font-size:10px;font-weight:800;color:#8ea3c4;margin-bottom:3px;">DESDE</div><input type="date" id="aev-desde" style="background:#0c1018;border:1px solid #2a3a56;border-radius:8px;padding:8px;font-size:12px;color:#fff;font-family:inherit;"></div>'
-    +'<div><div style="font-size:10px;font-weight:800;color:#8ea3c4;margin-bottom:3px;">HASTA</div><input type="date" id="aev-hasta" style="background:#0c1018;border:1px solid #2a3a56;border-radius:8px;padding:8px;font-size:12px;color:#fff;font-family:inherit;"></div>'
+    +'<div style="flex:1;min-width:160px;"><div style="font-size:10px;font-weight:800;color:#8ea3c4;margin-bottom:3px;">EJERCICIO</div><select id="aev-buscar" onchange="_aevBuscar()" style="width:100%;background:#0c1018;border:1px solid #2a3a56;border-radius:8px;padding:10px;font-size:13px;color:#fff;font-family:inherit;"><option value="">— Elegí un ejercicio —</option>'+opts+'</select></div>'
+    +'<div><div style="font-size:10px;font-weight:800;color:#8ea3c4;margin-bottom:3px;">DESDE</div><input type="date" id="aev-desde" onclick="try{this.showPicker()}catch(e){}" style="background:#0c1018;border:1px solid #2a3a56;border-radius:8px;padding:9px;font-size:13px;color:#fff;font-family:inherit;cursor:pointer;"></div>'
+    +'<div><div style="font-size:10px;font-weight:800;color:#8ea3c4;margin-bottom:3px;">HASTA</div><input type="date" id="aev-hasta" onclick="try{this.showPicker()}catch(e){}" style="background:#0c1018;border:1px solid #2a3a56;border-radius:8px;padding:9px;font-size:13px;color:#fff;font-family:inherit;cursor:pointer;"></div>'
     +'<button onclick="_aevBuscar()" style="background:#2f5f95;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">BUSCAR</button></div>'
     +'<div id="aev-res"></div>';
 }

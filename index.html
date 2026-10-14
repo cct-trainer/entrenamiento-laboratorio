@@ -14249,11 +14249,11 @@ function _cevRenderEjercicio(){
   var nombres={}; _cevDocs.forEach(function(d){ (d.ejercicios||[]).forEach(function(e){ if(e.nombre) nombres[_cevKey(e.nombre)]=e.nombre; }); });
   var keys=Object.keys(nombres).sort(function(a,b){return nombres[a].localeCompare(nombres[b]);});
   if(!keys.length){ c.innerHTML='<div style="padding:22px;text-align:center;color:#8795ab;">Todavía no hay ejercicios impresos para analizar.</div>'; return; }
-  var opts=keys.map(function(k){ return '<option value="'+_cevEsc(nombres[k])+'">'; }).join('');
+  var opts=keys.map(function(k){ return '<option value="'+_cevEsc(nombres[k])+'">'+_cevEsc(nombres[k])+'</option>'; }).join('');
   c.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">'
-    +'<div><div style="font-size:10px;font-weight:800;color:#8795ab;margin-bottom:3px;">EJERCICIO</div><input list="cev-ejlist" id="cev-buscar" placeholder="Escribí o elegí…" style="border:1px solid #d5deea;border-radius:8px;padding:8px 10px;font-size:13px;min-width:200px;font-family:inherit;"><datalist id="cev-ejlist">'+opts+'</datalist></div>'
-    +'<div><div style="font-size:10px;font-weight:800;color:#8795ab;margin-bottom:3px;">DESDE</div><input type="date" id="cev-desde" style="border:1px solid #d5deea;border-radius:8px;padding:7px;font-size:13px;font-family:inherit;"></div>'
-    +'<div><div style="font-size:10px;font-weight:800;color:#8795ab;margin-bottom:3px;">HASTA</div><input type="date" id="cev-hasta" style="border:1px solid #d5deea;border-radius:8px;padding:7px;font-size:13px;font-family:inherit;"></div>'
+    +'<div><div style="font-size:10px;font-weight:800;color:#8795ab;margin-bottom:3px;">EJERCICIO</div><select id="cev-buscar" onchange="_cevBuscarEj()" style="border:1px solid #d5deea;border-radius:8px;padding:8px 10px;font-size:13px;min-width:220px;font-family:inherit;background:#fff;"><option value="">— Elegí un ejercicio —</option>'+opts+'</select></div>'
+    +'<div><div style="font-size:10px;font-weight:800;color:#8795ab;margin-bottom:3px;">DESDE</div><input type="date" id="cev-desde" onclick="try{this.showPicker()}catch(e){}" style="border:1px solid #d5deea;border-radius:8px;padding:7px;font-size:13px;font-family:inherit;cursor:pointer;"></div>'
+    +'<div><div style="font-size:10px;font-weight:800;color:#8795ab;margin-bottom:3px;">HASTA</div><input type="date" id="cev-hasta" onclick="try{this.showPicker()}catch(e){}" style="border:1px solid #d5deea;border-radius:8px;padding:7px;font-size:13px;font-family:inherit;cursor:pointer;"></div>'
     +'<button onclick="_cevBuscarEj()" style="background:#2f5f95;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">BUSCAR</button></div>'
     +'<div id="cev-ejres"></div>';
 }
