@@ -319,6 +319,11 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .scard-name{font-size:13px;font-weight:900;color:var(--gold);margin-bottom:12px;letter-spacing:.3px;}
 /* Bloque · panel negro con borde 3D (tema oscuro) */
 .blk{margin-bottom:14px;border-radius:14px;padding:5px;background:transparent;border:1.5px solid #33373f;box-shadow:none;}
+/* Diferenciación de bloques (blanco/celeste/negro): entrada en calor marcada + alternado */
+.blk.scc-alt{background:#101c2c;border-color:#294767;}
+.blk.scc-calor{background:#0f1d30;border-color:#2f5f95;border-left:4px solid #4a86c4;}
+html.light .blk.scc-alt{background:#eef4fc;border:1px solid #d7e4f4;border-radius:10px;padding:6px;}
+html.light .blk.scc-calor{background:#e7f0fb;border:1px solid #bcd6f2;border-left:4px solid #4a86c4;border-radius:10px;padding:6px;}
 .blk-body>div:last-child{margin-bottom:0;}
 .blk-hdr{display:flex;align-items:center;gap:10px;padding:2px 2px 10px;background:transparent;border-radius:0;margin-bottom:2px;cursor:pointer;}
 .blk-letra{width:28px;height:28px;background:linear-gradient(160deg,#2c2f35,#141518);box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 2px 6px rgba(0,0,0,.7);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;}
@@ -1020,8 +1025,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261014135651 por un timestamp en cada deploy
-const _APP_VERSION = '20261014135651';
+// deploy.bat reemplaza 20261014141010 por un timestamp en cada deploy
+const _APP_VERSION = '20261014141010';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -9126,6 +9131,7 @@ function renderSesion() {
       '<div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:900;letter-spacing:1px;color:var(--text);margin-bottom:7px;"><span>'+_t('tu_entrenamiento')+'</span><span class="sp-txt" style="color:#3A6EA5;letter-spacing:0;font-weight:800;">0/0</span></div>'+
       '<div style="height:7px;background:#1b2540;border-radius:5px;overflow:hidden;"><div class="sp-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#3A6EA5,#6aa0dc);border-radius:5px;transition:width .3s;"></div></div>'+
     '</div>'+
+    (function(){ var wk=0; window._sccFaseCls=(ses.bloques||[]).map(function(b){ var t=String((b&&(b.tipo||b.nombre))||'').toLowerCase(); if(/movilidad|activaci|calentamiento|entrada en calor|enfriamiento|vuelta a la calma|elongaci|estiramiento/.test(t)) return 'scc-calor'; wk++; return (wk%2===0)?'scc-alt':''; }); })();
     ses.bloques.map((b,bi) => {
       const letra='ABCDEFGHIJ'[bi]||(bi+1);
       const _grupo   = _tc(b.nombre||b.tipo||'');        // grupo muscular / nombre del bloque → badge dorado
@@ -9147,7 +9153,7 @@ function renderSesion() {
       if(_esCardio){
         const _partC=_durBloqueMin(b, _st&&_st.reduce);
         const _partHTMLc=_partC?'<div style="text-align:right;font-size:10.5px;font-weight:700;color:var(--muted);margin-top:1px;padding-right:3px;">≈ '+_partC+' min</div>':'';
-        return '<div class="blk pfill" style="margin-bottom:16px;"><div class="blk-body" style="padding:2px 0 0;">'+_cardioCardHTML(b)+_partHTMLc+_porqueBloqueHTML(b)+'</div></div>';
+        return '<div class="blk pfill '+((window._sccFaseCls&&window._sccFaseCls[bi])||'')+'" style="margin-bottom:16px;"><div class="blk-body" style="padding:2px 0 0;">'+_cardioCardHTML(b)+_partHTMLc+_porqueBloqueHTML(b)+'</div></div>';
       }
       const _combo = /biserie|superserie|triserie|gigante|circuito/i.test(b.serieTipo||'');
       const _nEjB = (b.ejercicios||[]).length;
@@ -9155,7 +9161,7 @@ function renderSesion() {
       if(_combo && _nEjB>=2){
         const _hasPausaC = (b.ejercicios||[]).some(e => e && e.pausaActiva && e.pausaActiva.activo && Array.isArray(e.pausaActiva.items) && e.pausaActiva.items.length);
         if(!_hasPausaC){
-          return '<div class="blk pfill" style="margin-bottom:16px;">'+
+          return '<div class="blk pfill '+((window._sccFaseCls&&window._sccFaseCls[bi])||'')+'" style="margin-bottom:16px;">'+
             '<div class="blk-body" style="padding:2px 0 0;">'+_circuitPlayerHTML(b,bi,letra,_grupo,_serieLbl,30,_st)+'</div>'+
           '</div>';
         }
@@ -9173,7 +9179,7 @@ function renderSesion() {
       const _blkCls = 'blk' + (_hasPausa ? '' : (_nEj>=2 ? ' combo-blue' : (_nEj===1 ? ' solo-gold' : '')));
       const _partMin = _durBloqueMin(b, _st&&_st.reduce);
       const _partHTML = '<div style="text-align:right;font-size:10.5px;font-weight:700;color:var(--muted);margin-top:1px;padding-right:3px;">≈ '+_partMin+' min</div>';
-      return '<div class="blk pfill" style="margin-bottom:16px;">'+
+      return '<div class="blk pfill '+((window._sccFaseCls&&window._sccFaseCls[bi])||'')+'" style="margin-bottom:16px;">'+
         '<div class="blk-body" style="padding:2px 0 0;">'+_blockHeaderV2(b)+_sysDescHTML(b)+ejesHTML+_partHTML+_porqueBloqueHTML(b)+'</div>'+
       '</div>';
     }).join('');
