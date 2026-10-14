@@ -1025,8 +1025,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261014141010 por un timestamp en cada deploy
-const _APP_VERSION = '20261014141010';
+// deploy.bat reemplaza 20261014141436 por un timestamp en cada deploy
+const _APP_VERSION = '20261014141436';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -9126,12 +9126,12 @@ function renderSesion() {
     '</div>'
   ) : '';
   const _adap = _adaptarSesion(ses.bloques, _tiempoActual());
+  (function(){ var wk=0; window._sccFaseCls=(ses.bloques||[]).map(function(b){ var t=String((b&&(b.tipo||b.nombre))||'').toLowerCase(); if(/movilidad|activaci|calentamiento|entrada en calor|enfriamiento|vuelta a la calma|elongaci|estiramiento/.test(t)) return 'scc-calor'; wk++; return (wk%2===0)?'scc-alt':''; }); })();
   const _bloquesHTML = _objCard + _tiempoCard(ses.bloques) + _readinessCard() +
     '<div id="sesion-progreso" style="margin-bottom:14px;">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:900;letter-spacing:1px;color:var(--text);margin-bottom:7px;"><span>'+_t('tu_entrenamiento')+'</span><span class="sp-txt" style="color:#3A6EA5;letter-spacing:0;font-weight:800;">0/0</span></div>'+
       '<div style="height:7px;background:#1b2540;border-radius:5px;overflow:hidden;"><div class="sp-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#3A6EA5,#6aa0dc);border-radius:5px;transition:width .3s;"></div></div>'+
     '</div>'+
-    (function(){ var wk=0; window._sccFaseCls=(ses.bloques||[]).map(function(b){ var t=String((b&&(b.tipo||b.nombre))||'').toLowerCase(); if(/movilidad|activaci|calentamiento|entrada en calor|enfriamiento|vuelta a la calma|elongaci|estiramiento/.test(t)) return 'scc-calor'; wk++; return (wk%2===0)?'scc-alt':''; }); })();
     ses.bloques.map((b,bi) => {
       const letra='ABCDEFGHIJ'[bi]||(bi+1);
       const _grupo   = _tc(b.nombre||b.tipo||'');        // grupo muscular / nombre del bloque → badge dorado
