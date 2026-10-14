@@ -2450,10 +2450,10 @@ select.toolbox-input option:disabled { color: #888; }
 /* OVERLAY EDITOR DE DÍA (página dentro del panel) */
 #plan-editor-page {
   display: none;
-  position: absolute;
+  position: fixed;
   top: 0; right: 0; bottom: 0; left: 0;
   background: #fff;
-  z-index: 10;
+  z-index: 60;
   flex-direction: column;
   overflow-y: auto;
   border-radius: 0;
@@ -12971,7 +12971,8 @@ function abrirPlanDiaEditor(diaIdx, semIdx) {
   const planRight = document.querySelector('#view-planificador .plan-right');
   if(planRight) { planRight.scrollTop = 0; planRight.style.overflow = 'hidden'; }
   const overlay = document.getElementById('plan-editor-page');
-  if(overlay) overlay.classList.add('open');
+  if(overlay){ overlay.classList.add('open'); overlay.scrollTop = 0; }
+  try{ document.body.style.overflow = 'hidden'; }catch(e){}
   const scroll = document.getElementById('plan-editor-page-scroll');
   if(scroll) scroll.scrollTop = 0;
   renderPlanDiaEditor(diaIdx);
@@ -13604,6 +13605,7 @@ function cerrarPlanDiaEditor() {
   guardarEstadoDiaActual();
   const overlay = document.getElementById('plan-editor-page');
   if(overlay) overlay.classList.remove('open');
+  try{ document.body.style.overflow = ''; }catch(e){}
   // Restaurar scroll del panel
   const planRight = document.querySelector('#view-planificador .plan-right');
   if(planRight) planRight.style.overflow = '';
