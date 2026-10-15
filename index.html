@@ -1614,6 +1614,10 @@ body.coach-bg-on .nd-chip:not(.on){background:#fff;}
 .series-table tr[data-tipo="fallo"] .serie-tipo-sel{ color:#0e1520; }
 .series-table tr[data-tipo="drop"] td:first-child{ box-shadow:inset 4px 0 0 #1f6fb0; }
 .series-table tr[data-tipo="fallo"] td:first-child{ box-shadow:inset 4px 0 0 #0e1520; }
+.series-table tr[data-tipo="mparc"] .serie-tipo-sel{ color:#5b93cf; }
+.series-table tr[data-tipo="mcomp"] .serie-tipo-sel{ color:#2f5f90; }
+.series-table tr[data-tipo="mparc"] td:first-child{ box-shadow:inset 4px 0 0 #5b93cf; }
+.series-table tr[data-tipo="mcomp"] td:first-child{ box-shadow:inset 4px 0 0 #2f5f90; }
 .btn-del-row {
   background: none; border: none; color: #ddd; cursor: pointer;
   font-size: 14px; padding: 2px 6px;
@@ -22269,7 +22273,7 @@ function _pausaDefault(ejId){ return _PAUSA_DEFAULT; }
 
 // Tipo de serie (color por función): calentamiento / aproximación / feeder / efectiva / test
 // Orden oficial (tabla maestra v2.0)
-const _SERIE_TIPOS = [['movi','Movilidad'],['act','Activación'],['iso','Isométrico'],['cal','Calent.'],['apr','Aprox.'],['fee','Feeder'],['pfat','P-Fatiga'],['efec','Efectiva'],['bmb','Bombeo'],['drop','Drop set'],['fallo','Fallo'],['test','Test']];
+const _SERIE_TIPOS = [['movi','Movilidad'],['act','Activación'],['iso','Isométrico'],['cal','Calent.'],['apr','Aprox.'],['fee','Feeder'],['pfat','P-Fatiga'],['efec','Efectiva'],['bmb','Bombeo'],['drop','Drop set'],['fallo','Fallo'],['mparc','M. Parcial'],['mcomp','M. Completo'],['test','Test']];
 // Tabla maestra de configuración (reps / RIR / pausa) + si cuenta como serie efectiva
 const _SERIE_DEFAULTS = {
   movi: { reps:'10',    rir:'',    pausa:'',       efectiva:false },
@@ -22283,6 +22287,8 @@ const _SERIE_DEFAULTS = {
   bmb:  { reps:'20',    rir:'1-2', pausa:'30 seg', efectiva:null  },  // configurable
   drop: { reps:'10',    rir:'0',   pausa:'1 min',  efectiva:true  },
   fallo:{ reps:'10',    rir:'0',   pausa:'2 min',  efectiva:true  },
+  mparc:{ reps:'12',    rir:'1',   pausa:'1 min',  efectiva:true  },
+  mcomp:{ reps:'10',    rir:'2',   pausa:'2 min',  efectiva:true  },
   test: { reps:'1',     rir:'0',   pausa:'5 min',  efectiva:false }
 };
 // ¿Este tipo de serie cuenta como volumen efectivo? (bombeo = configurable por el coach)
@@ -22337,6 +22343,8 @@ const _REPS_OPC = {
   bmb:['15','20','25','30'],
   drop:['6','8','10','12'],
   fallo:['6','8','10','12'],
+  mparc:['8','10','12','15','20'],
+  mcomp:['6','8','10','12','15'],
   test:['1','2','3']
 };
 function _repsOptions(tipo,cur){
