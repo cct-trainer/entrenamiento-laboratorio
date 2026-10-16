@@ -1034,8 +1034,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261016130944 por un timestamp en cada deploy
-const _APP_VERSION = '20261016130944';
+// deploy.bat reemplaza 20261016132319 por un timestamp en cada deploy
+const _APP_VERSION = '20261016132319';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2765,8 +2765,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
       if(_barraKgR>0 && !_pesoEsTexto){
         const _totR = _barraNumA(pesoRaw);
         if(pesoRaw && _totR>0){
-          if(Math.abs(_totR-_barraKgR)<0.001) _barraCel='<div class="barra-bd solo">'+(_LANG==='en'?'just the bar':'solo la barra')+'</div>';
-          else if(_totR<_barraKgR) _barraCel='<div class="barra-bd solo">'+(_LANG==='en'?'less than the bar':'menos que la barra')+'</div>';
+          if(_totR<=_barraKgR+0.001) _barraCel='<div class="barra-bd solo">'+(_LANG==='en'?'(Bar ':'(Barra ')+_barraFmtA(_barraKgR)+' kg)</div>';
           else { const _ladoR=(_totR-_barraKgR)/2; _barraCel='<div class="barra-bd">'+(_LANG==='en'?'bar ':'barra ')+_barraFmtA(_barraKgR)+' + <b>'+_barraFmtA(_ladoR)+(_LANG==='en'?'/side':'/lado')+'</b></div>'; }
         }
       }

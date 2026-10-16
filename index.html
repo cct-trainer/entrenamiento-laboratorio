@@ -22052,8 +22052,7 @@ function _barraCalc(inp){
   var total=_barraNum(inp.value);
   if(!String(inp.value).trim() || total<=0){ span.style.display='none'; return; }
   span.style.display='block';
-  if(Math.abs(total-barra)<0.001){ span.className='barra-desglose solo'; span.textContent='= solo la barra ('+_barraFmt(barra)+' kg)'; return; }
-  if(total<barra){ span.className='barra-desglose solo'; span.textContent='menos que la barra ('+_barraFmt(barra)+' kg)'; return; }
+  if(total<=barra+0.001){ span.className='barra-desglose solo'; span.textContent='(Barra '+_barraFmt(barra)+' kg)'; return; }
   var discos=total-barra, lado=discos/2;
   span.className='barra-desglose';
   span.innerHTML='barra '+_barraFmt(barra)+' + '+_barraFmt(discos)+' discos · <span class="lado">'+_barraFmt(lado)+'/lado</span>';
