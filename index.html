@@ -1626,6 +1626,10 @@ body.coach-bg-on .nd-chip:not(.on){background:#fff;}
 .barra-desglose{ display:block; margin-top:4px; font-size:10px; font-weight:700; color:#2f5f95; background:#eef4fb; border-radius:6px; padding:2px 6px; line-height:1.3; white-space:nowrap; }
 .barra-desglose.solo{ color:#7a8aa0; background:#f1f3f7; }
 .barra-desglose .lado{ color:#1f8f5a; }
+/* ───── Inclinación del banco (solo ejercicios de banco/press) ───── */
+.ej-incl-wrap{ display:none; align-items:center; gap:5px; flex-shrink:0; background:#f4f2ec; border:1px solid #e3dcc8; border-radius:7px; padding:3px 7px; }
+.ej-incl-wrap .ic{ font-size:12px; }
+.ej-incl-sel{ border:none; background:transparent; font-size:11px; font-weight:800; color:#8a6d1f; font-family:inherit; cursor:pointer; outline:none; }
 /* ───── Evolución · planilla v2 (tarjetas por ejercicio) ───── */
 .ev2{ background:#fff; border:1px solid #e4e8ef; border-radius:14px; overflow:hidden; box-shadow:0 10px 26px -14px rgba(20,40,80,.28); }
 .ev2 .ejh{ display:flex; align-items:center; gap:10px; padding:11px 14px; background:#f1f5fb; border-top:1px solid #e3e9f1; }
@@ -14074,6 +14078,7 @@ function guardarEstadoDiaActual() {
       const _uniEj2 = (eEl.querySelector('.ej-uni')?.value === '1');
       const _mancUna = (eEl.querySelector('.ej-manc')?.value === '1');
       const _barraEj = (typeof _barraNum==='function') ? _barraNum(eEl.querySelector('.ej-barra')?.value||'0') : (parseFloat(eEl.querySelector('.ej-barra')?.value)||0);
+      const _inclEj = (eEl.querySelector('.ej-incl-val')?.value || '').trim();
       // Ejercicio en la pausa (descanso activo) — una fila por serie
       const _pausaItems = [];
       const _ptb = document.getElementById(eId+'-pausa-tbody');
@@ -14085,7 +14090,7 @@ function guardarEstadoDiaActual() {
         if(nombre) _pausaItems.push({ nombre, dur, video: vid });
       }); }
       const _pausaActiva = { activo: _pausaItems.length>0, items: _pausaItems };
-      if(eName) ejercicios.push({ nombre:eName, ctrl, video, nota, setup, ficha, series, seriesApro, dropset, tecnica:_tecEj, unilateral:_uniEj2, mancUna:_mancUna, barra:_barraEj, pausaActiva:_pausaActiva });
+      if(eName) ejercicios.push({ nombre:eName, ctrl, video, nota, setup, ficha, series, seriesApro, dropset, tecnica:_tecEj, unilateral:_uniEj2, mancUna:_mancUna, barra:_barraEj, incl:_inclEj, pausaActiva:_pausaActiva });
     });
     // Leer datos cardio si aplica
     let cardioData = null;
@@ -14620,6 +14625,9 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
     if(typeof _mancSync==='function') _mancSync(ejId);
     // Restaurar barra (peso de la barra)
     if(typeof _setBarra==='function' && datosPrevios.barra) _setBarra(ejId, datosPrevios.barra);
+    // Restaurar inclinación del banco
+    if(typeof _inclSync==='function') _inclSync(ejId);
+    if(typeof _setIncl==='function' && datosPrevios.incl) _setIncl(ejId, datosPrevios.incl);
     // Restaurar técnica avanzada (Etapa 1)
     if(datosPrevios.tecnica && typeof _loadTecnica==='function') _loadTecnica(ejId, datosPrevios.tecnica);
     // Controles
@@ -21541,6 +21549,11 @@ function addEjercicio(bloqueId) {
         <select id="${ejId}-barra-sel" class="ej-barra-sel" onchange="_barraSelChange('${ejId}')" style="display:none;">${_barraOptions(20)}</select>
       </div>
       <input type="hidden" class="ej-barra" id="${ejId}-barra" value="0">
+      <div id="${ejId}-incl-wrap" class="ej-incl-wrap" title="Inclinación del banco">
+        <span class="ic">📐</span>
+        <select id="${ejId}-incl" class="ej-incl ej-incl-sel" onchange="_inclSel('${ejId}')">${_inclOptions('')}</select>
+      </div>
+      <input type="hidden" class="ej-incl-val" id="${ejId}-incl-val" value="">
       <button class="ej-btn-stat" onclick="_abrirStatsCoach('${ejId}')" title="Estadísticas del ejercicio (peso máximo)">📊</button>
       <button class="ej-btn-sep" onclick="separarEjercicio('${ejId}','${bloqueId}')" title="Separar este ejercicio en un bloque nuevo">⇱</button>
       <button class="ej-btn-del" onclick="eliminarEjercicio('${ejId}','${bloqueId}')">🗑</button>
@@ -21842,6 +21855,7 @@ function onEjNombreInput(e, ejId, bloqueId) {
   const resultados = buscarEjercicios(val);
   renderDropdown(ejId, bloqueId, resultados, val);
   if(typeof _mancSync==='function') _mancSync(ejId);
+  if(typeof _inclSync==='function') _inclSync(ejId);
 }
 
 function closeDropdown(ejId) {
@@ -22051,6 +22065,58 @@ function _barraRefresh(ejId){
       if(inputs[1]) _barraCalc(inputs[1]);
     });
   });
+}
+
+// ══════════ INCLINACIÓN DEL BANCO · solo ejercicios de banco/press ══════════
+const _INCLINACIONES = ['Plano (0°)','15°','30°','45°','60°','Vertical (90°)','Declinado'];
+function _inclOptions(sel){
+  var s=String(sel||'');
+  var esStd=_INCLINACIONES.indexOf(s)>=0;
+  return _INCLINACIONES.map(function(v){ return '<option value="'+v+'"'+(s===v?' selected':'')+'>'+v+'</option>'; }).join('')
+    +'<option value="__otro"'+((!esStd&&s)?' selected':'')+'>Otro…</option>';
+}
+function _esBancoEj(nombre){
+  var n=String(nombre||'').toLowerCase();
+  return /banco|apertura|press de pecho|press banca|press plano|press inclinad|press declinad|press en banco/.test(n);
+}
+function _inclDefault(nombre){
+  var n=String(nombre||'').toLowerCase();
+  if(/inclinad/.test(n)) return '30°';
+  if(/declinad/.test(n)) return 'Declinado';
+  return 'Plano (0°)';
+}
+function _setIncl(ejId, val){
+  var hid=document.getElementById(ejId+'-incl-val'); var sel=document.getElementById(ejId+'-incl');
+  var v=String(val||'');
+  if(hid) hid.value=v;
+  if(sel){
+    if(v && _INCLINACIONES.indexOf(v)<0){ sel.innerHTML=_inclOptions(v); }
+    else sel.value = v || 'Plano (0°)';
+  }
+}
+function _inclSel(ejId){
+  var sel=document.getElementById(ejId+'-incl'); if(!sel) return;
+  if(sel.value==='__otro'){
+    var r=prompt('Inclinación del banco (ej: 20°, posición 3…):','30°');
+    if(r===null){ var hid=document.getElementById(ejId+'-incl-val'); if(hid) sel.innerHTML=_inclOptions(hid.value); return; }
+    _setIncl(ejId, String(r).trim()||'Plano (0°)');
+  } else {
+    _setIncl(ejId, sel.value);
+  }
+}
+// Muestra el selector de inclinación solo si el ejercicio es de banco/press
+function _inclSync(ejId){
+  var wrap=document.getElementById(ejId+'-incl-wrap'); if(!wrap) return;
+  var nInp=document.querySelector('#'+ejId+' .ej-nombre-input');
+  var nombre=nInp?nInp.value:'';
+  var hid=document.getElementById(ejId+'-incl-val');
+  if(_esBancoEj(nombre)){
+    wrap.style.display='inline-flex';
+    if(hid && !hid.value){ _setIncl(ejId, _inclDefault(nombre)); }
+  } else {
+    wrap.style.display='none';
+    if(hid) hid.value='';
+  }
 }
 
 // ══════════ ESTADÍSTICAS DEL EJERCICIO (coach) ══════════
@@ -22263,6 +22329,8 @@ function seleccionarEjercicio(ejId, bloqueId, nombreOIdx) {
   _setEquipoNote(ejId, ex.equipo || '');
   // Barra: auto-activar (20 kg olímpica por defecto) si la biblioteca marca el ejercicio como "Barra"
   if(typeof _setBarra==='function' && /barra/i.test(ex.equipo||'')) _setBarra(ejId, 20);
+  // Inclinación: mostrar el selector si es un ejercicio de banco/press
+  if(typeof _inclSync==='function') _inclSync(ejId);
   // Auto-popular video si el ejercicio tiene uno en la biblioteca
   setVideoEj(ejId, ex.video || '');
   // Auto-prescripción de MOVILIDAD: 1 serie efectiva · 8 reps por lado (unilateral) / 10 reps (bilateral)
@@ -22745,10 +22813,11 @@ function leerBloques() {
         const tipoEj    = (ficha && ficha['TIPO']) || _lib.tipoTrabajo || _lib.cat || '';
         const _uniEj = (eEl.querySelector('.ej-uni')?.value === '1');
         const _barraEj2 = (typeof _barraNum==='function') ? _barraNum(eEl.querySelector('.ej-barra')?.value||'0') : (parseFloat(eEl.querySelector('.ej-barra')?.value)||0);
+        const _inclEj2 = (eEl.querySelector('.ej-incl-val')?.value || '').trim();
         ejercicios.push({
           nombre: eNombre, nota: eNota, setup: eSetup, video, ficha, series, seriesApro, dropset,
           ctrlSeries, ctrlReps, ctrlPeso, ctrlPausa, ctrlRir,
-          ejecucion, musculos, tipo: tipoEj, unilateral: _uniEj, barra: _barraEj2,
+          ejecucion, musculos, tipo: tipoEj, unilateral: _uniEj, barra: _barraEj2, incl: _inclEj2,
           tecnica: (typeof _readTecnica==='function' ? _readTecnica(eEl) : null)
         });
       }
