@@ -21570,7 +21570,9 @@ function addEjercicio(bloqueId) {
       <span style="font-size:11px;font-weight:800;color:#2b4a6b;white-space:nowrap;flex-shrink:0;">🛠️ Ajuste:</span>
       <input class="ej-setup-input" type="text"
         placeholder="posición de la máquina / pies (ej: banco en posición 2, rodillo en 4...)"
+        onchange="_setupAjusteChange('${ejId}')" onblur="_setupAjusteChange('${ejId}')"
         style="flex:1;min-width:0;box-sizing:border-box;border:1px dashed #bcd3ea;border-radius:7px;padding:6px 12px;font-size:12px;color:#2b4a6b;background:#f2f7fc;">
+      <span id="${ejId}-setup-hint" style="display:none;font-size:10px;font-weight:800;color:#1f8f5a;white-space:nowrap;flex-shrink:0;" title="Configuración guardada para este alumno">✓ guardado</span>
     </div>
 
     <div style="padding: 0 0 4px;">
@@ -22119,6 +22121,42 @@ function _inclSync(ejId){
   }
 }
 
+// ══════════ AJUSTE DE MÁQUINA GUARDADO POR ALUMNO + EJERCICIO ══════════
+// Recuerda "asiento 45°, rodillo medio…" por alumno; al re-elegir el mismo ejercicio se autocompleta.
+function _setupAlumnoIdActual(){
+  try{ if(typeof currentAlumnoId!=='undefined' && currentAlumnoId) return currentAlumnoId; }catch(e){}
+  var s=document.getElementById('plan-alumno-select'); return s?s.value:'';
+}
+function _getSetupGuardado(alumnoId, nombre){
+  if(!alumnoId||!nombre) return '';
+  try{ var a=getAlumnos().find(function(x){return x.id===alumnoId;}); if(a&&a.setupsEj){ return a.setupsEj[_ejKey(nombre)]||''; } }catch(e){}
+  return '';
+}
+function _saveSetupGuardado(alumnoId, nombre, texto){
+  if(!alumnoId||!nombre) return;
+  try{
+    var arr=getAlumnos(); var a=arr.find(function(x){return x.id===alumnoId;}); if(!a) return;
+    if(!a.setupsEj) a.setupsEj={};
+    var k=_ejKey(nombre); var t=String(texto||'').trim();
+    if(t) a.setupsEj[k]=t; else delete a.setupsEj[k];
+    saveAlumnos(arr);
+  }catch(e){}
+}
+function _setupHint(ejId, on){ var h=document.getElementById(ejId+'-setup-hint'); if(h) h.style.display=on?'inline':'none'; }
+function _setupAjusteChange(ejId){
+  var nInp=document.querySelector('#'+ejId+' .ej-nombre-input'); var sInp=document.querySelector('#'+ejId+' .ej-setup-input');
+  if(!nInp||!sInp) return;
+  _saveSetupGuardado(_setupAlumnoIdActual(), nInp.value, sInp.value);
+  _setupHint(ejId, !!String(sInp.value||'').trim());
+}
+function _setupAutollenar(ejId){
+  var sInp=document.querySelector('#'+ejId+' .ej-setup-input'); var nm=document.querySelector('#'+ejId+' .ej-nombre-input');
+  if(!sInp||!nm) return;
+  if(String(sInp.value||'').trim()){ return; } // no pisar lo que el coach ya escribió
+  var g=_getSetupGuardado(_setupAlumnoIdActual(), nm.value);
+  if(g){ sInp.value=g; _setupHint(ejId, true); } else { _setupHint(ejId, false); }
+}
+
 // ══════════ ESTADÍSTICAS DEL EJERCICIO (coach) ══════════
 function _ejKey(n){ return String(n||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim(); }
 function _fmtFechaStc(f){ if(!f) return ''; const m=String(f).match(/^(\d{4})-(\d{2})-(\d{2})/); return m?(m[3]+'/'+m[2]+'/'+m[1]):String(f); }
@@ -22331,6 +22369,8 @@ function seleccionarEjercicio(ejId, bloqueId, nombreOIdx) {
   if(typeof _setBarra==='function' && /barra/i.test(ex.equipo||'')) _setBarra(ejId, 20);
   // Inclinación: mostrar el selector si es un ejercicio de banco/press
   if(typeof _inclSync==='function') _inclSync(ejId);
+  // Ajuste de máquina guardado para este alumno → autocompletar
+  if(typeof _setupAutollenar==='function') _setupAutollenar(ejId);
   // Auto-popular video si el ejercicio tiene uno en la biblioteca
   setVideoEj(ejId, ex.video || '');
   // Auto-prescripción de MOVILIDAD: 1 serie efectiva · 8 reps por lado (unilateral) / 10 reps (bilateral)
