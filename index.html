@@ -1619,6 +1619,24 @@ body.coach-bg-on .nd-chip:not(.on){background:#fff;}
 .series-table tr[data-tipo="mcomp"] .serie-tipo-sel{ color:#2f5f90; }
 .series-table tr[data-tipo="mparc"] td:first-child{ box-shadow:inset 4px 0 0 #5b93cf; }
 .series-table tr[data-tipo="mcomp"] td:first-child{ box-shadow:inset 4px 0 0 #2f5f90; }
+/* ───── Evolución · planilla v2 (tarjetas por ejercicio) ───── */
+.ev2{ background:#fff; border:1px solid #e4e8ef; border-radius:14px; overflow:hidden; box-shadow:0 10px 26px -14px rgba(20,40,80,.28); }
+.ev2 .ejh{ display:flex; align-items:center; gap:10px; padding:11px 14px; background:#f1f5fb; border-top:1px solid #e3e9f1; }
+.ev2 .ejh:first-child{ border-top:none; }
+.ev2 .idx{ flex:none; width:24px; height:24px; border-radius:7px; background:#2f5f95; color:#fff; font-size:12px; font-weight:900; display:flex; align-items:center; justify-content:center; }
+.ev2 .ejn{ font-size:13.5px; font-weight:800; color:#15202e; line-height:1.25; }
+.ev2 .ejmeta{ margin-left:auto; font-size:10.5px; font-weight:800; color:#7c8aa0; white-space:nowrap; letter-spacing:.3px; }
+.ev2 table{ width:100%; border-collapse:collapse; }
+.ev2 th{ font-size:9.5px; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:#9aa7ba; padding:6px 8px; text-align:center; background:#fafbfd; border-bottom:1px solid #eef1f6; }
+.ev2 th.s{ text-align:left; padding-left:18px; }
+.ev2 td{ font-size:13px; text-align:center; padding:8px; border-bottom:1px solid #f0f3f8; color:#1f2a38; font-variant-numeric:tabular-nums; font-weight:700; }
+.ev2 td.s{ text-align:left; padding-left:18px; color:#53627a; font-weight:800; }
+.ev2 tr:last-child td{ border-bottom:none; }
+.ev2 .dot{ display:inline-block; width:6px; height:6px; border-radius:50%; background:#c3ccd8; margin-right:7px; vertical-align:middle; }
+.ev2 .plan{ color:#8795ab; font-weight:700; }
+.ev2 .cev-rr,.ev2 .cev-cr{ width:62px; border:1px solid #d5deea; border-radius:7px; padding:6px; font-size:12.5px; text-align:center; font-family:inherit; font-weight:700; color:#15202e; background:#fff; }
+.ev2 .cev-rr:focus,.ev2 .cev-cr:focus{ border-color:#2f5f95; outline:none; }
+.ev2 .xt{ font-size:8.5px; font-weight:900; color:#2f5f95; background:#e4edf8; border-radius:4px; padding:1px 5px; margin-left:5px; }
 .btn-del-row {
   background: none; border: none; color: #ddd; cursor: pointer;
   font-size: 14px; padding: 2px 6px;
@@ -14233,20 +14251,26 @@ function _cevRenderFechas(){
 function _cevVerFecha(id){
   var d=_cevDocs.filter(function(x){return x._id===id;})[0]; if(!d) return;
   var c=document.getElementById('cev-tabc'); if(!c) return;
+  var ejs=(d.ejercicios||[]);
+  var totSer=0; ejs.forEach(function(e){ totSer+=((e.series||[]).length); });
   var html='<button onclick="_cevRenderFechas()" style="background:#eef2f8;border:1px solid #d5deea;color:#33415a;font-size:12px;font-weight:800;padding:8px 13px;border-radius:9px;cursor:pointer;font-family:inherit;margin-bottom:12px;">‹ Volver al historial</button>'
     +'<div style="font-size:15px;font-weight:900;color:#1e2a3c;text-transform:capitalize;">'+_cevFechaLarga(d.fecha)+'</div>'
-    +'<div style="font-size:12px;color:#8795ab;margin-bottom:14px;">'+_cevEsc(d.diaLabel||'')+'</div>';
-  (d.ejercicios||[]).forEach(function(e,ei){
-    html+='<div style="border:1px solid #e4e8ef;border-radius:10px;padding:11px 13px;margin-bottom:9px;"><div style="font-weight:800;color:#26303f;margin-bottom:7px;">'+_cevEsc(e.nombre)+'</div>'
-      +'<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><tr style="color:#8795ab;font-weight:700;"><td style="padding:3px 6px;">Serie</td><td>Reps plan</td><td>Carga plan</td><td>Reps real</td><td>Carga real (kg)</td></tr>';
-    (e.series||[]).forEach(function(s,si){
-      html+='<tr><td style="padding:4px 6px;font-weight:700;">'+_cevEsc(s.num)+(s.extra?' <span style="font-size:9px;font-weight:800;color:#2f5f95;">extra</span>':'')+'</td><td>'+_cevEsc(s.reps||'—')+'</td><td>'+_cevEsc(s.cargaPlan||'—')+'</td>'
-        +'<td><input class="cev-rr" data-e="'+ei+'" data-s="'+si+'" value="'+_cevEsc(s.repsReal||'')+'" placeholder="'+_cevEsc(s.reps||'')+'" style="width:58px;border:1px solid #d5deea;border-radius:6px;padding:5px;font-size:12px;text-align:center;"></td>'
-        +'<td><input class="cev-cr" data-e="'+ei+'" data-s="'+si+'" value="'+_cevEsc(s.cargaReal||'')+'" placeholder="'+_cevEsc(s.cargaPlan||'')+'" style="width:68px;border:1px solid #d5deea;border-radius:6px;padding:5px;font-size:12px;text-align:center;"></td></tr>';
+    +'<div style="font-size:12px;color:#8795ab;margin-bottom:14px;">'+_cevEsc(d.diaLabel||'')+(ejs.length?(' · '+ejs.length+' ejercicio'+(ejs.length>1?'s':'')+' · '+totSer+' serie'+(totSer>1?'s':'')):'')+'</div>';
+  var blks='';
+  ejs.forEach(function(e,ei){
+    var ser=(e.series||[]); if(!ser.length) ser=[{}];
+    blks+='<div class="ejh"><div class="idx">'+(ei+1)+'</div><div class="ejn">'+_cevEsc(e.nombre||'—')+'</div><div class="ejmeta">'+ser.length+' serie'+(ser.length>1?'s':'')+'</div></div>';
+    blks+='<table>'+(ei===0?'<thead><tr><th class="s">Serie</th><th>Reps plan</th><th>Carga plan</th><th>Reps real</th><th>Carga real (kg)</th></tr></thead>':'')+'<tbody>';
+    ser.forEach(function(s,si){
+      blks+='<tr><td class="s"><span class="dot"></span>Serie '+_cevEsc(s.num||(si+1))+(s.extra?'<span class="xt">EXTRA</span>':'')+'</td>'
+        +'<td class="plan">'+_cevEsc(s.reps||'—')+'</td><td class="plan">'+_cevEsc(s.cargaPlan||'—')+'</td>'
+        +'<td><input class="cev-rr" data-e="'+ei+'" data-s="'+si+'" value="'+_cevEsc(s.repsReal||'')+'" placeholder="'+_cevEsc(s.reps||'')+'"></td>'
+        +'<td><input class="cev-cr" data-e="'+ei+'" data-s="'+si+'" value="'+_cevEsc(s.cargaReal||'')+'" placeholder="'+_cevEsc(s.cargaPlan||'')+'"></td></tr>';
     });
-    html+='</table></div></div>';
+    blks+='</tbody></table>';
   });
-  html+='<div style="display:flex;justify-content:flex-end;margin-top:4px;"><button onclick="_cevGuardarReal(\''+id+'\')" style="background:#1f8f5a;color:#fff;border:none;border-radius:9px;padding:11px 24px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">GUARDAR cargas reales</button></div>';
+  html+='<div class="ev2">'+blks+'</div>';
+  html+='<div style="display:flex;justify-content:flex-end;margin-top:12px;"><button onclick="_cevGuardarReal(\''+id+'\')" style="background:#1f8f5a;color:#fff;border:none;border-radius:9px;padding:11px 24px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">GUARDAR cargas reales</button></div>';
   c.innerHTML=html;
 }
 function _cevGuardarReal(id){

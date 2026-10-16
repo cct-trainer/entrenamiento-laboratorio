@@ -1025,8 +1025,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261015200447 por un timestamp en cada deploy
-const _APP_VERSION = '20261015200447';
+// deploy.bat reemplaza 20261015215532 por un timestamp en cada deploy
+const _APP_VERSION = '20261015215532';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3262,13 +3262,38 @@ function _ensureEvolUI(){
     '.sheet th,.sheet td{border:1px solid #d6dde7;padding:7px 9px;text-align:center;white-space:nowrap;}'+
     '.sheet thead th{background:#eef1f6;color:#5a6577;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;}'+
     '.sheet td.lft,.sheet th.lft{text-align:left;}'+
-    '.sheet .rownum{background:#f4f6f9;color:#9aa5b4;font-weight:700;width:28px;}'+
+    '.sheet .rownum{background:#f4f6f9;color:#9aa5b4;font-weight:700;width:30px;vertical-align:middle;}'+
     '.sheet td.num{font-variant-numeric:tabular-nums;font-weight:700;}'+
     '.sheet tbody tr:nth-child(even) td{background:#fafbfd;}'+
     '.sheet td.real{color:#1f8f5a;font-weight:800;}'+
-    '.sheet td.ej{font-weight:800;color:#172230;text-align:left;}'+
+    '.sheet td.ej{font-weight:800;color:#172230;text-align:left;vertical-align:middle;background:#f8fafc;border-left:3px solid #4a86c4;line-height:1.3;white-space:normal;min-width:150px;}'+
+    /* agrupado por ejercicio: borde grueso al empezar cada grupo + sombreado alternado */
+    '.sheet.grouped tbody tr td{background:#fff;}'+
+    '.sheet tbody tr.grp td{border-top:2px solid #b9c3d1;}'+
+    '.sheet.grouped tbody tr.galt td{background:#f3f6fb;}'+
+    '.sheet.grouped tbody tr.galt td.ej{background:#eaf1fa;}'+
     '.sheet .prb{font-size:9px;font-weight:800;color:#fff;background:#2f5f95;border-radius:4px;padding:1px 5px;margin-left:4px;}'+
-    '.sheet .xt{font-size:9px;font-weight:800;color:#1f8f5a;margin-left:4px;}';
+    '.sheet .xt{font-size:9px;font-weight:800;color:#1f8f5a;margin-left:4px;}'+
+    /* ───── planilla v2 (tarjetas por ejercicio) ───── */
+    '.ev2{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 16px 38px -16px rgba(0,0,0,.65);}'+
+    '.ev2 .ejh{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#f1f5fb;border-top:1px solid #e3e9f1;}'+
+    '.ev2 .ejh:first-child{border-top:none;}'+
+    '.ev2 .idx{flex:none;width:24px;height:24px;border-radius:7px;background:#2f5f95;color:#fff;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;}'+
+    '.ev2 .ejn{font-size:13.5px;font-weight:800;color:#15202e;line-height:1.25;}'+
+    '.ev2 .ejmeta{margin-left:auto;font-size:10.5px;font-weight:800;color:#7c8aa0;white-space:nowrap;letter-spacing:.3px;}'+
+    '.ev2 table{width:100%;border-collapse:collapse;}'+
+    '.ev2 th{font-size:9.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#9aa7ba;padding:6px 8px;text-align:center;background:#fafbfd;border-bottom:1px solid #eef1f6;}'+
+    '.ev2 th.s{text-align:left;padding-left:18px;}'+
+    '.ev2 td{font-size:13px;text-align:center;padding:9px 8px;border-bottom:1px solid #f0f3f8;color:#1f2a38;font-variant-numeric:tabular-nums;font-weight:700;}'+
+    '.ev2 td.s{text-align:left;padding-left:18px;color:#53627a;font-weight:800;}'+
+    '.ev2 tr:last-child td{border-bottom:none;}'+
+    '.ev2 .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#c3ccd8;margin-right:7px;vertical-align:middle;}'+
+    '.ev2 .kg{font-weight:900;color:#15202e;}'+
+    '.ev2 .kg.real{color:#1f8f5a;}'+
+    '.ev2 .xt{font-size:8.5px;font-weight:900;color:#2f5f95;background:#e4edf8;border-radius:4px;padding:1px 5px;margin-left:5px;}'+
+    '.ev2-leg{display:flex;gap:16px;margin-top:10px;padding-left:4px;}'+
+    '.ev2-leg span{font-size:10.5px;color:#8ea3c4;font-weight:600;display:flex;align-items:center;gap:5px;}'+
+    '.ev2-leg i{width:10px;height:10px;border-radius:3px;display:inline-block;}';
   document.head.appendChild(st);
   var ov=document.createElement('div'); ov.className='evol-overlay'; ov.id='evol-overlay';
   ov.innerHTML='<div class="evol-top"><button class="evol-back" onclick="_cerrarEvolucion()">‹ Volver</button><div class="evol-h" id="evol-h">Mi evolución</div></div><div class="evol-body" id="evol-body"></div>';
@@ -3321,19 +3346,28 @@ function _aevVerFecha(id){
   var d=_aevDocs.filter(function(x){return x._id===id;})[0]; if(!d) return;
   var c=document.getElementById('aev-tabc'); if(!c) return;
   var uni=(_data&&_data.perfil&&_data.perfil.unidadPeso==='lb')?'lb':'kg';
+  var ejs=(d.ejercicios||[]);
+  var totSer=0; ejs.forEach(function(e){ totSer+=((e.series||[]).length); });
   var html='<button onclick="_aevFechas()" style="background:#141c30;border:1px solid #243150;color:#9fb4d2;font-size:12px;font-weight:800;padding:8px 13px;border-radius:9px;cursor:pointer;font-family:inherit;margin-bottom:12px;">‹ Volver</button>'
-    +'<div style="font-size:15px;font-weight:900;color:#fff;text-transform:capitalize;">'+_aevFechaLarga(d.fecha)+'</div><div style="font-size:12px;color:#8ea3c4;margin-bottom:13px;">'+_aevEsc(d.diaLabel||'')+'</div>';
-  var body=''; var rn=0;
-  (d.ejercicios||[]).forEach(function(e){
-    (e.series||[]).forEach(function(s,si){
-      rn++;
+    +'<div style="font-size:15px;font-weight:900;color:#fff;text-transform:capitalize;">'+_aevFechaLarga(d.fecha)+'</div>'
+    +'<div style="font-size:12px;color:#8ea3c4;margin-bottom:13px;">'+_aevEsc(d.diaLabel||'')+(ejs.length?(' · '+ejs.length+' ejercicio'+(ejs.length>1?'s':'')+' · '+totSer+' serie'+(totSer>1?'s':'')):'')+'</div>';
+  var blks='';
+  ejs.forEach(function(e,ei){
+    var ser=(e.series||[]); if(!ser.length) ser=[{}];
+    blks+='<div class="ejh"><div class="idx">'+(ei+1)+'</div><div class="ejn">'+_aevEsc(e.nombre||'—')+'</div><div class="ejmeta">'+ser.length+' serie'+(ser.length>1?'s':'')+'</div></div>';
+    blks+='<table>'+(ei===0?'<thead><tr><th class="s">Serie</th><th>Reps</th><th>Carga ('+uni+')</th></tr></thead>':'')+'<tbody>';
+    ser.forEach(function(s,si){
       var carga=(s.cargaReal&&String(s.cargaReal).trim()!=='')?s.cargaReal:s.cargaPlan;
       var reps=(s.repsReal&&String(s.repsReal).trim()!=='')?s.repsReal:s.reps;
       var real=!!(s.cargaReal&&String(s.cargaReal).trim()!=='');
-      body+='<tr><td class="rownum">'+rn+'</td><td class="ej">'+(si===0?_aevEsc(e.nombre):'')+'</td><td class="num">'+_aevEsc(s.num)+(s.extra?'<span class="xt">extra</span>':'')+'</td><td class="num">'+_aevEsc(reps||'—')+'</td><td class="num'+(real?' real':'')+'">'+_aevEsc(carga||'—')+'</td></tr>';
+      blks+='<tr><td class="s"><span class="dot"></span>Serie '+_aevEsc(s.num||(si+1))+(s.extra?'<span class="xt">EXTRA</span>':'')+'</td>'
+        +'<td>'+_aevEsc(reps||'—')+'</td>'
+        +'<td><span class="kg'+(real?' real':'')+'">'+_aevEsc(carga||'—')+'</span></td></tr>';
     });
+    blks+='</tbody></table>';
   });
-  html+='<div class="sheet"><table><thead><tr><th class="rownum"></th><th class="lft">Ejercicio</th><th>Serie</th><th>Reps</th><th>Carga ('+uni+')</th></tr></thead><tbody>'+body+'</tbody></table></div>';
+  html+='<div class="ev2">'+blks+'</div>'
+    +'<div class="ev2-leg"><span><i style="background:#1f8f5a;"></i>Carga real cargada</span><span><i style="background:#2f5f95;"></i>Serie extra</span></div>';
   c.innerHTML=html;
 }
 function _aevEjercicio(){
