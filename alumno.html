@@ -399,6 +399,13 @@ html.light .blk.pfill{background:#eef2f8;border:1px solid #d7dfec;border-radius:
 
 /* ── SERIE TYPE BADGE ─────────────────────────────────────────────── */
 .s-tipo{display:inline-block;font-size:8px;font-weight:800;padding:1px 5px;border-radius:4px;margin-left:3px;vertical-align:middle;letter-spacing:.3px;cursor:pointer;user-select:none;}
+.barra-bd{display:inline-block;margin-top:4px;font-size:9.5px;font-weight:700;color:#8fb6e6;background:rgba(74,134,196,.16);border-radius:6px;padding:1px 6px;line-height:1.3;white-space:nowrap;}
+.barra-bd b{color:#6fd39b;font-weight:900;}
+.barra-bd.solo{color:#9fb0cf;background:rgba(159,176,207,.14);}
+html.light .barra-bd{color:#2f5f95;background:rgba(47,95,149,.12);}
+html.light .barra-bd b{color:#1f8f5a;}
+.barra-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;color:#bcd6f5;background:rgba(74,134,196,.16);border:1px solid #2f557f;border-radius:20px;padding:3px 9px;white-space:nowrap;margin-left:6px;vertical-align:middle;}
+html.light .barra-badge{color:#2f5f95;background:rgba(47,95,149,.1);border-color:#b7cde8;}
 .serie-row{cursor:pointer;transition:background .1s;}
 .serie-row.lp-active{background:rgba(143,176,214,.12)!important;}
 /* Tabla BLANCA en tema oscuro (default): estilos claros */
@@ -1025,8 +1032,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261016072702 por un timestamp en cada deploy
-const _APP_VERSION = '20261016072702';
+// deploy.bat reemplaza 20261016122537 por un timestamp en cada deploy
+const _APP_VERSION = '20261016122537';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2285,9 +2292,14 @@ function _esUnilateralEj(ej){
 }
 // Nota automática de equipamiento (misma lógica que el panel del coach; [COACH↔APP])
 function _esMancuernaEj(ej){ return /mancuerna/i.test(String(((ej&&ej.equipo)||'')+' '+((ej&&ej.nombre)||''))); }
+// Peso de la barra fijado por el coach (0 = sin barra)
+function _barraNumA(v){ var n=parseFloat(String(v==null?'':v).replace(',','.')); return isNaN(n)?0:n; }
+function _barraFmtA(n){ return String(Math.round(n*10)/10).replace('.',','); }
 function _notaEquipo(ej){
   const e = String(((ej&&ej.equipo)||'')+' '+((ej&&ej.nombre)||'')).toLowerCase();
   const en = _LANG==='en';
+  // Barra con peso fijado por el coach → el peso cargado es el TOTAL (barra + discos)
+  if(_barraNumA(ej&&ej.barra)>0) return en ? 'Weight is the TOTAL (bar + plates). Below each set you see how much goes per side.' : 'El peso es el TOTAL (barra + discos). Abajo de cada serie te decimos cuánto va por lado.';
   // La aclaración de mancuerna ahora se resume con "c/u" en la tabla (según elija el coach 1 o 2), sin nota larga.
   if(/banda/.test(e))     return en ? 'Place the resistance band around the knees.' : 'Colocá la banda de resistencia alrededor de las rodillas.';
   if(/barra/.test(e) && !/smith|m[aá]quina/.test(e)) return en ? "Weight is the total of the plates only — don't include the bar. E.g. 60 kg = 60 kg in plates." : 'El peso es solo el total de los discos. No incluye la barra. Ej: 60 kg = 60 kg en discos.';
@@ -2745,6 +2757,17 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
               'onchange="_guardarEdit(\''+sp+'\',\'peso\',this.value)" onclick="event.stopPropagation()" '+
               'style="'+inpStyle+'">')
         : (pesoRaw ? (_pesoEsTexto?_compEsc(pesoRaw):pesoRaw+' kg') : '—');
+      // Desglose de barra (barra + discos · por lado) debajo del peso
+      let _barraCel = '';
+      const _barraKgR = _barraNumA(ej && ej.barra);
+      if(_barraKgR>0 && !_pesoEsTexto){
+        const _totR = _barraNumA(pesoRaw);
+        if(pesoRaw && _totR>0){
+          if(Math.abs(_totR-_barraKgR)<0.001) _barraCel='<div class="barra-bd solo">'+(_LANG==='en'?'just the bar':'solo la barra')+'</div>';
+          else if(_totR<_barraKgR) _barraCel='<div class="barra-bd solo">'+(_LANG==='en'?'less than the bar':'menos que la barra')+'</div>';
+          else { const _ladoR=(_totR-_barraKgR)/2; _barraCel='<div class="barra-bd">'+(_LANG==='en'?'bar ':'barra ')+_barraFmtA(_barraKgR)+' + <b>'+_barraFmtA(_ladoR)+(_LANG==='en'?'/side':'/lado')+'</b></div>'; }
+        }
+      }
       const rirRaw = (sp ? _getEdit(sp,'rir') : '') || s.rir || '';
       const rirCel = sp
         ? '<input id="inp_'+sp+'_rir" type="text" inputmode="text" value="'+rirRaw+'" placeholder="—" '+
@@ -2777,7 +2800,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
       return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+(done?' s-done':'')+'" data-pausa="'+(window._circLblOn?20:(_segDe(s.pausa)||defPausa))+'" data-rest="'+_restSec+'" data-iso="'+_isoSec+'" '+touch+'>'+
         '<td style="'+tdBase+'font-size:11px;font-weight:800;cursor:pointer;border-radius:11px 0 0 11px;" onclick="event.stopPropagation();_serieTap(\''+sp+'\')">'+serieLbl+'</td>'+
         '<td style="'+tdBase+'">'+repsCel+((_uni && !/\blado\b/i.test(String(repsVal)))?'<div style="font-size:8.5px;font-weight:800;color:#8a63c9;margin-top:1px;line-height:1;">c/lado</div>':'')+'</td>'+
-        (hasPeso  ? '<td style="'+tdBase+'">'+pesoCel+_cuHtml+'</td>' : '')+
+        (hasPeso  ? '<td style="'+tdBase+'">'+pesoCel+_cuHtml+_barraCel+'</td>' : '')+
         (hasRir   ? '<td style="'+tdBase+'">'+rirCel+'</td>' : '')+
         (hasPausa ? '<td style="'+tdBase+'font-size:11px;">'+pausaCel+'</td>' : '')+
         '<td style="'+tdBase+'padding:10px 4px;border-radius:0 11px 11px 0;">'+delBtn+'</td>'+
@@ -3068,7 +3091,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
             (ejLabel?'<span style="font-size:11px;font-weight:900;color:#9cc6ef;background:rgba(74,134,196,.16);border:1px solid rgba(74,134,196,.35);border-radius:6px;padding:2px 8px;flex-shrink:0;">'+ejLabel+'</span>':'')+
             _grupoBadge+
           '</div>'+
-          '<div style="font-size:17px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#3A6EA5':'var(--gold)')+';padding-left:9px;">'+_nomShow+'</div>'+
+          '<div style="font-size:17px;font-weight:900;color:var(--text);line-height:1.2;border-left:3px solid '+(_sust?'#3A6EA5':'var(--gold)')+';padding-left:9px;">'+_nomShow+(_barraNumA(ej&&ej.barra)>0?' <span class="barra-badge">🏋 '+(_barraNumA(ej.barra)<=10?(_LANG==='en'?'W bar ':'Barra W '):(_LANG==='en'?'Bar ':'Barra '))+_barraFmtA(_barraNumA(ej.barra))+' kg</span>':'')+'</div>'+
         '</div>'+
         (ytId ? '<button onclick="_toggleEjVid(\''+uid+'\')" title="Ver video" style="width:54px;height:54px;border-radius:14px;flex-shrink:0;background:#3A6EA5;border:1px solid #4a86c4;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;box-shadow:0 7px 16px rgba(58,110,165,.45),inset 0 1px 0 rgba(255,255,255,.28);transition:transform .12s,box-shadow .12s;" ontouchstart="" onmousedown="this.style.transform=\'translateY(2px)\';this.style.boxShadow=\'0 3px 8px rgba(58,110,165,.4)\';" onmouseup="this.style.transform=\'\';this.style.boxShadow=\'0 7px 16px rgba(58,110,165,.45),inset 0 1px 0 rgba(255,255,255,.28)\';"><span style="width:0;height:0;border-left:16px solid #fff;border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:3px;display:inline-block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));"></span></button>' : '')+
       '</div>'+
