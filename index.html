@@ -22766,10 +22766,18 @@ function _abrirPesoPicker(inp, ejId){
 
 function _prevRepsYPeso(tbody) {
   const rows = tbody.querySelectorAll('tr');
-  if (!rows.length) return { reps: '', peso: '' };
+  if (!rows.length) return { reps: '', peso: '', rir: '', pausa: '', tipo: '' };
   const last = rows[rows.length - 1];
   const inputs = last.querySelectorAll('input');
-  return { reps: inputs[0]?.value || '', peso: inputs[1]?.value || '' };
+  const reps = (last.querySelector('.reps-val')?.value) || inputs[0]?.value || '';
+  const tipo = last.querySelector('.serie-tipo-sel')?.value || '';
+  return {
+    reps,
+    peso:  inputs[1]?.value || '',
+    rir:   inputs[2]?.value || '',
+    pausa: inputs[3]?.value || '',
+    tipo
+  };
 }
 function addSerieApro(ejId) {
   const tbodyId = ejId+'-apro-tbody';
@@ -22784,10 +22792,14 @@ function addSerieEfec(ejId) {
   const tbodyId = ejId+'-efec-tbody';
   const tbody = document.getElementById(tbodyId);
   if (!tbody) return;
+  const hayPrev = tbody.querySelectorAll('tr').length > 0;
   const num = tbody.querySelectorAll('tr').length + 1;
-  const rir = _RIR_EFEC[Math.min(num-1, _RIR_EFEC.length-1)];
   const prev = _prevRepsYPeso(tbody);
-  tbody.appendChild(_makeSerieRow(ejId, tbodyId, 'Serie', num, { rir, reps: prev.reps, peso: prev.peso }));
+  // Repetir la serie anterior tal cual (tipo, pausa, reps, peso, rir). Si no hay serie previa, usar defaults.
+  const defs = hayPrev
+    ? { tipo: prev.tipo || 'efec', reps: prev.reps, peso: prev.peso, rir: prev.rir, pausa: prev.pausa }
+    : { rir: _RIR_EFEC[Math.min(num-1, _RIR_EFEC.length-1)] };
+  tbody.appendChild(_makeSerieRow(ejId, tbodyId, 'Serie', num, defs));
 }
 function addDropset(ejId) {
   const tbodyId = ejId+'-drop-tbody';
@@ -29464,9 +29476,9 @@ CORE: por tiempo, sin carga de referencia.
 
 ## 5. FORMATO DE PRESCRIPCIÓN
 - Cálculo: peso de trabajo = 1RM del ancla × %objetivo × coeficiente de transferencia.
-- En el campo peso escribí el kg concreto redondeado a 2.5 kg con el % entre paréntesis. Ej: "72.5 kg (75%)".
-- REGLA ESTRICTA: el peso de las SERIES EFECTIVAS lleva SIEMPRE el kg de trabajo concreto. PROHIBIDO poner textos como "ver series de aproximación", "según aproximación" o referencias cruzadas. Las aproximaciones son series PREVIAS más livianas (escalada ~40% → 90% del peso de trabajo); las efectivas van TODAS con su peso de trabajo real (mayor que la última aproximación).
-- MANCUERNAS: indicá el peso POR MANCUERNA (total ÷ 2). Ej: "68 kg → 34 kg por mancuerna".
+- En el campo PESO va SOLO el número, redondeado a 2.5. NO escribas "kg", ni el símbolo de kilos, ni ninguna unidad, ni el % entre paréntesis. Ejemplo CORRECTO: 72.5 — Ejemplo INCORRECTO: "72.5 kg (75%)".
+- REGLA ESTRICTA: el peso de las SERIES EFECTIVAS lleva SIEMPRE el número de trabajo concreto. PROHIBIDO poner textos como "ver series de aproximación", "según aproximación" o referencias cruzadas. Las aproximaciones son series PREVIAS más livianas (escalada ~40% → 90% del peso de trabajo); las efectivas van TODAS con su peso de trabajo real (mayor que la última aproximación).
+- MANCUERNAS: indicá el peso POR MANCUERNA (total ÷ 2), solo el número. Ej: total 68 → poné 34.
 - Descansos: hasta 7 min entre intentos máximos; 90 seg-3 min en hipertrofia.
 
 ## 6. AUTOAJUSTE INTELIGENTE
@@ -30660,12 +30672,12 @@ function _iaJSONaPlanificacion(data, alumnoId, opts) {
         const nSer = Math.min(parseInt(ej.series) || 3, 10);
         // Aproximación eliminada: si la IA la generó, se pliega como series de trabajo normales.
         const aproFold = Array.isArray(ej.seriesApro)
-          ? ej.seriesApro.slice(0, 6).map((s, ix) => ({ tipo: (ix === 0 ? 'cal' : 'apr'), reps: String(s.reps || ''), peso: String(s.peso || ''), rir: '', pausa: String(ej.pausa || ''), comentarios: '' }))
+          ? ej.seriesApro.slice(0, 6).map((s, ix) => ({ tipo: (ix === 0 ? 'cal' : 'apr'), reps: String(s.reps || ''), peso: _pesoSoloNumero(s.peso), rir: '', pausa: String(ej.pausa || ''), comentarios: '' }))
           : [];
-        let pesoEf = String(ej.peso || '').trim();
+        let pesoEf = _pesoSoloNumero(ej.peso);
         if (/aproximaci|ver serie|ver apro|seg[uú]n/i.test(pesoEf)) {
           const ultApro = aproFold.length ? parseFloat(String(aproFold[aproFold.length - 1].peso).replace(',', '.')) : NaN;
-          pesoEf = !isNaN(ultApro) ? (Math.round((ultApro * 1.05) / 2.5) * 2.5) + ' kg' : '';
+          pesoEf = !isNaN(ultApro) ? String(Math.round((ultApro * 1.05) / 2.5) * 2.5) : '';
         }
         const fila = { tipo: 'efec', reps: String(ej.reps || ''), peso: pesoEf, rir: String(ej.rir || ''), pausa: String(ej.pausa || ''), comentarios: '' };
         const seriesTrabajo = aproFold.concat(Array.from({ length: nSer }, () => ({ ...fila })));
@@ -30836,6 +30848,15 @@ function _traspEsHeader(t){
   const letras=t.replace(/[^a-záéíóúñ]/gi,'');
   return letras.length>=3 && letras===letras.toUpperCase() && !/\d+\s*[x×]\s*\d+/.test(t);
 }
+// Deja SOLO el número en el campo peso: "72.5 kg (75%)"→"72.5", "40kg"→"40", "34 kg por mancuerna"→"34".
+// No toca textos sin kg (RPE 8, 70%, Corporal, banda, etc.).
+function _pesoSoloNumero(v){
+  var s=String(v==null?'':v).trim();
+  if(!s) return '';
+  var m=s.match(/^(\d+(?:[.,]\d+)?)\s*(?:kg|kgs|kilos?|k)\b/i);
+  if(m) return m[1].replace(',','.');
+  return s;
+}
 function _traspParseEj(line){
   let t=line.replace(/^[\s\-•*]+/,'').trim(); if(!t) return null;
   const idxs=[]; const iP=t.indexOf('·'), iB=t.indexOf('|'); if(iP>=0)idxs.push(iP); if(iB>=0)idxs.push(iB);
@@ -30848,7 +30869,7 @@ function _traspParseEj(line){
   if(mSuf){ nombre=mSuf[1].trim(); const w=mSuf[2].toLowerCase(); tipoSerie= w.indexOf('cal')===0?'cal':(w.indexOf('apr')===0?'apr':'efec'); }
   const m=t.match(/(\d+)\s*[x×]\s*([0-9]{1,3}(?:\s*[-–\/]\s*[0-9]{1,3})?)/i); if(m){ series=m[1]; reps=m[2].replace(/\s/g,''); }
   const mp=t.match(/@?\s*(\d+(?:[.,]\d+)?)\s*kg/i);
-  if(mp) peso=mp[1].replace(',','.')+' kg';
+  if(mp) peso=mp[1].replace(',','.');
   else { const rpe=t.match(/rpe\s*(\d+)/i); if(rpe) peso='RPE '+rpe[1]; else { const pc=t.match(/\b(\d{1,3})\s*%/); if(pc) peso=pc[1]+'%'; } }
   const mr=t.match(/rir\s*(\d+)/i); if(mr) rir=mr[1];
   const _trP=mSR?t.slice(t.indexOf(mSR[0])):t;
