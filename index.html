@@ -22730,7 +22730,10 @@ function _makeSerieRow(ejId, tbodyId, prefix, num, defaults) {
 }
 function _renumRows(tbodyId, prefix) {
   document.querySelectorAll(`#${tbodyId} tr`).forEach((r,i)=>{
-    const c=r.querySelector('.serie-num-cell'); if(c) c.textContent=prefix+' '+(i+1);
+    const c=r.querySelector('.serie-num-cell'); if(!c) return;
+    const chk=c.querySelector('.evo-serie-chk');      // conservar el casillero de Evolución
+    const label=prefix+' '+(i+1);
+    c.innerHTML = chk ? (chk.outerHTML+' '+label) : label;
   });
 }
 
