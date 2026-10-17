@@ -411,36 +411,25 @@ html.light .barra-badge{color:#2f5f95;background:rgba(47,95,149,.1);border-color
 .ejincl2{font-size:12px;font-weight:400;color:#9fb0cf;line-height:1.3;margin-top:4px;padding-left:9px;}
 .ejincl2 b{color:#fff;font-weight:900;}
 html.light .ejincl2{color:#5a6b86;}
-/* ───── Movilidad: tarjeta compacta, celeste, deslizable ───── */
+/* ───── Movilidad: fila plegable (mismo lenguaje de la app) + deslizar ───── */
 #mov-histbar{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:-2px 0 10px;}
 #mov-histbar .hb{width:34px;height:34px;border-radius:10px;background:#16233a;border:1px solid #243150;color:#9fb4d2;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;}
 #mov-histbar .hb:disabled{opacity:.32;cursor:default;}
-.swipe-mov{position:relative;overflow:hidden;border-radius:14px;margin-bottom:9px;}
+.swipe-mov{position:relative;overflow:hidden;border-radius:13px;margin-bottom:10px;}
 .swipe-mov.mov-gone{display:none;}
-.swipe-mov .mov-bg{position:absolute;inset:0;background:linear-gradient(90deg,#1d3657,#3a2330);display:flex;align-items:center;justify-content:flex-end;padding-right:20px;color:#e9a0a0;font-size:12px;font-weight:800;border-radius:14px;}
-/* Bloque de movilidad · Opción B: sin recuadro, barra lateral celeste + tarjetas oscuras */
-.blk.mov-blk{background:transparent;border:none;border-left:5px solid #4a86c4;border-radius:0;padding-left:12px;}
-.blk.mov-blk .blk-body{padding:2px 0 0;}
-.mov-card{position:relative;background:#111c2e;border:1px solid #223150;border-radius:12px;}
-.mov-card.animout{transition:transform .25s ease,opacity .25s ease;transform:translateX(-120%);opacity:0;}
-.mov-row{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:grab;}
-.mov-name{flex:1;min-width:0;}
-.mov-name .n{font-size:14.5px;font-weight:800;color:#fff;line-height:1.2;}
-.mov-name .p{font-size:11.5px;color:#9fb0cf;font-weight:600;margin-top:3px;}
-.mov-exp{flex:none;width:30px;height:30px;border-radius:9px;background:#1a2740;border:1px solid #2d3f5e;color:#9fb4d2;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .2s;font-family:inherit;}
-.mov-card.open .mov-exp{transform:rotate(180deg);}
-.mov-det{max-height:0;overflow:hidden;transition:max-height .3s ease;}
-.mov-card.open .mov-det{max-height:620px;border-top:1px solid #26324a;}
-.mov-detin{padding:12px 14px;}
-.mov-vid{width:100%;height:150px;border-radius:10px;overflow:hidden;background:linear-gradient(135deg,#1b3a5e,#13294a);border:1px solid #2f557f;display:flex;align-items:center;justify-content:center;margin-bottom:10px;cursor:pointer;}
-.mov-vid .pl{width:50px;height:50px;border-radius:50%;background:#3A6EA5;display:flex;align-items:center;justify-content:center;}
-.mov-vid .pl span{width:0;height:0;border-left:15px solid #fff;border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:4px;}
-.mov-srow{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:8px 2px;border-bottom:1px solid #22314d;}
-.mov-srow:last-child{border-bottom:none;}
-.mov-srow .k{color:#9fb0cf;font-weight:700;}
-.mov-srow .v{color:#fff;font-weight:800;text-align:right;}
-.mov-note{font-size:12px;color:#eaf3ff;background:rgba(255,255,255,.08);border-radius:9px;padding:8px 11px;margin-top:9px;line-height:1.45;}
-.mov-note b{color:#bcd9ff;}
+.swipe-mov .mov-bg{position:absolute;inset:0;background:linear-gradient(90deg,#1d3657,#3a2330);display:flex;align-items:center;justify-content:flex-end;padding-right:20px;color:#e9a0a0;font-size:12px;font-weight:800;border-radius:13px;}
+.movx{position:relative;background:var(--card,#131d2e);border:1px solid rgba(128,140,170,.22);border-radius:13px;transition:transform .02s;}
+.movx.animout{transition:transform .25s ease,opacity .25s ease;transform:translateX(-120%);opacity:0;}
+.movx-head{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;}
+.movx-name{flex:1;min-width:0;font-size:14px;font-weight:800;color:var(--text,#fff);line-height:1.2;border-left:3px solid var(--gold,#8FB0D6);padding-left:10px;}
+.movx-reps{flex:none;font-size:12px;font-weight:800;color:#8fb6e6;background:rgba(58,110,165,.16);border:1.5px solid #3A6EA5;border-radius:20px;padding:4px 11px;white-space:nowrap;}
+.movx-chev{flex:none;width:30px;height:30px;border-radius:9px;background:rgba(58,110,165,.12);border:1px solid rgba(58,110,165,.4);color:#8fb6e6;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .2s;font-family:inherit;}
+.movx.open .movx-chev{transform:rotate(180deg);}
+.movx-det{max-height:0;overflow:hidden;transition:max-height .32s ease;}
+.movx.open .movx-det{max-height:1600px;border-top:1px solid rgba(128,140,170,.18);}
+/* dentro del detalle reusamos la tarjeta real; ocultamos el nombre duplicado */
+.movx-det .ejname-row{display:none;}
+.movx-det > div > div[style*="padding:10px 2px 12px"]{padding-top:4px!important;}
 .serie-row{cursor:pointer;transition:background .1s;}
 .serie-row.lp-active{background:rgba(143,176,214,.12)!important;}
 /* Tabla BLANCA en tema oscuro (default): estilos claros */
@@ -1067,8 +1056,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261017114133 por un timestamp en cada deploy
-const _APP_VERSION = '20261017114133';
+// deploy.bat reemplaza 20261017122119 por un timestamp en cada deploy
+const _APP_VERSION = '20261017122119';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2347,35 +2336,30 @@ function _movResumen(ej){
   if(reps) txt+=' × '+reps;
   return txt;
 }
-function _movCardHTML(ej, uid, label){
+function _movRepsPill(ej){
+  var ser=(ej&&ej.series)||[];
+  var n=ser.length || (ej&&ej.ctrl&&parseInt(ej.ctrl.series)) || 1;
+  var r=String((ser[0]&&ser[0].reps)||(ej&&ej.ctrl&&ej.ctrl.reps)||'').trim();
+  r=r.replace(/\s*(por\s*lado|c\/\s*lado|cada lado)/ig,'').trim();
+  return n+' × '+(r||'—');
+}
+function _movCardHTML(ej, uid, label, grupo, serieLbl, defP){
   var esc=function(s){return String(s==null?'':s).replace(/</g,'&lt;');};
   var nombre=esc((ej&&ej.nombre)||'—');
-  var resumen=esc(_movResumen(ej));
-  var yt=(typeof _ytId==='function')?_ytId((ej&&ej.video)||''):'';
+  var pill=esc(_movRepsPill(ej));
   var gone=window._movOut.has(uid)?' mov-gone':'';
-  var det='';
-  if(yt) det+='<div class="mov-vid" id="movv-'+uid+'" onclick="_movPlay(\''+uid+'\',\''+yt+'\')"><div class="pl"><span></span></div></div>';
-  var ser=(ej&&ej.series)||[];
-  if(ser.length){
-    ser.forEach(function(s,i){
-      var reps=String((s&&s.reps)||'').trim();
-      if(reps && typeof _esUnilateralEj==='function' && _esUnilateralEj(ej) && !/lado/i.test(reps)) reps+=' por lado';
-      det+='<div class="mov-srow"><span class="k">Serie '+(i+1)+'</span><span class="v">'+esc(reps||'—')+((s&&s.pausa)?(' · pausa '+esc(s.pausa)):'')+'</span></div>';
-    });
-  } else {
-    det+='<div class="mov-srow"><span class="k">Prescripción</span><span class="v">'+resumen+'</span></div>';
-  }
-  if(ej&&ej.nota) det+='<div class="mov-note"><b>Aclaración:</b> '+esc(ej.nota)+'</div>';
-  if(ej&&ej.setup) det+='<div class="mov-note"><b>Ajuste:</b> '+esc(ej.setup)+'</div>';
+  var full=(typeof _ejCard==='function')?_ejCard(ej, uid, label||'', grupo||'', serieLbl||'', defP||60):'';
   return '<div class="swipe-mov'+gone+'" data-uid="'+uid+'"><div class="mov-bg">'+(_LANG==='en'?'Remove ✓':'Sacar ✓')+'</div>'
-    +'<div class="mov-card" id="movc-'+uid+'" data-uid="'+uid+'">'
-      +'<div class="mov-row"><div class="mov-name"><div class="n">'+nombre+'</div><div class="p">'+resumen+'</div></div>'
-      +'<button class="mov-exp" title="'+(_LANG==='en'?'Details':'Ver detalle')+'" onclick="_movToggle(\''+uid+'\',event)">&#9662;</button></div>'
-      +'<div class="mov-det"><div class="mov-detin">'+det+'</div></div>'
+    +'<div class="movx" id="movc-'+uid+'" data-uid="'+uid+'">'
+      +'<div class="movx-head" onclick="_movToggle(\''+uid+'\',event)">'
+        +'<div class="movx-name">'+nombre+'</div>'
+        +'<span class="movx-reps">'+pill+'</span>'
+        +'<button class="movx-chev" title="'+(_LANG==='en'?'Details':'Ver detalle')+'" onclick="_movToggle(\''+uid+'\',event)">&#9662;</button>'
+      +'</div>'
+      +'<div class="movx-det">'+full+'</div>'
     +'</div></div>';
 }
 function _movToggle(uid,e){ if(e)e.stopPropagation(); var c=document.getElementById('movc-'+uid); if(c) c.classList.toggle('open'); }
-function _movPlay(uid,yt){ var b=document.getElementById('movv-'+uid); if(b&&yt) b.innerHTML='<iframe src="https://www.youtube.com/embed/'+yt+'?autoplay=1&rel=0" allow="autoplay; encrypted-media" allowfullscreen style="border:0;width:100%;height:150px;border-radius:10px;"></iframe>'; }
 function _movHistUpd(){ var u=document.getElementById('mov-undo'), r=document.getElementById('mov-redo'); if(u)u.disabled=!window._movUndo.length; if(r)r.disabled=!window._movRedo.length; }
 function _movDismiss(uid){
   if(window._movOut.has(uid)) return;
@@ -2397,7 +2381,7 @@ function _movInit(){
     document.addEventListener('mousemove',_movMove); document.addEventListener('mouseup',_movUp);
     document.addEventListener('touchmove',function(e){ if(_movDragCard) _movMove(e); },{passive:true}); document.addEventListener('touchend',_movUp);
   }
-  document.querySelectorAll('.mov-card').forEach(function(c){
+  document.querySelectorAll('.movx').forEach(function(c){
     if(c._movWired) return; c._movWired=true;
     c.addEventListener('mousedown',function(e){ _movDown(c,e); });
     c.addEventListener('touchstart',function(e){ _movDown(c,e); },{passive:true});
@@ -9335,10 +9319,10 @@ function renderSesion() {
           '</div>';
         }
       }
-      // ── MOVILIDAD: tarjetas compactas celestes, plegadas, deslizables (solo este tipo) ──
+      // ── MOVILIDAD: mismas tarjetas de la app pero plegadas + deslizables (solo este tipo) ──
       if(_movEsBloque(b)){
-        const movHTML=(b.ejercicios||[]).map((ej,ei)=> _movCardHTML(ej,'b'+bi+'e'+ei, letra+(ei+1))).join('');
-        return '<div class="blk pfill mov-blk '+((window._sccFaseCls&&window._sccFaseCls[bi])||'')+'" style="margin-bottom:16px;">'+
+        const movHTML=(b.ejercicios||[]).map((ej,ei)=> _movCardHTML(ej,'b'+bi+'e'+ei, letra+(ei+1), _grupo, _serieLbl, 60)).join('');
+        return '<div class="blk pfill '+((window._sccFaseCls&&window._sccFaseCls[bi])||'')+'" style="margin-bottom:16px;">'+
           '<div class="blk-body" style="padding:2px 0 0;">'+_blockHeaderV2(b)+_sysDescHTML(b)+movHTML+_porqueBloqueHTML(b)+'</div>'+
         '</div>';
       }
