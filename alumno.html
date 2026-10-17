@@ -418,26 +418,26 @@ html.light .ejincl2{color:#5a6b86;}
 .swipe-mov{position:relative;overflow:hidden;border-radius:14px;margin-bottom:9px;}
 .swipe-mov.mov-gone{display:none;}
 .swipe-mov .mov-bg{position:absolute;inset:0;background:linear-gradient(90deg,#1d3657,#3a2330);display:flex;align-items:center;justify-content:flex-end;padding-right:20px;color:#e9a0a0;font-size:12px;font-weight:800;border-radius:14px;}
-/* Fondo celeste del BLOQUE de movilidad (el recuadro que contiene las tarjetas) */
-.blk.mov-blk{background:linear-gradient(180deg,#2b5a88,#214a72);border:1px solid #5193c7;border-radius:16px;}
-.blk.mov-blk .blk-body{padding:12px 12px 4px;}
-.mov-card{position:relative;background:#0f1c30;border:1px solid #37608c;border-radius:14px;}
+/* Bloque de movilidad · Opción B: sin recuadro, barra lateral celeste + tarjetas oscuras */
+.blk.mov-blk{background:transparent;border:none;border-left:5px solid #4a86c4;border-radius:0;padding-left:12px;}
+.blk.mov-blk .blk-body{padding:2px 0 0;}
+.mov-card{position:relative;background:#111c2e;border:1px solid #223150;border-radius:12px;}
 .mov-card.animout{transition:transform .25s ease,opacity .25s ease;transform:translateX(-120%);opacity:0;}
 .mov-row{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:grab;}
-.mov-name{flex:1;min-width:0;border-left:3px solid #ffffff;padding-left:9px;}
+.mov-name{flex:1;min-width:0;}
 .mov-name .n{font-size:14.5px;font-weight:800;color:#fff;line-height:1.2;}
-.mov-name .p{font-size:11.5px;color:#d3e6ff;font-weight:600;margin-top:3px;}
-.mov-exp{flex:none;width:30px;height:30px;border-radius:9px;background:#21436c;border:1px solid #4f85bd;color:#eaf2ff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .2s;font-family:inherit;}
+.mov-name .p{font-size:11.5px;color:#9fb0cf;font-weight:600;margin-top:3px;}
+.mov-exp{flex:none;width:30px;height:30px;border-radius:9px;background:#1a2740;border:1px solid #2d3f5e;color:#9fb4d2;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .2s;font-family:inherit;}
 .mov-card.open .mov-exp{transform:rotate(180deg);}
 .mov-det{max-height:0;overflow:hidden;transition:max-height .3s ease;}
-.mov-card.open .mov-det{max-height:620px;border-top:1px solid #3d6a97;}
+.mov-card.open .mov-det{max-height:620px;border-top:1px solid #26324a;}
 .mov-detin{padding:12px 14px;}
-.mov-vid{width:100%;height:150px;border-radius:10px;overflow:hidden;background:linear-gradient(135deg,#1b3a5e,#13294a);border:1px solid #4f85bd;display:flex;align-items:center;justify-content:center;margin-bottom:10px;cursor:pointer;}
+.mov-vid{width:100%;height:150px;border-radius:10px;overflow:hidden;background:linear-gradient(135deg,#1b3a5e,#13294a);border:1px solid #2f557f;display:flex;align-items:center;justify-content:center;margin-bottom:10px;cursor:pointer;}
 .mov-vid .pl{width:50px;height:50px;border-radius:50%;background:#3A6EA5;display:flex;align-items:center;justify-content:center;}
 .mov-vid .pl span{width:0;height:0;border-left:15px solid #fff;border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:4px;}
-.mov-srow{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:8px 2px;border-bottom:1px solid #35618c;}
+.mov-srow{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:8px 2px;border-bottom:1px solid #22314d;}
 .mov-srow:last-child{border-bottom:none;}
-.mov-srow .k{color:#cfe0f6;font-weight:700;}
+.mov-srow .k{color:#9fb0cf;font-weight:700;}
 .mov-srow .v{color:#fff;font-weight:800;text-align:right;}
 .mov-note{font-size:12px;color:#eaf3ff;background:rgba(255,255,255,.08);border-radius:9px;padding:8px 11px;margin-top:9px;line-height:1.45;}
 .mov-note b{color:#bcd9ff;}
@@ -1067,8 +1067,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261017112548 por un timestamp en cada deploy
-const _APP_VERSION = '20261017112548';
+// deploy.bat reemplaza 20261017114133 por un timestamp en cada deploy
+const _APP_VERSION = '20261017114133';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
