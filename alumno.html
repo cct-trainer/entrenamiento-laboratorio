@@ -411,6 +411,33 @@ html.light .barra-badge{color:#2f5f95;background:rgba(47,95,149,.1);border-color
 .ejincl2{font-size:12px;font-weight:400;color:#9fb0cf;line-height:1.3;margin-top:4px;padding-left:9px;}
 .ejincl2 b{color:#fff;font-weight:900;}
 html.light .ejincl2{color:#5a6b86;}
+/* ───── Movilidad: tarjeta compacta, celeste, deslizable ───── */
+#mov-histbar{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:-2px 0 10px;}
+#mov-histbar .hb{width:34px;height:34px;border-radius:10px;background:#16233a;border:1px solid #243150;color:#9fb4d2;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;}
+#mov-histbar .hb:disabled{opacity:.32;cursor:default;}
+.swipe-mov{position:relative;overflow:hidden;border-radius:14px;margin-bottom:9px;}
+.swipe-mov.mov-gone{display:none;}
+.swipe-mov .mov-bg{position:absolute;inset:0;background:linear-gradient(90deg,#1d3657,#3a2330);display:flex;align-items:center;justify-content:flex-end;padding-right:20px;color:#e9a0a0;font-size:12px;font-weight:800;border-radius:14px;}
+.mov-card{position:relative;background:linear-gradient(180deg,#26527f,#1f4269);border:1px solid #5593c9;border-radius:14px;}
+.mov-card.animout{transition:transform .25s ease,opacity .25s ease;transform:translateX(-120%);opacity:0;}
+.mov-row{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:grab;}
+.mov-name{flex:1;min-width:0;border-left:3px solid #ffffff;padding-left:9px;}
+.mov-name .n{font-size:14.5px;font-weight:800;color:#fff;line-height:1.2;}
+.mov-name .p{font-size:11.5px;color:#d3e6ff;font-weight:600;margin-top:3px;}
+.mov-exp{flex:none;width:30px;height:30px;border-radius:9px;background:#21436c;border:1px solid #4f85bd;color:#eaf2ff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .2s;font-family:inherit;}
+.mov-card.open .mov-exp{transform:rotate(180deg);}
+.mov-det{max-height:0;overflow:hidden;transition:max-height .3s ease;}
+.mov-card.open .mov-det{max-height:620px;border-top:1px solid #3d6a97;}
+.mov-detin{padding:12px 14px;}
+.mov-vid{width:100%;height:150px;border-radius:10px;overflow:hidden;background:linear-gradient(135deg,#1b3a5e,#13294a);border:1px solid #4f85bd;display:flex;align-items:center;justify-content:center;margin-bottom:10px;cursor:pointer;}
+.mov-vid .pl{width:50px;height:50px;border-radius:50%;background:#3A6EA5;display:flex;align-items:center;justify-content:center;}
+.mov-vid .pl span{width:0;height:0;border-left:15px solid #fff;border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:4px;}
+.mov-srow{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:8px 2px;border-bottom:1px solid #35618c;}
+.mov-srow:last-child{border-bottom:none;}
+.mov-srow .k{color:#cfe0f6;font-weight:700;}
+.mov-srow .v{color:#fff;font-weight:800;text-align:right;}
+.mov-note{font-size:12px;color:#eaf3ff;background:rgba(255,255,255,.08);border-radius:9px;padding:8px 11px;margin-top:9px;line-height:1.45;}
+.mov-note b{color:#bcd9ff;}
 .serie-row{cursor:pointer;transition:background .1s;}
 .serie-row.lp-active{background:rgba(143,176,214,.12)!important;}
 /* Tabla BLANCA en tema oscuro (default): estilos claros */
@@ -1037,8 +1064,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261017094942 por un timestamp en cada deploy
-const _APP_VERSION = '20261017094942';
+// deploy.bat reemplaza 20261017111518 por un timestamp en cada deploy
+const _APP_VERSION = '20261017111518';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2300,6 +2327,79 @@ function _esMancuernaEj(ej){ return /mancuerna/i.test(String(((ej&&ej.equipo)||'
 // Peso de la barra fijado por el coach (0 = sin barra)
 function _barraNumA(v){ var n=parseFloat(String(v==null?'':v).replace(',','.')); return isNaN(n)?0:n; }
 function _barraFmtA(n){ return String(Math.round(n*10)/10).replace('.',','); }
+
+// ═════ MOVILIDAD: tarjeta compacta (celeste) + deslizar para sacar + deshacer/rehacer ═════
+window._movOut = window._movOut || new Set();
+window._movUndo = window._movUndo || [];
+window._movRedo = window._movRedo || [];
+function _movResetSi(key){ if(window._movKey!==key){ window._movKey=key; window._movOut=new Set(); window._movUndo=[]; window._movRedo=[]; } }
+function _movEsBloque(b){ var t=String((b&&(b.tipo||b.nombre))||'').toLowerCase(); return /movilidad/.test(t); }
+function _movResumen(ej){
+  var ser=(ej&&ej.series)||[];
+  var n=ser.length || (ej&&ej.ctrl&&parseInt(ej.ctrl.series)) || 1;
+  var reps=(ser[0]&&ser[0].reps)||(ej&&ej.ctrl&&ej.ctrl.reps)||'';
+  reps=String(reps||'').trim();
+  if(reps && typeof _esUnilateralEj==='function' && _esUnilateralEj(ej) && !/lado/i.test(reps)) reps+=' por lado';
+  var txt=n+' serie'+(n>1?'s':'');
+  if(reps) txt+=' × '+reps;
+  return txt;
+}
+function _movCardHTML(ej, uid, label){
+  var esc=function(s){return String(s==null?'':s).replace(/</g,'&lt;');};
+  var nombre=esc((ej&&ej.nombre)||'—');
+  var resumen=esc(_movResumen(ej));
+  var yt=(typeof _ytId==='function')?_ytId((ej&&ej.video)||''):'';
+  var gone=window._movOut.has(uid)?' mov-gone':'';
+  var det='';
+  if(yt) det+='<div class="mov-vid" id="movv-'+uid+'" onclick="_movPlay(\''+uid+'\',\''+yt+'\')"><div class="pl"><span></span></div></div>';
+  var ser=(ej&&ej.series)||[];
+  if(ser.length){
+    ser.forEach(function(s,i){
+      var reps=String((s&&s.reps)||'').trim();
+      if(reps && typeof _esUnilateralEj==='function' && _esUnilateralEj(ej) && !/lado/i.test(reps)) reps+=' por lado';
+      det+='<div class="mov-srow"><span class="k">Serie '+(i+1)+'</span><span class="v">'+esc(reps||'—')+((s&&s.pausa)?(' · pausa '+esc(s.pausa)):'')+'</span></div>';
+    });
+  } else {
+    det+='<div class="mov-srow"><span class="k">Prescripción</span><span class="v">'+resumen+'</span></div>';
+  }
+  if(ej&&ej.nota) det+='<div class="mov-note"><b>Aclaración:</b> '+esc(ej.nota)+'</div>';
+  if(ej&&ej.setup) det+='<div class="mov-note"><b>Ajuste:</b> '+esc(ej.setup)+'</div>';
+  return '<div class="swipe-mov'+gone+'" data-uid="'+uid+'"><div class="mov-bg">'+(_LANG==='en'?'Remove ✓':'Sacar ✓')+'</div>'
+    +'<div class="mov-card" id="movc-'+uid+'" data-uid="'+uid+'">'
+      +'<div class="mov-row"><div class="mov-name"><div class="n">'+nombre+'</div><div class="p">'+resumen+'</div></div>'
+      +'<button class="mov-exp" title="'+(_LANG==='en'?'Details':'Ver detalle')+'" onclick="_movToggle(\''+uid+'\',event)">&#9662;</button></div>'
+      +'<div class="mov-det"><div class="mov-detin">'+det+'</div></div>'
+    +'</div></div>';
+}
+function _movToggle(uid,e){ if(e)e.stopPropagation(); var c=document.getElementById('movc-'+uid); if(c) c.classList.toggle('open'); }
+function _movPlay(uid,yt){ var b=document.getElementById('movv-'+uid); if(b&&yt) b.innerHTML='<iframe src="https://www.youtube.com/embed/'+yt+'?autoplay=1&rel=0" allow="autoplay; encrypted-media" allowfullscreen style="border:0;width:100%;height:150px;border-radius:10px;"></iframe>'; }
+function _movHistUpd(){ var u=document.getElementById('mov-undo'), r=document.getElementById('mov-redo'); if(u)u.disabled=!window._movUndo.length; if(r)r.disabled=!window._movRedo.length; }
+function _movDismiss(uid){
+  if(window._movOut.has(uid)) return;
+  window._movOut.add(uid); window._movUndo.push(uid); window._movRedo=[];
+  var sw=document.querySelector('.swipe-mov[data-uid="'+uid+'"]'); var c=document.getElementById('movc-'+uid);
+  if(c){ c.classList.add('animout'); setTimeout(function(){ if(sw) sw.classList.add('mov-gone'); c.classList.remove('animout'); c.style.transform=''; },240); }
+  else if(sw){ sw.classList.add('mov-gone'); }
+  _movHistUpd();
+}
+function _movUndoFn(){ var uid=window._movUndo.pop(); if(!uid)return; window._movOut.delete(uid); window._movRedo.push(uid); var sw=document.querySelector('.swipe-mov[data-uid="'+uid+'"]'); if(sw) sw.classList.remove('mov-gone'); var c=document.getElementById('movc-'+uid); if(c) c.style.transform=''; _movHistUpd(); }
+function _movRedoFn(){ var uid=window._movRedo.pop(); if(!uid)return; window._movOut.add(uid); window._movUndo.push(uid); var sw=document.querySelector('.swipe-mov[data-uid="'+uid+'"]'); if(sw) sw.classList.add('mov-gone'); _movHistUpd(); }
+var _movDragCard=null,_movX0=0,_movDX=0;
+function _movDown(c,e){ _movDragCard=c; _movX0=(e.touches?e.touches[0].clientX:e.clientX); _movDX=0; c.style.transition='none'; }
+function _movMove(e){ if(!_movDragCard)return; var x=(e.touches?e.touches[0].clientX:e.clientX); _movDX=Math.min(0,x-_movX0); _movDragCard.style.transform='translateX('+_movDX+'px)'; }
+function _movUp(){ var c=_movDragCard; if(!c)return; _movDragCard=null; c.style.transition='transform .2s'; var uid=c.getAttribute('data-uid'); if(_movDX<-80){ _movDismiss(uid); } else { c.style.transform='translateX(0)'; } _movDX=0; }
+function _movInit(){
+  _movHistUpd();
+  if(!window._movGlobBound){ window._movGlobBound=true;
+    document.addEventListener('mousemove',_movMove); document.addEventListener('mouseup',_movUp);
+    document.addEventListener('touchmove',function(e){ if(_movDragCard) _movMove(e); },{passive:true}); document.addEventListener('touchend',_movUp);
+  }
+  document.querySelectorAll('.mov-card').forEach(function(c){
+    if(c._movWired) return; c._movWired=true;
+    c.addEventListener('mousedown',function(e){ _movDown(c,e); });
+    c.addEventListener('touchstart',function(e){ _movDown(c,e); },{passive:true});
+  });
+}
 function _notaEquipo(ej){
   const e = String(((ej&&ej.equipo)||'')+' '+((ej&&ej.nombre)||'')).toLowerCase();
   const en = _LANG==='en';
@@ -9189,11 +9289,15 @@ function renderSesion() {
   ) : '';
   const _adap = _adaptarSesion(ses.bloques, _tiempoActual());
   (function(){ var wk=0; window._sccFaseCls=(ses.bloques||[]).map(function(b){ var t=String((b&&(b.tipo||b.nombre))||'').toLowerCase(); if(/movilidad|activaci|calentamiento|entrada en calor|enfriamiento|vuelta a la calma|elongaci|estiramiento/.test(t)) return 'scc-calor'; wk++; return (wk%2===0)?'scc-alt':''; }); })();
+  // Movilidad: resetear el estado de "sacados"/deshacer al cambiar de sesión
+  _movResetSi(_plan.id+'_'+_semIdx+'_'+_diaIdx+'_'+_diaModTab);
+  const _hasMov = (ses.bloques||[]).some(_movEsBloque);
   const _bloquesHTML = _objCard + _tiempoCard(ses.bloques) + _readinessCard() +
     '<div id="sesion-progreso" style="margin-bottom:14px;">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:900;letter-spacing:1px;color:var(--text);margin-bottom:7px;"><span>'+_t('tu_entrenamiento')+'</span><span class="sp-txt" style="color:#3A6EA5;letter-spacing:0;font-weight:800;">0/0</span></div>'+
       '<div style="height:7px;background:#1b2540;border-radius:5px;overflow:hidden;"><div class="sp-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#3A6EA5,#6aa0dc);border-radius:5px;transition:width .3s;"></div></div>'+
     '</div>'+
+    (_hasMov ? '<div id="mov-histbar"><button class="hb" id="mov-undo" title="'+(_LANG==='en'?'Undo':'Deshacer')+'" onclick="_movUndoFn()" disabled>&#8630;</button><button class="hb" id="mov-redo" title="'+(_LANG==='en'?'Redo':'Rehacer')+'" onclick="_movRedoFn()" disabled>&#8631;</button></div>' : '')+
     ses.bloques.map((b,bi) => {
       const letra='ABCDEFGHIJ'[bi]||(bi+1);
       const _grupo   = _tc(b.nombre||b.tipo||'');        // grupo muscular / nombre del bloque → badge dorado
@@ -9227,6 +9331,13 @@ function renderSesion() {
             '<div class="blk-body" style="padding:2px 0 0;">'+_circuitPlayerHTML(b,bi,letra,_grupo,_serieLbl,30,_st)+'</div>'+
           '</div>';
         }
+      }
+      // ── MOVILIDAD: tarjetas compactas celestes, plegadas, deslizables (solo este tipo) ──
+      if(_movEsBloque(b)){
+        const movHTML=(b.ejercicios||[]).map((ej,ei)=> _movCardHTML(ej,'b'+bi+'e'+ei, letra+(ei+1))).join('');
+        return '<div class="blk pfill '+((window._sccFaseCls&&window._sccFaseCls[bi])||'')+'" style="margin-bottom:16px;">'+
+          '<div class="blk-body" style="padding:2px 0 0;">'+_blockHeaderV2(b)+_sysDescHTML(b)+movHTML+_porqueBloqueHTML(b)+'</div>'+
+        '</div>';
       }
       const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>{
         const _defP = (!_combo) ? 60 : ((ei===_nEjB-1) ? 60 : 30);   // simple 1min · combo intermedio 30s · último 1min
@@ -9294,6 +9405,7 @@ function renderSesion() {
     '</div>';
   _updProgreso();
   _wakeOn();
+  if(typeof _movInit==='function') _movInit();
 }
 
 // ── RUNNING (el render nuevo, estilo Fuerza, está más abajo) ──
