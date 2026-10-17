@@ -418,7 +418,10 @@ html.light .ejincl2{color:#5a6b86;}
 .swipe-mov{position:relative;overflow:hidden;border-radius:14px;margin-bottom:9px;}
 .swipe-mov.mov-gone{display:none;}
 .swipe-mov .mov-bg{position:absolute;inset:0;background:linear-gradient(90deg,#1d3657,#3a2330);display:flex;align-items:center;justify-content:flex-end;padding-right:20px;color:#e9a0a0;font-size:12px;font-weight:800;border-radius:14px;}
-.mov-card{position:relative;background:linear-gradient(180deg,#26527f,#1f4269);border:1px solid #5593c9;border-radius:14px;}
+/* Fondo celeste del BLOQUE de movilidad (el recuadro que contiene las tarjetas) */
+.blk.mov-blk{background:linear-gradient(180deg,#2b5a88,#214a72);border:1px solid #5193c7;border-radius:16px;}
+.blk.mov-blk .blk-body{padding:12px 12px 4px;}
+.mov-card{position:relative;background:#0f1c30;border:1px solid #37608c;border-radius:14px;}
 .mov-card.animout{transition:transform .25s ease,opacity .25s ease;transform:translateX(-120%);opacity:0;}
 .mov-row{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:grab;}
 .mov-name{flex:1;min-width:0;border-left:3px solid #ffffff;padding-left:9px;}
@@ -1064,8 +1067,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261017111655 por un timestamp en cada deploy
-const _APP_VERSION = '20261017111655';
+// deploy.bat reemplaza 20261017112548 por un timestamp en cada deploy
+const _APP_VERSION = '20261017112548';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -9335,7 +9338,7 @@ function renderSesion() {
       // ── MOVILIDAD: tarjetas compactas celestes, plegadas, deslizables (solo este tipo) ──
       if(_movEsBloque(b)){
         const movHTML=(b.ejercicios||[]).map((ej,ei)=> _movCardHTML(ej,'b'+bi+'e'+ei, letra+(ei+1))).join('');
-        return '<div class="blk pfill '+((window._sccFaseCls&&window._sccFaseCls[bi])||'')+'" style="margin-bottom:16px;">'+
+        return '<div class="blk pfill mov-blk '+((window._sccFaseCls&&window._sccFaseCls[bi])||'')+'" style="margin-bottom:16px;">'+
           '<div class="blk-body" style="padding:2px 0 0;">'+_blockHeaderV2(b)+_sysDescHTML(b)+movHTML+_porqueBloqueHTML(b)+'</div>'+
         '</div>';
       }
