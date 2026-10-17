@@ -13540,8 +13540,9 @@ function renderPlanDiaEditor(diaIdx) {
             <div id="plan-ses-durcalc" style="font-size:11px;color:#059669;font-weight:700;margin-top:6px;"></div>
           </details>
         </div>
-        <div style="display:flex;justify-content:flex-end;margin:2px 2px 8px;">
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin:2px 2px 8px;flex-wrap:wrap;">
           <button onclick="_evoSelTodas(this)" style="background:#eef2f8;border:1px solid #cdd9ea;color:#2f5f95;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">☑ Seleccionar todas las series</button>
+          <button onclick="_imprimirSesionSeleccion()" title="Imprimir la sesión con las series tildadas" style="background:#1a2a4a;border:1px solid #1a2a4a;color:#fff;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">🖨 Imprimir sesión</button>
         </div>
         <div id="plan-dia-bloques-${diaIdx}"></div>
         <div class="plan-add-bloque-zone" onclick="abrirModalNuevoBloque(${diaIdx})">
@@ -14369,6 +14370,79 @@ function _evoGather(){
   var planId=(typeof planSemActualId!=='undefined' && planSemActualId)?planSemActualId:'plan';
   return { fecha:fecha, diaLabel:diaLabel, ejercicios:ejercicios, planId:planId, sem:planSemEditando, dia:planDiaAbierto, mod:(_editorModTab||0),
            docId:planId+'_'+planSemEditando+'_'+planDiaAbierto+'_'+(_editorModTab||0) };
+}
+// ── IMPRIMIR LA SESIÓN (papel/PDF) con lo tildado ────────────────────────────
+function _imprimirSesionSeleccion(){
+  var cont=document.getElementById('plan-editor-page-content'); if(!cont){ alert('Abrí el día de entrenamiento.'); return; }
+  var esc=function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  var uni=(typeof _pesoUnit==='function')?_pesoUnit():'kg';
+  var tipoLabel=function(k){ for(var i=0;i<_SERIE_TIPOS.length;i++){ if(_SERIE_TIPOS[i][0]===k) return _SERIE_TIPOS[i][1]; } return ''; };
+  var num=function(v){ var n=parseFloat(String(v==null?'':v).replace(',','.')); return isNaN(n)?0:n; };
+  var fmt=function(n){ return String(Math.round(n*10)/10).replace('.',','); };
+  // Encabezado de la sesión
+  var alumno=''; try{ var a=getAlumnos().find(function(x){return x.id===_setupAlumnoIdActual();}); if(a) alumno=a.nombre||''; }catch(e){}
+  var nombreSes=((document.getElementById('plan-sesion-nombre')||{}).value||'').trim();
+  var etiqueta=((document.getElementById('plan-ses-etiqueta')||{}).value||'').trim();
+  var lugar=((document.getElementById('plan-ses-lugar')||{}).value||'').trim();
+  var bloquesHTML=''; var totalSeries=0;
+  cont.querySelectorAll('.bloque-wrap').forEach(function(bEl){
+    var bNombre=((bEl.querySelector('.bloque-nombre-input')||{}).value||'').trim();
+    var ejHTML='';
+    bEl.querySelectorAll('.ej-card').forEach(function(card){
+      var nombre=((card.querySelector('.ej-nombre-input')||{}).value||'').trim();
+      var barra=num((card.querySelector('.ej-barra')||{}).value);
+      var incl=((card.querySelector('.ej-incl-val')||{}).value||'').trim();
+      var ajuste=((card.querySelector('.ej-setup-input')||{}).value||'').trim();
+      var nota=((card.querySelector('.ej-nota-input')||{}).value||'').trim();
+      var filas='';
+      card.querySelectorAll('.evo-serie-chk').forEach(function(chk,ri){
+        if(!chk.classList.contains('on')) return;
+        var row=chk.closest('tr'); if(!row) return;
+        var numTxt=((row.querySelector('.serie-num-cell')||{}).textContent||'').trim();
+        var sNum=(numTxt.match(/(\d+)\s*$/)||[])[1]||String(ri+1);
+        var inps=row.querySelectorAll('input');
+        var reps=((row.querySelector('.reps-val')||{}).value||(inps[0]&&inps[0].value)||'').trim();
+        var peso=((inps[1]&&inps[1].value)||'').trim();
+        var rir=((inps[2]&&inps[2].value)||'').trim();
+        var pausa=((inps[3]&&inps[3].value)||'').trim();
+        var tKey=((row.querySelector('.serie-tipo-sel')||{}).value||''); var tLab=tipoLabel(tKey);
+        var pesoCell=peso?esc(peso)+' '+uni:'—';
+        if(barra>0 && peso){ var tot=num(peso); if(tot>barra){ pesoCell+=' <span style="color:#2f5f95;font-weight:600;">(barra '+fmt(barra)+' + '+fmt((tot-barra)/2)+'/lado)</span>'; } else { pesoCell+=' <span style="color:#8795ab;font-weight:600;">(barra '+fmt(barra)+' '+uni+')</span>'; } }
+        filas+='<tr><td>'+esc(sNum)+'</td><td>'+(tLab?esc(tLab):'—')+'</td><td>'+(reps?esc(reps):'—')+'</td><td>'+pesoCell+'</td><td>'+(rir?esc(rir):'—')+'</td><td>'+(pausa?esc(pausa):'—')+'</td></tr>';
+        totalSeries++;
+      });
+      if(!nombre || !filas) return;
+      var badges='';
+      if(barra>0) badges+='<span class="bdg">Barra '+fmt(barra)+' '+uni+'</span>';
+      if(incl) badges+='<span class="bdg">Inclinación '+esc(incl)+'</span>';
+      ejHTML+='<div class="ej"><div class="ejn">'+esc(nombre)+' '+badges+'</div>'
+        +(ajuste?'<div class="aj"><b>Ajuste:</b> '+esc(ajuste)+'</div>':'')
+        +(nota?'<div class="aj"><b>Aclaración:</b> '+esc(nota)+'</div>':'')
+        +'<table class="st"><thead><tr><th>Serie</th><th>Tipo</th><th>Reps</th><th>Peso</th><th>RIR</th><th>Pausa</th></tr></thead><tbody>'+filas+'</tbody></table></div>';
+    });
+    if(ejHTML) bloquesHTML+='<div class="blk">'+(bNombre?'<div class="blkn">'+esc(bNombre)+'</div>':'')+ejHTML+'</div>';
+  });
+  if(!totalSeries){ alert('No tildaste ninguna serie. Marcá las series (o los ejercicios) que querés imprimir.'); return; }
+  var head='<div class="hd"><div class="t1">'+esc(nombreSes||'Sesión de entrenamiento')+'</div>'
+    +'<div class="t2">'+(alumno?esc(alumno)+' · ':'')+(etiqueta?esc(etiqueta):'')+(lugar?' · '+esc(lugar):'')+'</div></div>';
+  var css='body{font-family:Arial,Helvetica,sans-serif;color:#1a2230;margin:24px;}'
+    +'.hd{border-bottom:2px solid #2f5f95;padding-bottom:10px;margin-bottom:16px;}'
+    +'.t1{font-size:20px;font-weight:800;}.t2{font-size:13px;color:#55607a;margin-top:3px;}'
+    +'.blk{margin-bottom:18px;}'
+    +'.blkn{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#2f5f95;border-left:4px solid #2f5f95;padding-left:8px;margin-bottom:8px;}'
+    +'.ej{border:1px solid #d8deea;border-radius:8px;padding:10px 12px;margin-bottom:9px;page-break-inside:avoid;}'
+    +'.ejn{font-size:14px;font-weight:800;margin-bottom:5px;}'
+    +'.bdg{display:inline-block;font-size:10px;font-weight:700;color:#2f5f95;background:#eef4fb;border-radius:5px;padding:1px 7px;margin-left:4px;}'
+    +'.aj{font-size:11.5px;color:#44536b;margin:2px 0 5px;}'
+    +'.st{width:100%;border-collapse:collapse;font-size:12px;margin-top:5px;}'
+    +'.st th{background:#f2f5fa;color:#55607a;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:5px 7px;border:1px solid #e2e7ef;text-align:left;}'
+    +'.st td{padding:5px 7px;border:1px solid #eef1f6;}'
+    +'@media print{body{margin:12mm;} .ej{border-color:#bbb;}}';
+  var w=window.open('','_blank','width=820,height=950');
+  if(!w){ alert('El navegador bloqueó la ventana de impresión. Permití las ventanas emergentes para este sitio.'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(nombreSes||'Sesión')+'</title><style>'+css+'</style></head><body>'+head+bloquesHTML+'</body></html>');
+  w.document.close(); w.focus();
+  setTimeout(function(){ try{ w.print(); }catch(e){} }, 350);
 }
 function _evoImprimir(){
   if(typeof currentAlumnoId==='undefined' || !currentAlumnoId){ alert('Abrí primero el perfil de un alumno.'); return; }
