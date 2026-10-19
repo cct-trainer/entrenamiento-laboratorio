@@ -16271,20 +16271,25 @@ const _AG_L1={0:'Dom',1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb'};
 function _agAutoDias(alId){
   const set=new Set();
   try{
-    const planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]).filter(p=>p&&p.alumnoId===alId&&(p.tipoPlan==='fuerza'||!p.tipoPlan));
-    planes.forEach(p=>{
-      const sems=(Array.isArray(p.semanasArray)&&p.semanasArray.length)?p.semanasArray:[{fechaInicio:p.fecha||'',dias:p.diasData||{}}];
-      sems.forEach(s=>{
-        if(!s||!s.fechaInicio) return;
-        const dias=s.dias||s.diasData||{};
-        for(let d=0;d<7;d++){
-          const arr=dias[d]; if(!Array.isArray(arr)) continue;
-          if(!arr.some(x=>x&&x.bloques&&x.bloques.length)) continue;
-          const fd=new Date(s.fechaInicio+'T00:00:00'); fd.setDate(fd.getDate()+d);
-          set.add(fd.getDay());
-        }
-      });
-    });
+    let planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]).filter(p=>p&&p.alumnoId===alId&&(p.tipoPlan==='fuerza'||!p.tipoPlan));
+    if(!planes.length) return set;
+    // Un solo plan (el real): el activo; si no hay, el más reciente. Así no se mezclan planes viejos.
+    let plan = planes.find(p=>p && p.activo);
+    if(!plan){ plan = planes.slice().sort((a,b)=>String(b.createdAt||b.fecha||'').localeCompare(String(a.createdAt||a.fecha||'')))[0]; }
+    if(!plan) return set;
+    // Dentro del plan, la semana más reciente con sesiones define los días (la semana repite el patrón)
+    let sems=(Array.isArray(plan.semanasArray)&&plan.semanasArray.length)?plan.semanasArray.slice():[{fechaInicio:plan.fecha||'',dias:plan.diasData||{}}];
+    sems=sems.filter(s=>s&&s.fechaInicio).sort((a,b)=>String(b.fechaInicio||'').localeCompare(String(a.fechaInicio||'')));
+    for(let k=0;k<sems.length;k++){
+      const s=sems[k]; const dias=s.dias||s.diasData||{}; let hubo=false;
+      for(let d=0;d<7;d++){
+        const arr=dias[d]; if(!Array.isArray(arr)) continue;
+        if(!arr.some(x=>x&&x.bloques&&x.bloques.length)) continue;
+        const fd=new Date(s.fechaInicio+'T00:00:00'); fd.setDate(fd.getDate()+d);
+        set.add(fd.getDay()); hubo=true;
+      }
+      if(hubo) break; // con la primera semana que tiene sesiones alcanza (define el patrón semanal)
+    }
   }catch(e){}
   return set;
 }
