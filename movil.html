@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach · Actualizando…</title>
+<style>
+  html,body{height:100%;margin:0;}
+  body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:#0B1739;color:#fff;
+       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;}
+  .sp{width:40px;height:40px;border:4px solid rgba(255,255,255,.25);border-top-color:#E8C96A;border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  h1{font-size:17px;font-weight:800;margin:0;}
+  p{font-size:13px;color:#bcd0ea;margin:0;max-width:300px;line-height:1.5;}
+</style>
+</head>
+<body>
+  <div class="sp"></div>
+  <h1>Cargando la versión para celular…</h1>
+  <p>Estamos actualizando el coach a la última versión. Esto tarda unos segundos la primera vez.</p>
+<script>
+(async function(){
+  try{
+    // 1) Sacar cualquier service worker viejo (es el que cachea la versión anterior)
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for(const r of regs){ try{ await r.unregister(); }catch(e){} }
+    }
+    // 2) Borrar todas las cachés
+    if(window.caches && caches.keys){
+      const keys = await caches.keys();
+      for(const k of keys){ try{ await caches.delete(k); }catch(e){} }
+    }
+  }catch(e){}
+  // 3) Cargar el coach fresco (con cache-busting)
+  location.replace('index.html?fresh=' + Date.now());
+})();
+</script>
+</body>
+</html>
