@@ -140,6 +140,8 @@ main { padding: 28px 32px; max-width: none; margin: 0; }
 @media(max-width:560px){ .alu-cards{ grid-template-columns: 1fr 1fr; gap:10px; } }
 .alu-card { position: relative; overflow: hidden; background: #fff; border: 1px solid #E5EBF3; border-radius: 16px; padding: 14px; cursor: default; box-shadow: 0 8px 22px -14px rgba(20,40,80,.16); transition: box-shadow .18s; }
 .alu-card:hover { box-shadow: 0 14px 34px -16px rgba(20,40,80,.24); }
+.alu-del { position:absolute; top:8px; right:8px; z-index:3; width:30px; height:30px; border:none; border-radius:9px; background:#fbeceb; color:#c0392b; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:.55; transition:opacity .12s, background .12s; }
+.alu-del:hover { opacity:1; background:#f7d7d4; }
 .alu-card::before { content:''; display:none; }
 .ac-top { display:flex; align-items:center; gap:11px; }
 .alu-card-av { width:46px; height:46px; border-radius:50%; overflow:hidden; background:#e9edf2; border:2px solid #fff; box-shadow:0 0 0 2px #cfe0f6; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:17px; color:#8a93a3; }
@@ -545,7 +547,17 @@ body.coach-bg-on .alu-daybar{ background:rgba(255,255,255,.9); }
 .esc-card { background:#fff; border-radius:12px; padding:18px 20px; border:1px solid #e8e8e8; }
 .esc-card-title { font-size:9px; font-weight:800; color:#C9A84C; letter-spacing:2px; text-transform:uppercase; margin-bottom:12px; }
 .esc-card.full { grid-column:1/-1; }
-@media(max-width:900px){ .perfil-layout{flex-direction:column;} .perfil-sidebar{width:auto;border-radius:12px 12px 0 0;} .esc-grid{grid-template-columns:1fr;} }
+@media(max-width:900px){
+  .perfil-layout{ flex-direction:column; min-height:0; }
+  /* En celular el panel de acciones fluye normal (no sticky) para que no tape los planes */
+  .perfil-sidebar,
+  body.os-mode #view-perfil.active .perfil-sidebar{
+    width:auto !important; position:static !important; top:auto !important; height:auto !important;
+    align-self:stretch !important; border-radius:14px !important; margin-bottom:14px !important;
+  }
+  .perfil-main{ overflow:visible !important; border-radius:14px !important; }
+  .esc-grid{ grid-template-columns:1fr; }
+}
 
 .progreso-card { background:#fff; border:1.5px solid #e8eaed; border-radius:12px; margin-bottom:14px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
 .progreso-card-head { background:#1a1a1a; padding:11px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
@@ -16329,6 +16341,7 @@ function renderAlumnosGrid() {
       ? '<span class="ac-next-off">Sin sesión programada</span>'
       : '<span class="k">Próxima: </span><span class="v">'+_esc(x.proxTxt)+'</span>';
     return '<div class="alu-card" data-nom="'+_esc((a.nombre||'').toLowerCase())+'" data-obj="'+x.cat+'" data-est="'+x.est+'" data-dia="'+(x.dias.join(','))+'">'
+      +'<button class="alu-del" title="Eliminar alumno" onclick="event.stopPropagation();_eliminarAlumnoRapido(\''+a.id+'\',\''+_esc(a.nombre||'')+'\')">🗑</button>'
       +'<div class="ac-top" onclick="openPerfilAlumno(\''+a.id+'\')">'
         +'<div class="alu-card-av">'+av+'</div>'
         +'<div class="alu-card-main"><div class="alu-card-nom">'+_esc(a.nombre||'')+'</div><div style="margin-top:6px;">'+_objPillHTML(a.objetivo)+'</div></div>'
@@ -16362,6 +16375,15 @@ function _setAluEst(est){
   _aluEst = est;
   document.querySelectorAll('.alu-filters .fchip').forEach(b=>b.classList.toggle('on', b.dataset.est===est));
   _aplicarFiltroAlumnos();
+}
+function _eliminarAlumnoRapido(id, nombre){
+  if(!id) return;
+  if(!confirm('¿Eliminar a '+(nombre||'este alumno')+' y todas sus planificaciones?\n\nEsta acción no se puede deshacer.')) return;
+  try{ saveAlumnos(getAlumnos().filter(x=>x.id!==id)); }catch(e){ toast('No se pudo eliminar','error'); return; }
+  try{ savePlanificaciones(getPlanificaciones().filter(x=>x.alumnoId!==id)); }catch(e){}
+  if(typeof toast==='function') toast('Alumno eliminado ✓');
+  renderAlumnosGrid();
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
 }
 function _setAluCat(cat, btn){ _aluCat = (_aluCat===cat) ? 'todos' : cat; _aplicarFiltroAlumnos(); }
 function _filtrarAlumnos(q){ _aluQ = (q||'').toLowerCase().trim(); _aplicarFiltroAlumnos(); }
