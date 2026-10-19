@@ -3427,6 +3427,44 @@ select.toolbox-input option:disabled { color: #888; }
 #coach-os .os-ritem .src{font-size:9px;font-weight:800;padding:2px 7px;border-radius:999px;white-space:nowrap;}
 #coach-os .os-ritem .src.auto{background:#e7f0fa;color:#3a7bbf;}
 #coach-os .os-ritem .src.fijo{background:#fdf3e0;color:#b5852b;}
+/* Agenda por día · panel en la vista de inicio */
+.agx-panel{background:#fff;border:1px solid #E6EAF0;border-radius:16px;padding:15px 16px;margin-bottom:20px;box-shadow:0 8px 22px -16px rgba(20,40,80,.18);}
+.agx-cap{font-size:12px;font-weight:900;letter-spacing:.5px;color:#183153;margin-bottom:11px;}
+.agx-days{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+.agx-day{flex:1;min-width:38px;border:none;background:#eef2f8;color:#5a7690;font-size:12px;font-weight:800;padding:9px 0;border-radius:10px;cursor:pointer;font-family:inherit;transition:.12s;position:relative;}
+.agx-day.on{background:#2f6fb0;color:#fff;box-shadow:0 6px 14px -8px rgba(47,111,176,.9);}
+.agx-day.today::after{content:"";position:absolute;left:50%;bottom:4px;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:currentColor;}
+.agx-sum{font-size:13px;color:#16304d;font-weight:800;margin:0 2px 9px;}
+.agx-sum i{color:#7c93a9;font-weight:600;font-style:normal;}
+.agx-empty{font-size:13px;color:#7c93a9;padding:12px 6px;text-align:center;}
+.agx-ritem{display:flex;align-items:center;gap:11px;padding:9px 8px;border-radius:11px;cursor:pointer;transition:background .12s;}
+.agx-ritem:hover{background:#f3f7fc;}
+.agx-av{width:36px;height:36px;border-radius:50%;background:#dbe7f3;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#4a6b8c;flex-shrink:0;overflow:hidden;}
+.agx-av img{width:100%;height:100%;object-fit:cover;}
+.agx-tx{flex:1;min-width:0;}
+.agx-tx b{display:block;font-size:13.5px;color:#16304d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.agx-tx span{font-size:11.5px;color:#7c93a9;}
+.agx-src{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap;}
+.agx-src.auto{background:#e7f0fa;color:#3a7bbf;}
+.agx-src.fijo{background:#fdf3e0;color:#b5852b;}
+/* En el escritorio OS, reusar estas clases con el mismo look claro */
+#coach-os .agx-days{display:flex;gap:5px;margin-bottom:10px;}
+#coach-os .agx-day{flex:1;background:#eaf1f8;color:#5a7690;border:none;font-size:11px;font-weight:800;padding:7px 0;border-radius:9px;cursor:pointer;font-family:inherit;position:relative;}
+#coach-os .agx-day.on{background:#2f6fb0;color:#fff;}
+#coach-os .agx-day.today::after{content:"";position:absolute;left:50%;bottom:3px;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:currentColor;}
+#coach-os .agx-sum{font-size:12px;color:#16304d;font-weight:800;margin:0 2px 7px;}
+#coach-os .agx-sum i{color:#7c93a9;font-weight:600;font-style:normal;}
+#coach-os .agx-empty{font-size:12px;color:#7c93a9;padding:8px 6px;text-align:center;}
+#coach-os .agx-ritem{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:11px;cursor:pointer;}
+#coach-os .agx-ritem:hover{background:rgba(255,255,255,.8);}
+#coach-os .agx-av{width:32px;height:32px;border-radius:50%;background:#dbe7f3;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#4a6b8c;flex-shrink:0;overflow:hidden;}
+#coach-os .agx-av img{width:100%;height:100%;object-fit:cover;}
+#coach-os .agx-tx{flex:1;min-width:0;}
+#coach-os .agx-tx b{display:block;font-size:13px;color:#16304d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#coach-os .agx-tx span{font-size:11px;color:#7c93a9;}
+#coach-os .agx-src{font-size:9px;font-weight:800;padding:2px 7px;border-radius:999px;white-space:nowrap;}
+#coach-os .agx-src.auto{background:#e7f0fa;color:#3a7bbf;}
+#coach-os .agx-src.fijo{background:#fdf3e0;color:#b5852b;}
 /* Ficha del alumno · días y horarios */
 .agenda-grid{display:flex;flex-direction:column;gap:5px;}
 .agenda-grid .agrow{display:flex;align-items:center;gap:9px;font-size:13px;color:#2b3140;cursor:pointer;background:#fafbfd;border:1px solid #e6e9f0;border-radius:8px;padding:7px 11px;}
@@ -4126,6 +4164,10 @@ window.addEventListener('load',function(){ try{
         <button onclick="abrirComplementos()" style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#183153;background:#fff;border:1px solid #E6EAF0;border-radius:10px;padding:9px 14px;cursor:pointer;">🧩 Complementos</button>
         <button onclick="abrirBibliotecaEditor()" style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#183153;background:#fff;border:1px solid #E6EAF0;border-radius:10px;padding:9px 14px;cursor:pointer;">📚 Biblioteca de ejercicios</button>
       </div>
+    </div>
+    <div id="inicio-agenda" class="agx-panel">
+      <div class="agx-cap">📅 AGENDA POR DÍA</div>
+      <div id="inicio-agenda-body"></div>
     </div>
     <div class="alumnos-grid" id="alumnos-grid"></div>
   </div>
@@ -16307,15 +16349,14 @@ function _agFichaLeer(){
   });
   return { dias:dias, horas:horas };
 }
-// ── Widget "Agenda por día" en el escritorio ──
-function _agRender(){
-  const cont=document.getElementById('os-wg-agenda'); if(!cont) return;
+// ── Agenda por día: HTML interno (se usa en el escritorio y en la vista de inicio) ──
+function _agInner(abrirFn){
   let als=[]; try{ als=(typeof getAlumnos==='function')?(getAlumnos()||[]):[]; }catch(e){}
   als=als.filter(a=>a&&a.id&&a.nombre&&a.id.indexOf('zz_')!==0);
   const hoyDay=new Date().getDay();
   if(typeof window._agSel!=='number') window._agSel=hoyDay;
   const esc=s=>String(s==null?'':s).replace(/</g,'&lt;').replace(/'/g,'&#39;');
-  // alumnos por día seleccionado
+  const ini=(typeof _osIniciales==='function')?_osIniciales:(n=>String(n||'?')[0]||'?');
   const filas=[];
   als.forEach(function(a){
     const info=_agAlumnoDias(a);
@@ -16325,16 +16366,24 @@ function _agRender(){
     }
   });
   filas.sort(function(x,y){ return (x.hora||'~').localeCompare(y.hora||'~') || String(x.a.nombre).localeCompare(String(y.a.nombre)); });
-  const tabs='<div class="ag-days">'+_AG_ORDEN.map(function(d){
-    return '<button class="ag-day'+(d===window._agSel?' on':'')+(d===hoyDay?' today':'')+'" onclick="window._agSel='+d+';_agRender()">'+_AG_LBL1[d]+'</button>';
+  const tabs='<div class="agx-days">'+_AG_ORDEN.map(function(d){
+    return '<button class="agx-day'+(d===window._agSel?' on':'')+(d===hoyDay?' today':'')+'" onclick="window._agSel='+d+';_agRender()">'+_AG_LBL1[d]+'</button>';
   }).join('')+'</div>';
-  const sum='<div class="ag-sum">'+filas.length+' '+(filas.length===1?'alumno':'alumnos')+' <i>· '+_AG_LBL[window._agSel]+(window._agSel===hoyDay?' (hoy)':'')+'</i></div>';
+  const sum='<div class="agx-sum">'+filas.length+' '+(filas.length===1?'alumno':'alumnos')+' <i>· '+_AG_LBL[window._agSel]+(window._agSel===hoyDay?' (hoy)':'')+'</i></div>';
   const lista=filas.length? filas.map(function(f){
-    const a=f.a; const av=a.foto?('<img src="'+esc(a.foto)+'">'):_osIniciales(a.nombre);
+    const a=f.a; const av=a.foto?('<img src="'+esc(a.foto)+'">'):ini(a.nombre);
     const sub=f.hora?esc(f.hora):(f.fijo?'día fijo':'según sus sesiones');
-    return '<div class="os-ritem" onclick="_osAbrirAlumno(\''+a.id+'\')"><div class="av">'+av+'</div><div class="tx"><b>'+esc(a.nombre)+'</b><span>'+sub+'</span></div><span class="src '+(f.fijo?'fijo':'auto')+'">'+(f.fijo?'fijo':'auto')+'</span></div>';
-  }).join('') : '<div class="ag-empty">Nadie entrena este día.</div>';
-  cont.innerHTML='<div class="cap">📅 AGENDA POR DÍA</div>'+tabs+sum+lista;
+    return '<div class="agx-ritem" onclick="'+abrirFn+'(\''+a.id+'\')"><div class="agx-av">'+av+'</div><div class="agx-tx"><b>'+esc(a.nombre)+'</b><span>'+sub+'</span></div><span class="agx-src '+(f.fijo?'fijo':'auto')+'">'+(f.fijo?'fijo':'auto')+'</span></div>';
+  }).join('') : '<div class="agx-empty">Nadie entrena este día.</div>';
+  return { tabs, sum, lista };
+}
+function _agRender(){
+  // Escritorio (OS): abre el perfil y cierra el escritorio
+  const wg=document.getElementById('os-wg-agenda');
+  if(wg){ const p=_agInner('_osAbrirAlumno'); wg.innerHTML='<div class="cap">📅 AGENDA POR DÍA</div>'+p.tabs+p.sum+p.lista; }
+  // Vista de inicio (donde trabajás siempre)
+  const hp=document.getElementById('inicio-agenda-body');
+  if(hp){ const p2=_agInner('openPerfilAlumno'); hp.innerHTML=p2.tabs+p2.sum+p2.lista; }
 }
 function _proxLabel(best){
   if(!best) return '';
@@ -16347,6 +16396,7 @@ function _proxLabel(best){
 function renderAlumnosGrid() {
   const grid = document.getElementById('alumnos-grid');
   if (!grid) return;
+  if(typeof _agRender==='function'){ try{ _agRender(); }catch(e){} }
   const alumnos = getAlumnos();
   _aluCat = 'todos'; _aluQ = ''; _aluEst = 'todos';
   const hoy = new Date(); hoy.setHours(0,0,0,0);
