@@ -1056,8 +1056,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261018233349 por un timestamp en cada deploy
-const _APP_VERSION = '20261018233349';
+// deploy.bat reemplaza 20261019154525 por un timestamp en cada deploy
+const _APP_VERSION = '20261019154525';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1390,10 +1390,10 @@ function render() {
   // El botón de Panel Coach (🏋️) solo aparece en el perfil de Christian Cattaneo
   const esChristian = (_alumnoId === 'mqcxctmkrucidy326rn') || /christian\s+cattaneo/i.test(nombre);
   const coachBtn = document.getElementById('btn-coach-panel');
-  if (coachBtn) coachBtn.style.display = esChristian ? 'inline-flex' : 'none';
+  if (coachBtn) coachBtn.style.display = 'none';
   window._esCoach = esChristian;
   const ptCoach = document.getElementById('pt-coach-btn');
-  if (ptCoach) ptCoach.style.display = esChristian ? 'flex' : 'none';
+  if (ptCoach) ptCoach.style.display = 'none';
   if (_plan) document.getElementById('al-plan').textContent = (_plan.nombre||'Plan activo').toUpperCase();
   // Actualizar ícono del botón de tema según preferencia guardada
   const isLight = document.documentElement.classList.contains('light');
