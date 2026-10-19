@@ -233,6 +233,21 @@ body.coach-bg-on .nd-chip:not(.on){background:#fff;}
 .fchip { font-size: 13px; font-weight: 600; padding: 9px 0; border: none; border-bottom: 2px solid transparent; color: #8a92a0; background: none; cursor: pointer; transition: .15s; font-family: inherit; margin-bottom: -1px; }
 .fchip:hover { color: #5a6472; }
 .fchip.on { color: #1b2030; border-bottom-color: #3A6EA5; }
+/* Calendario / selector de día en Alumnos */
+.alu-daybar { display:flex; gap:7px; background:#fff; border:1px solid #E6EAF0; border-radius:14px; padding:7px; margin:0 0 16px; box-shadow:0 8px 22px -18px rgba(20,40,80,.2); flex-wrap:wrap; }
+.alu-day { flex:1; min-width:52px; border:none; background:transparent; color:#5a7690; font-size:13px; font-weight:800; padding:10px 0; border-radius:10px; cursor:pointer; font-family:inherit; transition:.12s; position:relative; }
+.alu-day:hover { background:#f0f4fa; }
+.alu-day.on { background:#183153; color:#fff; box-shadow:0 8px 16px -9px rgba(24,49,83,.6); }
+.alu-day .c { display:block; font-size:10px; font-weight:700; margin-top:2px; opacity:.7; }
+.alu-day.today::after { content:"HOY"; position:absolute; top:3px; right:6px; font-size:7px; font-weight:900; color:#2F8CFF; letter-spacing:.5px; }
+.alu-day.on.today::after { color:#9fc3ff; }
+body.coach-bg-on .alu-daybar{ background:rgba(255,255,255,.9); }
+/* Ficha · días de entrenamiento */
+.agenda-grid{display:flex;flex-direction:column;gap:5px;}
+.agenda-grid .agrow{display:flex;align-items:center;gap:9px;font-size:13px;color:#2b3140;cursor:pointer;background:#fafbfd;border:1px solid #e6e9f0;border-radius:8px;padding:7px 11px;}
+.agenda-grid .agrow.on{background:#eef5fc;border-color:#bcd7f0;}
+.agenda-grid .agrow input[type=time]{margin-left:auto;border:1px solid #d5d9e0;border-radius:6px;padding:4px 7px;font-size:12px;font-family:inherit;color:#2b3140;}
+.agenda-hint{font-size:11px;color:#8a8f9c;margin-top:6px;line-height:1.5;}
 
 .btn-add-alumno { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; }
 .btn-add-alumno:hover { transform: translateY(-3px); }
@@ -5472,6 +5487,18 @@ window.addEventListener('load',function(){ try{
           </div>
           <div class="field"><label>Días disponibles / semana</label>
             <select id="f-dias"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
+          </div>
+          <div class="field"><label>Días que entrena (agenda)</label>
+            <div id="f-agenda" class="agenda-grid">
+              <label class="agrow"><input type="checkbox" class="agchk" data-d="1" onchange="_agFichaTog(this)"> Lunes <input type="time" class="aghora" data-d="1"></label>
+              <label class="agrow"><input type="checkbox" class="agchk" data-d="2" onchange="_agFichaTog(this)"> Martes <input type="time" class="aghora" data-d="2"></label>
+              <label class="agrow"><input type="checkbox" class="agchk" data-d="3" onchange="_agFichaTog(this)"> Miércoles <input type="time" class="aghora" data-d="3"></label>
+              <label class="agrow"><input type="checkbox" class="agchk" data-d="4" onchange="_agFichaTog(this)"> Jueves <input type="time" class="aghora" data-d="4"></label>
+              <label class="agrow"><input type="checkbox" class="agchk" data-d="5" onchange="_agFichaTog(this)"> Viernes <input type="time" class="aghora" data-d="5"></label>
+              <label class="agrow"><input type="checkbox" class="agchk" data-d="6" onchange="_agFichaTog(this)"> Sábado <input type="time" class="aghora" data-d="6"></label>
+              <label class="agrow"><input type="checkbox" class="agchk" data-d="0" onchange="_agFichaTog(this)"> Domingo <input type="time" class="aghora" data-d="0"></label>
+            </div>
+            <div class="agenda-hint">Si marcás días acá, mandan en el calendario de Alumnos. Si no marcás nada, se calculan solos por las fechas de sus sesiones.</div>
           </div>
           <div class="field"><label>Modalidad</label>
             <select id="f-modalidad">
@@ -16083,6 +16110,7 @@ function openModalNuevoAlumno() {
   ['nombre','nacimiento','sexo','telefono','email','pin','objetivo','nivel','dias','inicio','lesiones','enfermedades','observaciones']
     .forEach(id => { const el = document.getElementById('f-'+id); if(el) el.value = ''; });
   const _tmN=document.getElementById('f-tiempomax'); if(_tmN) _tmN.value='120';
+  if(typeof _agFichaFill==='function') _agFichaFill([],{});
   document.getElementById('foto-preview').innerHTML = '👤';
   document.getElementById('foto-input').value = '';
   document.getElementById('modal-alumno').classList.add('open');
@@ -16099,6 +16127,7 @@ function openModalEditarAlumno(id) {
   const _nacE=document.getElementById('f-nacionalidad'); if(_nacE) _nacE.value = a.idioma || 'es';
   const _modE=document.getElementById('f-modalidad'); if(_modE) _modE.value = a.modalidad || 'gym';
   const _pinE=document.getElementById('f-pin'); if(_pinE) _pinE.value = a.pin || '';
+  if(typeof _agFichaFill==='function') _agFichaFill(a.agendaDias||[], a.agendaHoras||{});
   document.getElementById('foto-preview').innerHTML = a.foto ? `<img src="${a.foto}">` : '👤';
   document.getElementById('foto-input').value = '';
   document.getElementById('modal-alumno').classList.add('open');
@@ -16129,6 +16158,8 @@ function guardarAlumno() {
     enfermedades: document.getElementById('f-enfermedades').value,
     observaciones: document.getElementById('f-observaciones').value,
     foto: fotoDataUrl,
+    agendaDias: (typeof _agFichaLeerDias==='function') ? _agFichaLeerDias() : [],
+    agendaHoras: (typeof _agFichaLeerHoras==='function') ? _agFichaLeerHoras() : {},
   };
   const alumnos = alumnosAntes.slice();
   if (editingAlumnoId) {
@@ -16186,7 +16217,7 @@ function _objCat(obj){
   if (/rendimiento|deportivo/.test(o)) return 'rendimiento';
   return 'otros';
 }
-let _aluCat = 'todos', _aluQ = '', _aluEst = 'todos';
+let _aluCat = 'todos', _aluQ = '', _aluEst = 'todos', _aluDia = 'all';
 // Badge de objetivo con color según categoría
 function _objPillHTML(objetivo){
   if(!objetivo) return '<span style="font-size:12px;color:#aab1bd;font-weight:500;">Sin objetivo</span>';
@@ -16221,6 +16252,49 @@ function _proximaSesionAlumno(alId){
     return best;
   }catch(e){ return null; }
 }
+// ─── Días de entrenamiento por alumno (para el filtro por día en Alumnos) ───
+// getDay(): 0=Dom … 6=Sáb. Orden visual Lun→Dom.
+const _AG_ORDEN=[1,2,3,4,5,6,0];
+const _AG_L1={0:'Dom',1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb'};
+function _agAutoDias(alId){
+  const set=new Set();
+  try{
+    const planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]).filter(p=>p&&p.alumnoId===alId&&(p.tipoPlan==='fuerza'||!p.tipoPlan));
+    planes.forEach(p=>{
+      const sems=(Array.isArray(p.semanasArray)&&p.semanasArray.length)?p.semanasArray:[{fechaInicio:p.fecha||'',dias:p.diasData||{}}];
+      sems.forEach(s=>{
+        if(!s||!s.fechaInicio) return;
+        const dias=s.dias||s.diasData||{};
+        for(let d=0;d<7;d++){
+          const arr=dias[d]; if(!Array.isArray(arr)) continue;
+          if(!arr.some(x=>x&&x.bloques&&x.bloques.length)) continue;
+          const fd=new Date(s.fechaInicio+'T00:00:00'); fd.setDate(fd.getDate()+d);
+          set.add(fd.getDay());
+        }
+      });
+    });
+  }catch(e){}
+  return set;
+}
+// manual (agendaDias) si existe, si no automático
+function _agAlumnoDias(a){
+  if(a && Array.isArray(a.agendaDias) && a.agendaDias.length){
+    return { dias:new Set(a.agendaDias.map(Number)), fijo:true };
+  }
+  return { dias:_agAutoDias(a&&a.id), fijo:false };
+}
+// Ficha: días/horarios
+function _agFichaTog(chk){ const r=chk.closest('.agrow'); if(r) r.classList.toggle('on',chk.checked); }
+function _agFichaFill(dias, horas){
+  dias=dias||[]; horas=horas||{};
+  document.querySelectorAll('#f-agenda .agchk').forEach(function(c){
+    const d=c.dataset.d; const on=dias.map(String).indexOf(String(d))>=0;
+    c.checked=on; const r=c.closest('.agrow'); if(r) r.classList.toggle('on',on);
+    const h=document.querySelector('#f-agenda .aghora[data-d="'+d+'"]'); if(h) h.value=horas[d]||'';
+  });
+}
+function _agFichaLeerDias(){ const a=[]; document.querySelectorAll('#f-agenda .agchk').forEach(function(c){ if(c.checked) a.push(parseInt(c.dataset.d,10)); }); return a; }
+function _agFichaLeerHoras(){ const o={}; document.querySelectorAll('#f-agenda .agchk').forEach(function(c){ if(c.checked){ const d=c.dataset.d; const h=document.querySelector('#f-agenda .aghora[data-d="'+d+'"]'); if(h&&h.value) o[d]=h.value; } }); return o; }
 function _proxLabel(best){
   if(!best) return '';
   const hoy = new Date(); hoy.setHours(0,0,0,0);
@@ -16233,14 +16307,17 @@ function renderAlumnosGrid() {
   const grid = document.getElementById('alumnos-grid');
   if (!grid) return;
   const alumnos = getAlumnos();
-  _aluCat = 'todos'; _aluQ = ''; _aluEst = 'todos';
+  _aluCat = 'todos'; _aluQ = ''; _aluEst = 'todos'; _aluDia = 'all';
   const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const diaCount={0:0,1:0,2:0,3:0,4:0,5:0,6:0};
   const items = alumnos.map(a => {
     const cat = _objCat(a.objetivo);
     const prox = _proximaSesionAlumno(a.id);
     let est='sin', proxTxt='';
     if(prox){ const diff=Math.round((prox.date-hoy)/86400000); est = diff===0?'hoy' : diff===1?'man' : 'prox'; proxTxt=_proxLabel(prox); }
-    return { a, cat, est, proxTxt };
+    const dinfo=_agAlumnoDias(a); const dias=[...dinfo.dias];
+    dias.forEach(d=>{ if(diaCount[d]!=null) diaCount[d]++; });
+    return { a, cat, est, proxTxt, dias };
   });
   const cnt={hoy:0,man:0,prox:0,sin:0}; items.forEach(x=>cnt[x.est]++);
   const _sub=document.querySelector('.ih-sub'); if(_sub) _sub.textContent = alumnos.length+' alumno'+(alumnos.length!==1?'s':'')+' activo'+(alumnos.length!==1?'s':'');
@@ -16251,7 +16328,7 @@ function renderAlumnosGrid() {
     const nextInner = x.est==='sin'
       ? '<span class="ac-next-off">Sin sesión programada</span>'
       : '<span class="k">Próxima: </span><span class="v">'+_esc(x.proxTxt)+'</span>';
-    return '<div class="alu-card" data-nom="'+_esc((a.nombre||'').toLowerCase())+'" data-obj="'+x.cat+'" data-est="'+x.est+'">'
+    return '<div class="alu-card" data-nom="'+_esc((a.nombre||'').toLowerCase())+'" data-obj="'+x.cat+'" data-est="'+x.est+'" data-dia="'+(x.dias.join(','))+'">'
       +'<div class="ac-top" onclick="openPerfilAlumno(\''+a.id+'\')">'
         +'<div class="alu-card-av">'+av+'</div>'
         +'<div class="alu-card-main"><div class="alu-card-nom">'+_esc(a.nombre||'')+'</div><div style="margin-top:6px;">'+_objPillHTML(a.objetivo)+'</div></div>'
@@ -16262,17 +16339,24 @@ function renderAlumnosGrid() {
   }
   const cardsHTML = items.map(cardHTML).join('');
   const fchip=(k,l,n)=>'<button class="fchip'+(k==='todos'?' on':'')+'" data-est="'+k+'" onclick="_setAluEst(\''+k+'\',this)">'+l+(n!=null?' ('+n+')':'')+'</button>';
+  const hoyDay=new Date().getDay();
+  const dchip=(k,l,n,today)=>'<button class="alu-day'+(String(k)===String(_aluDia)?' on':'')+(today?' today':'')+'" data-dia="'+k+'" onclick="_setAluDia(\''+k+'\')">'+l+'<span class="c">'+n+'</span></button>';
+  const dayBar='<div class="alu-daybar">'
+    + dchip('all','Todos',alumnos.length,false)
+    + _AG_ORDEN.map(d=>dchip(d,_AG_L1[d],diaCount[d],d===hoyDay)).join('')
+    +'</div>';
   grid.className='alumnos-grid crm';
   grid.innerHTML =
     '<div class="alu-toolbar">'
       +'<div class="alu-search-wrap"><span class="alu-search-ico">🔍</span><input class="alu-search" type="text" placeholder="Buscar alumno…" oninput="_filtrarAlumnos(this.value)"></div>'
       +'<button class="alu-nuevo" onclick="openModalNuevoAlumno()">+ Nuevo alumno</button>'
     +'</div>'
+    +dayBar
     +'<div class="alu-filters">'
       + fchip('todos','Todos',alumnos.length) + fchip('hoy','Hoy',cnt.hoy) + fchip('man','Mañana',cnt.man) + fchip('sin','Sin sesión',cnt.sin)
     +'</div>'
     +'<div class="alu-count">'+alumnos.length+' ALUMNO'+(alumnos.length!==1?'S':'')+'</div>'
-    +'<div class="alu-cards" id="alu-list">'+(cardsHTML || '<div class="alu-empty">Todavía no hay alumnos cargados.</div>')+'</div>';
+    +'<div class="alu-cards" id="alu-list">'+(cardsHTML || '<div class="alu-empty">Todavía no hay alumnos cargados.</div>')+'<div class="alu-empty" id="alu-dia-empty" style="display:none;">Nadie entrena este día.</div></div>';
 }
 function _setAluEst(est){
   _aluEst = est;
@@ -16281,13 +16365,24 @@ function _setAluEst(est){
 }
 function _setAluCat(cat, btn){ _aluCat = (_aluCat===cat) ? 'todos' : cat; _aplicarFiltroAlumnos(); }
 function _filtrarAlumnos(q){ _aluQ = (q||'').toLowerCase().trim(); _aplicarFiltroAlumnos(); }
+function _setAluDia(d){
+  _aluDia = String(d);
+  document.querySelectorAll('.alu-daybar .alu-day').forEach(b=>b.classList.toggle('on', String(b.dataset.dia)===_aluDia));
+  _aplicarFiltroAlumnos();
+}
 function _aplicarFiltroAlumnos(){
+  let visibles=0;
   document.querySelectorAll('#alu-list .alu-card').forEach(r => {
     const okNom = r.dataset.nom.includes(_aluQ);
     const okCat = (_aluCat==='todos') || (r.dataset.obj===_aluCat);
     const okEst = (_aluEst==='todos') || (r.dataset.est===_aluEst);
-    r.style.display = (okNom && okCat && okEst) ? '' : 'none';
+    const okDia = (_aluDia==='all') || ((r.dataset.dia||'').split(',').indexOf(_aluDia)>=0);
+    const ok = okNom && okCat && okEst && okDia;
+    r.style.display = ok ? '' : 'none';
+    if(ok) visibles++;
   });
+  const emptyEl=document.getElementById('alu-dia-empty');
+  if(emptyEl) emptyEl.style.display = (visibles===0 && _aluDia!=='all') ? '' : 'none';
 }
 
 // ══════════════════════════════════════════════════════════════════════
