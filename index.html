@@ -32722,5 +32722,38 @@ function _fechaCort(f) {
   try { return new Date(f+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}); } catch(e){return f.slice(0,10);}
 }
 </script>
+<!-- ════════ COACH · OVERRIDE FINAL PARA CELULAR (va último para ganarle a os-mode) ════════ -->
+<style>
+@media(max-width:768px){
+  /* Header + navegación en modo escritorio (os-mode): que entre, con scroll horizontal */
+  body.os-mode header{ flex-wrap:wrap !important; height:auto !important; min-height:0 !important; padding:6px 10px !important; }
+  body.os-mode header .header-left img{ height:30px !important; width:auto !important; }
+  body.os-mode header #main-nav{ width:100% !important; flex-wrap:nowrap !important; overflow-x:auto !important; -webkit-overflow-scrolling:touch; }
+  body.os-mode header #main-nav::-webkit-scrollbar{ display:none; }
+  body.os-mode header #main-nav > .nav-btn,
+  body.os-mode header #main-nav .nav-dropdown-trigger,
+  body.os-mode header #main-nav .perfil-nav-plan-trigger{ white-space:nowrap; }
+
+  /* Escritorio (os-mode): dock deslizable, buscador full width */
+  #coach-os .os-menubar{ height:auto !important; min-height:52px; padding:8px 12px !important; flex-wrap:wrap; }
+  #coach-os .os-desk{ padding:84px 14px 160px !important; }
+  #coach-os .os-box, #coach-os .os-desk .row{ width:100% !important; max-width:92vw !important; }
+  #coach-os .os-dock{ max-width:96vw; overflow-x:auto; justify-content:flex-start; -webkit-overflow-scrolling:touch; }
+  #coach-os .os-dock::-webkit-scrollbar{ display:none; }
+  #coach-os .os-dapp{ width:44px !important; height:44px !important; font-size:19px !important; }
+
+  /* Perfil (os-mode): panel de acciones fluye y no tapa los planes */
+  body.os-mode #view-perfil.active .perfil-sidebar{ position:static !important; width:auto !important; height:auto !important; top:auto !important; margin-bottom:14px !important; align-self:stretch !important; border-radius:16px !important; }
+  body.os-mode #view-perfil.active .perfil-main{ overflow:visible !important; }
+  /* Botones del perfil en 2 columnas (panel más corto → se ven los planes abajo) */
+  #psb-content{ display:grid !important; grid-template-columns:1fr 1fr !important; gap:8px !important; align-content:start; }
+  #psb-content > button{ margin:0 !important; width:100% !important; height:100%; }
+  #psb-content > div, #psb-content > img, #psb-content > p, #psb-content > h1, #psb-content > h2, #psb-content > h3{ grid-column:1 / -1 !important; }
+  #psb-content > button:first-of-type{ grid-column:1 / -1 !important; }
+
+  /* Grilla de alumnos en 1 columna también en os-mode */
+  .alu-cards{ grid-template-columns:1fr !important; }
+}
+</style>
 </body>
 </html>
