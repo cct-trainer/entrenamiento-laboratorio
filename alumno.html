@@ -1056,8 +1056,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261019154525 por un timestamp en cada deploy
-const _APP_VERSION = '20261019154525';
+// deploy.bat reemplaza 20261019210236 por un timestamp en cada deploy
+const _APP_VERSION = '20261019210236';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1136,8 +1136,17 @@ function _guardarEdit(key, campo, val) {
   _syncEditsFirebase();
 }
 function _getEdit(key, campo) { return (_pesoEdits[key] && _pesoEdits[key][campo]) || ''; }
-// Firma de la prescripción del coach para un lugar (nombre del ejercicio + cantidad de series)
-function _sigOf(ej){ return String((ej&&ej.nombre)||'')+'|'+((ej&&Array.isArray(ej.series))?ej.series.length:0); }
+// Firma de la prescripción del coach para un lugar.
+// Incluye el PLAN + nombre + toda la prescripción (reps/peso/RIR/pausa/tipo de cada serie).
+// Si el coach copia o actualiza la sesión (cambia el plan o cualquier dato), la firma cambia
+// y lo que el alumno había marcado se descarta solo → la sesión aparece en blanco (como nueva).
+function _sigOf(ej){
+  var pid='';
+  try{ if(typeof _plan!=='undefined' && _plan && _plan.id) pid=String(_plan.id); }catch(e){}
+  var ser=(ej&&Array.isArray(ej.series))?ej.series:[];
+  var presc=ser.map(function(s){ s=s||{}; return (s.reps||'')+':'+(s.peso||'')+':'+(s.rir||'')+':'+(s.pausa||'')+':'+(s.tipo||''); }).join(',');
+  return pid+'|'+String((ej&&ej.nombre)||'')+'|'+ser.length+'|'+presc;
+}
 // Borra TODO lo que el alumno cargó en un lugar (sustitución + series realizadas + drops) y lo sincroniza
 function _purgarSlot(sp){
   if(!sp) return; var changed=false;
