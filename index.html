@@ -17587,26 +17587,12 @@ function renderSidebarAlumno(id) {
       onmouseover="this.style.background='#2b3547'" onmouseout="this.style.background='#222B3A'">
       ✏️ Editar perfil
     </button>
-    <button onclick="copiarLinkActualizacion('${id}')"
-      style="width:100%;background:#222B3A;border:1px solid #283142;border-radius:9px;
-             color:#F2F4F7;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
+    <button onclick="_abrirLoQueQuiere('${id}')"
+      style="width:100%;margin-top:8px;background:#2f5f95;border:1px solid #3d72ad;border-radius:9px;
+             color:#fff;font-size:11px;font-weight:800;padding:10px 12px;cursor:pointer;
              letter-spacing:0.3px;font-family:inherit;transition:background .15s;"
-      onmouseover="this.style.background='#2b3547'" onmouseout="this.style.background='#222B3A'">
-      🔄 Link de actualización
-    </button>
-    <button onclick="copiarLinkFormulario('${id}')"
-      style="width:100%;margin-top:8px;background:#222B3A;border:1px solid #283142;border-radius:9px;
-             color:#F2F4F7;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
-             letter-spacing:0.3px;font-family:inherit;transition:background .15s;"
-      onmouseover="this.style.background='#2b3547'" onmouseout="this.style.background='#222B3A'">
-      🏋️ Formulario de pesos y preferencias
-    </button>
-    <button onclick="_abrirEstiloAlumno('${id}')"
-      style="width:100%;margin-top:8px;background:#222B3A;border:1px solid #283142;border-radius:9px;
-             color:#F2F4F7;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
-             letter-spacing:0.3px;font-family:inherit;transition:background .15s;"
-      onmouseover="this.style.background='#2b3547'" onmouseout="this.style.background='#222B3A'">
-      🎯 Estilo de entrenamiento
+      onmouseover="this.style.background='#386bab'" onmouseout="this.style.background='#2f5f95'">
+      🎯 Lo que quiere el alumno
     </button>
     <button onclick="_verSustituciones('${id}')"
       style="width:100%;margin-top:8px;background:#222B3A;border:1px solid #283142;border-radius:9px;
@@ -17622,12 +17608,6 @@ function renderSidebarAlumno(id) {
       onmouseover="this.style.background='#386bab'" onmouseout="this.style.background='#2f5f95'">
       📈 Evolución
     </button>
-    ${(a.checkins&&a.checkins.length)?`<button onclick="verHistorialCheckins('${id}')"
-      style="width:100%;margin-top:8px;background:#222B3A;border:1px solid #283142;border-radius:9px;
-             color:#F2F4F7;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;font-family:inherit;transition:background .15s;"
-      onmouseover="this.style.background='#2b3547'" onmouseout="this.style.background='#222B3A'">
-      📋 Ver actualizaciones (${a.checkins.length})
-    </button>`:''}
 
     <!-- Control de acceso -->
     ${(()=>{
@@ -30029,6 +30009,64 @@ async function _abrirEstiloAlumno(id){
   document.body.appendChild(ov);
   var _cb=document.getElementById('estilo-copybtn');
   if(_cb){ _cb.onclick=function(){ var t=window._estiloResumenTxt||''; try{ navigator.clipboard.writeText(t); }catch(e){ try{ var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }catch(e2){} } if(typeof toast==='function') toast('Respuestas copiadas ✓'); }; }
+}
+// ── "LO QUE QUIERE EL ALUMNO": todo lo que el alumno pide/espera en un solo lugar ──
+function _lqqLink(tipo,id){
+  var url='https://cct-trainer.github.io/entrenamiento-laboratorio/'+(tipo==='estilo'?'estilo.html':'actualizar.html')+'?id='+encodeURIComponent(id);
+  try{ navigator.clipboard.writeText(url); }catch(e){ try{ var ta=document.createElement('textarea'); ta.value=url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }catch(e2){} }
+  if(typeof toast==='function') toast('Link copiado ✓');
+}
+function _lqqCopiarEstilo(){
+  var t=window._lqqEstilo||''; if(!t){ if(typeof toast==='function') toast('Todavía no hay respuestas'); return; }
+  try{ navigator.clipboard.writeText(t); }catch(e){ try{ var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }catch(e2){} }
+  if(typeof toast==='function') toast('Respuestas copiadas ✓');
+}
+async function _abrirLoQueQuiere(id){
+  const al=((typeof getAlumnos==='function')?getAlumnos():[]).find(x=>x.id===id)||{};
+  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  let estilo=null;
+  try{ if(window._db){ const d=await window._db.collection('alumnos').doc(id).get(); if(d.exists) estilo=(d.data()||{}).estiloPerfil||null; } }catch(e){}
+  window._lqqEstilo=(estilo&&estilo.resumen)?String(estilo.resumen):'';
+  const obj=esc(al.objetivo||'Sin objetivo cargado');
+  const sub=[al.nivel?('Nivel: '+al.nivel):'',(al.dias?al.dias+' días/semana':''),al.modalidad].filter(Boolean).map(esc).join(' · ');
+  // estilo
+  const efecha=(estilo&&estilo.at)?new Date(estilo.at).toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}):'';
+  const estiloBody=window._lqqEstilo
+    ? '<div class="lqq-fecha" style="margin-bottom:6px;">Completado el '+efecha+'</div><div class="lqq-pre">'+window._lqqEstilo.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</div>'
+    : '<div class="lqq-empty">Todavía no completó el formulario de estilo. Pedile el link para que lo llene.</div>';
+  // actualizaciones
+  const chs=(al.checkins||[]).slice().sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));
+  const last=chs[0]; const nCh=chs.length;
+  const lfecha=last&&last.fecha?new Date(last.fecha).toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}):'';
+  const actBody=last
+    ? '<div class="lqq-fecha" style="margin-bottom:6px;">Última: '+lfecha+'</div><div class="lqq-txt">'+((typeof _updResumenHTML==='function')?_updResumenHTML(last.resumen):esc(last.resumen||''))+'</div>'
+    : '<div class="lqq-empty">Sin actualizaciones todavía. Pedile el link para que te mande la primera.</div>';
+  const av=al.foto?('<img src="'+esc(al.foto)+'" style="width:100%;height:100%;object-fit:cover;">'):'<span style="font-size:17px;">👤</span>';
+  const nom=esc((al.nombre||'').split(' ')[0]||'el alumno');
+  var ov=document.getElementById('lqq-ov'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='lqq-ov';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(6,10,18,.72);z-index:12000;display:flex;align-items:flex-start;justify-content:center;padding:22px 14px 60px;overflow:auto;';
+  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+  const cardCSS='border:1px solid #e4e8ef;border-radius:13px;padding:13px 14px;margin-bottom:12px;';
+  const capCSS='display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;';
+  const lblCSS='font-size:10.5px;font-weight:900;letter-spacing:.6px;text-transform:uppercase;color:#2f6fb0;';
+  const btnCSS='font-size:10.5px;font-weight:800;border-radius:7px;padding:5px 10px;cursor:pointer;border:1px solid #cdd9ea;background:#eef4fb;color:#2f5f95;';
+  const ghostCSS='font-size:10.5px;font-weight:800;border-radius:7px;padding:5px 10px;cursor:pointer;border:1px solid #e0e6ef;background:#fff;color:#6b7a90;';
+  const preCSS='white-space:pre-wrap;font-size:12.5px;line-height:1.6;color:#28304a;background:#f6f9fc;border:1px solid #e8eef6;border-radius:9px;padding:10px 12px;';
+  const emptyCSS='font-size:12.5px;color:#8795ab;background:#f6f9fc;border:1px dashed #d6deea;border-radius:9px;padding:11px;text-align:center;';
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:480px;width:100%;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);" onclick="event.stopPropagation()">'
+    +'<div style="background:#1a2a4a;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:15px 18px;">'
+      +'<div style="display:flex;align-items:center;gap:11px;"><div style="width:38px;height:38px;border-radius:50%;background:#33456e;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+av+'</div><b style="font-size:16px;">Lo que quiere '+nom+'</b></div>'
+      +'<button onclick="var o=document.getElementById(\'lqq-ov\');if(o)o.remove();" style="background:none;border:none;color:#9fb4d2;font-size:22px;cursor:pointer;line-height:1;">×</button>'
+    +'</div>'
+    +'<div style="padding:15px 16px 18px;max-height:78vh;overflow:auto;">'
+      +'<div style="'+cardCSS+'"><div style="'+capCSS+'"><span style="'+lblCSS+'">🎯 Objetivo y qué espera</span><button style="'+ghostCSS+'" onclick="var o=document.getElementById(\'lqq-ov\');if(o)o.remove();openModalEditarAlumno(\''+id+'\')">Editar</button></div>'
+        +'<div style="font-size:15px;font-weight:800;color:#15233c;">'+obj+'</div>'+(sub?'<div style="font-size:12px;color:#7c8aa0;margin-top:2px;">'+sub+'</div>':'')+'</div>'
+      +'<div style="'+cardCSS+'"><div style="'+capCSS+'"><span style="'+lblCSS+'">💡 Estilo de entrenamiento</span><div style="display:flex;gap:6px;flex-shrink:0;"><button style="'+btnCSS+'" onclick="_lqqCopiarEstilo()">Copiar</button><button style="'+ghostCSS+'" onclick="_lqqLink(\'estilo\',\''+id+'\')">Pedir link</button></div></div>'+estiloBody+'</div>'
+      +'<div style="'+cardCSS+'"><div style="'+capCSS+'"><span style="'+lblCSS+'">🏋️ Preferencias y pesos</span><button style="'+ghostCSS+'" onclick="copiarLinkFormulario(\''+id+'\')">Pedir link</button></div><div style="'+emptyCSS+'">Lo que el alumno cargue en el formulario de pesos y preferencias (mancuernas, molestias, lo que evita).</div></div>'
+      +'<div style="'+cardCSS+'"><div style="'+capCSS+'"><span style="'+lblCSS+'">📋 Últimas actualizaciones'+(nCh?(' ('+nCh+')'):'')+'</span><div style="display:flex;gap:6px;flex-shrink:0;">'+(nCh?('<button style="'+btnCSS+'" onclick="var o=document.getElementById(\'lqq-ov\');if(o)o.remove();verHistorialCheckins(\''+id+'\')">Ver todas</button>'):'')+'<button style="'+ghostCSS+'" onclick="copiarLinkActualizacion(\''+id+'\')">Pedir link</button></div></div>'+actBody+'</div>'
+    +'</div></div>';
+  document.body.appendChild(ov);
 }
 // Copiar el CONTENIDO que mandó el alumno en su actualización (para pegar donde se necesite)
 function _textoActualizacion(u){
