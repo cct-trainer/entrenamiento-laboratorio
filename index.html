@@ -22685,7 +22685,7 @@ function seleccionarEjercicio(ejId, bloqueId, nombreOIdx) {
   if (/movilidad/i.test(_catEx)) {
     const tb = document.getElementById(ejId + '-efec-tbody');
     if (tb && tb.querySelectorAll('tr').length === 0) {
-      tb.appendChild(_makeSerieRow(ejId, ejId + '-efec-tbody', 'Serie', 1, { reps: ex.unilateral ? '8 por lado' : '10' }));
+      tb.appendChild(_makeSerieRow(ejId, ejId + '-efec-tbody', 'Serie', 1, { tipo: 'movi', reps: ex.unilateral ? '8 por lado' : '10' }));
       const bodyEl = document.getElementById(ejId + '-efec-body');
       if (bodyEl && !bodyEl.classList.contains('open')) toggleSeriesSec(ejId, 'efec');
     }
