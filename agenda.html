@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mis alumnos · por día</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',-apple-system,'Segoe UI',Arial,sans-serif;-webkit-tap-highlight-color:transparent;}
+  body{background:#0e1520;color:#eaf0fa;min-height:100vh;padding:16px 14px calc(26px + env(safe-area-inset-bottom,0px));}
+  .wrap{max-width:560px;margin:0 auto;}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+  .top h1{font-size:18px;font-weight:900;color:#fff;}
+  .top .sub{font-size:11px;color:#8ea3c4;margin-top:2px;}
+  .reload{width:40px;height:40px;border-radius:12px;background:#16233a;border:1px solid #243150;color:#9fb4d2;font-size:18px;cursor:pointer;}
+  .search{width:100%;background:#111c2e;border:1px solid #243150;border-radius:12px;padding:12px 14px;color:#fff;font-size:15px;font-family:inherit;outline:none;margin-bottom:12px;}
+  .days{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+  .day{flex:1;min-width:42px;border:none;background:#111c2e;color:#9fb0cf;font-size:13px;font-weight:800;padding:10px 0;border-radius:11px;cursor:pointer;font-family:inherit;transition:.12s;position:relative;}
+  .day.on{background:#2f6fb0;color:#fff;}
+  .day .c{display:block;font-size:10px;font-weight:700;margin-top:2px;opacity:.7;}
+  .day.today::after{content:"";position:absolute;left:50%;bottom:4px;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:currentColor;}
+  .cnt{font-size:13px;font-weight:800;color:#eaf0fa;margin:0 2px 10px;}
+  .cnt span{color:#7e92b4;font-weight:600;}
+  .card{display:flex;align-items:center;gap:12px;background:#111c2e;border:1px solid #223150;border-radius:14px;padding:13px;margin-bottom:9px;cursor:pointer;}
+  .card:active{background:#16233a;}
+  .av{width:48px;height:48px;border-radius:50%;flex-shrink:0;background:#24324a;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#8fb6e6;overflow:hidden;}
+  .av img{width:100%;height:100%;object-fit:cover;}
+  .meta{flex:1;min-width:0;}
+  .meta .nm{font-size:16px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .meta .ds{font-size:11.5px;color:#9fb0cf;margin-top:2px;}
+  .go{font-size:11px;font-weight:800;color:#fff;background:#2f5f95;border-radius:9px;padding:8px 12px;white-space:nowrap;flex-shrink:0;}
+  .empty{text-align:center;color:#8ea3c4;font-size:14px;padding:38px 12px;background:#111c2e;border:1px dashed #2a3a56;border-radius:14px;line-height:1.7;}
+  .loading{text-align:center;color:#9fb0cf;padding:50px 10px;font-size:14px;}
+  .sp{width:34px;height:34px;border:4px solid rgba(143,176,214,.25);border-top-color:#4a86c4;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><h1>Mis alumnos</h1><div class="sub" id="sub">Cargando…</div></div>
+    <button class="reload" title="Actualizar" onclick="cargar()">⟳</button>
+  </div>
+  <input class="search" id="q" type="text" placeholder="Buscar alumno…" oninput="render()">
+  <div class="days" id="days"></div>
+  <div class="cnt" id="cnt"></div>
+  <div id="list"><div class="loading"><div class="sp"></div>Cargando…</div></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+const DIAS=[{k:'all',l:'Todos'},{k:1,l:'Lun'},{k:2,l:'Mar'},{k:3,l:'Mié'},{k:4,l:'Jue'},{k:5,l:'Vie'},{k:6,l:'Sáb'},{k:0,l:'Dom'}];
+const DOWF={0:'Dom',1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb'};
+const hoyDay=new Date().getDay();
+let _sel='all', _alumnos=[], _db=null;
+
+function _initFb(){
+  if(_db) return;
+  if(!firebase.apps.length) firebase.initializeApp({apiKey:'AIzaSyDkSgbqAJJRdlLwzcn-2vSMjVIUJbkVUGQ',authDomain:'entrenamiento-laboratorio.firebaseapp.com',projectId:'entrenamiento-laboratorio',storageBucket:'entrenamiento-laboratorio.firebasestorage.app',messagingSenderId:'399177627945',appId:'1:399177627945:web:2b4fef0894480f70dc1f38'});
+  _db=firebase.firestore();
+}
+
+async function cargar(){
+  _initFb();
+  document.getElementById('list').innerHTML='<div class="loading"><div class="sp"></div>Cargando…</div>';
+  try{
+    const doc=await _db.collection('alumnos').doc('zz_agenda').get();
+    if(!doc.exists || !(doc.data()&&Array.isArray(doc.data().alumnos))){
+      _alumnos=[];
+      document.getElementById('sub').textContent='';
+      document.getElementById('days').innerHTML='';
+      document.getElementById('cnt').innerHTML='';
+      document.getElementById('list').innerHTML='<div class="empty"><b>Todavía no hay lista publicada.</b><br>Abrí el coach en la computadora, entrá a <b>Alumnos</b> una vez, y después recargá acá con ⟳.</div>';
+      return;
+    }
+    _alumnos=(doc.data().alumnos||[]).filter(a=>a&&a.id&&a.nombre);
+    _alumnos.sort((x,y)=>String(x.nombre||'').localeCompare(String(y.nombre||'')));
+    document.getElementById('sub').textContent=_alumnos.length+' alumno'+(_alumnos.length!==1?'s':'');
+    render();
+  }catch(e){
+    console.error(e);
+    document.getElementById('list').innerHTML='<div class="empty">No se pudo cargar. Revisá la conexión y tocá ⟳.</div>';
+  }
+}
+
+function ini(n){const p=String(n||'?').trim().split(/\s+/);return((p[0]||'')[0]||'')+((p[1]||'')[0]||'');}
+function diasDe(a){return Array.isArray(a.dias)?a.dias.map(Number):[];}
+
+function render(){
+  const q=(document.getElementById('q').value||'').toLowerCase().trim();
+  // chips de día con conteo
+  const count={}; DIAS.forEach(d=>{ count[d.k]=d.k==='all'?_alumnos.length:_alumnos.filter(a=>diasDe(a).indexOf(d.k)>=0).length; });
+  document.getElementById('days').innerHTML=DIAS.map(d=>{
+    const on=String(d.k)===String(_sel), today=(d.k!=='all'&&d.k===hoyDay)?' today':'';
+    return '<button class="day'+(on?' on':'')+today+'" onclick="_sel=\''+d.k+'\';render()">'+d.l+'<span class="c">'+count[d.k]+'</span></button>';
+  }).join('');
+  // filtrar
+  let list=_alumnos;
+  if(_sel!=='all') list=list.filter(a=>diasDe(a).indexOf(Number(_sel))>=0);
+  if(q) list=list.filter(a=>String(a.nombre||'').toLowerCase().indexOf(q)>=0);
+  const lbl=_sel==='all'?'todos':(DIAS.find(d=>String(d.k)===String(_sel)).l+(Number(_sel)===hoyDay?' (hoy)':''));
+  document.getElementById('cnt').innerHTML='<b>'+list.length+'</b> '+(list.length===1?'alumno':'alumnos')+' <span>· '+lbl+'</span>';
+  const cont=document.getElementById('list');
+  if(!list.length){ cont.innerHTML='<div class="empty">Nadie en este día.</div>'; return; }
+  cont.innerHTML=list.map(a=>{
+    const esc=s=>String(s==null?'':s).replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    const av=a.foto?'<img src="'+esc(a.foto)+'">':ini(a.nombre).toUpperCase();
+    const d=diasDe(a); const ds=d.length?d.slice().sort().map(x=>DOWF[x]).join(' · '):'sin días cargados';
+    return '<div class="card" onclick="abrir(\''+esc(a.id)+'\')"><div class="av">'+av+'</div>'
+      +'<div class="meta"><div class="nm">'+esc(a.nombre)+'</div><div class="ds">'+ds+'</div></div>'
+      +'<span class="go">Abrir ›</span></div>';
+  }).join('');
+}
+
+function abrir(id){ window.location.href='alumno.html?id='+encodeURIComponent(id); }
+
+cargar();
+</script>
+</body>
+</html>

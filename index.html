@@ -16290,6 +16290,25 @@ function _agAlumnoDias(a){
   }
   return { dias:_agAutoDias(a&&a.id), fijo:false };
 }
+// Publica una agenda liviana (lista de alumnos + días) en un doc que la página móvil puede leer.
+// La base no permite LISTAR todos los alumnos, así que el coach deja esto pre-calculado.
+let _agPubTimer = null;
+function _publicarAgenda(){
+  try{
+    if(!window._db || typeof getAlumnos!=='function') return;
+    clearTimeout(_agPubTimer);
+    _agPubTimer = setTimeout(function(){
+      try{
+        var als = getAlumnos().filter(function(a){ return a && a.id && a.nombre; });
+        var roster = als.map(function(a){
+          var info = _agAlumnoDias(a);
+          return { id:a.id, nombre:a.nombre, foto:(a.foto&&a.foto.length<60000)?a.foto:'', dias:[].concat([...info.dias]), fijo:info.fijo };
+        });
+        window._db.collection('alumnos').doc('zz_agenda').set({ alumnos:roster, at:new Date().toISOString() }).catch(function(){});
+      }catch(e){}
+    }, 1200);
+  }catch(e){}
+}
 // Ficha: días/horarios
 function _agFichaTog(chk){ const r=chk.closest('.agrow'); if(r) r.classList.toggle('on',chk.checked); }
 function _agFichaFill(dias, horas){
@@ -16365,6 +16384,7 @@ function renderAlumnosGrid() {
     +'</div>'
     +'<div class="alu-count">'+alumnos.length+' ALUMNO'+(alumnos.length!==1?'S':'')+'</div>'
     +'<div class="alu-cards" id="alu-list">'+(cardsHTML || '<div class="alu-empty">Todavía no hay alumnos cargados.</div>')+'<div class="alu-empty" id="alu-dia-empty" style="display:none;">Nadie entrena este día.</div></div>';
+  if(typeof _publicarAgenda==='function') _publicarAgenda();
 }
 function _setAluEst(est){
   _aluEst = est;
