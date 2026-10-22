@@ -11417,32 +11417,54 @@ let _editorModTab    = 0;    // 0 = Gym, 1 = Casa
 
 const DIAS_SEM       = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 const DIAS_SEM_SIG   = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+// Estructura estándar de la sesión (Mesa Técnica / Protocolo Operativo).
+// Los 5 primeros son los bloques fundamentales; Avanzado y Core/Metabólico son condicionales;
+// Vuelta a la Calma es opcional. (Se mantienen Cardio y Personalizado por compatibilidad.)
 const TIPOS_BLOQUE_F = [
-  'Movilidad y Calentamiento','Activación y Core','Calentamiento Específico',
-  'Fuerza Principal / Potencia','Desarrollo / Hipertrofia','Enfriamiento Final',
-  'Pliometría','Pre-Agotamiento','Zona Media','Cardio','Personalizado'
+  'Movilidad y Calentamiento',
+  'Activación',
+  'Calentamiento Específico y Aproximaciones',
+  'Bloque Principal',
+  'Bloque Complementario',
+  'Bloque Avanzado (Mountain Dog / FST-7)',
+  'Core o Metabólico',
+  'Vuelta a la Calma',
+  'Cardio',
+  'Personalizado'
 ];
+// Devuelve las <option> del tipo de bloque, agregando el valor guardado si es de una sesión vieja
+// (así no se pierde el tipo de los bloques ya cargados con nombres anteriores).
+function _tiposBloqueOptions(sel, lista){
+  const L = (lista||TIPOS_BLOQUE_F).slice();
+  if(sel && L.indexOf(sel)<0) L.unshift(sel);
+  return L.map(t=>`<option${sel===t?' selected':''}>${t}</option>`).join('');
+}
 const BLOQUES_SOCC_PICKER = [
-  { icon:'🧘', nombre:'Movilidad y Calentamiento General',  tipo:'Movilidad y Calentamiento' },
-  { icon:'⚡', nombre:'Activación y Core',                  tipo:'Activación y Core' },
-  { icon:'🎯', nombre:'Calentamiento Específico',            tipo:'Calentamiento Específico' },
-  { icon:'💪', nombre:'Fuerza Principal / Potencia',         tipo:'Fuerza Principal / Potencia' },
-  { icon:'📈', nombre:'Desarrollo / Hipertrofia',            tipo:'Desarrollo / Hipertrofia' },
-  { icon:'🌬', nombre:'Enfriamiento Final',                  tipo:'Enfriamiento Final' },
-  { icon:'🚴', nombre:'Cardio',                              tipo:'Cardio' },
-  { icon:'✏️', nombre:'',                                    tipo:'Personalizado' },
+  { icon:'🧘', nombre:'Movilidad y Calentamiento',             tipo:'Movilidad y Calentamiento' },
+  { icon:'⚡', nombre:'Activación',                            tipo:'Activación' },
+  { icon:'🎯', nombre:'Calentamiento Específico y Aproximaciones', tipo:'Calentamiento Específico y Aproximaciones' },
+  { icon:'💪', nombre:'Bloque Principal',                       tipo:'Bloque Principal' },
+  { icon:'📈', nombre:'Bloque Complementario',                  tipo:'Bloque Complementario' },
+  { icon:'🔥', nombre:'Bloque Avanzado (Mountain Dog / FST-7)', tipo:'Bloque Avanzado (Mountain Dog / FST-7)' },
+  { icon:'🌀', nombre:'Core o Metabólico',                      tipo:'Core o Metabólico' },
+  { icon:'🌬', nombre:'Vuelta a la Calma',                      tipo:'Vuelta a la Calma' },
+  { icon:'🚴', nombre:'Cardio',                                tipo:'Cardio' },
+  { icon:'✏️', nombre:'',                                       tipo:'Personalizado' },
 ];
 const TIPOS_SERIE_F  = ['Serie Simple','Biserie','Triserie','Superserie','Serie Gigante','Circuito'];
 
 // ── Catálogo de bloques por SISTEMA de entrenamiento (selector nuevo) ────────
 // n: nombre visible · tipo: fase (para color/compatibilidad) · serie: sistema de serie si aplica · d: explicación
 const BLOQUES_CAT = [
-  { grupo:'Fases de la sesión', color:'47,95,149', items:[
-    {n:'Movilidad y Entrada en Calor', tipo:'Movilidad y Calentamiento', serie:'Serie Simple', d:'Prepara articulaciones y tejidos, mejora el rango de movimiento y predispone al sistema nervioso antes del trabajo principal.'},
-    {n:'Activación y Core', tipo:'Activación y Core', serie:'Serie Simple', d:'Activa los músculos objetivo y la zona media para mejorar el reclutamiento antes de las cargas altas.'},
-    {n:'Fuerza / Potencia (Principal)', tipo:'Fuerza Principal / Potencia', serie:'Serie Simple', d:'Trabajo principal con cargas altas y pocas repeticiones. Foco en fuerza máxima y producción de potencia, con pausas largas.'},
-    {n:'Desarrollo / Hipertrofia', tipo:'Desarrollo / Hipertrofia', serie:'Serie Simple', d:'Volumen efectivo en rangos moderados de repeticiones. Es el principal motor del crecimiento muscular.'},
-    {n:'Enfriamiento / Vuelta a la calma', tipo:'Enfriamiento Final', serie:'Serie Simple', d:'Baja la intensidad con respiración y movilidad suave para iniciar la recuperación.'},
+  { grupo:'Estructura de la sesión', color:'47,95,149', items:[
+    {n:'Movilidad y Calentamiento', tipo:'Movilidad y Calentamiento', serie:'Serie Simple', d:'1 a 2 vueltas. Preparación articular y general: seleccionar movimientos según las demandas del ejercicio principal.'},
+    {n:'Activación', tipo:'Activación', serie:'Serie Simple', d:'1 a 2 vueltas. Preparación neuromuscular específica: preparar musculatura y coordinación sin fatiga innecesaria.'},
+    {n:'Calentamiento Específico y Aproximaciones', tipo:'Calentamiento Específico y Aproximaciones', serie:'Serie Simple', d:'Preparación para la carga principal: 1 serie liviana y 3 aproximaciones progresivas del ejercicio principal (no cuentan como volumen efectivo).'},
+    {n:'Bloque Principal', tipo:'Bloque Principal', serie:'Serie Simple', d:'Mayor prioridad de la sesión. Ejercicio foco, con 1 a 3 series efectivas y carga, repeticiones, RIR y pausas definidos.'},
+    {n:'Bloque Complementario', tipo:'Bloque Complementario', serie:'Serie Simple', d:'Volumen y patrones secundarios: ejercicios para completar el estímulo muscular o los patrones necesarios.'},
+    {n:'Bloque Avanzado (Mountain Dog / FST-7)', tipo:'Bloque Avanzado (Mountain Dog / FST-7)', serie:'Serie Simple', d:'Condicional. Técnicas como Mountain Dog o FST-7 solo cuando tengan una justificación concreta.'},
+    {n:'Core o Metabólico', tipo:'Core o Metabólico', serie:'Serie Simple', d:'Condicional. Trabajo adicional de zona media o metabólico según las necesidades del alumno y la sesión.'},
+    {n:'Vuelta a la Calma', tipo:'Vuelta a la Calma', serie:'Serie Simple', d:'Opcional. Baja la intensidad con respiración y movilidad suave para iniciar la recuperación, cuando tenga sentido.'},
     {n:'Cardio', tipo:'Cardio', serie:'Serie Simple', d:'Trabajo cardiovascular, continuo o por intervalos, según el objetivo de la sesión.'},
   ]},
   { grupo:'Métodos / Sistemas', color:'21,122,110', items:[
@@ -14669,7 +14691,7 @@ function addBloqueDia(diaIdx, datosPrevios) {
         placeholder="Nombre del bloque..."
         value="${datosPrevios?.nombre||''}">
       <select class="bloque-tipo-sel" id="${id}-tipo" onchange="toggleCardioBloque('${id}')">
-        ${TIPOS_BLOQUE_F.map(t=>`<option${datosPrevios?.tipo===t?' selected':''}>${t}</option>`).join('')}
+        ${_tiposBloqueOptions(datosPrevios?.tipo)}
       </select>
       <span class="bloque-serie-tipo-label">|</span>
       <select class="bloque-tipo-sel" id="${id}-serie-tipo" onchange="onSerieTipoChange('${id}')">
@@ -21499,7 +21521,7 @@ function renombrarPlanificacion(id) {
 // ================================================
 // PLANIFICADOR - BLOQUES
 // ================================================
-const TIPOS_BLOQUE = ['Movilidad','Activación','Pliometría','Potencia','Pre-Agotamiento','Fuerza Principal','Bloque Complementario 1','Bloque Complementario 2','Bloque Complementario 3','Zona Media','Cardio','Personalizado'];
+const TIPOS_BLOQUE = (typeof TIPOS_BLOQUE_F!=='undefined') ? TIPOS_BLOQUE_F.slice() : ['Movilidad y Calentamiento','Activación','Calentamiento Específico y Aproximaciones','Bloque Principal','Bloque Complementario','Bloque Avanzado (Mountain Dog / FST-7)','Core o Metabólico','Vuelta a la Calma','Cardio','Personalizado'];
 const TIPOS_SERIE = ['Serie Simple','Biserie','Triserie','Superserie','Serie Gigante','Circuito'];
 let bloqueCounter = 0, ejercicioCounter = 0;
 
@@ -21935,7 +21957,7 @@ function separarEjercicio(ejId, bloqueId) {
       <input class="bloque-nombre-input" type="text" id="${nid}-nombre-input"
         placeholder="Nombre del bloque..." oninput="actualizarTituloBloque('${nid}')">
       <select class="bloque-tipo-sel" id="${nid}-tipo" onchange="onBloqueTipoChange('${nid}');toggleCardioBloque('${nid}')">
-        ${TIPOS_BLOQUE.map(t=>`<option>${t}</option>`).join('')}
+        ${_tiposBloqueOptions(tipoActual)}
       </select>
       <span class="bloque-serie-tipo-label">|</span>
       <select class="bloque-tipo-sel" id="${nid}-serie-tipo" onchange="onSerieTipoChange('${nid}')">
