@@ -65,7 +65,7 @@ const PREGUNTAS = [
     { id:'tiempo', t:'¿Cuánto tiempo real querés dedicarle por sesión?', tipo:'uni', otro:true, ops:['20 min','30 min','45 min','60 min','Más de 60'] },
     { id:'dias', t:'¿Cuántos días por semana, siendo realista?', tipo:'uni', otro:true, ops:['1','2','3','4','5 o más'] },
     { id:'lugar', t:'¿Dónde preferís entrenar?', tipo:'uni', otro:true, ops:['En casa','En el gym','Al aire libre','Me da igual'] },
-    { id:'momento', t:'¿Qué momento del día te funciona mejor?', tipo:'uni', otro:true, ops:['Mañana','Mediodía','Tarde','Noche','Variable'] },
+    { id:'momento', t:'¿Qué momento del día te funciona mejor? (podés elegir varios)', tipo:'multi', otro:true, ops:['Mañana','Mediodía','Tarde','Noche','Variable'] },
   ]},
   { sec:'Tu por qué', qs:[
     { id:'porque', t:'¿Para qué querés entrenar DE VERDAD? (en tus palabras)', tipo:'texto', ph:'Ej: tener más energía, sacarme un dolor, verme mejor, llegar bien a los 60…' },
@@ -156,7 +156,7 @@ function _resumen(){
   if(g('abandono')) L.push('Lo hace abandonar: '+g('abandono')+'.');
   if(m('engancha')) L.push('Lo engancharía: '+m('engancha')+'.');
   if(m('disfruta')) L.push('Disfruta fuera del gym: '+m('disfruta')+'.');
-  L.push('Prefiere: '+(g('tiempo')||'—')+' · '+(g('dias')||'—')+' días · '+(g('lugar')||'—')+' · '+(g('momento')||'—')+'.');
+  L.push('Prefiere: '+(g('tiempo')||'—')+' · '+(g('dias')||'—')+' días · '+(g('lugar')||'—')+' · '+(m('momento')||'—')+'.');
   if(g('porque')) L.push('Su por qué: "'+g('porque')+'".');
   if(g('exito')) L.push('Éxito para él/ella: "'+g('exito')+'".');
   if(g('guia')) L.push('Prefiere que lo guíen: '+g('guia')+'.');
