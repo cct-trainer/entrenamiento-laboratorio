@@ -17601,6 +17601,13 @@ function renderSidebarAlumno(id) {
       onmouseover="this.style.background='#2b3547'" onmouseout="this.style.background='#222B3A'">
       🏋️ Formulario de pesos y preferencias
     </button>
+    <button onclick="_abrirEstiloAlumno('${id}')"
+      style="width:100%;margin-top:8px;background:#222B3A;border:1px solid #283142;border-radius:9px;
+             color:#F2F4F7;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
+             letter-spacing:0.3px;font-family:inherit;transition:background .15s;"
+      onmouseover="this.style.background='#2b3547'" onmouseout="this.style.background='#222B3A'">
+      🎯 Estilo de entrenamiento
+    </button>
     <button onclick="_verSustituciones('${id}')"
       style="width:100%;margin-top:8px;background:#222B3A;border:1px solid #283142;border-radius:9px;
              color:#F2F4F7;font-size:11px;font-weight:800;padding:9px 12px;cursor:pointer;
@@ -29993,6 +30000,30 @@ function copiarLinkActualizacion(id){
 function copiarLinkFormulario(id){
   const url='https://cct-trainer.github.io/entrenamiento-laboratorio/formulario-entrenamiento.html'+(id?('?a='+encodeURIComponent(id)):'');
   navigator.clipboard.writeText(url).then(()=>toast('🏋️ Link del formulario copiado — mandáselo al alumno')).catch(()=>prompt('Copiá este link:',url));
+}
+// Estilo de entrenamiento: link para el alumno + ver lo que respondió
+async function _abrirEstiloAlumno(id){
+  const link='https://cct-trainer.github.io/entrenamiento-laboratorio/estilo.html?id='+encodeURIComponent(id);
+  let perfil=null;
+  try{ if(window._db){ const d=await window._db.collection('alumnos').doc(id).get(); if(d.exists) perfil=(d.data()||{}).estiloPerfil||null; } }catch(e){}
+  const fecha=(perfil&&perfil.at)?new Date(perfil.at).toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}):'';
+  const resumen=(perfil&&perfil.resumen)?String(perfil.resumen):'';
+  const body = resumen
+    ? '<div style="font-size:11px;color:#8795ab;margin-bottom:6px;">Completado el '+fecha+'</div><div style="white-space:pre-wrap;font-size:13.5px;line-height:1.6;color:#223;background:#f4f7fb;border:1px solid #e1e8f2;border-radius:10px;padding:12px 14px;">'+resumen.replace(/</g,'&lt;')+'</div>'
+    : '<div style="font-size:13px;color:#8795ab;background:#f4f7fb;border:1px dashed #cfd8e6;border-radius:10px;padding:14px;text-align:center;">Todavía no completó el formulario. Copiá el link y mandáselo para que lo llene.</div>';
+  var ov=document.getElementById('estilo-ov'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='estilo-ov';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(6,10,18,.72);z-index:12000;display:flex;align-items:center;justify-content:center;padding:18px;';
+  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:460px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,.4);">'
+    +'<div style="background:#1a2a4a;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0;"><b style="font-size:15px;">🎯 Estilo de entrenamiento</b><button onclick="var o=document.getElementById(\'estilo-ov\');if(o)o.remove();" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;">×</button></div>'
+    +'<div style="padding:16px 18px;">'
+      +'<div style="font-size:11px;font-weight:800;color:#8795ab;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Link para el alumno</div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:16px;"><input id="estilo-link" readonly value="'+link.replace(/"/g,'&quot;')+'" style="flex:1;min-width:0;border:1px solid #d5deea;border-radius:8px;padding:9px;font-size:12px;color:#334;background:#f8fafc;"><button onclick="(function(){var i=document.getElementById(\'estilo-link\');i.select();try{navigator.clipboard.writeText(i.value);}catch(e){document.execCommand(\'copy\');} if(typeof toast===\'function\')toast(\'Link copiado ✓\');})()" style="background:#2f5f95;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">Copiar</button></div>'
+      +'<div style="font-size:11px;font-weight:800;color:#8795ab;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Lo que respondió</div>'
+      + body
+    +'</div></div>';
+  document.body.appendChild(ov);
 }
 // Copiar el CONTENIDO que mandó el alumno en su actualización (para pegar donde se necesite)
 function _textoActualizacion(u){

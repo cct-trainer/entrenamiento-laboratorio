@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Tu estilo de entrenamiento</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',-apple-system,'Segoe UI',Arial,sans-serif;-webkit-tap-highlight-color:transparent;}
+  body{background:#0e1520;color:#eaf0fa;min-height:100vh;padding:18px 14px calc(30px + env(safe-area-inset-bottom,0px));}
+  .wrap{max-width:560px;margin:0 auto;}
+  .hd{text-align:center;margin-bottom:18px;}
+  .hd .k{font-size:10px;font-weight:900;letter-spacing:1.5px;color:#8fb6e6;text-transform:uppercase;}
+  .hd h1{font-size:20px;font-weight:900;color:#fff;margin-top:6px;line-height:1.2;}
+  .hd p{font-size:12.5px;color:#9fb0cf;margin-top:7px;line-height:1.5;}
+  .sec{background:#111c2e;border:1px solid #223150;border-radius:16px;padding:15px 15px 16px;margin-bottom:13px;}
+  .sec .st{font-size:11px;font-weight:900;letter-spacing:.5px;color:#8fb6e6;text-transform:uppercase;margin-bottom:12px;}
+  .q{margin-bottom:16px;}
+  .q:last-child{margin-bottom:0;}
+  .ql{font-size:14px;font-weight:700;color:#eaf0fa;margin-bottom:9px;line-height:1.35;}
+  .opts{display:flex;flex-wrap:wrap;gap:8px;}
+  .opt{border:1.5px solid #2a3a56;background:#0e1828;color:#cdd9ea;font-size:13px;font-weight:700;padding:9px 13px;border-radius:11px;cursor:pointer;transition:.12s;font-family:inherit;user-select:none;}
+  .opt.on{background:#2f6fb0;border-color:#4a86c4;color:#fff;}
+  textarea,input[type=text]{width:100%;background:#0c1018;border:1px solid #2a3a56;border-radius:11px;padding:11px 12px;font-size:14px;color:#fff;font-family:inherit;outline:none;resize:vertical;line-height:1.5;}
+  textarea{min-height:64px;}
+  .rng{display:flex;align-items:center;gap:12px;}
+  .rng input{flex:1;}
+  .rng .v{font-size:18px;font-weight:900;color:#8fb6e6;width:34px;text-align:center;}
+  input[type=range]{accent-color:#4a86c4;height:26px;}
+  .send{width:100%;margin-top:6px;background:linear-gradient(135deg,#2f8cff,#125ce6);border:none;color:#fff;border-radius:14px;padding:16px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 10px 24px -12px rgba(18,92,230,.6);}
+  .send:disabled{opacity:.55;}
+  .loading,.msg{text-align:center;color:#9fb0cf;padding:60px 16px;font-size:15px;line-height:1.6;}
+  .ok{background:#111c2e;border:1px solid #2a5f5b;border-radius:16px;padding:28px 20px;text-align:center;}
+  .ok .ic{font-size:40px;}
+  .ok h2{font-size:19px;font-weight:900;color:#fff;margin:10px 0 6px;}
+  .ok p{font-size:13.5px;color:#bcd4f0;line-height:1.6;}
+  .hint{font-size:11px;color:#7e92b4;margin-top:6px;}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="loading" id="loading">Cargando…</div>
+  <div id="form" style="display:none;"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+let _db=null, _id='', _nombre='';
+
+const PREGUNTAS = [
+  { sec:'Tu relación con entrenar', qs:[
+    { id:'relacion', t:'¿Cómo te llevás con entrenar hoy?', tipo:'uni', ops:['Me encanta','Me gusta','Lo hago aunque me cuesta','Voy medio obligado/a','Lo detesto pero quiero cambiar'] },
+    { id:'disfrute', t:'Del 1 al 10, ¿cuánto disfrutás moverte hoy?', tipo:'rango' },
+  ]},
+  { sec:'Qué te traba', qs:[
+    { id:'traba', t:'¿Qué es lo que MENOS te gusta o más te cuesta? (elegí los que quieras)', tipo:'multi', ops:['Me aburre','Me da pereza / cansancio','Me duele o tengo molestias','No veo resultados','No tengo tiempo','Me da vergüenza / que me miren','La rutina repetitiva','No entiendo los ejercicios','Ir al gimnasio'] },
+    { id:'abandono', t:'¿Qué suele hacer que faltes o lo dejes?', tipo:'texto', ph:'Ej: cuando se complica el laburo, cuando no veo cambios, cuando me aburro…' },
+  ]},
+  { sec:'Qué te engancharía', qs:[
+    { id:'engancha', t:'¿Qué te haría venir con más ganas? (elegí los que quieras)', tipo:'multi', ops:['Sesiones cortas','Que cambie seguido / variedad','Con música','Al aire libre','En casa','Tipo juego / circuito','Ver mi progreso claro','Metas chicas y alcanzables','Entrenar con alguien','Que me expliquen el por qué','Que me motiven y acompañen'] },
+    { id:'disfruta', t:'¿Qué actividades disfrutás fuera del gym?', tipo:'multi', ops:['Caminar','Bailar','Bici','Nadar','Correr','Deportes','Juegos / aire libre','Ninguna'] },
+  ]},
+  { sec:'Logística', qs:[
+    { id:'tiempo', t:'¿Cuánto tiempo real querés por sesión?', tipo:'uni', ops:['20 min','30 min','45 min','60 min','Más de 60'] },
+    { id:'dias', t:'¿Cuántos días por semana, siendo realista?', tipo:'uni', ops:['1','2','3','4','5 o más'] },
+    { id:'lugar', t:'¿Dónde preferís entrenar?', tipo:'uni', ops:['En casa','En el gym','Al aire libre','Me da igual'] },
+    { id:'momento', t:'¿Qué momento del día te funciona mejor?', tipo:'uni', ops:['Mañana','Mediodía','Tarde','Noche','Variable'] },
+  ]},
+  { sec:'Tu por qué', qs:[
+    { id:'porque', t:'¿Para qué querés entrenar DE VERDAD? (en tus palabras)', tipo:'texto', ph:'Ej: tener más energía, sacarme un dolor, verme mejor, llegar bien a los 60…' },
+    { id:'exito', t:'¿Qué resultado te haría sentir que valió la pena?', tipo:'texto', ph:'Ej: subir escaleras sin agitarme, entrar en un jean, animarme a jugar al fútbol…' },
+    { id:'guia', t:'¿Cómo preferís que te guíe tu coach?', tipo:'uni', ops:['Directo y al grano','Con explicaciones','Con aliento y motivación','Con datos y números'] },
+    { id:'extra', t:'Algo que quieras que tenga en cuenta (molestias, gustos, lo que sea)', tipo:'texto', ph:'Opcional…' },
+  ]},
+];
+
+const _R = {};   // respuestas
+
+function _initFb(){
+  if(_db) return;
+  if(!firebase.apps.length) firebase.initializeApp({apiKey:'AIzaSyDkSgbqAJJRdlLwzcn-2vSMjVIUJbkVUGQ',authDomain:'entrenamiento-laboratorio.firebaseapp.com',projectId:'entrenamiento-laboratorio',storageBucket:'entrenamiento-laboratorio.firebasestorage.app',messagingSenderId:'399177627945',appId:'1:399177627945:web:2b4fef0894480f70dc1f38'});
+  _db=firebase.firestore();
+}
+function _esc(s){return String(s==null?'':s).replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+
+async function _arrancar(){
+  _initFb();
+  const p=new URLSearchParams(location.search);
+  _id=p.get('id')||''; const slug=p.get('u')||'';
+  try{
+    if(!_id && slug){ const q=await _db.collection('alumnos').where('slug','==',slug).limit(1).get(); if(!q.empty){ _id=q.docs[0].id; } }
+    if(!_id){ _msg('No se encontró el identificador en el enlace. Pedíle a tu coach el link correcto.'); return; }
+    const doc=await _db.collection('alumnos').doc(_id).get();
+    const data=doc.exists?doc.data():{};
+    _nombre=(data.perfil&&(data.perfil.nombre||data.perfil.name))||data.nombre||'';
+    // precargar respuestas si ya lo completó antes
+    if(data.estiloPerfil&&data.estiloPerfil.resp){ Object.assign(_R, data.estiloPerfil.resp); }
+    _pintar();
+  }catch(e){ console.error(e); _msg('No se pudo cargar. Revisá tu conexión e intentá de nuevo.'); }
+}
+function _msg(t){ document.getElementById('loading').style.display='none'; const f=document.getElementById('form'); f.style.display='block'; f.innerHTML='<div class="msg">'+_esc(t)+'</div>'; }
+
+function _pintar(){
+  document.getElementById('loading').style.display='none';
+  const f=document.getElementById('form'); f.style.display='block';
+  let h='<div class="hd"><div class="k">Para conocerte un poco más</div><h1>Hola'+ (_nombre?(', '+_esc(_nombre.split(' ')[0])):'') +'</h1><p>Me gustaría saber qué es lo que te gusta del entrenamiento y qué tenés en mente. No hay respuestas buenas ni malas: con lo que me cuentes te armo las sesiones a tu medida.</p></div>';
+  PREGUNTAS.forEach(function(sec){
+    h+='<div class="sec"><div class="st">'+_esc(sec.sec)+'</div>';
+    sec.qs.forEach(function(q){
+      h+='<div class="q"><div class="ql">'+_esc(q.t)+'</div>';
+      if(q.tipo==='texto'){
+        h+='<textarea data-id="'+q.id+'" placeholder="'+_esc(q.ph||'')+'" oninput="_R[\''+q.id+'\']=this.value">'+_esc(_R[q.id]||'')+'</textarea>';
+      } else if(q.tipo==='rango'){
+        var v=_R[q.id]||5;
+        h+='<div class="rng"><input type="range" min="1" max="10" value="'+v+'" oninput="_R[\''+q.id+'\']=+this.value;this.nextElementSibling.textContent=this.value"><span class="v">'+v+'</span></div>';
+      } else {
+        h+='<div class="opts">'+q.ops.map(function(o){
+          var on=(q.tipo==='multi')?((_R[q.id]||[]).indexOf(o)>=0):(_R[q.id]===o);
+          return '<button type="button" class="opt'+(on?' on':'')+'" onclick="_tog(this,\''+q.id+'\',\''+_esc(o).replace(/'/g,"\\'")+'\','+(q.tipo==='multi')+')">'+_esc(o)+'</button>';
+        }).join('')+'</div>';
+      }
+      h+='</div>';
+    });
+    h+='</div>';
+  });
+  h+='<button class="send" id="sendBtn" onclick="_enviar()">Enviar mis respuestas</button>';
+  h+='<div class="hint" style="text-align:center;">Podés volver a completarlo cuando quieras; se guarda lo último.</div>';
+  f.innerHTML=h;
+}
+function _tog(btn,id,val,multi){
+  if(multi){
+    var a=_R[id]||[]; var i=a.indexOf(val);
+    if(i>=0){ a.splice(i,1); btn.classList.remove('on'); } else { a.push(val); btn.classList.add('on'); }
+    _R[id]=a;
+  } else {
+    _R[id]=val;
+    var box=btn.parentElement; box.querySelectorAll('.opt').forEach(function(b){ b.classList.remove('on'); }); btn.classList.add('on');
+  }
+}
+
+// Resumen legible para el coach
+function _resumen(){
+  var g=function(id){ return _R[id]||''; };
+  var m=function(id){ return (_R[id]||[]).join(', '); };
+  var L=[];
+  L.push('Relación con entrenar: '+(g('relacion')||'—')+' (disfrute '+(g('disfrute')||'—')+'/10).');
+  if(m('traba')) L.push('Lo que lo traba: '+m('traba')+'.');
+  if(g('abandono')) L.push('Lo hace abandonar: '+g('abandono')+'.');
+  if(m('engancha')) L.push('Lo engancharía: '+m('engancha')+'.');
+  if(m('disfruta')) L.push('Disfruta fuera del gym: '+m('disfruta')+'.');
+  L.push('Prefiere: '+(g('tiempo')||'—')+' · '+(g('dias')||'—')+' días · '+(g('lugar')||'—')+' · '+(g('momento')||'—')+'.');
+  if(g('porque')) L.push('Su por qué: "'+g('porque')+'".');
+  if(g('exito')) L.push('Éxito para él/ella: "'+g('exito')+'".');
+  if(g('guia')) L.push('Prefiere que lo guíen: '+g('guia')+'.');
+  if(g('extra')) L.push('A tener en cuenta: '+g('extra')+'.');
+  return L.join('\n');
+}
+
+async function _enviar(){
+  var b=document.getElementById('sendBtn'); if(b){ b.disabled=true; b.textContent='Guardando…'; }
+  try{
+    await _db.collection('alumnos').doc(_id).set({
+      estiloPerfil: { resp:_R, resumen:_resumen(), at:new Date().toISOString() }
+    }, { merge:true });
+    document.getElementById('form').innerHTML='<div class="ok"><div class="ic">✅</div><h2>¡Listo, gracias!</h2><p>Tu coach ya tiene tus respuestas y va a usarlas para armarte sesiones a tu medida. Podés cerrar esta página.</p></div>';
+    window.scrollTo(0,0);
+  }catch(e){ console.error(e); if(b){ b.disabled=false; b.textContent='Enviar mis respuestas'; } alert('No se pudo guardar. Revisá tu conexión e intentá de nuevo.'); }
+}
+
+_arrancar();
+</script>
+</body>
+</html>
