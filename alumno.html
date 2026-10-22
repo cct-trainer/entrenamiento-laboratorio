@@ -1056,8 +1056,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261022094419 por un timestamp en cada deploy
-const _APP_VERSION = '20261022094419';
+// deploy.bat reemplaza 20261022094916 por un timestamp en cada deploy
+const _APP_VERSION = '20261022094916';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3502,14 +3502,15 @@ function _aevEjercicio(){
   var opts=keys.map(function(k){ return '<option value="'+_aevEsc(nombres[k])+'">'+_aevEsc(nombres[k])+'</option>'; }).join('');
   c.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">'
     +'<div style="flex:1;min-width:160px;"><div style="font-size:10px;font-weight:800;color:#8ea3c4;margin-bottom:3px;">EJERCICIO</div><select id="aev-buscar" onchange="_aevBuscar()" style="width:100%;background:#0c1018;border:1px solid #2a3a56;border-radius:8px;padding:10px;font-size:13px;color:#fff;font-family:inherit;"><option value="">— Elegí un ejercicio —</option>'+opts+'</select></div>'
-    +'<div><div style="font-size:10px;font-weight:800;color:#8ea3c4;margin-bottom:3px;">DESDE</div><input type="date" id="aev-desde" onclick="try{this.showPicker()}catch(e){}" style="background:#0c1018;border:1px solid #2a3a56;border-radius:8px;padding:9px;font-size:13px;color:#fff;font-family:inherit;cursor:pointer;"></div>'
-    +'<div><div style="font-size:10px;font-weight:800;color:#8ea3c4;margin-bottom:3px;">HASTA</div><input type="date" id="aev-hasta" onclick="try{this.showPicker()}catch(e){}" style="background:#0c1018;border:1px solid #2a3a56;border-radius:8px;padding:9px;font-size:13px;color:#fff;font-family:inherit;cursor:pointer;"></div>'
+    +'<div><div style="font-size:10px;font-weight:800;color:#8ea3c4;margin-bottom:3px;">PERÍODO</div><select id="aev-meses" onchange="_aevBuscar()" style="background:#0c1018;border:1px solid #2a3a56;border-radius:8px;padding:9px;font-size:13px;color:#fff;font-family:inherit;cursor:pointer;"><option value="1">Último mes</option><option value="3" selected>Últimos 3 meses</option><option value="6">Últimos 6 meses</option><option value="12">Último año</option><option value="all">Todo</option></select></div>'
     +'<button onclick="_aevBuscar()" style="background:#2f5f95;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">BUSCAR</button></div>'
     +'<div id="aev-res"></div>';
 }
 function _aevBuscar(){
   var q=_ejKey((document.getElementById('aev-buscar')||{}).value||'');
-  var desde=(document.getElementById('aev-desde')||{}).value||'', hasta=(document.getElementById('aev-hasta')||{}).value||'';
+  var _mesesSel=(document.getElementById('aev-meses')||{}).value||'3';
+  var desde='', hasta='';
+  if(_mesesSel!=='all'){ var _dd=new Date(); _dd.setHours(0,0,0,0); _dd.setMonth(_dd.getMonth()-parseInt(_mesesSel,10)); desde=_dd.getFullYear()+'-'+String(_dd.getMonth()+1).padStart(2,'0')+'-'+String(_dd.getDate()).padStart(2,'0'); }
   var res=document.getElementById('aev-res'); if(!res) return;
   if(!q){ res.innerHTML='<div style="color:#8ea3c4;padding:10px;">Elegí un ejercicio.</div>'; return; }
   var uni=(_data&&_data.perfil&&_data.perfil.unidadPeso==='lb')?'lb':'kg'; var nombreShow=''; var filas=[];

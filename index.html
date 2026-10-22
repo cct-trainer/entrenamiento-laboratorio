@@ -14355,14 +14355,15 @@ function _cevRenderEjercicio(){
   var opts=keys.map(function(k){ return '<option value="'+_cevEsc(nombres[k])+'">'+_cevEsc(nombres[k])+'</option>'; }).join('');
   c.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">'
     +'<div><div style="font-size:10px;font-weight:800;color:#8795ab;margin-bottom:3px;">EJERCICIO</div><select id="cev-buscar" onchange="_cevBuscarEj()" style="border:1px solid #d5deea;border-radius:8px;padding:8px 10px;font-size:13px;min-width:220px;font-family:inherit;background:#fff;"><option value="">— Elegí un ejercicio —</option>'+opts+'</select></div>'
-    +'<div><div style="font-size:10px;font-weight:800;color:#8795ab;margin-bottom:3px;">DESDE</div><input type="date" id="cev-desde" onclick="try{this.showPicker()}catch(e){}" style="border:1px solid #d5deea;border-radius:8px;padding:7px;font-size:13px;font-family:inherit;cursor:pointer;"></div>'
-    +'<div><div style="font-size:10px;font-weight:800;color:#8795ab;margin-bottom:3px;">HASTA</div><input type="date" id="cev-hasta" onclick="try{this.showPicker()}catch(e){}" style="border:1px solid #d5deea;border-radius:8px;padding:7px;font-size:13px;font-family:inherit;cursor:pointer;"></div>'
+    +'<div><div style="font-size:10px;font-weight:800;color:#8795ab;margin-bottom:3px;">PERÍODO</div><select id="cev-meses" onchange="_cevBuscarEj()" style="border:1px solid #d5deea;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;background:#fff;cursor:pointer;"><option value="1">Último mes</option><option value="3" selected>Últimos 3 meses</option><option value="6">Últimos 6 meses</option><option value="12">Último año</option><option value="all">Todo</option></select></div>'
     +'<button onclick="_cevBuscarEj()" style="background:#2f5f95;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">BUSCAR</button></div>'
     +'<div id="cev-ejres"></div>';
 }
 function _cevBuscarEj(){
   var q=_cevKey((document.getElementById('cev-buscar')||{}).value||'');
-  var desde=(document.getElementById('cev-desde')||{}).value||'', hasta=(document.getElementById('cev-hasta')||{}).value||'';
+  var _mesesSel=(document.getElementById('cev-meses')||{}).value||'3';
+  var desde='', hasta='';
+  if(_mesesSel!=='all'){ var _dd=new Date(); _dd.setHours(0,0,0,0); _dd.setMonth(_dd.getMonth()-parseInt(_mesesSel,10)); desde=_dd.getFullYear()+'-'+String(_dd.getMonth()+1).padStart(2,'0')+'-'+String(_dd.getDate()).padStart(2,'0'); }
   var res=document.getElementById('cev-ejres'); if(!res) return;
   if(!q){ res.innerHTML='<div style="color:#8795ab;padding:10px;">Elegí un ejercicio.</div>'; return; }
   var nombreShow='';
