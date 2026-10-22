@@ -49,28 +49,28 @@
 let _db=null, _id='', _nombre='';
 
 const PREGUNTAS = [
-  { sec:'Tu relación con entrenar', qs:[
-    { id:'relacion', t:'¿Cómo te llevás con entrenar hoy?', tipo:'uni', ops:['Me encanta','Me gusta','Lo hago aunque me cuesta','Voy medio obligado/a','Lo detesto pero quiero cambiar'] },
+  { sec:'Tu relación con el entrenamiento y tu manera de entrenar hoy', qs:[
+    { id:'relacion', t:'¿Cómo lo llevás?', tipo:'uni', otro:true, ops:['Me encanta','Me gusta','Lo hago aunque me cuesta','Voy medio obligado/a','Lo detesto pero quiero cambiar'] },
     { id:'disfrute', t:'Del 1 al 10, ¿cuánto disfrutás moverte hoy?', tipo:'rango' },
   ]},
-  { sec:'Qué te traba', qs:[
-    { id:'traba', t:'¿Qué es lo que MENOS te gusta o más te cuesta? (elegí los que quieras)', tipo:'multi', ops:['Me aburre','Me da pereza / cansancio','Me duele o tengo molestias','No veo resultados','No tengo tiempo','Me da vergüenza / que me miren','La rutina repetitiva','No entiendo los ejercicios','Ir al gimnasio'] },
-    { id:'abandono', t:'¿Qué suele hacer que faltes o lo dejes?', tipo:'texto', ph:'Ej: cuando se complica el laburo, cuando no veo cambios, cuando me aburro…' },
+  { sec:'Lo que te cuesta (así te lo hago más fácil)', qs:[
+    { id:'traba', t:'¿Qué parte se te hace más cuesta arriba? Contame con confianza: saber esto me ayuda a hacértelo mucho más llevadero.', tipo:'multi', otro:true, ops:['Me aburre','Me da pereza / cansancio','Me duele o tengo molestias','Me cuesta ver resultados','El tiempo que me lleva','Me da vergüenza / que me miren','Cuando se vuelve muy repetitivo','Cuando no entiendo los ejercicios','Ir al gimnasio'] },
+    { id:'abandono', t:'¿Qué suele cortarte la racha cuando venías entrenando bien?', tipo:'texto', ph:'Ej: cuando se complica el laburo, cuando no veo cambios, cuando me aburro…' },
   ]},
-  { sec:'Qué te engancharía', qs:[
-    { id:'engancha', t:'¿Qué te haría venir con más ganas? (elegí los que quieras)', tipo:'multi', ops:['Sesiones cortas','Que cambie seguido / variedad','Con música','Al aire libre','En casa','Tipo juego / circuito','Ver mi progreso claro','Metas chicas y alcanzables','Entrenar con alguien','Que me expliquen el por qué','Que me motiven y acompañen'] },
-    { id:'disfruta', t:'¿Qué actividades disfrutás fuera del gym?', tipo:'multi', ops:['Caminar','Bailar','Bici','Nadar','Correr','Deportes','Juegos / aire libre','Ninguna'] },
+  { sec:'Lo que te engancha', qs:[
+    { id:'engancha', t:'¿Qué te haría venir con más ganas? (elegí los que quieras)', tipo:'multi', otro:true, ops:['Sesiones cortas','Que cambie seguido / variedad','Con música','Al aire libre','En casa','Tipo juego / circuito','Ver mi progreso claro','Metas chicas y alcanzables','Entrenar con alguien','Que me expliquen el por qué','Que me motiven y acompañen'] },
+    { id:'disfruta', t:'¿Qué actividades disfrutás fuera del gym?', tipo:'multi', otro:true, ops:['Caminar','Bailar','Bici','Nadar','Correr','Deportes','Juegos / aire libre','Ninguna por ahora'] },
   ]},
   { sec:'Logística', qs:[
-    { id:'tiempo', t:'¿Cuánto tiempo real querés por sesión?', tipo:'uni', ops:['20 min','30 min','45 min','60 min','Más de 60'] },
-    { id:'dias', t:'¿Cuántos días por semana, siendo realista?', tipo:'uni', ops:['1','2','3','4','5 o más'] },
-    { id:'lugar', t:'¿Dónde preferís entrenar?', tipo:'uni', ops:['En casa','En el gym','Al aire libre','Me da igual'] },
-    { id:'momento', t:'¿Qué momento del día te funciona mejor?', tipo:'uni', ops:['Mañana','Mediodía','Tarde','Noche','Variable'] },
+    { id:'tiempo', t:'¿Cuánto tiempo real querés dedicarle por sesión?', tipo:'uni', otro:true, ops:['20 min','30 min','45 min','60 min','Más de 60'] },
+    { id:'dias', t:'¿Cuántos días por semana, siendo realista?', tipo:'uni', otro:true, ops:['1','2','3','4','5 o más'] },
+    { id:'lugar', t:'¿Dónde preferís entrenar?', tipo:'uni', otro:true, ops:['En casa','En el gym','Al aire libre','Me da igual'] },
+    { id:'momento', t:'¿Qué momento del día te funciona mejor?', tipo:'uni', otro:true, ops:['Mañana','Mediodía','Tarde','Noche','Variable'] },
   ]},
   { sec:'Tu por qué', qs:[
     { id:'porque', t:'¿Para qué querés entrenar DE VERDAD? (en tus palabras)', tipo:'texto', ph:'Ej: tener más energía, sacarme un dolor, verme mejor, llegar bien a los 60…' },
     { id:'exito', t:'¿Qué resultado te haría sentir que valió la pena?', tipo:'texto', ph:'Ej: subir escaleras sin agitarme, entrar en un jean, animarme a jugar al fútbol…' },
-    { id:'guia', t:'¿Cómo preferís que te guíe tu coach?', tipo:'uni', ops:['Directo y al grano','Con explicaciones','Con aliento y motivación','Con datos y números'] },
+    { id:'guia', t:'¿Cómo preferís que te guíe tu coach?', tipo:'uni', otro:true, ops:['Directo y al grano','Con explicaciones','Con aliento y motivación','Con datos y números'] },
     { id:'extra', t:'Algo que quieras que tenga en cuenta (molestias, gustos, lo que sea)', tipo:'texto', ph:'Opcional…' },
   ]},
 ];
@@ -115,10 +115,15 @@ function _pintar(){
         var v=_R[q.id]||5;
         h+='<div class="rng"><input type="range" min="1" max="10" value="'+v+'" oninput="_R[\''+q.id+'\']=+this.value;this.nextElementSibling.textContent=this.value"><span class="v">'+v+'</span></div>';
       } else {
-        h+='<div class="opts">'+q.ops.map(function(o){
+        var ops=q.ops.slice(); if(q.otro) ops.push('Otro');
+        h+='<div class="opts">'+ops.map(function(o){
           var on=(q.tipo==='multi')?((_R[q.id]||[]).indexOf(o)>=0):(_R[q.id]===o);
           return '<button type="button" class="opt'+(on?' on':'')+'" onclick="_tog(this,\''+q.id+'\',\''+_esc(o).replace(/'/g,"\\'")+'\','+(q.tipo==='multi')+')">'+_esc(o)+'</button>';
         }).join('')+'</div>';
+        if(q.otro){
+          var selO=(q.tipo==='multi')?((_R[q.id]||[]).indexOf('Otro')>=0):(_R[q.id]==='Otro');
+          h+='<input type="text" id="otro-'+q.id+'" placeholder="Contame cuál…" value="'+_esc(_R[q.id+'_otro']||'')+'" oninput="_R[\''+q.id+'_otro\']=this.value" style="margin-top:9px;display:'+(selO?'block':'none')+';">';
+        }
       }
       h+='</div>';
     });
@@ -137,12 +142,14 @@ function _tog(btn,id,val,multi){
     _R[id]=val;
     var box=btn.parentElement; box.querySelectorAll('.opt').forEach(function(b){ b.classList.remove('on'); }); btn.classList.add('on');
   }
+  var oi=document.getElementById('otro-'+id);
+  if(oi){ var sel=multi?((_R[id]||[]).indexOf('Otro')>=0):(_R[id]==='Otro'); oi.style.display=sel?'block':'none'; if(sel){ try{oi.focus();}catch(e){} } }
 }
 
 // Resumen legible para el coach
 function _resumen(){
-  var g=function(id){ return _R[id]||''; };
-  var m=function(id){ return (_R[id]||[]).join(', '); };
+  var g=function(id){ var v=_R[id]||''; if(v==='Otro'&&_R[id+'_otro']) v='Otro: '+_R[id+'_otro']; return v; };
+  var m=function(id){ return (_R[id]||[]).map(function(x){ return (x==='Otro'&&_R[id+'_otro'])?('Otro: '+_R[id+'_otro']):x; }).join(', '); };
   var L=[];
   L.push('Relación con entrenar: '+(g('relacion')||'—')+' (disfrute '+(g('disfrute')||'—')+'/10).');
   if(m('traba')) L.push('Lo que lo traba: '+m('traba')+'.');
