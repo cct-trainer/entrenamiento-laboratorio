@@ -14368,6 +14368,9 @@ function _cevBuscarEj(){
   var nombreShow='';
   var filas=[];
   _cevDocs.forEach(function(d){ if(desde && d.fecha<desde) return; if(hasta && d.fecha>hasta) return; (d.ejercicios||[]).forEach(function(e){ if(_cevKey(e.nombre)!==q) return; nombreShow=e.nombre; (e.series||[]).forEach(function(s){ var carga=(s.cargaReal&&String(s.cargaReal).trim()!=='')?s.cargaReal:s.cargaPlan; var reps=(s.repsReal&&String(s.repsReal).trim()!=='')?s.repsReal:s.reps; var p=_cevP(carga); if(p>0) filas.push({fecha:d.fecha, num:s.num, reps:reps, carga:p, real:!!(s.cargaReal&&String(s.cargaReal).trim()!=='')}); }); }); });
+  // Quedarnos solo con las 2 series de MAYOR carga de cada fecha
+  var _porF={}; filas.forEach(function(f){ (_porF[f.fecha]=_porF[f.fecha]||[]).push(f); });
+  filas=[]; Object.keys(_porF).forEach(function(fe){ filas=filas.concat(_porF[fe].slice().sort(function(a,b){ return b.carga-a.carga; }).slice(0,2)); });
   filas.sort(function(a,b){ return String(a.fecha).localeCompare(String(b.fecha)) || (parseInt(a.num)-parseInt(b.num)); });
   var rows=filas.map(function(f){ return '<tr><td style="padding:6px 9px;">'+_cevFechaCorta(f.fecha)+'</td><td style="text-align:center;">'+_cevEsc(f.num)+'</td><td style="text-align:center;">'+_cevEsc(f.reps||'')+'</td><td style="text-align:center;"><b style="color:'+(f.real?'#1f8f5a':'#26303f')+';">'+_cevFmt(f.carga)+' kg</b></td></tr>'; }).join('');
   var html='<div style="font-size:14px;font-weight:900;color:#1e2a3c;margin-bottom:8px;">'+_cevEsc(nombreShow||document.getElementById('cev-buscar').value)+'</div>'

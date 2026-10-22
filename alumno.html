@@ -1056,8 +1056,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261022084031 por un timestamp en cada deploy
-const _APP_VERSION = '20261022084031';
+// deploy.bat reemplaza 20261022094419 por un timestamp en cada deploy
+const _APP_VERSION = '20261022094419';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3514,6 +3514,9 @@ function _aevBuscar(){
   if(!q){ res.innerHTML='<div style="color:#8ea3c4;padding:10px;">Elegí un ejercicio.</div>'; return; }
   var uni=(_data&&_data.perfil&&_data.perfil.unidadPeso==='lb')?'lb':'kg'; var nombreShow=''; var filas=[];
   _aevDocs.forEach(function(d){ if(desde&&d.fecha<desde)return; if(hasta&&d.fecha>hasta)return; (d.ejercicios||[]).forEach(function(e){ if(_ejKey(e.nombre)!==q)return; nombreShow=e.nombre; (e.series||[]).forEach(function(s){ var carga=(s.cargaReal&&String(s.cargaReal).trim()!=='')?s.cargaReal:s.cargaPlan; var reps=(s.repsReal&&String(s.repsReal).trim()!=='')?s.repsReal:s.reps; var p=_evP(carga); if(p>0) filas.push({fecha:d.fecha,num:s.num,reps:reps,carga:p,real:!!(s.cargaReal&&String(s.cargaReal).trim()!=='')}); }); }); });
+  // Mostrar solo las 2 series de MAYOR carga de cada fecha
+  var _porF={}; filas.forEach(function(f){ (_porF[f.fecha]=_porF[f.fecha]||[]).push(f); });
+  filas=[]; Object.keys(_porF).forEach(function(fe){ filas=filas.concat(_porF[fe].slice().sort(function(a,b){ return b.carga-a.carga; }).slice(0,2)); });
   filas.sort(function(a,b){ return String(a.fecha).localeCompare(String(b.fecha))||(parseInt(a.num)-parseInt(b.num)); });
   var mx=0; filas.forEach(function(f){ if(f.carga>mx)mx=f.carga; });
   var rows=filas.map(function(f,ix){ var pr=(f.carga>=mx-0.001&&mx>0); return '<tr><td class="rownum">'+(ix+1)+'</td><td class="num">'+_evolFechaCorta(f.fecha)+'</td><td class="num">'+_aevEsc(f.num)+'</td><td class="num">'+_aevEsc(f.reps||'')+'</td><td class="num'+(f.real?' real':'')+'">'+_stxFmt(f.carga)+(pr?'<span class="prb">PR</span>':'')+'</td></tr>'; }).join('');
