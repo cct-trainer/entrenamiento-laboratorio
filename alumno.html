@@ -662,6 +662,7 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
 <div id="tutorial-overlay" style="display:none;position:fixed;inset:0;z-index:12000;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;"></div>
 
 <div id="app">
+  <div id="coach-viewbar" style="display:none;"></div>
   <div class="hdr">
     <div class="hdr-row">
       <div class="avatar" id="av">?</div>
@@ -682,6 +683,9 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
           style="background:var(--card);border:1.5px solid var(--border);border-radius:22px;padding:7px 13px;cursor:pointer;font-size:17px;flex-shrink:0;transition:all .2s;color:var(--text);">🌙</button>
       </div>
     </div>
+    <button id="btn-mis-alumnos" onclick="_abrirMisAlumnos()" style="display:none;align-items:center;gap:8px;margin-top:13px;width:100%;background:linear-gradient(135deg,#3A6EA5,#2d5784);border:none;border-radius:12px;padding:12px 14px;cursor:pointer;color:#fff;font-family:inherit;">
+      <span style="font-size:17px;">👥</span><span style="font-size:13.5px;font-weight:800;flex:1;text-align:left;">Mis alumnos</span><span style="font-size:15px;color:#bcd3ea;">›</span>
+    </button>
   </div>
 
   <div id="novedades-banner" style="display:none;"></div>
@@ -1056,8 +1060,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261023132138 por un timestamp en cada deploy
-const _APP_VERSION = '20261023132138';
+// deploy.bat reemplaza 20261023132927 por un timestamp en cada deploy
+const _APP_VERSION = '20261023132927';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1401,6 +1405,22 @@ function render() {
   const coachBtn = document.getElementById('btn-coach-panel');
   if (coachBtn) coachBtn.style.display = 'none';
   window._esCoach = esChristian;
+  // Botón "Mis alumnos" (solo en el perfil de Christian)
+  const misAlBtn = document.getElementById('btn-mis-alumnos');
+  if (misAlBtn) misAlBtn.style.display = esChristian ? 'flex' : 'none';
+  // Barra "Volver a mi perfil" (cuando Christian está viendo a otro alumno)
+  const _coachView = new URLSearchParams(location.search).get('coach') === '1';
+  const vb = document.getElementById('coach-viewbar');
+  if (vb) {
+    if (_coachView && !esChristian) {
+      vb.style.display = 'block';
+      vb.innerHTML = '<div style="display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#3A6EA5,#2d5784);padding:10px 14px;">'
+        + '<span style="font-size:15px;">👁</span>'
+        + '<span style="font-size:12.5px;font-weight:700;color:#eaf1ff;flex:1;">Estás viendo a <b style="color:#fff;">'+String(nombre).replace(/</g,'&lt;')+'</b></span>'
+        + '<button onclick="_volverAMiPerfil()" style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:7px 12px;font-size:11.5px;font-weight:800;color:#fff;cursor:pointer;white-space:nowrap;font-family:inherit;">← Mi perfil</button>'
+        + '</div>';
+    } else { vb.style.display = 'none'; vb.innerHTML=''; }
+  }
   const ptCoach = document.getElementById('pt-coach-btn');
   if (ptCoach) ptCoach.style.display = 'none';
   if (_plan) document.getElementById('al-plan').textContent = (_plan.nombre||'Plan activo').toUpperCase();
@@ -1565,6 +1585,62 @@ function _configNavModo() {
   if (bm) bm.style.display = 'none';   // sin selector: el ⇄ ya no se usa
 }
 function _volverChooser() { _mostrarChooser(); }
+// ── Acceso del coach a los perfiles de sus alumnos ──
+const _COACH_ID = 'mqcxctmkrucidy326rn';
+function _volverAMiPerfil(){ location.href = 'alumno.html?id=' + _COACH_ID; }
+async function _abrirMisAlumnos(){
+  const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  let ov = document.getElementById('mis-al-ov');
+  if (ov) ov.remove();
+  ov = document.createElement('div'); ov.id = 'mis-al-ov';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:12000;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;';
+  ov.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:14px 15px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:2;">'
+    + '<button onclick="var o=document.getElementById(\'mis-al-ov\');if(o)o.remove();" style="background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:20px;padding:7px 13px;font-size:12px;font-weight:800;color:#9fb0cf;cursor:pointer;font-family:inherit;">✕ Cerrar</button>'
+    + '<div style="font-size:16px;font-weight:900;color:#fff;">Mis alumnos</div></div>'
+    + '<div style="margin:13px 15px 6px;display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:10px 13px;">🔍 '
+    + '<input id="mis-al-srch" oninput="_misAlFiltrar()" placeholder="Buscar alumno…" style="background:none;border:none;outline:none;color:var(--text);font-size:13px;flex:1;font-family:inherit;"></div>'
+    + '<div id="mis-al-cnt" style="font-size:11px;color:var(--muted);margin:4px 17px 8px;">Cargando…</div>'
+    + '<div id="mis-al-list" style="padding-bottom:40px;"></div>';
+  document.body.appendChild(ov);
+  let lista = [];
+  try {
+    const doc = await _db.collection('alumnos').doc('zz_agenda').get();
+    if (doc.exists && doc.data() && Array.isArray(doc.data().alumnos)) lista = doc.data().alumnos.filter(a => a && a.id && a.nombre);
+  } catch(e) {}
+  lista.sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||'')));
+  window._misAlData = lista;
+  _misAlPintar(lista);
+}
+function _misAlDiasTxt(a){
+  const map = {0:'Dom',1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb'};
+  let ds = a && a.dias;
+  if (Array.isArray(ds)) return ds.map(d=>map[d]!=null?map[d]:d).join(' · ');
+  return '';
+}
+function _misAlPintar(lista){
+  const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  const cnt = document.getElementById('mis-al-cnt'); const cont = document.getElementById('mis-al-list');
+  if (!cont) return;
+  if (cnt) cnt.textContent = lista.length + (lista.length===1?' alumno':' alumnos');
+  if (!lista.length){ cont.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:30px 20px;line-height:1.6;">No encontré alumnos.<br>Publicá la lista desde el panel del coach.</div>'; return; }
+  cont.innerHTML = lista.map(function(a){
+    const ini = esc(String(a.nombre||'?').charAt(0).toUpperCase());
+    const ava = a.foto ? '<img src="'+esc(a.foto)+'" style="width:100%;height:100%;object-fit:cover;">' : ini;
+    const dias = _misAlDiasTxt(a);
+    return '<div onclick="_misAlEntrar(\''+esc(a.id)+'\')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;margin:0 11px 8px;background:var(--card);border:1px solid var(--border);border-radius:13px;cursor:pointer;">'
+      + '<div style="width:40px;height:40px;border-radius:50%;background:#2a2a4a;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#cdd9ea;overflow:hidden;flex-shrink:0;">'+ava+'</div>'
+      + '<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(a.nombre)+'</div>'+(dias?'<div style="font-size:11px;color:var(--muted);margin-top:1px;">'+esc(dias)+'</div>':'')+'</div>'
+      + '<div style="font-size:17px;color:var(--gold);">›</div></div>';
+  }).join('');
+}
+function _misAlFiltrar(){
+  const q = (document.getElementById('mis-al-srch')||{}).value || '';
+  const k = q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+  const base = window._misAlData || [];
+  if (!k) return _misAlPintar(base);
+  _misAlPintar(base.filter(a => String(a.nombre||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').indexOf(k) !== -1));
+}
+function _misAlEntrar(id){ if(!id) return; location.href = 'alumno.html?id=' + encodeURIComponent(id) + '&coach=1'; }
 
 // ══════════ TUTORIAL EN LA APP ══════════
 function _tutBannerMaybe(){
