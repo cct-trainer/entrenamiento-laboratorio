@@ -1056,8 +1056,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261023123500 por un timestamp en cada deploy
-const _APP_VERSION = '20261023123500';
+// deploy.bat reemplaza 20261023132138 por un timestamp en cada deploy
+const _APP_VERSION = '20261023132138';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3524,10 +3524,19 @@ function _aevBuscar(){
   var _nomEj=nombreShow||document.getElementById('aev-buscar').value;
   var _alNom=(_data&&_data.nombre)||'';
   window._aevShareName=_ejKey((_alNom?_alNom+'-':'')+_nomEj).slice(0,40);
+  // Mensaje positivo personalizado
+  var _latF=''; filas.forEach(function(f){ if(String(f.fecha)>_latF)_latF=String(f.fecha); });
+  var _esPR=false; filas.forEach(function(f){ if(String(f.fecha)===_latF && f.carga>=mx-0.001 && mx>0) _esPR=true; });
+  var _nn=(_alNom||'').split(' ')[0]||'';
+  var _msgTxt = filas.length ? (_esPR
+    ? '¡Felicitaciones'+(_nn?', '+_nn:'')+'! 🏆 Marcaste tu mejor registro en '+_nomEj+'. Tu esfuerzo y tu constancia se están viendo. ¡A seguir así! 💪'
+    : '¡Bien ahí'+(_nn?', '+_nn:'')+'! 💪 Seguís trabajando tu '+_nomEj+'. Cada entrenamiento suma y la constancia hace la diferencia.') : '';
+  var _msgBox = _msgTxt ? '<div style="background:linear-gradient(135deg,#1e2e4d,#20314f);border:1px solid #39507d;border-left:4px solid #e7c25f;border-radius:10px;padding:11px 13px;margin-bottom:14px;font-size:13px;font-weight:700;color:#f0e6c8;line-height:1.5;">'+_aevEsc(_msgTxt)+'</div>' : '';
   var cam = filas.length ? '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button onclick="_aevCompartir(this)" style="background:#4a86c4;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;">📷 Compartir imagen</button></div>' : '';
   var share='<div id="aev-sharebox" style="background:#101827;border:1px solid #243150;border-radius:14px;padding:16px;">'
     +'<div style="font-size:16px;font-weight:900;color:#fff;">'+_aevEsc(_nomEj)+'</div>'
     +(_alNom?'<div style="font-size:12px;color:#8ea3c4;margin-bottom:12px;">'+_aevEsc(_alNom)+' · Evolución de carga</div>':'<div style="margin-bottom:12px;"></div>')
+    +_msgBox
     +'<div class="sheet" style="margin-bottom:14px;"><table><thead><tr><th class="rownum"></th><th>Fecha</th><th>Serie</th><th>Reps</th><th>Carga ('+uni+')</th></tr></thead><tbody>'+(rows||'<tr><td colspan="5" style="padding:16px;text-align:center;color:#8795ab;">Sin registros en ese período.</td></tr>')+'</tbody></table></div>';
   if(filas.length) share+='<div style="background:#141c30;border:1px solid #243150;border-radius:11px;padding:12px;"><canvas id="aev-chart" height="150"></canvas></div>'
     +'<div style="margin-top:12px;font-size:10px;font-weight:800;color:#5d6f90;letter-spacing:.5px;text-transform:uppercase;text-align:right;">Laboratorio de Entrenamiento</div>';

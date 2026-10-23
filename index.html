@@ -14394,12 +14394,21 @@ function _cevBuscarEj(){
   var _nomEj=nombreShow||document.getElementById('cev-buscar').value;
   var _alNom=''; try{ var _a=getAlumnos().find(function(x){return x.id===currentAlumnoId;}); if(_a)_alNom=_a.nombre||''; }catch(e){}
   window._cevShareName=_cevKey((_alNom?_alNom+'-':'')+_nomEj).slice(0,40);
+  // Mensaje positivo personalizado (si viene de récord, felicita; si no, motiva)
+  var _maxC=0,_latF=''; filas.forEach(function(f){ if(f.carga>_maxC)_maxC=f.carga; if(String(f.fecha)>_latF)_latF=String(f.fecha); });
+  var _esPR=false; filas.forEach(function(f){ if(String(f.fecha)===_latF && f.carga>=_maxC-0.001 && _maxC>0) _esPR=true; });
+  var _nn=(_alNom||'').split(' ')[0]||'';
+  var _msgTxt = filas.length ? (_esPR
+    ? '¡Felicitaciones'+(_nn?', '+_nn:'')+'! 🏆 Marcaste tu mejor registro en '+_nomEj+'. Tu esfuerzo y tu constancia se están viendo. ¡A seguir así! 💪'
+    : '¡Bien ahí'+(_nn?', '+_nn:'')+'! 💪 Seguís trabajando tu '+_nomEj+'. Cada entrenamiento suma y la constancia hace la diferencia.') : '';
+  var _msgBox = _msgTxt ? '<div style="background:linear-gradient(135deg,#fff6e3,#fdeecb);border:1px solid #f0d79a;border-left:4px solid #d8a93a;border-radius:10px;padding:11px 13px;margin-bottom:14px;font-size:13px;font-weight:700;color:#6b5014;line-height:1.5;">'+_cevEsc(_msgTxt)+'</div>' : '';
   // Botón cámara (solo si hay datos)
   var cam = filas.length ? '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button onclick="_cevCompartir(this)" title="Generar una imagen para compartir con tu alumno" style="background:#2f5f95;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;">📷 Compartir imagen</button></div>' : '';
   // Lo que se captura en la imagen → dentro de #cev-sharebox
   var share='<div id="cev-sharebox" style="background:#fff;border:1px solid #e4e8ef;border-radius:14px;padding:16px 16px 14px;">'
     +'<div style="font-size:16px;font-weight:900;color:#1e2a3c;">'+_cevEsc(_nomEj)+'</div>'
     +(_alNom?'<div style="font-size:12px;color:#8795ab;margin-bottom:12px;">'+_cevEsc(_alNom)+' · Evolución de carga</div>':'<div style="margin-bottom:12px;"></div>')
+    +_msgBox
     +'<div style="overflow-x:auto;border:1px solid #e4e8ef;border-radius:10px;margin-bottom:16px;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;"><thead><tr style="background:#0f1726;color:#cfe0ff;"><th style="padding:9px;text-align:left;">Fecha</th><th>Serie</th><th>Reps</th><th>Carga</th></tr></thead><tbody>'+(rows||'<tr><td colspan="4" style="padding:16px;text-align:center;color:#8795ab;">Sin registros en ese período.</td></tr>')+'</tbody></table></div>';
   if(filas.length){ share+='<div style="font-size:11px;font-weight:800;color:#8795ab;text-transform:uppercase;margin-bottom:6px;">Gráfico de carga</div><div style="border:1px solid #e4e8ef;border-radius:10px;padding:12px;"><canvas id="cev-chart" height="150"></canvas></div>'
       +'<div style="margin-top:12px;font-size:10px;font-weight:800;color:#b8c2d4;letter-spacing:.5px;text-transform:uppercase;text-align:right;">Laboratorio de Entrenamiento</div>'; }
@@ -14497,7 +14506,7 @@ function _logroCopiarMsg(){
   try{ navigator.clipboard.writeText(t); }catch(e){ try{ var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }catch(e2){} }
   if(typeof toast==='function') toast('📋 Mensaje copiado — ya lo podés mandar');
 }
-function _logroImagenActual(btn){ _logroImagen(window._logroActual, window._logroActualNombre, btn); }
+function _logroImagenActual(btn){ var r=window._logroActual||{}; var t=document.getElementById('logro-msg'); if(t){ var copia={}; for(var k in r) copia[k]=r[k]; copia.msg=t.value; r=copia; } _logroImagen(r, window._logroActualNombre, btn); }
 // Tarjeta de felicitaciones (la imagen que se comparte)
 function _logroCardHTML(rec, nombre){
   var esc=function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
@@ -14513,6 +14522,7 @@ function _logroCardHTML(rec, nombre){
     +'<div style="font-size:23px;font-weight:900;color:#fff;margin-top:3px;letter-spacing:.3px;">'+esc(rec.ej)+'</div>'
     +'<div style="font-size:56px;font-weight:900;color:#ffe08a;line-height:1;margin:16px 0 3px;">'+_cevFmt(rec.kg)+' kg</div>'
     +'<div style="font-size:13px;color:#9fb0d0;">Antes <s style="color:#6f80a4;">'+_cevFmt(rec.prevKg)+' kg</s> &nbsp;→&nbsp; <b style="color:#7fe0a0;">+'+_cevFmt(rec.delta!=null?rec.delta:(rec.kg-rec.prevKg))+' kg</b></div>'
+    +(rec.msg?'<div style="background:rgba(240,199,90,.12);border:1px solid rgba(240,199,90,.35);border-radius:11px;padding:12px 14px;margin-top:18px;font-size:13px;font-weight:600;color:#f3e6c2;line-height:1.5;">'+esc(rec.msg)+'</div>':'')
     +'<div style="height:1px;background:rgba(255,255,255,.12);margin:18px 0 12px;"></div>'
     +'<div style="display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:#9fb0d0;"><span>'+esc(_logroFechaTxt(rec.fecha))+'</span><span style="font-weight:900;letter-spacing:.8px;color:#c7d4ec;text-transform:uppercase;">Laboratorio de Entrenamiento</span></div>'
     +'</div>';
