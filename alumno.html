@@ -1056,8 +1056,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261022200430 por un timestamp en cada deploy
-const _APP_VERSION = '20261022200430';
+// deploy.bat reemplaza 20261023114133 por un timestamp en cada deploy
+const _APP_VERSION = '20261023114133';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -11084,6 +11084,33 @@ function renderStats() {
 
   // ── 3. HTML ────────────────────────────────────────────────────────────
   let h = '<div style="padding:16px 12px 100px;">';
+
+  // ── Mis logros (récords confirmados por el coach) ──
+  const _recs = (_data && Array.isArray(_data.records)) ? _data.records.slice() : [];
+  if (_recs.length) {
+    const _escL = s => String(s==null?'':s).replace(/</g,'&lt;');
+    const _fmtK = v => String(Math.round((+v||0)*10)/10).replace('.',',');
+    const _fL = iso => { try{ const p=String(iso).split('-'); if(p.length!==3) return iso||''; return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return iso||''; } };
+    _recs.sort((a,b)=>String(b.at||b.fecha||'').localeCompare(String(a.at||a.fecha||'')));
+    let _totK=0; _recs.forEach(r=>_totK+=(+r.delta||0));
+    const _ahora=new Date(); let _mes=0; _recs.forEach(r=>{ const dt=new Date(r.at||r.fecha||0); if(dt&&dt.getFullYear()===_ahora.getFullYear()&&dt.getMonth()===_ahora.getMonth()) _mes++; });
+    h += '<h3 style="color:var(--gold);font-size:14px;font-weight:900;letter-spacing:.08em;margin:0 0 12px;text-transform:uppercase;">🏆 Mis logros</h3>';
+    h += '<div style="display:flex;gap:8px;margin-bottom:14px;">'
+      + '<div style="flex:1;background:rgba(255,255,255,.05);border-radius:12px;padding:12px;text-align:center;"><div style="font-size:22px;font-weight:900;color:var(--text);">'+_recs.length+'</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px;">Récords</div></div>'
+      + '<div style="flex:1;background:rgba(255,255,255,.05);border-radius:12px;padding:12px;text-align:center;"><div style="font-size:22px;font-weight:900;color:var(--text);">+'+_fmtK(_totK)+'<span style="font-size:12px;">kg</span></div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px;">Sumados</div></div>'
+      + '<div style="flex:1;background:rgba(255,255,255,.05);border-radius:12px;padding:12px;text-align:center;"><div style="font-size:22px;font-weight:900;color:var(--text);">'+_mes+'</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px;">Este mes</div></div>'
+      + '</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:28px;">';
+    _recs.forEach((r,i)=>{
+      const med=i===0?'🥇':'🥈';
+      h += '<div style="background:color-mix(in srgb,var(--gold) 6%,var(--card));border:1px solid color-mix(in srgb,var(--gold) 18%,transparent);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:12px;">'
+        + '<div style="font-size:22px;flex-shrink:0;">'+med+'</div>'
+        + '<div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:800;color:var(--text);">'+_escL(r.ej||'')+'</div><div style="font-size:11px;color:var(--muted);margin-top:1px;">'+_fL(r.fecha)+' · récord personal</div></div>'
+        + '<div style="text-align:right;flex-shrink:0;"><div style="font-size:16px;font-weight:900;color:var(--gold);">'+_fmtK(r.kg)+' kg</div><div style="font-size:10.5px;font-weight:800;color:#2f9e6a;">▲ +'+_fmtK(r.delta!=null?r.delta:((+r.kg||0)-(+r.prevKg||0)))+'</div></div>'
+        + '</div>';
+    });
+    h += '</div>';
+  }
 
   // Sección PRs
   h += '<h3 style="color:var(--gold);font-size:14px;font-weight:900;letter-spacing:.08em;margin:0 0 12px;text-transform:uppercase;">🏆 Records personales</h3>';

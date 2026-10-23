@@ -14341,10 +14341,26 @@ function _cevVerFecha(id){
 }
 function _cevGuardarReal(id){
   var d=_cevDocs.filter(function(x){return x._id===id;})[0]; if(!d) return;
+  // 1) Récord histórico ANTES de aplicar cambios: máxima carga real por ejercicio en TODOS los entrenamientos
+  var prevMax={};
+  _cevDocs.forEach(function(doc){ (doc.ejercicios||[]).forEach(function(e){ var k=_cevKey(e.nombre); (e.series||[]).forEach(function(s){ var p=_cevP(s.cargaReal); if(p>(prevMax[k]||0)) prevMax[k]=p; }); }); });
+  // 2) Aplicar lo que cargó el coach
   document.querySelectorAll('.cev-cr').forEach(function(inp){ var e=+inp.dataset.e, s=+inp.dataset.s; if(d.ejercicios[e]&&d.ejercicios[e].series[s]) d.ejercicios[e].series[s].cargaReal=inp.value.trim(); });
   document.querySelectorAll('.cev-rr').forEach(function(inp){ var e=+inp.dataset.e, s=+inp.dataset.s; if(d.ejercicios[e]&&d.ejercicios[e].series[s]) d.ejercicios[e].series[s].repsReal=inp.value.trim(); });
+  // 3) Detectar récords nuevos (la carga real supera la máxima histórica previa de ese ejercicio)
+  var recs=[];
+  (d.ejercicios||[]).forEach(function(e){
+    var k=_cevKey(e.nombre); var nmax=0, nreps='';
+    (e.series||[]).forEach(function(s){ var p=_cevP(s.cargaReal); if(p>nmax){ nmax=p; nreps=(s.repsReal&&String(s.repsReal).trim())||s.reps||''; } });
+    var pm=prevMax[k]||0;
+    if(nmax>0 && pm>0 && nmax>pm){ recs.push({key:k, ej:e.nombre, kg:nmax, prevKg:pm, reps:nreps, fecha:d.fecha||''}); }
+  });
+  // 4) Guardar evolución
   window._db.collection('alumnos').doc(currentAlumnoId).collection('evolucion').doc(id).set({ ejercicios:d.ejercicios, updatedAt:new Date().toISOString() },{merge:true})
-    .then(function(){ if(typeof toast==='function') toast('✓ Cargas reales guardadas'); else alert('Guardado'); })
+    .then(function(){
+      if(recs.length){ _logroRegistrar(recs); }
+      else if(typeof toast==='function'){ toast('✓ Cargas reales guardadas'); } else { alert('Guardado'); }
+    })
     .catch(function(e){ alert('No se pudo guardar: '+(e&&e.message?e.message:e)); });
 }
 // ── POR EJERCICIO ──
@@ -14375,12 +14391,200 @@ function _cevBuscarEj(){
   filas=[]; Object.keys(_porF).forEach(function(fe){ filas=filas.concat(_porF[fe].slice().sort(function(a,b){ return b.carga-a.carga; }).slice(0,2)); });
   filas.sort(function(a,b){ return String(a.fecha).localeCompare(String(b.fecha)) || (parseInt(a.num)-parseInt(b.num)); });
   var rows=filas.map(function(f){ return '<tr><td style="padding:6px 9px;">'+_cevFechaCorta(f.fecha)+'</td><td style="text-align:center;">'+_cevEsc(f.num)+'</td><td style="text-align:center;">'+_cevEsc(f.reps||'')+'</td><td style="text-align:center;"><b style="color:'+(f.real?'#1f8f5a':'#26303f')+';">'+_cevFmt(f.carga)+' kg</b></td></tr>'; }).join('');
-  var html='<div style="font-size:14px;font-weight:900;color:#1e2a3c;margin-bottom:8px;">'+_cevEsc(nombreShow||document.getElementById('cev-buscar').value)+'</div>'
+  var _nomEj=nombreShow||document.getElementById('cev-buscar').value;
+  var _alNom=''; try{ var _a=getAlumnos().find(function(x){return x.id===currentAlumnoId;}); if(_a)_alNom=_a.nombre||''; }catch(e){}
+  window._cevShareName=_cevKey((_alNom?_alNom+'-':'')+_nomEj).slice(0,40);
+  // Botón cámara (solo si hay datos)
+  var cam = filas.length ? '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button onclick="_cevCompartir(this)" title="Generar una imagen para compartir con tu alumno" style="background:#2f5f95;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;">📷 Compartir imagen</button></div>' : '';
+  // Lo que se captura en la imagen → dentro de #cev-sharebox
+  var share='<div id="cev-sharebox" style="background:#fff;border:1px solid #e4e8ef;border-radius:14px;padding:16px 16px 14px;">'
+    +'<div style="font-size:16px;font-weight:900;color:#1e2a3c;">'+_cevEsc(_nomEj)+'</div>'
+    +(_alNom?'<div style="font-size:12px;color:#8795ab;margin-bottom:12px;">'+_cevEsc(_alNom)+' · Evolución de carga</div>':'<div style="margin-bottom:12px;"></div>')
     +'<div style="overflow-x:auto;border:1px solid #e4e8ef;border-radius:10px;margin-bottom:16px;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;"><thead><tr style="background:#0f1726;color:#cfe0ff;"><th style="padding:9px;text-align:left;">Fecha</th><th>Serie</th><th>Reps</th><th>Carga</th></tr></thead><tbody>'+(rows||'<tr><td colspan="4" style="padding:16px;text-align:center;color:#8795ab;">Sin registros en ese período.</td></tr>')+'</tbody></table></div>';
-  if(filas.length){ html+='<div style="font-size:11px;font-weight:800;color:#8795ab;text-transform:uppercase;margin-bottom:6px;">Gráfico de carga</div><div style="border:1px solid #e4e8ef;border-radius:10px;padding:12px;"><canvas id="cev-chart" height="150"></canvas></div><div style="font-size:11px;color:#8795ab;margin-top:8px;line-height:1.5;">El gráfico muestra la carga máxima de cada fecha. Como las reps pueden cambiar, no interpreta automáticamente más kilos como más fuerza: mirá también las reps en la tabla.</div>'; }
-  res.innerHTML=html;
+  if(filas.length){ share+='<div style="font-size:11px;font-weight:800;color:#8795ab;text-transform:uppercase;margin-bottom:6px;">Gráfico de carga</div><div style="border:1px solid #e4e8ef;border-radius:10px;padding:12px;"><canvas id="cev-chart" height="150"></canvas></div>'
+      +'<div style="margin-top:12px;font-size:10px;font-weight:800;color:#b8c2d4;letter-spacing:.5px;text-transform:uppercase;text-align:right;">Laboratorio de Entrenamiento</div>'; }
+  share+='</div>';
+  var nota = filas.length ? '<div style="font-size:11px;color:#8795ab;margin-top:8px;line-height:1.5;">El gráfico muestra la carga máxima de cada fecha. Como las reps pueden cambiar, no interpreta automáticamente más kilos como más fuerza: mirá también las reps en la tabla.</div>' : '';
+  res.innerHTML=cam+share+nota;
   if(filas.length) _cevDibujarGrafico(filas);
 }
+// ── Compartir la evolución como imagen (cámara) ──
+function _cevCargarH2C(cb){
+  if(window.html2canvas){ cb(); return; }
+  var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+  s.onload=function(){ cb(); }; s.onerror=function(){ cb(new Error('load')); };
+  document.head.appendChild(s);
+}
+function _cevCompartir(btn){
+  var box=document.getElementById('cev-sharebox'); if(!box){ if(typeof toast==='function')toast('No hay datos para compartir'); return; }
+  var old=btn?btn.innerHTML:''; if(btn){ btn.disabled=true; btn.innerHTML='Generando…'; }
+  var restore=function(){ if(btn){ btn.disabled=false; btn.innerHTML=old; } };
+  _cevCargarH2C(function(err){
+    if(err){ restore(); alert('No se pudo generar la imagen. Revisá tu conexión a internet e intentá de nuevo.'); return; }
+    try{
+      html2canvas(box,{backgroundColor:'#ffffff',scale:2,useCORS:true,logging:false}).then(function(canvas){
+        canvas.toBlob(function(blob){
+          restore();
+          if(!blob){ alert('No se pudo generar la imagen.'); return; }
+          var fname='evolucion'+(window._cevShareName?('-'+window._cevShareName):'')+'.png';
+          var file=null; try{ file=new File([blob],fname,{type:'image/png'}); }catch(e){}
+          if(file && navigator.canShare && navigator.canShare({files:[file]})){
+            navigator.share({files:[file], title:'Evolución', text:'Tu evolución 💪'}).catch(function(){});
+          } else {
+            var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname; document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(function(){ try{URL.revokeObjectURL(a.href);}catch(e){} },4000);
+            if(typeof toast==='function') toast('📷 Imagen guardada — ya la podés compartir');
+          }
+        },'image/png');
+      }).catch(function(){ restore(); alert('No se pudo generar la imagen.'); });
+    }catch(e){ restore(); alert('No se pudo generar la imagen.'); }
+  });
+}
+// ════════════ RÉCORDS Y LOGROS ════════════
+function _logroNombreAlumno(){ try{ var a=getAlumnos().find(function(x){return x.id===currentAlumnoId;}); return a?(a.nombre||''):''; }catch(e){ return ''; } }
+function _logroMsg(nombre, ej, prevKg, kg){
+  var nom=(nombre||'').split(' ')[0]||'';
+  return '¡Felicitaciones'+(nom?', '+nom:'')+'! Pasaste de '+_cevFmt(prevKg)+' a '+_cevFmt(kg)+' kg en '+ej+'. Tu trabajo constante se está notando. 💪 A seguir así.';
+}
+function _logroFechaTxt(iso){ try{ var p=String(iso).split('-'); if(p.length!==3) return iso||''; return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return iso||''; } }
+// Registrar los récords detectados: guardar en el perfil del alumno + mostrar el aviso
+function _logroRegistrar(recs){
+  var nombre=_logroNombreAlumno();
+  var now=new Date().toISOString();
+  var items=recs.map(function(r){ return {key:r.key, ej:r.ej, kg:r.kg, prevKg:r.prevKg, delta:Math.round((r.kg-r.prevKg)*10)/10, reps:r.reps||'', fecha:r.fecha||'', at:now, msg:_logroMsg(nombre,r.ej,r.prevKg,r.kg)}; });
+  try{
+    if(window._db && window.firebase && firebase.firestore){
+      window._db.collection('alumnos').doc(currentAlumnoId)
+        .update({ records: firebase.firestore.FieldValue.arrayUnion.apply(null, items) })
+        .catch(function(){ window._db.collection('alumnos').doc(currentAlumnoId).set({ records: items },{merge:true}).catch(function(){}); });
+    }
+  }catch(e){}
+  try{ var al=getAlumnos().find(function(x){return x.id===currentAlumnoId;}); if(al){ al.records=(al.records||[]).concat(items); } }catch(e){}
+  var top=items.slice().sort(function(a,b){return b.delta-a.delta;})[0];
+  _logroPopup(top, nombre, items.length);
+}
+// Aviso de récord (lo que ve el coach al guardar)
+function _logroPopup(rec, nombre, count){
+  if(!rec) return;
+  var esc=function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+  var nom=esc((nombre||'').split(' ')[0]||'tu alumno');
+  window._logroActual=rec; window._logroActualNombre=nombre||'';
+  var ov=document.getElementById('logro-ov'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='logro-ov';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(6,10,18,.74);z-index:13000;display:flex;align-items:flex-start;justify-content:center;padding:26px 14px 60px;overflow:auto;';
+  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML='<div style="max-width:420px;width:100%;" onclick="event.stopPropagation()">'
+    +'<div style="background:linear-gradient(135deg,#1a2a4a,#0f1726);border-radius:16px;padding:18px;color:#fff;position:relative;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.45);">'
+      +'<span style="position:absolute;top:12px;right:18px;font-size:18px;opacity:.55;">✨</span><span style="position:absolute;bottom:14px;left:16px;font-size:16px;opacity:.5;">⭐</span>'
+      +'<span style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#f0c75a,#d8a93a);color:#4a3608;font-size:10.5px;font-weight:900;letter-spacing:.6px;padding:4px 12px;border-radius:999px;text-transform:uppercase;">🏆 Nuevo récord'+(count>1?(' ·  '+count):'')+'</span>'
+      +'<div style="font-size:20px;font-weight:900;margin:11px 0 3px;">¡'+nom+' rompió su marca!</div>'
+      +'<div style="font-size:13px;color:#b9c9e4;">'+esc(rec.ej)+'</div>'
+      +'<div style="display:flex;align-items:baseline;gap:9px;margin:13px 0 2px;"><span style="font-size:32px;font-weight:900;color:#ffe08a;">'+_cevFmt(rec.kg)+' kg</span><span style="color:#7fe0a0;font-size:13px;font-weight:800;">▲ +'+_cevFmt(rec.delta)+' kg</span><span style="font-size:13px;color:#8294b4;text-decoration:line-through;">'+_cevFmt(rec.prevKg)+' kg</span></div>'
+      +'<div style="background:#fff6e3;border:1px solid #f0d79a;border-radius:10px;padding:10px 12px;margin-top:14px;">'
+        +'<div style="font-size:10px;font-weight:900;color:#a8803a;letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px;">Mensaje para '+nom+' (podés editarlo)</div>'
+        +'<textarea id="logro-msg" style="width:100%;border:1px solid #ecd6a3;border-radius:8px;padding:8px 9px;font-size:12.5px;color:#5a4518;line-height:1.5;font-family:inherit;background:#fffdf7;resize:vertical;" rows="3">'+esc(rec.msg)+'</textarea>'
+      +'</div>'
+      +'<div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap;">'
+        +'<button onclick="_logroCopiarMsg()" style="flex:1;min-width:120px;background:rgba(255,255,255,.12);color:#dbe6f7;border:1px solid rgba(255,255,255,.28);border-radius:10px;padding:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">📋 Copiar mensaje</button>'
+        +'<button onclick="_logroImagenActual(this)" style="flex:1;min-width:120px;background:linear-gradient(135deg,#f0c75a,#d8a93a);color:#4a3608;border:none;border-radius:10px;padding:10px;font-size:12px;font-weight:900;cursor:pointer;font-family:inherit;">📷 Crear felicitación</button>'
+      +'</div>'
+      +'<div style="text-align:center;margin-top:10px;"><button onclick="var o=document.getElementById(\'logro-ov\');if(o)o.remove();if(typeof toast===\'function\')toast(\'✓ Récord guardado en Logros\');" style="background:none;border:none;color:#9fb4d2;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;font-family:inherit;">Guardar nomás</button></div>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+}
+function _logroCopiarMsg(){
+  var t=(document.getElementById('logro-msg')||{}).value||(window._logroActual&&window._logroActual.msg)||'';
+  try{ navigator.clipboard.writeText(t); }catch(e){ try{ var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }catch(e2){} }
+  if(typeof toast==='function') toast('📋 Mensaje copiado — ya lo podés mandar');
+}
+function _logroImagenActual(btn){ _logroImagen(window._logroActual, window._logroActualNombre, btn); }
+// Tarjeta de felicitaciones (la imagen que se comparte)
+function _logroCardHTML(rec, nombre){
+  var esc=function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
+  var nom=esc((nombre||'').split(' ')[0]||'');
+  return '<div style="width:380px;background:radial-gradient(circle at 50% 0%,#20305a 0%,#0e1526 72%);padding:30px 24px 22px;color:#fff;text-align:center;position:relative;overflow:hidden;font-family:Inter,Arial,sans-serif;">'
+    +'<span style="position:absolute;top:16px;left:22px;color:#f0c75a;font-size:16px;">✦</span>'
+    +'<span style="position:absolute;top:26px;right:26px;color:#7fe0a0;font-size:16px;">✦</span>'
+    +'<span style="position:absolute;top:120px;left:34px;color:#5b93cf;font-size:14px;">•</span>'
+    +'<span style="position:absolute;bottom:90px;right:30px;color:#f0c75a;font-size:14px;">•</span>'
+    +'<div style="font-size:50px;line-height:1;">🏆</div>'
+    +'<div style="display:inline-block;margin-top:10px;background:linear-gradient(135deg,#f0c75a,#d8a93a);color:#4a3608;font-size:12px;font-weight:900;letter-spacing:1.6px;text-transform:uppercase;padding:6px 20px;border-radius:999px;">Nuevo récord</div>'
+    +(nom?'<div style="font-size:16px;font-weight:800;color:#eaf1ff;margin-top:18px;">'+nom+'</div>':'<div style="margin-top:14px;"></div>')
+    +'<div style="font-size:23px;font-weight:900;color:#fff;margin-top:3px;letter-spacing:.3px;">'+esc(rec.ej)+'</div>'
+    +'<div style="font-size:56px;font-weight:900;color:#ffe08a;line-height:1;margin:16px 0 3px;">'+_cevFmt(rec.kg)+' kg</div>'
+    +'<div style="font-size:13px;color:#9fb0d0;">Antes <s style="color:#6f80a4;">'+_cevFmt(rec.prevKg)+' kg</s> &nbsp;→&nbsp; <b style="color:#7fe0a0;">+'+_cevFmt(rec.delta!=null?rec.delta:(rec.kg-rec.prevKg))+' kg</b></div>'
+    +'<div style="height:1px;background:rgba(255,255,255,.12);margin:18px 0 12px;"></div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:#9fb0d0;"><span>'+esc(_logroFechaTxt(rec.fecha))+'</span><span style="font-weight:900;letter-spacing:.8px;color:#c7d4ec;text-transform:uppercase;">Laboratorio de Entrenamiento</span></div>'
+    +'</div>';
+}
+function _logroImagen(rec, nombre, btn){
+  if(!rec){ if(typeof toast==='function')toast('No hay récord para compartir'); return; }
+  var old=btn?btn.innerHTML:''; if(btn){ btn.disabled=true; btn.innerHTML='Generando…'; }
+  var restore=function(){ if(btn){ btn.disabled=false; btn.innerHTML=old; } };
+  var host=document.createElement('div');
+  host.style.cssText='position:fixed;left:-10000px;top:0;z-index:-1;';
+  host.innerHTML=_logroCardHTML(rec, nombre);
+  document.body.appendChild(host);
+  var card=host.firstChild;
+  _cevCargarH2C(function(err){
+    if(err){ restore(); host.remove(); alert('No se pudo generar la imagen. Revisá tu conexión a internet.'); return; }
+    try{
+      html2canvas(card,{backgroundColor:null,scale:2,useCORS:true,logging:false}).then(function(canvas){
+        host.remove();
+        canvas.toBlob(function(blob){
+          restore();
+          if(!blob){ alert('No se pudo generar la imagen.'); return; }
+          var fname='record-'+_cevKey((nombre?nombre+'-':'')+rec.ej).slice(0,40)+'.png';
+          var file=null; try{ file=new File([blob],fname,{type:'image/png'}); }catch(e){}
+          if(file && navigator.canShare && navigator.canShare({files:[file]})){
+            navigator.share({files:[file], title:'¡Nuevo récord!', text:(window._logroActual&&document.getElementById('logro-msg')?document.getElementById('logro-msg').value:rec.msg)||'¡Nuevo récord! 🏆'}).catch(function(){});
+          } else {
+            var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname; document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(function(){ try{URL.revokeObjectURL(a.href);}catch(e){} },4000);
+            if(typeof toast==='function') toast('📷 Felicitación guardada — ya la podés compartir');
+          }
+        },'image/png');
+      }).catch(function(){ restore(); host.remove(); alert('No se pudo generar la imagen.'); });
+    }catch(e){ restore(); host.remove(); alert('No se pudo generar la imagen.'); }
+  });
+}
+// Espacio de logros (modal en la ficha del alumno)
+async function _verLogros(id){
+  var esc=function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+  var al=(getAlumnos()||[]).find(function(x){return x.id===id;})||{};
+  var nombre=al.nombre||'';
+  var recs=[];
+  try{ if(window._db){ var d=await window._db.collection('alumnos').doc(id).get(); if(d.exists) recs=(d.data()||{}).records||[]; } }catch(e){}
+  if(!recs.length){ try{ recs=al.records||[]; }catch(e){} }
+  recs=recs.slice().sort(function(a,b){ return String(b.at||b.fecha||'').localeCompare(String(a.at||a.fecha||'')); });
+  window._logrosCache=recs; window._logrosNombre=nombre;
+  var totK=0; recs.forEach(function(r){ totK+=(+r.delta||0); });
+  var ahora=new Date(); var mesCnt=0;
+  recs.forEach(function(r){ var dt=new Date(r.at||r.fecha||0); if(dt&&dt.getFullYear()===ahora.getFullYear()&&dt.getMonth()===ahora.getMonth()) mesCnt++; });
+  var resumen='<div style="display:flex;gap:10px;margin-bottom:14px;">'
+    +'<div style="flex:1;background:#f6f9fc;border:1px solid #e8eef6;border-radius:11px;padding:11px;text-align:center;"><div style="font-size:22px;font-weight:900;color:#2f5f95;">'+recs.length+'</div><div style="font-size:10px;font-weight:800;color:#8795ab;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;">Récords</div></div>'
+    +'<div style="flex:1;background:#f6f9fc;border:1px solid #e8eef6;border-radius:11px;padding:11px;text-align:center;"><div style="font-size:22px;font-weight:900;color:#2f5f95;">+'+_cevFmt(totK)+'<span style="font-size:13px;">kg</span></div><div style="font-size:10px;font-weight:800;color:#8795ab;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;">Sumados</div></div>'
+    +'<div style="flex:1;background:#f6f9fc;border:1px solid #e8eef6;border-radius:11px;padding:11px;text-align:center;"><div style="font-size:22px;font-weight:900;color:#2f5f95;">'+mesCnt+'</div><div style="font-size:10px;font-weight:800;color:#8795ab;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;">Este mes</div></div>'
+    +'</div>';
+  var lista = recs.length ? recs.map(function(r,i){
+    var med=i===0?'🥇':'🥈'; var bg=i===0?'linear-gradient(135deg,#fbe9b8,#e7c25f)':'linear-gradient(135deg,#eef1f5,#c6ced9)'; var ring=i===0?'#d8a93a':'#aab4c2';
+    return '<div style="display:flex;align-items:center;gap:12px;border:1px solid #e9edf3;border-radius:12px;padding:11px 12px;margin-bottom:10px;">'
+      +'<div style="width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;background:'+bg+';box-shadow:inset 0 0 0 2px '+ring+';">'+med+'</div>'
+      +'<div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:800;color:#1b2740;">'+esc(r.ej)+'</div><div style="font-size:11px;color:#8795ab;margin-top:1px;">'+esc(_logroFechaTxt(r.fecha))+' · récord personal</div></div>'
+      +'<div style="text-align:right;flex-shrink:0;"><div style="font-size:16px;font-weight:900;color:#1f8f5a;">'+_cevFmt(r.kg)+' kg</div><div style="font-size:10.5px;font-weight:800;color:#2f9e6a;">▲ +'+_cevFmt(r.delta!=null?r.delta:(r.kg-r.prevKg))+'</div></div>'
+      +'<button onclick="_logroImagenDesdeCache('+i+',this)" title="Crear imagen de felicitación" style="background:#eef4fb;border:1px solid #cdd9ea;color:#2f5f95;border-radius:8px;padding:7px 9px;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0;">📷</button>'
+    +'</div>';
+  }).join('') : '<div style="text-align:center;color:#8795ab;padding:26px 10px;font-size:13px;line-height:1.6;">Todavía no hay récords.<br>Cargá las <b>cargas reales</b> en Evolución → Por fecha y, cuando el alumno supere su marca, va a aparecer acá.</div>';
+  var ov=document.getElementById('logros-ov'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='logros-ov';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(6,10,18,.72);z-index:12000;display:flex;align-items:flex-start;justify-content:center;padding:22px 14px 60px;overflow:auto;';
+  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:460px;width:100%;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);" onclick="event.stopPropagation()">'
+    +'<div style="background:#1a2a4a;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:15px 18px;"><b style="font-size:16px;">🏆 Logros de '+esc((nombre||'').split(" ")[0]||"")+'</b><button onclick="var o=document.getElementById(\'logros-ov\');if(o)o.remove();" style="background:none;border:none;color:#9fb4d2;font-size:22px;cursor:pointer;line-height:1;">×</button></div>'
+    +'<div style="padding:15px 16px 18px;max-height:78vh;overflow:auto;">'+resumen+lista+'</div></div>';
+  document.body.appendChild(ov);
+}
+function _logroImagenDesdeCache(i, btn){ var r=(window._logrosCache||[])[i]; if(r) _logroImagen(r, window._logrosNombre||'', btn); }
 function _cevDibujarGrafico(filas){
   var byF={}; filas.forEach(function(f){ if(!byF[f.fecha]||f.carga>byF[f.fecha]) byF[f.fecha]=f.carga; });
   var labels=Object.keys(byF).sort(); var data=labels.map(function(l){return byF[l];});
@@ -17674,6 +17878,13 @@ function renderSidebarAlumno(id) {
              letter-spacing:0.3px;font-family:inherit;transition:background .15s;"
       onmouseover="this.style.background='#386bab'" onmouseout="this.style.background='#2f5f95'">
       🎯 Lo que quiere el alumno
+    </button>
+    <button onclick="_verLogros('${id}')"
+      style="width:100%;margin-top:8px;background:linear-gradient(135deg,#f0c75a,#d8a93a);border:1px solid #d8a93a;border-radius:9px;
+             color:#4a3608;font-size:11px;font-weight:900;padding:10px 12px;cursor:pointer;
+             letter-spacing:0.3px;font-family:inherit;transition:filter .15s;"
+      onmouseover="this.style.filter='brightness(1.05)'" onmouseout="this.style.filter='none'">
+      🏆 Logros y récords
     </button>
     <button onclick="_verSustituciones('${id}')"
       style="width:100%;margin-top:8px;background:#222B3A;border:1px solid #283142;border-radius:9px;
