@@ -1056,8 +1056,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261023114133 por un timestamp en cada deploy
-const _APP_VERSION = '20261023114133';
+// deploy.bat reemplaza 20261023123500 por un timestamp en cada deploy
+const _APP_VERSION = '20261023123500';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3521,11 +3521,50 @@ function _aevBuscar(){
   filas.sort(function(a,b){ return String(a.fecha).localeCompare(String(b.fecha))||(parseInt(a.num)-parseInt(b.num)); });
   var mx=0; filas.forEach(function(f){ if(f.carga>mx)mx=f.carga; });
   var rows=filas.map(function(f,ix){ var pr=(f.carga>=mx-0.001&&mx>0); return '<tr><td class="rownum">'+(ix+1)+'</td><td class="num">'+_evolFechaCorta(f.fecha)+'</td><td class="num">'+_aevEsc(f.num)+'</td><td class="num">'+_aevEsc(f.reps||'')+'</td><td class="num'+(f.real?' real':'')+'">'+_stxFmt(f.carga)+(pr?'<span class="prb">PR</span>':'')+'</td></tr>'; }).join('');
-  var html='<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:8px;">'+_aevEsc(nombreShow||document.getElementById('aev-buscar').value)+'</div>'
+  var _nomEj=nombreShow||document.getElementById('aev-buscar').value;
+  var _alNom=(_data&&_data.nombre)||'';
+  window._aevShareName=_ejKey((_alNom?_alNom+'-':'')+_nomEj).slice(0,40);
+  var cam = filas.length ? '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button onclick="_aevCompartir(this)" style="background:#4a86c4;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;">📷 Compartir imagen</button></div>' : '';
+  var share='<div id="aev-sharebox" style="background:#101827;border:1px solid #243150;border-radius:14px;padding:16px;">'
+    +'<div style="font-size:16px;font-weight:900;color:#fff;">'+_aevEsc(_nomEj)+'</div>'
+    +(_alNom?'<div style="font-size:12px;color:#8ea3c4;margin-bottom:12px;">'+_aevEsc(_alNom)+' · Evolución de carga</div>':'<div style="margin-bottom:12px;"></div>')
     +'<div class="sheet" style="margin-bottom:14px;"><table><thead><tr><th class="rownum"></th><th>Fecha</th><th>Serie</th><th>Reps</th><th>Carga ('+uni+')</th></tr></thead><tbody>'+(rows||'<tr><td colspan="5" style="padding:16px;text-align:center;color:#8795ab;">Sin registros en ese período.</td></tr>')+'</tbody></table></div>';
-  if(filas.length) html+='<div style="background:#141c30;border:1px solid #243150;border-radius:11px;padding:12px;"><canvas id="aev-chart" height="150"></canvas></div>';
-  res.innerHTML=html;
+  if(filas.length) share+='<div style="background:#141c30;border:1px solid #243150;border-radius:11px;padding:12px;"><canvas id="aev-chart" height="150"></canvas></div>'
+    +'<div style="margin-top:12px;font-size:10px;font-weight:800;color:#5d6f90;letter-spacing:.5px;text-transform:uppercase;text-align:right;">Laboratorio de Entrenamiento</div>';
+  share+='</div>';
+  res.innerHTML=cam+share;
   if(filas.length) _aevChart(filas);
+}
+// ── Compartir la evolución como imagen (cámara) ──
+function _aevCargarH2C(cb){
+  if(window.html2canvas){ cb(); return; }
+  var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+  s.onload=function(){ cb(); }; s.onerror=function(){ cb(new Error('load')); };
+  document.head.appendChild(s);
+}
+function _aevCompartir(btn){
+  var box=document.getElementById('aev-sharebox'); if(!box){ return; }
+  var old=btn?btn.innerHTML:''; if(btn){ btn.disabled=true; btn.innerHTML='Generando…'; }
+  var restore=function(){ if(btn){ btn.disabled=false; btn.innerHTML=old; } };
+  _aevCargarH2C(function(err){
+    if(err){ restore(); alert('No se pudo generar la imagen. Revisá tu conexión a internet.'); return; }
+    try{
+      html2canvas(box,{backgroundColor:'#101827',scale:2,useCORS:true,logging:false}).then(function(canvas){
+        canvas.toBlob(function(blob){
+          restore();
+          if(!blob){ alert('No se pudo generar la imagen.'); return; }
+          var fname='evolucion'+(window._aevShareName?('-'+window._aevShareName):'')+'.png';
+          var file=null; try{ file=new File([blob],fname,{type:'image/png'}); }catch(e){}
+          if(file && navigator.canShare && navigator.canShare({files:[file]})){
+            navigator.share({files:[file], title:'Evolución', text:'Mi evolución 💪'}).catch(function(){});
+          } else {
+            var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname; document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(function(){ try{URL.revokeObjectURL(a.href);}catch(e){} },4000);
+          }
+        },'image/png');
+      }).catch(function(){ restore(); alert('No se pudo generar la imagen.'); });
+    }catch(e){ restore(); alert('No se pudo generar la imagen.'); }
+  });
 }
 function _aevChart(filas){
   var byF={}; filas.forEach(function(f){ if(!byF[f.fecha]||f.carga>byF[f.fecha]) byF[f.fecha]=f.carga; });
