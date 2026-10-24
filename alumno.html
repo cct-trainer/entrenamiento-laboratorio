@@ -409,6 +409,9 @@ html.light .barra-bd{color:#2f5f95;background:rgba(47,95,149,.12);}
 .carga-min .tot{display:block;margin-top:2px;color:var(--text);font-weight:900;font-size:11px;}
 .carga-min .tot .k{color:#8ea3c4;font-weight:800;font-size:9px;letter-spacing:.3px;margin-right:4px;}
 html.light .carga-min{border-top-color:#e4e9f2;}
+/* Botón "marcar bloque completado" */
+.blk-done-btn{display:block;width:100%;margin:10px 0 2px;padding:10px;border:1px dashed color-mix(in srgb,var(--green) 50%,transparent);border-radius:11px;background:color-mix(in srgb,var(--green) 8%,transparent);color:var(--green);font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;transition:background .15s;}
+.blk-done-btn:hover{background:color-mix(in srgb,var(--green) 16%,transparent);}
 html.light .carga-min .per{color:#9aa6bd;}
 html.light .carga-min .tot{color:#1a2a4a;}
 html.light .barra-bd b{color:#1f8f5a;}
@@ -1068,8 +1071,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261024103238 por un timestamp en cada deploy
-const _APP_VERSION = '20261024103238';
+// deploy.bat reemplaza 20261024110627 por un timestamp en cada deploy
+const _APP_VERSION = '20261024110627';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -8891,13 +8894,16 @@ function _evolUidDeNombre(nombre){
   }catch(e){}
   return '';
 }
-// Completa en Evolución la carga/reps REAL de cada serie impresa, y agrega series extra
+// Completa en Evolución la carga/reps REAL de cada serie impresa, y agrega series extra.
+// Si el coach NO imprimió este día, CREA la evolución automáticamente desde la prescripción.
 async function _evolSyncReal(resultados){
   if(!_db || !_alumnoId || !_plan || !_plan.id) return;
   var docId=_plan.id+'_'+_semIdx+'_'+_diaIdx+'_'+_diaModTab;
   var ref=_db.collection('alumnos').doc(_alumnoId).collection('evolucion').doc(docId);
-  var doc=await ref.get(); if(!doc.exists) return;   // el coach no imprimió este día → nada que sincronizar
-  var data=doc.data()||{}; var pref=_semIdx+'_'+_diaIdx+'_';
+  var doc=await ref.get();
+  var pref=_semIdx+'_'+_diaIdx+'_';
+  if(!doc.exists){ return await _evolCrearAuto(ref, docId, resultados, pref); }
+  var data=doc.data()||{};
   (data.ejercicios||[]).forEach(function(e){
     var uid=_evolUidDeNombre(e.nombre); if(!uid) return;
     // 1) completar las series planificadas con lo real
@@ -8917,6 +8923,48 @@ async function _evolSyncReal(resultados){
     }
   });
   await ref.set({ ejercicios:data.ejercicios, updatedAt:new Date().toISOString() },{merge:true});
+}
+// Crea el documento de Evolución desde la prescripción del día + lo que registró el alumno
+async function _evolCrearAuto(ref, docId, resultados, pref){
+  var sem=_plan&&_plan.semanasArray?_plan.semanasArray[_semIdx]:null;
+  var ses=sem&&sem.dias&&sem.dias[_diaIdx]?sem.dias[_diaIdx][_diaModTab]:null;
+  if(!ses||!ses.bloques) return;
+  var _num=function(x){ var n=parseFloat(String(x==null?'':x).replace(',','.')); return isNaN(n)?0:n; };
+  var ejercicios=[];
+  ses.bloques.forEach(function(b,bi){
+    (b.ejercicios||[]).forEach(function(ej,ei){
+      var uid='b'+bi+'e'+ei;
+      var nombre=''; try{ nombre=_getEdit(pref+uid,'sust')||''; }catch(e){}
+      if(!nombre) nombre=(typeof _nomEj==='function'?_nomEj(ej):(ej.nombre||ej.ejercicio||''))||'';
+      if(!nombre) return;
+      var serArr=Array.isArray(ej.series)?ej.series:[];
+      var series=[]; var tieneCarga=false; var maxNum=0;
+      serArr.forEach(function(s,i){
+        if(i+1>maxNum) maxNum=i+1;
+        var cargaPlan=(s&&s.peso!=null)?String(s.peso).replace(/kg$/i,'').trim():'';
+        var reps=(s&&s.reps!=null)?String(s.reps):'';
+        var rec=resultados[pref+uid+'_efec_'+i]||null;
+        var cargaReal=(rec&&rec.peso!=null&&String(rec.peso).trim()!=='')?String(rec.peso).trim():'';
+        var repsReal=(rec&&rec.reps!=null&&String(rec.reps).trim()!=='')?String(rec.reps).trim():'';
+        if(_num(cargaPlan)>0||_num(cargaReal)>0) tieneCarga=true;
+        series.push({num:String(i+1), reps:reps, cargaPlan:cargaPlan, cargaReal:cargaReal, repsReal:repsReal});
+      });
+      // series EXTRA que agregó el alumno
+      for(var k=maxNum;k<maxNum+12;k++){
+        var rec2=resultados[pref+uid+'_efec_'+k];
+        if(rec2 && rec2.peso!=null && String(rec2.peso).trim()!==''){
+          series.push({num:String(k+1), reps:'', cargaPlan:'', cargaReal:String(rec2.peso).trim(), repsReal:(rec2.reps?String(rec2.reps).trim():''), extra:true});
+          tieneCarga=true;
+        }
+      }
+      // solo ejercicios con carga (dejar afuera movilidad / peso corporal sin kilos)
+      if(series.length && tieneCarga) ejercicios.push({ nombre:nombre, series:series });
+    });
+  });
+  if(!ejercicios.length) return;   // nada con carga que registrar
+  var fecha=new Date().toISOString().slice(0,10);
+  var diaLabel=ses.nombre||(typeof DN!=='undefined'&&DN[_diaIdx])||('Día '+(_diaIdx+1));
+  await ref.set({ fecha:fecha, diaLabel:diaLabel, ejercicios:ejercicios, planId:_plan.id, sem:_semIdx, dia:_diaIdx, mod:_diaModTab, docId:docId, auto:true, updatedAt:new Date().toISOString() },{merge:true});
 }
 
 // Reabrir una sesión ya completada para poder editarla (por si se tocó sin querer)
@@ -8976,6 +9024,35 @@ function _serieNoHecha(sp){
     if(!om){ tr.classList.remove('s-done'); const c=tr.querySelector('.s-num'); if(c) c.classList.remove('on'); }
   }
   _updProgreso();
+}
+// Marca TODAS las series como hechas dentro de un contenedor (bloque o toda la sesión)
+function _marcarSeriesEn(cont){
+  if(!cont) return 0;
+  var n=0;
+  cont.querySelectorAll('.serie-row').forEach(function(tr){
+    if(tr.classList.contains('s-done')) return;
+    var id=tr.id||''; if(id.indexOf('sr_')!==0) return;
+    var sp=id.slice(3); if(!sp) return;
+    _guardarEdit(sp,'done','1'); _guardarEdit(sp,'omitida','');
+    tr.classList.add('s-done'); tr.classList.remove('s-omitida');
+    var c=tr.querySelector('.s-num'); if(c) c.classList.add('on');
+    var x=tr.querySelector('.s-del'); if(x) x.classList.remove('on');
+    n++;
+  });
+  if(n) _updProgreso();
+  return n;
+}
+// Botón "marcar bloque completado"
+function _marcarBloqueBtn(btn){
+  var blk=btn.closest('.blk'); if(!blk) return;
+  var n=_marcarSeriesEn(blk);
+  if(typeof toast==='function') toast(n ? ('✓ '+(_LANG==='en'?'Block completed':'Bloque completado')) : (_LANG==='en'?'Block already complete':'El bloque ya estaba completo'));
+}
+// Botón general "marcar todo el entrenamiento"
+function _marcarTodo(){
+  var cont=document.getElementById('sesion-ctn'); if(!cont) return;
+  var n=_marcarSeriesEn(cont);
+  if(typeof toast==='function') toast(n ? ('✓ '+(_LANG==='en'?'All sets completed':'Todo marcado como completado')) : (_LANG==='en'?'Everything already complete':'Ya estaba todo completo'));
 }
 // ── DESCANSO AUTOMÁTICO + PROGRESO + PANTALLA ENCENDIDA ──────────────────
 let _restInt=null, _restLeft=0, _restTotal=0, _restAudio=null;
@@ -9496,8 +9573,9 @@ function renderSesion() {
       const _blkCls = 'blk' + (_hasPausa ? '' : (_nEj>=2 ? ' combo-blue' : (_nEj===1 ? ' solo-gold' : '')));
       const _partMin = _durBloqueMin(b, _st&&_st.reduce);
       const _partHTML = '<div style="text-align:right;font-size:10.5px;font-weight:700;color:var(--muted);margin-top:1px;padding-right:3px;">≈ '+_partMin+' min</div>';
+      const _blkDoneBtn = '<button class="blk-done-btn" onclick="event.stopPropagation();_marcarBloqueBtn(this)">✓ '+(_LANG==='en'?'Mark block done':'Marcar bloque completado')+'</button>';
       return '<div class="blk pfill '+((window._sccFaseCls&&window._sccFaseCls[bi])||'')+'" style="margin-bottom:16px;">'+
-        '<div class="blk-body" style="padding:2px 0 0;">'+_blockHeaderV2(b)+_sysDescHTML(b)+ejesHTML+_partHTML+_porqueBloqueHTML(b)+'</div>'+
+        '<div class="blk-body" style="padding:2px 0 0;">'+_blockHeaderV2(b)+_sysDescHTML(b)+ejesHTML+_partHTML+_blkDoneBtn+_porqueBloqueHTML(b)+'</div>'+
       '</div>';
     }).join('');
 
@@ -9518,7 +9596,8 @@ function renderSesion() {
         +'<div style="flex:1;padding:14px;border-radius:14px;border:1px solid color-mix(in srgb,var(--green) 45%,transparent);background:color-mix(in srgb,var(--green) 10%,transparent);color:var(--green);font-size:14px;font-weight:800;text-align:center;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;">✓ '+_t('completado')+'</div>'
         +'<button onclick="_reabrirEntrenamiento()" title="'+(_LANG==='en'?'Edit / reopen':'Editar / reabrir')+'" style="width:56px;border:1px solid color-mix(in srgb,#3A6EA5 50%,transparent);background:color-mix(in srgb,#3A6EA5 14%,transparent);color:#5b93cf;border-radius:14px;font-size:19px;cursor:pointer;">✏️</button>'
       +'</div>'
-    : '<button onclick="_terminarEntrenamiento()" style="margin-top:18px;width:100%;padding:16px;border:none;border-radius:14px;background:#3A6EA5;color:#fff;font-size:15px;font-weight:800;letter-spacing:.3px;cursor:pointer;">✓ '+_t('terminar')+'</button>';
+    : '<button onclick="_marcarTodo()" style="margin-top:18px;width:100%;padding:13px;border:1px solid color-mix(in srgb,var(--green) 45%,transparent);border-radius:14px;background:color-mix(in srgb,var(--green) 10%,transparent);color:var(--green);font-size:13.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">✓✓ '+(_LANG==='en'?'Mark everything done':'Marcar todo como completado')+'</button>'
+      +'<button onclick="_terminarEntrenamiento()" style="margin-top:10px;width:100%;padding:16px;border:none;border-radius:14px;background:#3A6EA5;color:#fff;font-size:15px;font-weight:800;letter-spacing:.3px;cursor:pointer;">✓ '+_t('terminar')+'</button>';
   // Círculo cerrado: el coach ya revisó esta sesión
   const _sesRev = _yaComp && (_data.sesionesRevisadas||[]).some(r=>r && String(r.sem)===String(_semIdx) && String(r.dia)===String(_diaIdx) && String(r.mod)===String(_diaModTab) && String(r.at||'')>=String((_compRec&&_compRec.at)||''));
   const _revBadge = _sesRev
