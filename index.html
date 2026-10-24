@@ -14167,6 +14167,8 @@ function guardarEstadoDiaActual() {
           duracion:     document.getElementById(bId+'-cardio-duracion')?.value || '',
           zona:         document.getElementById(bId+'-cardio-zona')?.value || '',
           velocidad:    document.getElementById(bId+'-cardio-velocidad')?.value || '',
+          pausa:        document.getElementById(bId+'-cardio-pausa')?.value || '',
+          lugar:        document.getElementById(bId+'-cardio-lugar')?.value || '',
           inclinacion:  document.getElementById(bId+'-cardio-inclinacion')?.value || '',
           resistencia:  document.getElementById(bId+'-cardio-resistencia')?.value || '',
           rpe:          document.getElementById(bId+'-cardio-rpe')?.value || '',
@@ -21949,6 +21951,7 @@ function toggleCardioBloque(bloqueId, data) {
     if(body) {
       // Limpiar ejercicios existentes, insertar panel cardio
       body.innerHTML = renderCardioPanel(bloqueId, data || null);
+      _cardioParaSync(bloqueId);
     }
   } else {
     if(footer) footer.style.display = '';
@@ -21961,19 +21964,42 @@ function toggleCardioBloque(bloqueId, data) {
   }
 }
 
+// ¿Para qué sirve? — descripción del tipo de sesión de cardio (la ve el coach y el alumno)
+const _CARDIO_PARA = {
+  'HIIT':'Alterna esfuerzos muy intensos con pausas cortas. Mejora la capacidad cardiovascular y la quema de grasa en poco tiempo, y mantiene el metabolismo elevado durante horas.',
+  'Caminata en cinta':'Trabajo aeróbico suave y continuo. Mejora la resistencia de base y la salud cardiovascular, y ayuda a recuperar sin generar fatiga.',
+  'Bicicleta estática':'Cardio de bajo impacto. Mejora la resistencia y la capacidad aeróbica cuidando las articulaciones.',
+  'Elíptica':'Cardio de bajo impacto que suma tren superior e inferior. Buena para resistencia general sin cargar las rodillas.',
+  'Remo ergómetro':'Cardio de cuerpo completo. Trabaja resistencia y potencia aeróbica sumando espalda, piernas y core.',
+  'Descanso activo':'Movimiento suave entre esfuerzos para recuperar sin frenar del todo. Favorece la circulación y la recuperación.',
+  'Descanso pasivo':'Pausa completa para recuperar bien antes del próximo esfuerzo.',
+  'Otro':''
+};
+function _cardioParaTxt(act){ return _CARDIO_PARA[act] || ''; }
+function _cardioParaSync(bloqueId){
+  var sel=document.getElementById(bloqueId+'-cardio-actividad');
+  var box=document.getElementById(bloqueId+'-cardio-para');
+  if(!sel||!box) return;
+  var txt=_cardioParaTxt(sel.value);
+  if(txt){ box.style.display='block'; box.innerHTML='<b style="color:#3A6EA5;">¿Para qué sirve?</b> '+txt; }
+  else { box.style.display='none'; box.innerHTML=''; }
+}
 function renderCardioPanel(bloqueId, data) {
   const acts = ['Caminata en cinta','Bicicleta estática','Descanso activo','Descanso pasivo','Elíptica','Remo ergómetro','HIIT','Otro'];
   return '<div class="cardio-panel" id="'+bloqueId+'-cardio-panel">' +
     '<div class="cardio-act-row">' +
       '<span class="cardio-act-label">Actividad</span>' +
-      '<select class="cardio-act-sel" id="'+bloqueId+'-cardio-actividad">' +
+      '<select class="cardio-act-sel" id="'+bloqueId+'-cardio-actividad" onchange="_cardioParaSync(\''+bloqueId+'\')">' +
         acts.map(a => '<option'+(data&&data.actividad===a?' selected':'')+'>'+a+'</option>').join('') +
       '</select>' +
     '</div>' +
+    '<div id="'+bloqueId+'-cardio-para" style="display:none;font-size:12px;line-height:1.5;color:#44536b;background:#eef4fb;border:1px solid #d7e3f4;border-radius:9px;padding:9px 11px;margin-bottom:12px;"></div>' +
     '<div class="cardio-fields-grid">' +
       '<div class="cardio-field"><label>DURACION</label><input id="'+bloqueId+'-cardio-duracion" type="text" placeholder="ej: 20 min" value="'+(data&&data.duracion||'')+'"></div>' +
       '<div class="cardio-field"><label>ZONA FC / INTENSIDAD</label><input id="'+bloqueId+'-cardio-zona" type="text" placeholder="ej: Zona 2 / 65%" value="'+(data&&data.zona||'')+'"></div>' +
       '<div class="cardio-field"><label>VELOCIDAD (km/h)</label><input id="'+bloqueId+'-cardio-velocidad" type="text" placeholder="ej: 5.5" value="'+(data&&data.velocidad||'')+'"></div>' +
+      '<div class="cardio-field"><label>PAUSA</label><input id="'+bloqueId+'-cardio-pausa" type="text" placeholder="ej: 12 seg pasiva" value="'+(data&&data.pausa||'')+'"></div>' +
+      '<div class="cardio-field"><label>LUGAR</label><input id="'+bloqueId+'-cardio-lugar" type="text" placeholder="ej: Cinta / Calle" value="'+(data&&data.lugar||'')+'"></div>' +
       '<div class="cardio-field"><label>INCLINACION (%)</label><input id="'+bloqueId+'-cardio-inclinacion" type="text" placeholder="ej: 2%" value="'+(data&&data.inclinacion||'')+'"></div>' +
       '<div class="cardio-field"><label>RESISTENCIA (nivel)</label><input id="'+bloqueId+'-cardio-resistencia" type="text" placeholder="ej: 8" value="'+(data&&data.resistencia||'')+'"></div>' +
       '<div class="cardio-field"><label>RPE (1-10)</label><input id="'+bloqueId+'-cardio-rpe" type="text" placeholder="ej: 6/10" value="'+(data&&data.rpe||'')+'"></div>' +

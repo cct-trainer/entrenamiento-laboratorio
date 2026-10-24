@@ -1071,8 +1071,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261024121423 por un timestamp en cada deploy
-const _APP_VERSION = '20261024121423';
+// deploy.bat reemplaza 20261024124312 por un timestamp en cada deploy
+const _APP_VERSION = '20261024124312';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -9311,6 +9311,15 @@ function _adaptarSesion(bloques, budget){
   }
   return state;
 }
+const _CARDIO_PARA = {
+  'HIIT':'Alterna esfuerzos muy intensos con pausas cortas. Mejora la capacidad cardiovascular y la quema de grasa en poco tiempo, y mantiene el metabolismo elevado durante horas.',
+  'Caminata en cinta':'Trabajo aeróbico suave y continuo. Mejora la resistencia de base y la salud cardiovascular, y ayuda a recuperar sin generar fatiga.',
+  'Bicicleta estática':'Cardio de bajo impacto. Mejora la resistencia y la capacidad aeróbica cuidando las articulaciones.',
+  'Elíptica':'Cardio de bajo impacto que suma tren superior e inferior. Buena para resistencia general sin cargar las rodillas.',
+  'Remo ergómetro':'Cardio de cuerpo completo. Trabaja resistencia y potencia aeróbica sumando espalda, piernas y core.',
+  'Descanso activo':'Movimiento suave entre esfuerzos para recuperar sin frenar del todo. Favorece la circulación y la recuperación.',
+  'Descanso pasivo':'Pausa completa para recuperar bien antes del próximo esfuerzo.'
+};
 function _cardioCardHTML(b){
   const cd=b.cardioData||{}; const en=(_LANG==='en');
   const nom=_tc(b.nombre||b.tipo||'Cardio');
@@ -9320,9 +9329,13 @@ function _cardioCardHTML(b){
   add(en?'Duration':'Duración', cd.duracion);
   add(en?'HR zone / intensity':'Zona FC / intensidad', cd.zona);
   add(en?'Speed (km/h)':'Velocidad (km/h)', cd.velocidad);
+  add(en?'Rest':'Pausa', cd.pausa);
+  add(en?'Place':'Lugar', cd.lugar);
   add(en?'Incline (%)':'Inclinación (%)', cd.inclinacion);
   add(en?'Resistance':'Resistencia', cd.resistencia);
   add('RPE', cd.rpe);
+  const para=(!en && _CARDIO_PARA[act]) ? _CARDIO_PARA[act] : '';
+  const paraHTML=para?'<div style="margin-top:8px;font-size:11.5px;line-height:1.5;color:var(--text);background:rgba(58,110,165,.10);border-left:3px solid #3A6EA5;border-radius:0 8px 8px 0;padding:8px 11px;"><b style="color:#5b93cf;">¿Para qué sirve?</b> '+para+'</div>':'';
   const obs=String(cd.observaciones||'').trim();
   const obsHTML=obs?'<div style="margin-top:10px;font-size:12px;line-height:1.5;color:var(--text);background:rgba(230,81,0,.08);border-left:3px solid #e6773a;border-radius:0 8px 8px 0;padding:9px 11px;">'+obs.replace(/</g,'&lt;')+'</div>':'';
   return '<div style="background:var(--card);border:1px solid rgba(230,120,60,.35);border-radius:14px;padding:13px 15px;margin-bottom:8px;">'
@@ -9331,6 +9344,7 @@ function _cardioCardHTML(b){
       +'<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:900;color:var(--text);">'+nom+'</div>'
       +(act?'<div style="font-size:11.5px;font-weight:700;color:#e6773a;">'+act.replace(/</g,'&lt;')+'</div>':'')+'</div>'
     +'</div>'
+    +paraHTML
     +(rows.length?'<div style="margin-top:6px;">'+rows.join('')+'</div>':'')
     +obsHTML
   +'</div>';
