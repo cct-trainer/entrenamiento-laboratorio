@@ -1060,8 +1060,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261023132927 por un timestamp en cada deploy
-const _APP_VERSION = '20261023132927';
+// deploy.bat reemplaza 20261024095404 por un timestamp en cada deploy
+const _APP_VERSION = '20261024095404';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3598,16 +3598,16 @@ function _aevBuscar(){
   var mx=0; filas.forEach(function(f){ if(f.carga>mx)mx=f.carga; });
   var rows=filas.map(function(f,ix){ var pr=(f.carga>=mx-0.001&&mx>0); return '<tr><td class="rownum">'+(ix+1)+'</td><td class="num">'+_evolFechaCorta(f.fecha)+'</td><td class="num">'+_aevEsc(f.num)+'</td><td class="num">'+_aevEsc(f.reps||'')+'</td><td class="num'+(f.real?' real':'')+'">'+_stxFmt(f.carga)+(pr?'<span class="prb">PR</span>':'')+'</td></tr>'; }).join('');
   var _nomEj=nombreShow||document.getElementById('aev-buscar').value;
-  var _alNom=(_data&&_data.nombre)||'';
+  var _alNom=(_data&&_data.nombre)||(_data&&_data.perfil&&_data.perfil.nombre)||'';
   window._aevShareName=_ejKey((_alNom?_alNom+'-':'')+_nomEj).slice(0,40);
-  // Mensaje positivo personalizado
+  // Mensaje positivo personalizado — siempre con el nombre
   var _latF=''; filas.forEach(function(f){ if(String(f.fecha)>_latF)_latF=String(f.fecha); });
   var _esPR=false; filas.forEach(function(f){ if(String(f.fecha)===_latF && f.carga>=mx-0.001 && mx>0) _esPR=true; });
-  var _nn=(_alNom||'').split(' ')[0]||'';
+  var _nn=(_alNom||'').split(' ')[0]||'crack';
   var _msgTxt = filas.length ? (_esPR
-    ? '¡Felicitaciones'+(_nn?', '+_nn:'')+'! 🏆 Marcaste tu mejor registro en '+_nomEj+'. Tu esfuerzo y tu constancia se están viendo. ¡A seguir así! 💪'
-    : '¡Bien ahí'+(_nn?', '+_nn:'')+'! 💪 Seguís trabajando tu '+_nomEj+'. Cada entrenamiento suma y la constancia hace la diferencia.') : '';
-  var _msgBox = _msgTxt ? '<div style="background:linear-gradient(135deg,#1e2e4d,#20314f);border:1px solid #39507d;border-left:4px solid #e7c25f;border-radius:10px;padding:11px 13px;margin-bottom:14px;font-size:13px;font-weight:700;color:#f0e6c8;line-height:1.5;">'+_aevEsc(_msgTxt)+'</div>' : '';
+    ? '¡Felicitaciones, '+_nn+'! 🎉 Superaste tu marca en '+_nomEj+' y llegaste a '+_stxFmt(mx)+' kg. Tu esfuerzo y tu constancia están dando frutos. ¡Qué orgullo verte progresar! 💪'
+    : '¡Vamos, '+_nn+'! 💪 Seguís sumando en '+_nomEj+'. Cada entrenamiento te acerca a tu próxima marca — tu constancia es la que hace la diferencia. ¡A seguir así!') : '';
+  var _msgBox = _msgTxt ? '<div style="background:linear-gradient(135deg,#1e2e4d,#20314f);border:1px solid #39507d;border-left:4px solid #e7c25f;border-radius:11px;padding:13px 15px;margin-bottom:14px;font-size:14px;font-weight:700;color:#f3ead0;line-height:1.55;">'+_aevEsc(_msgTxt)+'</div>' : '';
   var cam = filas.length ? '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button onclick="_aevCompartir(this)" style="background:#4a86c4;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;">📷 Compartir imagen</button></div>' : '';
   var share='<div id="aev-sharebox" style="background:#101827;border:1px solid #243150;border-radius:14px;padding:16px;">'
     +'<div style="font-size:16px;font-weight:900;color:#fff;">'+_aevEsc(_nomEj)+'</div>'
