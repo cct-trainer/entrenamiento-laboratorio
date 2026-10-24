@@ -22509,6 +22509,7 @@ function _setEjExec(ejId, val){
     un.style.color      = val ? '#fff' : '#888';
     un.style.fontWeight = val ? '600' : '400';
   }
+  if(typeof _barraRefresh==='function') _barraRefresh(ejId);
 }
 // Selector 1 / 2 mancuernas (val = 2 dos · 1 una)
 function _setEjManc(ejId, val){
@@ -22526,6 +22527,7 @@ function _mancSync(ejId){
   const nInp=document.querySelector('#'+ejId+' .ej-nombre-input');
   const nombre=nInp?nInp.value:'';
   wrap.style.display=/mancuerna/i.test(nombre) ? 'inline-flex' : 'none';
+  if(typeof _barraRefresh==='function') _barraRefresh(ejId);
 }
 
 // ══════════ BARRA · peso de la barra en ejercicios con barra ══════════
@@ -22581,15 +22583,30 @@ function _barraCalc(inp){
   var hid=card.querySelector('.ej-barra'); var barra=hid?_barraNum(hid.value):0;
   var td=inp.closest('td'); if(!td) return;
   var span=td.querySelector('.barra-desglose');
-  if(barra<=0){ if(span) span.style.display='none'; return; }
-  if(!span){ span=document.createElement('span'); span.className='barra-desglose'; td.appendChild(span); }
   var total=_barraNum(inp.value);
-  if(!String(inp.value).trim() || total<=0){ span.style.display='none'; return; }
-  span.style.display='block';
-  if(total<=barra+0.001){ span.className='barra-desglose solo'; span.textContent='(Barra '+_barraFmt(barra)+' kg)'; return; }
-  var discos=total-barra, lado=discos/2;
-  span.className='barra-desglose';
-  span.innerHTML='barra '+_barraFmt(barra)+' + '+_barraFmt(discos)+' discos · <span class="lado">'+_barraFmt(lado)+'/lado</span>';
+  var ensure=function(){ if(!span){ span=document.createElement('span'); span.className='barra-desglose'; td.appendChild(span); } return span; };
+  if(!String(inp.value).trim() || total<=0){ if(span) span.style.display='none'; return; }
+  // 1) Con barra → barra + discos · por lado (el peso ya es el total)
+  if(barra>0){
+    span=ensure(); span.style.display='block';
+    if(total<=barra+0.001){ span.className='barra-desglose solo'; span.textContent='(Barra '+_barraFmt(barra)+' kg)'; return; }
+    var discos=total-barra, lado=discos/2;
+    span.className='barra-desglose';
+    span.innerHTML='barra '+_barraFmt(barra)+' + '+_barraFmt(discos)+' discos · <span class="lado">'+_barraFmt(lado)+'/lado</span>';
+    return;
+  }
+  // 2) Sin barra, trabajo individual (mancuerna o unilateral) → peso individual + TOTAL ×2
+  var nombre=(card.querySelector('.ej-nombre-input')?card.querySelector('.ej-nombre-input').value:'')||'';
+  var esManc=/mancuerna/i.test(nombre);
+  var uniHid=card.querySelector('.ej-uni'); var esUni=!!(uniHid && uniHid.value==='1');
+  if(esManc || esUni){
+    span=ensure(); span.style.display='block'; span.className='barra-desglose';
+    var lbl=esManc?'por mancuerna':'por lado';
+    span.innerHTML=lbl+' · TOTAL <span class="lado">'+_barraFmt(total*2)+' kg</span>';
+    return;
+  }
+  // 3) Máquina bilateral → el peso ya es el total, no hace falta aclarar
+  if(span) span.style.display='none';
 }
 function _barraRefresh(ejId){
   var card=document.getElementById(ejId); if(!card) return;
