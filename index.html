@@ -13612,6 +13612,10 @@ function renderPlanDiaEditor(diaIdx) {
         <div class="plan-add-bloque-zone" onclick="abrirModalNuevoBloque(${diaIdx})">
           ＋ AGREGAR BLOQUE
         </div>
+        <div style="margin:16px 2px 4px;">
+          <button onclick="_estimarDuracionEditor()" style="width:100%;background:#0e1520;color:#fff;border:none;border-radius:11px;padding:13px;font-size:13.5px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:9px;">⏱ Estimar duración de la sesión</button>
+          <div id="plan-dur-pronostico" style="display:none;margin-top:10px;"></div>
+        </div>
         <div style="display:flex;justify-content:flex-end;margin:12px 2px 2px;">
           <button onclick="_evoImprimir()" title="Incorporar a Evolución los ejercicios/series tildados" style="background:#2f5f95;color:#fff;border:none;border-radius:9px;padding:11px 20px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:8px;">🖨 IMPRIMIR a Evolución</button>
         </div>
@@ -13704,6 +13708,54 @@ function _sesActualizarDuracion(bloques){
   const el=document.getElementById('plan-ses-durcalc'); if(!el) return;
   const m=_calcDurSesionCoach(bloques);
   el.textContent = m ? '⏱ Duración estimada: ~'+m+' min (dejá "auto" para usar esta, o escribí una fija arriba)' : '';
+}
+// Pronosticador de duración — calcula en vivo desde lo que el coach tiene cargado en el editor
+function _estimarDuracionEditor(){
+  var cont=document.getElementById('plan-editor-page-content'); if(!cont){ alert('Abrí el día de entrenamiento.'); return; }
+  var out=document.getElementById('plan-dur-pronostico');
+  var sec=0, nEj=0, nSer=0, nBloques=0, nCardio=0;
+  cont.querySelectorAll('.bloque-wrap').forEach(function(bEl){
+    nBloques++;
+    // Bloque de cardio → usar la duración declarada
+    var cardio=bEl.querySelector('.cardio-panel');
+    if(cardio){
+      var durInp=cardio.querySelector('[id$="-cardio-duracion"]');
+      var secs=_parseSecsCoach(durInp?durInp.value:'')||0;
+      if(secs){ sec+=secs; nCardio++; }
+      return;
+    }
+    var stSel=bEl.querySelector('[id$="-serie-tipo"]'); var st=stSel?stSel.value:'';
+    var combo=/biserie|superserie|triserie|gigante|circuito/i.test(st||'');
+    bEl.querySelectorAll('.ej-card').forEach(function(card){
+      var nombre=((card.querySelector('.ej-nombre-input')||{}).value||'').trim();
+      if(!nombre) return;
+      nEj++;
+      var serRows=[];
+      card.querySelectorAll('tr').forEach(function(r){ if(r.querySelector('.evo-serie-chk')) serRows.push(r); });
+      var cantSer=serRows.length||1;
+      var r0=serRows[0]; var reps='', pausa='';
+      if(r0){ var inps=r0.querySelectorAll('input'); reps=((r0.querySelector('.reps-val')||{}).value||(inps[0]&&inps[0].value)||'').trim(); pausa=((inps[3]&&inps[3].value)||'').trim(); }
+      var dur=_serieDurCoach(reps);
+      var pausaSec=_parseSecsCoach(pausa); if(pausaSec===null) pausaSec=combo?25:75;
+      sec += cantSer*dur + cantSer*pausaSec;
+      nSer += cantSer;
+    });
+    sec += 25; // transición / armado entre bloques
+  });
+  var min=Math.round(sec/60);
+  if(!out) return;
+  if(!min){ out.style.display='block'; out.innerHTML='<div style="background:#f4f6fa;border:1px solid #e2e7ef;border-radius:11px;padding:12px;font-size:12.5px;color:#55607a;text-align:center;">Cargá ejercicios y series para estimar la duración.</div>'; return; }
+  // Semáforo orientativo
+  var color, icono, texto;
+  if(min<30){ color='#2f6fb0'; icono='🟦'; texto='Sesión corta'; }
+  else if(min<=75){ color='#1f8f5a'; icono='🟢'; texto='Duración equilibrada'; }
+  else if(min<=95){ color='#b5701d'; icono='🟡'; texto='Sesión larga — revisá si es la idea'; }
+  else { color='#c0392b'; icono='🔴'; texto='Muy larga — conviene recortar'; }
+  out.style.display='block';
+  out.innerHTML='<div style="background:#fff;border:1px solid '+color+'55;border-left:4px solid '+color+';border-radius:11px;padding:13px 15px;">'
+    +'<div style="display:flex;align-items:baseline;gap:9px;"><span style="font-size:26px;font-weight:900;color:'+color+';">~'+min+' min</span><span style="font-size:12.5px;font-weight:800;color:'+color+';">'+icono+' '+texto+'</span></div>'
+    +'<div style="font-size:11px;color:#7c8aa0;margin-top:6px;line-height:1.5;">Estimado con '+nEj+' ejercicio'+(nEj!==1?'s':'')+' · '+nSer+' serie'+(nSer!==1?'s':'')+(nCardio?(' · '+nCardio+' bloque'+(nCardio!==1?'s':'')+' de cardio'):'')+'. Incluye el trabajo de cada serie, las pausas y la transición entre bloques. Es orientativo (no cuenta charla ni demoras).</div>'
+    +'</div>';
 }
 
 function cerrarPlanDiaEditor() {
