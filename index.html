@@ -12201,9 +12201,11 @@ const _PM_GRID_CSS = '<style id="pm-grid-css">'
   +'.mes-semana-bloque.sem-pasada .mes-semana-titulo-txt{color:#9a8686;}'
   +'.mes-semana-bloque.sem-futura .mes-semana-header{background:repeating-linear-gradient(45deg,#fdf6e5,#fdf6e5 10px,#fbf1d8 10px,#fbf1d8 20px);}'
   +'.mes-semana-bloque.sem-futura .mes-semana-titulo-txt{color:#9a7118;}'
-  +'.mes-semana-bloque.sem-prev{opacity:.97;}'
   +'.mes-semana-bloque.sem-prev .mes-semana-header{background:#eef1f4;border-left:4px solid #b9c0cb;}'
   +'.mes-semana-bloque.sem-prev .mes-semana-titulo-txt{color:#5a6472;}'
+  // Semanas que NO son la actual (anterior, pasada y próxima) → tarjetas de día en gris
+  +'.mes-semana-bloque.sem-prev .plan-mes-grid,.mes-semana-bloque.sem-futura .plan-mes-grid,.mes-semana-bloque.sem-pasada .plan-mes-grid{filter:grayscale(1);opacity:.62;transition:filter .15s,opacity .15s;}'
+  +'.mes-semana-bloque.sem-prev:hover .plan-mes-grid,.mes-semana-bloque.sem-futura:hover .plan-mes-grid,.mes-semana-bloque.sem-pasada:hover .plan-mes-grid{filter:grayscale(.15);opacity:.95;}'
   +'.sem-badge{font-size:9px;font-weight:900;letter-spacing:.6px;padding:3px 11px;border-radius:20px;text-transform:uppercase;margin-left:10px;vertical-align:middle;}'
   +'.sem-badge.a{background:#3A6EA5;color:#fff;}.sem-badge.p{background:#d9c4c4;color:#8a4a4a;}.sem-badge.f{background:#d29a2a;color:#fff;}.sem-badge.pr{background:#e2e5ea;color:#5a6472;}'
   +'</style>';
