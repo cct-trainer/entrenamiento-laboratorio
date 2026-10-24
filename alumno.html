@@ -1071,8 +1071,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261024180819 por un timestamp en cada deploy
-const _APP_VERSION = '20261024180819';
+// deploy.bat reemplaza 20261024183550 por un timestamp en cada deploy
+const _APP_VERSION = '20261024183550';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -9226,6 +9226,24 @@ function _circNSer(ej){ return (Array.isArray(ej.series)&&ej.series.length)?ej.s
 function _circDoneCount(bi,ei,ej){ let c=0,n=_circNSer(ej); for(let i=0;i<n;i++){ if(_getEdit(_circSerieKey(bi,ei,i),'done')==='1') c++; } return c; }
 function _circEstDone(bi,ei,ej){ return _circDoneCount(bi,ei,ej)>=_circNSer(ej); }
 // bloque circular renderizado como "player" de estaciones (Fusión 3)
+function _circEnsureCSS(){
+  if(document.getElementById('circ-b2-css')) return;
+  var st=document.createElement('style'); st.id='circ-b2-css';
+  st.textContent=
+    '.circ-rail2{position:relative;padding:4px 2px 12px;}'+
+    '.circ-st{position:relative;display:flex;align-items:center;gap:12px;padding:8px 0;cursor:pointer;}'+
+    '.circ-st:not(:last-child)::before{content:"";position:absolute;left:16px;top:30px;bottom:-8px;width:2px;background:#2a3a57;}'+
+    '.circ-st.done:not(:last-child)::before{background:#1f5c39;}'+
+    '.circ-d{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;z-index:1;}'+
+    '.circ-d.on{background:#3A6EA5;color:#fff;box-shadow:0 0 0 4px rgba(58,110,165,.22);}'+
+    '.circ-d.done{background:#1f8f55;color:#fff;}'+
+    '.circ-d.todo{background:#16233f;color:#7f93b5;border:1.5px solid #26375c;}'+
+    '.circ-nm{font-size:14px;font-weight:800;color:#e6eefc;line-height:1.15;}'+
+    '.circ-st.off .circ-nm{color:#9fb0cf;}'+
+    '.circ-meta{font-size:10.5px;color:#7f93b5;margin-top:1px;}'+
+    '.circ-now{font-size:9.5px;font-weight:900;color:#8fb7e6;letter-spacing:.5px;}';
+  document.head.appendChild(st);
+}
 function _circuitPlayerHTML(b, bi, letra, grupo, serieLbl, defP, stObj){
   const ejs=(b.ejercicios||[]);
   const nEj=ejs.length;
@@ -9233,16 +9251,23 @@ function _circuitPlayerHTML(b, bi, letra, grupo, serieLbl, defP, stObj){
   const en=(_LANG==='en');
   // progreso total del circuito
   let tot=0,dn=0; ejs.forEach((e,ei)=>{ const n=_circNSer(e); tot+=n; dn+=_circDoneCount(bi,ei,e); });
-  // rail de estaciones
-  let rail='<div style="display:flex;align-items:center;gap:3px;background:transparent;border:none;padding:4px 2px 10px;overflow-x:auto;">';
+  // rail de estaciones — B2: recorrido (timeline vertical) con nombre completo
+  _circEnsureCSS();
+  let rail='<div class="circ-rail2">';
   ejs.forEach((e,ei)=>{
     const done=_circEstDone(bi,ei,e), on=(ei===cur);
-    const bg=on?'#3A6EA5':(done?'#123a24':'#16233f'), bd=on?'#3A6EA5':(done?'#1f5c39':'#26375c'), col=on?'#fff':(done?'#4fd07f':'#7f93b5');
-    const nm=String(e.nombre||e.ejercicio||'').split(' ').slice(0,1).join(' ');
-    rail+='<div onclick="_circIr('+bi+','+ei+')" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-width:52px;flex:1;">'
-      +'<div style="width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;background:'+bg+';color:'+col+';border:1.5px solid '+bd+';'+(on?'box-shadow:0 4px 12px rgba(58,110,165,.5);':'')+'">'+(done&&!on?'✓':(letra+(ei+1)))+'</div>'
-      +'<div style="font-size:11px;font-weight:800;color:'+(on?'#cfe0ff':'#8fa0ba')+';max-width:82px;text-align:center;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+nm.replace(/</g,'&lt;')+'</div></div>';
-    if(ei<nEj-1) rail+='<span style="color:#3a4a68;font-size:12px;flex:0;">›</span>';
+    const nm=String(e.nombre||e.ejercicio||'').replace(/</g,'&lt;');
+    const isC=/bicicleta|cinta|caminat|el[ií]ptic|remo\s*erg|escalera|trote|correr|carrera|spinning|cardio|hiit|airbike|treadmill/i.test(String(e.nombre||e.ejercicio||''));
+    const reps=(Array.isArray(e.series)&&e.series[0]&&e.series[0].reps)||(e.ctrl&&e.ctrl.reps)||'';
+    const metaReps = reps ? (isC ? (reps+' · '+(en?'avg':'media')) : (reps+' '+(en?'reps':'reps'))) : '';
+    const metaTxt = [metaReps, (done&&!on?(en?'done':'hecha'):'')].filter(Boolean).join(' · ');
+    const dcls = on?'on':(done?'done':'todo');
+    const badge = (done&&!on)?'✓':(letra+(ei+1));
+    const nowLbl = on?'<div class="circ-now">▶ '+(en?'NOW':'AHORA')+'</div>':'';
+    rail+='<div class="circ-st'+(on?'':' off')+(done?' done':'')+'" onclick="_circIr('+bi+','+ei+')">'
+      +'<div class="circ-d '+dcls+'">'+badge+'</div>'
+      +'<div style="min-width:0;">'+nowLbl+'<div class="circ-nm">'+nm+'</div>'+(metaTxt?'<div class="circ-meta">'+metaTxt+'</div>':'')+'</div>'
+    +'</div>';
   });
   rail+='</div>';
   // tarjeta de la estación actual (reutiliza _ejCard con etiqueta VUELTA)
