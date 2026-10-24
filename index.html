@@ -715,6 +715,8 @@ body.coach-bg-on .alu-daybar{ background:rgba(255,255,255,.9); }
 .ps-sem:hover { border-color: #C9A84C; }
 .ps-sem.done { background: #e7f6ec; color: #0f7a3d; border-color: #c7ebd3; }
 .ps-g.act { color: #b08d3a; border-color: #C9A84C; background: #faf4e4; }
+.ps-g.hid { color: #c0392b; border-color: #eab8b1; background: #fdeeec; }
+.plan-sheet.dark .ps-g.hid { color: #e88a7d; border-color: #5e2a24; background: #2e1613; }
 
 /* Planilla · tema oscuro */
 .plan-sheet.dark { background: #171b24; border-color: #2b3240; }
@@ -21529,6 +21531,18 @@ function _toggleActivoMes(planId) {
     toast(nuevo ? '● Mes activo — sincronizado ✓' : 'Mes desactivado — sincronizado ✓');
   }
 }
+function _toggleOcultoMes(planId){
+  const planes = getPlanificaciones();
+  const p = planes.find(x => x.id === planId);
+  if (!p) return;
+  p.oculto = !p.oculto;
+  savePlanificaciones(planes);
+  renderPerfilPlanificaciones(p.alumnoId, 'fuerza');
+  if (typeof forzarSyncFirebase === 'function') {
+    forzarSyncFirebase();
+    toast(p.oculto ? '🙈 Mes oculto para el alumno ✓' : '👁 Mes visible para el alumno ✓');
+  }
+}
 function _faseBloqueHTML(p, faseIdx, auto) {
   const f = FASES_MACRO[faseIdx] || FASES_MACRO[0];
   const opts = ['<option value=""'+(auto?' selected':'')+'>Automático (por orden)</option>']
@@ -21635,6 +21649,7 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
             <div style="font-size:10px;color:#9aa2b0;margin-top:5px;font-weight:700;">${nDone}/${semanas} completas</div></td>
         <td><div class="ps-acts">
           <button class="ps-abrir" onclick="abrirPlanFuerzaExistente('${p.id}')">Abrir</button>
+          <button class="ps-g${p.oculto?' hid':''}" onclick="_toggleOcultoMes('${p.id}')" title="${p.oculto?'Oculto para el alumno · tocá para mostrarlo':'Visible para el alumno · tocá para ocultarlo'}">${p.oculto?'🙈':'👁'}</button>
           <button class="ps-g${activo?' act':''}" onclick="_toggleActivoMes('${p.id}')" title="Marcar / quitar mes activo">${activo?'★':'☆'}</button>
           <button class="ps-g" onclick="_togglePlanCopy('${p.id}')" title="Copiar y enviar a un alumno">📤</button>
           <button class="ps-g" onclick="renombrarPlanificacion('${p.id}')" title="Renombrar">✏️</button>
