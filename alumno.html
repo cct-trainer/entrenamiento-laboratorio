@@ -1071,8 +1071,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261024110627 por un timestamp en cada deploy
-const _APP_VERSION = '20261024110627';
+// deploy.bat reemplaza 20261024110718 por un timestamp en cada deploy
+const _APP_VERSION = '20261024110718';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2955,18 +2955,8 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
           else { const _ladoR=(_totR-_barraKgR)/2; _barraCel='<div class="barra-bd">'+(_LANG==='en'?'bar ':'barra ')+_barraFmtA(_barraKgR)+' + <b>'+_barraFmtA(_ladoR)+(_LANG==='en'?'/side':'/lado')+'</b></div>'; }
         }
       }
-      // Peso total en trabajo individual (mancuerna / unilateral) → individual × 2
+      // En mancuerna / unilateral el peso ya es el valor individual real → no se multiplica
       let _totCel = '';
-      if(!_barraCel && !_pesoEsTexto){
-        const _nomInd = (ej && ej.nombre) || '';
-        const _esManc = /mancuerna/i.test(_nomInd);
-        const _ind = _esManc || _uni;
-        const _pR = _barraNumA(pesoRaw);
-        if(_ind && pesoRaw && _pR>0){
-          const _lblInd = _esManc ? (_LANG==='en'?'per dumbbell':'por mancuerna') : (_LANG==='en'?'per side':'por lado');
-          _totCel = '<div class="carga-min"><span class="per">'+_lblInd+'</span><span class="tot"><span class="k">TOTAL</span>'+_barraFmtA(_pR*2)+' kg</span></div>';
-        }
-      }
       const rirRaw = (sp ? _getEdit(sp,'rir') : '') || s.rir || '';
       const rirCel = sp
         ? '<input id="inp_'+sp+'_rir" type="text" inputmode="text" value="'+rirRaw+'" placeholder="—" '+

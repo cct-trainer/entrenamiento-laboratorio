@@ -22600,17 +22600,7 @@ function _barraCalc(inp){
     span.innerHTML='barra '+_barraFmt(barra)+' + '+_barraFmt(discos)+' discos · <span class="lado">'+_barraFmt(lado)+'/lado</span>';
     return;
   }
-  // 2) Sin barra, trabajo individual (mancuerna o unilateral) → peso individual + TOTAL ×2
-  var nombre=(card.querySelector('.ej-nombre-input')?card.querySelector('.ej-nombre-input').value:'')||'';
-  var esManc=/mancuerna/i.test(nombre);
-  var uniHid=card.querySelector('.ej-uni'); var esUni=!!(uniHid && uniHid.value==='1');
-  if(esManc || esUni){
-    span=ensure(); span.style.display='block'; span.className='carga-min';
-    var lbl=esManc?'por mancuerna':'por lado';
-    span.innerHTML='<span class="per">'+lbl+'</span><span class="tot"><span class="k">TOTAL</span>'+_barraFmt(total*2)+' kg</span>';
-    return;
-  }
-  // 3) Máquina bilateral → el peso ya es el total, no hace falta aclarar
+  // 2) Sin barra → el peso ya es el valor real (individual en mancuerna/unilateral), no se multiplica
   if(span) span.style.display='none';
 }
 function _barraRefresh(ejId){
