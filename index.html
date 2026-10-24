@@ -714,6 +714,8 @@ body.coach-bg-on .alu-daybar{ background:rgba(255,255,255,.9); }
 .ps-sem { font-size: 11px; font-weight: 800; color: #8a92a1; background: #f2f4f7; border: 1px solid #e4e7ec; border-radius: 7px; padding: 5px 9px; cursor: pointer; font-family: inherit; transition: .12s; }
 .ps-sem:hover { border-color: #C9A84C; }
 .ps-sem.done { background: #e7f6ec; color: #0f7a3d; border-color: #c7ebd3; }
+.ps-sem.cur { background: #e8f0fb; color: #2f5f95; border-color: #2f5f95; box-shadow: 0 0 0 2px rgba(47,95,149,.18); font-weight: 900; }
+.ps-sem.off { opacity: .42; filter: grayscale(.65); }
 .ps-g.act { color: #b08d3a; border-color: #C9A84C; background: #faf4e4; }
 .ps-g.hid { color: #c0392b; border-color: #eab8b1; background: #fdeeec; }
 .plan-sheet.dark .ps-g.hid { color: #e88a7d; border-color: #5e2a24; background: #2e1613; }
@@ -744,6 +746,7 @@ body.coach-bg-on .alu-daybar{ background:rgba(255,255,255,.9); }
 .plan-sheet.dark .ps-copybox .lbl { color: #8a92a4; }
 .plan-sheet.dark .ps-sem { background: #232a36; color: #a7aec0; border-color: #2b3240; }
 .plan-sheet.dark .ps-sem.done { background: #123322; color: #7fe0a0; border-color: #1f5a3a; }
+.plan-sheet.dark .ps-sem.cur { background: #15314f; color: #8fc0ff; border-color: #4d86c4; box-shadow: 0 0 0 2px rgba(77,134,196,.25); }
 .plan-sheet.dark .ps-g.act { color: #e0bd63; border-color: #C9A84C; background: #2a2412; }
 .plan-item-actions-row { display: flex; gap: 6px; padding: 12px 14px; align-items: center; }
 .pi-abrir { flex: 1; background: #141414; color: #fff; border: none; border-radius: 9px; padding: 10px; font-size: 12px; font-weight: 800; letter-spacing: 0.5px; cursor: pointer; transition: background 0.15s; }
@@ -21601,6 +21604,16 @@ function _setFaseMacro(planId, val) {
   savePlanificaciones(planes);
   renderPerfilPlanificaciones(p.alumnoId, 'fuerza');
 }
+// Fecha de inicio (YYYY-MM-DD) de la semana i de un mes: usa la de la semana si existe, sino la del mes + i*7
+function _semFechaInicioCoach(p, i){
+  const w = p && p.semanasArray && p.semanasArray[i];
+  if (w && w.fechaInicio) return w.fechaInicio;
+  if (p && p.fecha){
+    const d = new Date(p.fecha + 'T12:00:00');
+    if (!isNaN(d)) { d.setDate(d.getDate() + i*7); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  }
+  return '';
+}
 function _toggleActivoMes(planId) {
   const planes = getPlanificaciones();
   const p = planes.find(x => x.id === planId);
@@ -21705,6 +21718,7 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
       </span>
     </div>`;
 
+  const _HOY_COACH = new Date(); _HOY_COACH.setHours(0,0,0,0);
   const rows = planes.map(p => {
     const semanas = p.semanasArray ? p.semanasArray.length : 1;
     let mesDisplay;
@@ -21725,7 +21739,18 @@ function renderPerfilPlanificaciones(alumnoId, tipo) {
     const comp = Array.isArray(p.semanasCompletas) ? p.semanasCompletas : [];
     const semChips = Array.from({length:semanas}).map((_,i)=>{
       const done = comp.indexOf(i) >= 0;
-      return '<button class="ps-sem'+(done?' done':'')+'" onclick="_toggleSemanaCompleta(\''+p.id+'\','+i+')" title="'+(done?'Semana '+(i+1)+' completa · tocá para desmarcar':'Marcar semana '+(i+1)+' como completa')+'">S'+(i+1)+'</button>';
+      // Estado por fecha: semana actual (color), pasada/próxima (gris)
+      const fi = _semFechaInicioCoach(p, i);
+      let estado = '', estTitle = '';
+      if (fi) {
+        const ini = new Date(fi + 'T00:00:00');
+        const fin = new Date(ini); fin.setDate(fin.getDate() + 7);
+        if (_HOY_COACH >= ini && _HOY_COACH < fin) { estado = ' cur'; estTitle = ' · SEMANA ACTUAL'; }
+        else if (_HOY_COACH >= fin) { estado = ' off'; estTitle = ' · semana pasada'; }
+        else { estado = ' off'; estTitle = ' · semana próxima'; }
+      }
+      const baseTitle = done ? 'Semana '+(i+1)+' completa · tocá para desmarcar' : 'Marcar semana '+(i+1)+' como completa';
+      return '<button class="ps-sem'+(done?' done':'')+estado+'" onclick="_toggleSemanaCompleta(\''+p.id+'\','+i+')" title="'+baseTitle+estTitle+'">S'+(i+1)+'</button>';
     }).join('');
     const nDone = comp.filter(i=>i<semanas).length;
     return `
