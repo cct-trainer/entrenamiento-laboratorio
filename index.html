@@ -1258,6 +1258,13 @@ body.coach-bg-on .alu-daybar{ background:rgba(255,255,255,.9); }
   display: flex; align-items: center; gap: 4px;
 }
 .bloque-btn-eliminar:hover { background: rgba(220,38,38,0.35); }
+.bloque-btn-copiar {
+  background: rgba(96,165,224,0.18); border: 1px solid rgba(96,165,224,0.42); color: #bcd3ea;
+  padding: 5px 12px; border-radius: 6px; font-size: 11px;
+  font-weight: 700; cursor: pointer; font-family: inherit;
+  display: flex; align-items: center; gap: 4px; margin-right: 7px;
+}
+.bloque-btn-copiar:hover { background: rgba(96,165,224,0.32); }
 .bloque-body { padding: 0 18px 0; background: #fff; }
 
 /* ── Drag & Drop ── */
@@ -13612,6 +13619,9 @@ function renderPlanDiaEditor(diaIdx) {
         <div class="plan-add-bloque-zone" onclick="abrirModalNuevoBloque(${diaIdx})">
           ＋ AGREGAR BLOQUE
         </div>
+        <div style="margin:8px 2px 0;">
+          <button onclick="_pegarBloque()" title="Pegar el bloque que copiaste (de este u otro día/sesión)" style="width:100%;background:#eef4fb;border:1px dashed #9cc0e8;color:#2f5f95;border-radius:11px;padding:11px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">📋 Pegar bloque copiado</button>
+        </div>
         <div style="margin:16px 2px 4px;">
           <button onclick="_estimarDuracionEditor()" style="width:100%;background:#0e1520;color:#fff;border:none;border-radius:11px;padding:13px;font-size:13.5px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:9px;">⏱ Estimar duración de la sesión</button>
           <div id="plan-dur-pronostico" style="display:none;margin-top:10px;"></div>
@@ -15063,6 +15073,7 @@ function addBloqueDia(diaIdx, datosPrevios) {
         ${TIPOS_SERIE_F.map(t=>`<option${datosPrevios?.serieTipo===t?' selected':''}>${t}</option>`).join('')}
       </select>
       <div style="flex:1"></div>
+      <button class="bloque-btn-copiar" onclick="_copiarBloque('${id}')" title="Copiar este bloque para pegarlo en otro bloque o sesión">📋 Copiar</button>
       <button class="bloque-btn-eliminar" onclick="eliminarBloqueEnDia('${id}',${diaIdx})">🗑 Eliminar</button>
     </div>
     <div class="bloque-sysbox" id="${id}-sysbox"></div>
@@ -15093,6 +15104,29 @@ function addBloqueDia(diaIdx, datosPrevios) {
 function eliminarBloqueEnDia(bloqueId, diaIdx) {
   const el=document.getElementById(bloqueId); if(el) el.remove();
   actualizarLetrasBloque();
+}
+// ── Copiar / Pegar bloque (para mantener un mismo estilo entre bloques y sesiones) ──
+function _copiarBloque(bloqueId){
+  try { guardarEstadoDiaActual(); } catch(e){}
+  const els = Array.from(document.querySelectorAll('#plan-editor-page-content .bloque-wrap'));
+  const idx = els.findIndex(e => e.id === bloqueId);
+  if (idx < 0) { if(typeof toast==='function') toast('No pude copiar el bloque'); return; }
+  const ses = planSemanasArray[planSemEditando] && planSemanasArray[planSemEditando].dias[planDiaAbierto] && planSemanasArray[planSemEditando].dias[planDiaAbierto][_editorModTab];
+  const b = ses && ses.bloques && ses.bloques[idx];
+  if (!b) { if(typeof toast==='function') toast('No pude copiar el bloque'); return; }
+  let copia; try { copia = JSON.parse(JSON.stringify(b)); } catch(e){ copia = b; }
+  window._bloqueClipboard = copia;
+  try { localStorage.setItem('LAB_BLOQUE_CLIP', JSON.stringify(copia)); } catch(e){}
+  if(typeof toast==='function') toast('📋 Bloque copiado — abrí otro bloque/sesión y tocá "Pegar bloque"');
+}
+function _pegarBloque(){
+  let data = window._bloqueClipboard;
+  if (!data) { try { data = JSON.parse(localStorage.getItem('LAB_BLOQUE_CLIP')||'null'); window._bloqueClipboard = data; } catch(e){} }
+  if (!data) { if(typeof toast==='function') toast('No hay ningún bloque copiado todavía'); return; }
+  if (planDiaAbierto === null) { if(typeof toast==='function') toast('Abrí un día para pegar el bloque'); return; }
+  let copia; try { copia = JSON.parse(JSON.stringify(data)); } catch(e){ copia = data; }
+  addBloqueDia(planDiaAbierto, copia);
+  if(typeof toast==='function') toast('✓ Bloque pegado');
 }
 
 function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
