@@ -13065,8 +13065,9 @@ function abrirPlanDiaEditor(diaIdx, semIdx) {
     const _soloRun=_arr.length && _arr.every(s=>s&&s.tipoSesion==='running');
     if(_soloRun && _run){ return _abrirRunningFocoDia(diaIdx, semIdx, _run.runBloques||[]); }
   }catch(e){}
-  // Guardar estado del editor previo
+  // Guardar estado del editor previo (y persistir, para no perder lo editado al cambiar de día)
   guardarEstadoDiaActual();
+  try { if(planDiaAbierto!==null && typeof _persistPlanMes==='function') _persistPlanMes(); } catch(e){}
   // Cambiar semana activa si es otra
   if(semIdx !== planSemEditando) {
     planSemEditando = semIdx;
@@ -13775,6 +13776,7 @@ function _estimarDuracionEditor(){
 
 function cerrarPlanDiaEditor() {
   guardarEstadoDiaActual();
+  try { if(typeof _persistPlanMes==='function') _persistPlanMes(); } catch(e){}   // guardar a disco + nube al cerrar (evita perder cambios al recargar)
   const overlay = document.getElementById('plan-editor-page');
   if(overlay) overlay.classList.remove('open');
   try{ document.body.style.overflow = ''; }catch(e){}
@@ -13789,6 +13791,7 @@ function cerrarPlanDiaEditor() {
 function _switchEditorTab(tabIdx, diaIdx) {
   if (tabIdx === _editorModTab) return;
   guardarEstadoDiaActual();           // guardar el tab actual antes de cambiar
+  try { if(typeof _persistPlanMes==='function') _persistPlanMes(); } catch(e){}
   _editorModTab = tabIdx;
   // Actualizar estilos de tabs sin re-renderizar todo
   [0, 1].forEach(i => {
@@ -22382,7 +22385,10 @@ function _ajustarTodosCardio(){ try{ document.querySelectorAll('.ej-card').forEa
 setInterval(_ajustarTodosCardio, 1500);
 function _infoRIR(){ alert('RIR — Repeticiones en Reserva\n\nEs cuántas repeticiones te QUEDABAN sin llegar al fallo al terminar la serie.\n\n• RIR 2 = te quedaban 2 en el tanque (podías hacer 2 más).\n• RIR 1 = te quedaba 1.\n• RIR 0 = llegaste justo al fallo, no podías ni una más.\n\nSirve para medir el esfuerzo de cada serie. Si no estás seguro, dejalo vacío.'); }
 function _togglePesoUnit() {
-  const nu = _pesoUnit() === 'kg' ? 'lb' : 'kg';
+  const actual = _pesoUnit();
+  const nu = actual === 'kg' ? 'lb' : 'kg';
+  // Confirmación para evitar cambios accidentales (NO convierte los números, solo cambia la etiqueta)
+  if (!confirm('¿Cambiar la unidad de peso de ' + actual.toUpperCase() + ' a ' + nu.toUpperCase() + '?\n\nOjo: no convierte los números cargados, solo cambia la etiqueta de la columna.')) return;
   try { localStorage.setItem('SOCC_PESO_UNIT', nu); } catch(e) {}
   document.querySelectorAll('.peso-unit').forEach(el => { el.textContent = nu; });
   if (typeof toast === 'function') toast('Unidad de peso: ' + nu.toUpperCase());
