@@ -16968,25 +16968,11 @@ async function _veTerminar(){
       toast('Sesión realizada guardada ✓ ('+nRes+' series)');
     } else { toast('Sin conexión: no se guardó','error'); }
   }catch(e){ console.warn('VE guardar:',e); toast('Error al guardar','error'); }
-  // Volcar los pesos cargados a la PLANILLA: lo que modificaste se actualiza, lo demás queda igual.
-  try{
-    const planes=getPlanificaciones(); const plan=planes.find(p=>p.id===st.planId);
-    if(plan){
-      const dias=plan.semanasArray && plan.semanasArray[st.semIdx] && plan.semanasArray[st.semIdx].dias;
-      let sesP=dias?(dias[st.diaIdx]!=null?dias[st.diaIdx]:dias[String(st.diaIdx)]):null;
-      sesP=Array.isArray(sesP)?sesP[0]:sesP;
-      if(sesP && sesP.bloques){
-        let cambio=false;
-        Object.keys(resultados).forEach(k=>{
-          const m=k.match(/^\d+_\d+_b(\d+)e(\d+)_efec_(\d+)$/); if(!m) return;
-          const bi=+m[1], ei=+m[2], si=+m[3]; const peso=resultados[k].peso;
-          const ej=sesP.bloques[bi] && sesP.bloques[bi].ejercicios && sesP.bloques[bi].ejercicios[ei];
-          if(peso!=null && String(peso).trim()!=='' && ej && Array.isArray(ej.series) && ej.series[si]){ ej.series[si].peso=String(peso).trim(); cambio=true; }
-        });
-        if(cambio){ savePlanificaciones(planes); if(typeof forzarSyncFirebase==='function') forzarSyncFirebase(); }
-      }
-    }
-  }catch(e){ console.warn('volcar pesos a la planilla:',e); }
+  // NOTA: antes se "volcaban" los pesos registrados sobre la prescripción del plan,
+  // lo que pisaba lo que el coach había prescrito. Se desactivó a pedido: lo que
+  // levantó el alumno queda guardado en resultados/historial/evolución, pero la
+  // PRESCRIPCIÓN del plan NO se modifica. Para aplicar lo hecho al plan, usar el
+  // botón "Aceptar cambios / Aplicar a la próxima" en "Lo que hizo".
   _veClearDraft();
   _veCerrar();
   _completadasFetchAlumno=null; if(typeof renderPlanMes==='function') renderPlanMes();
