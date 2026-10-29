@@ -1071,8 +1071,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261027214139 por un timestamp en cada deploy
-const _APP_VERSION = '20261027214139';
+// deploy.bat reemplaza 20261029091046 por un timestamp en cada deploy
+const _APP_VERSION = '20261029091046';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2755,10 +2755,12 @@ const _SYS_INFO = {
   'triserie':{ic:'🔗',circ:true,desc:'Tres ejercicios encadenados sin descanso entre ellos. Descansás al terminar los tres. Eso es una vuelta.'},
   'superserie':{ic:'⚡',circ:true,desc:'Dos ejercicios seguidos con poco o nada de descanso entre ellos (según lo pautado). Suelen combinarse músculos opuestos o el mismo desde otro ángulo.'},
   'serie gigante':{ic:'🔥',circ:true,desc:'Cuatro o más ejercicios encadenados sin descanso. Recorrés todos y recién al final descansás.'},
-  'circuito':{ic:'🔁',circ:true,desc:'Recorrés todas las estaciones una tras otra con poco descanso. Al terminar la última, volvés al inicio y repetís el recorrido por la cantidad de vueltas indicada.'}
+  'circuito':{ic:'🔁',circ:true,desc:'Recorrés todas las estaciones una tras otra con poco descanso. Al terminar la última, volvés al inicio y repetís el recorrido por la cantidad de vueltas indicada.'},
+  'serie progresiva':{ic:'📈',circ:false,desc:'Variantes encadenadas del mismo movimiento, de menor a mayor exigencia. No hay vueltas: hacés TODAS las series de la etapa 1, pasás a la 2 y después a la 3. Cada etapa puede tener distinta cantidad de series.'}
 };
 function _sysInfo(t){ return _SYS_INFO[String(t||'').toLowerCase().trim()] || null; }
 function _esCircular(t){ return /biserie|triserie|superserie|gigante|circuito/i.test(String(t||'')); }
+function _esProgresiva(t){ return /progresiva/i.test(String(t||'')); }
 function _sysCardHTML(b){
   try{
     const st=String((b&&b.serieTipo)||'').trim(); if(!st) return '';
@@ -2821,7 +2823,7 @@ function _blockHeaderV2(b){
 // descripción "cómo se hace" (solo texto, para acompañar el encabezado en circuitos)
 function _sysDescHTML(b){
   try{
-    const st=String((b&&b.serieTipo)||'').trim(); if(!st||!_esCircular(st)) return '';
+    const st=String((b&&b.serieTipo)||'').trim(); if(!st||(!_esCircular(st)&&!_esProgresiva(st))) return '';
     const info=_sysInfo(st); let desc=String((b&&b.serieDesc)||'').trim(); if(!desc&&info)desc=info.desc;
     if(!desc) return '';
     return '<div style="font-size:12px;line-height:1.5;color:var(--muted);background:transparent;border:none;padding:2px 2px 4px;margin-bottom:10px;">'+String(desc).replace(/</g,'&lt;')+'</div>';
@@ -9226,6 +9228,17 @@ function _circNSer(ej){ return (Array.isArray(ej.series)&&ej.series.length)?ej.s
 function _circDoneCount(bi,ei,ej){ let c=0,n=_circNSer(ej); for(let i=0;i<n;i++){ if(_getEdit(_circSerieKey(bi,ei,i),'done')==='1') c++; } return c; }
 function _circEstDone(bi,ei,ej){ return _circDoneCount(bi,ei,ej)>=_circNSer(ej); }
 // bloque circular renderizado como "player" de estaciones (Fusión 3)
+function _progEnsureCSS(){
+  if(document.getElementById('prog-css')) return;
+  var st=document.createElement('style'); st.id='prog-css';
+  st.textContent=
+    '.prog-step{position:relative;padding-left:32px;margin-bottom:4px;}'+
+    '.prog-step::before{content:"";position:absolute;left:12px;top:28px;bottom:-6px;width:2px;background:linear-gradient(#3A6EA5,#6aa0dc);}'+
+    '.prog-step.last::before{display:none;}'+
+    '.prog-dot{position:absolute;left:0;top:2px;width:26px;height:26px;border-radius:50%;background:#3A6EA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;z-index:1;box-shadow:0 0 0 3px rgba(58,110,165,.18);}'+
+    '.prog-etapa{font-size:9.5px;font-weight:900;letter-spacing:1.2px;color:#8fb7e6;margin:3px 0 6px;}';
+  document.head.appendChild(st);
+}
 function _circEnsureCSS(){
   if(document.getElementById('circ-b2-css')) return;
   var st=document.createElement('style'); st.id='circ-b2-css';
@@ -9589,11 +9602,19 @@ function renderSesion() {
           '<div class="blk-body" style="padding:2px 0 0;">'+_blockHeaderV2(b)+_sysDescHTML(b)+movHTML+_porqueBloqueHTML(b)+'</div>'+
         '</div>';
       }
+      const _prog = _esProgresiva(b.serieTipo||'') && _nEjB>=2;
+      if(_prog) _progEnsureCSS();
       const ejesHTML = (b.ejercicios||[]).map((ej,ei)=>{
         const _defP = (!_combo) ? 60 : ((ei===_nEjB-1) ? 60 : 30);   // simple 1min · combo intermedio 30s · último 1min
         const _card=_ejCard(ej,'b'+bi+'e'+ei, letra+(ei+1), _grupo, _serieLbl, _defP);
         const _nr=_st&&_st.reduce[ei];
         const _note=_nr ? '<div style="font-size:11px;font-weight:700;color:#E6C766;background:rgba(214,168,84,.12);border-radius:8px;padding:6px 10px;margin:0 0 7px;">⏱ '+(_LANG==='en'?('Today: '+_nr+' sets (less time)'):('Hoy: hacé '+_nr+' series (menos tiempo)'))+'</div>' : '';
+        if(_prog){
+          return '<div class="prog-step'+(ei===_nEjB-1?' last':'')+'">'
+            +'<div class="prog-dot">'+(ei+1)+'</div>'
+            +'<div class="prog-body"><div class="prog-etapa">'+(_LANG==='en'?'STAGE ':'ETAPA ')+(ei+1)+'</div>'+_note+_card+'</div>'
+          +'</div>';
+        }
         return _note+_card;
       }).join('');
       // Borde según composición: pausa activa → gris (neutro) · 2+ ejercicios → azul · 1 ejercicio → dorado

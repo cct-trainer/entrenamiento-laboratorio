@@ -1635,6 +1635,10 @@ body.coach-bg-on .alu-daybar{ background:rgba(255,255,255,.9); }
 .series-table tr[data-tipo="fee"]  td:first-child{ box-shadow:inset 4px 0 0 #3A6EA5; }
 .series-table tr[data-tipo="efec"] td:first-child{ box-shadow:inset 4px 0 0 #8bbf9a; }
 .series-table tr[data-tipo="test"] td:first-child{ box-shadow:inset 4px 0 0 #7a4fb0; }
+.series-table tr[data-tipo="core"] td:first-child{ box-shadow:inset 4px 0 0 #d1792e; }
+.series-table tr[data-tipo="core"] .serie-tipo-sel{ color:#c2691e; }
+.series-table tr[data-tipo="vol"] td:first-child{ box-shadow:inset 4px 0 0 #b5519a; }
+.series-table tr[data-tipo="vol"] .serie-tipo-sel{ color:#a5438b; }
 .series-table tr[data-tipo="movi"] .serie-tipo-sel{ color:#0ea5a5; }
 .series-table tr[data-tipo="cal"]  .serie-tipo-sel{ color:#3A6EA5; }
 .series-table tr[data-tipo="act"]  .serie-tipo-sel{ color:#1f8f66; }
@@ -11473,7 +11477,7 @@ const BLOQUES_SOCC_PICKER = [
   { icon:'🚴', nombre:'Cardio',                                tipo:'Cardio' },
   { icon:'✏️', nombre:'',                                       tipo:'Personalizado' },
 ];
-const TIPOS_SERIE_F  = ['Serie Simple','Biserie','Triserie','Superserie','Serie Gigante','Circuito'];
+const TIPOS_SERIE_F  = ['Serie Simple','Biserie','Triserie','Superserie','Serie Gigante','Circuito','Serie progresiva'];
 
 // ── Catálogo de bloques por SISTEMA de entrenamiento (selector nuevo) ────────
 // n: nombre visible · tipo: fase (para color/compatibilidad) · serie: sistema de serie si aplica · d: explicación
@@ -15303,6 +15307,7 @@ function guardarPlanSemanal() {
 
   try {
     savePlanificaciones(planes);
+    if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();   // subir YA a la nube (no esperar el auto-sync de 2s)
     toast(alumnoDistinto ? 'Plan guardado como nuevo para el alumno seleccionado ✓' : 'Plan de fuerza guardado ✓');
     if(currentAlumnoId) {
       renderPerfilPlanificaciones(currentAlumnoId,'fuerza');
@@ -22123,9 +22128,10 @@ const _SYS_DESC = {
   'Triserie':'Tres ejercicios encadenados sin descanso entre ellos. Descansás al terminar los tres. Eso es una vuelta.',
   'Superserie':'Dos ejercicios seguidos con poco o nada de descanso entre ellos (según lo pautado). Suelen combinarse músculos opuestos o el mismo desde otro ángulo.',
   'Serie Gigante':'Cuatro o más ejercicios encadenados sin descanso. Recorrés todos y recién al final descansás.',
-  'Circuito':'Recorrés todas las estaciones una tras otra con poco descanso. Al terminar la última, volvés al inicio y repetís el recorrido por la cantidad de vueltas indicada.'
+  'Circuito':'Recorrés todas las estaciones una tras otra con poco descanso. Al terminar la última, volvés al inicio y repetís el recorrido por la cantidad de vueltas indicada.',
+  'Serie progresiva':'Variantes encadenadas del mismo patrón, de menor a mayor exigencia. NO hay vueltas: hacés TODAS las series de la etapa 1, pasás a la 2 y después a la 3. Cada etapa puede tener su propia cantidad de series. El orden va de más fácil a más difícil (ej: banda → carga → carga + más rango).'
 };
-const _SYS_IC = {'Biserie':'🔗','Triserie':'🔗','Superserie':'⚡','Serie Gigante':'🔥','Circuito':'🔁'};
+const _SYS_IC = {'Biserie':'🔗','Triserie':'🔗','Superserie':'⚡','Serie Gigante':'🔥','Circuito':'🔁','Serie progresiva':'📈'};
 function _esCircularCoach(t){ return /biserie|triserie|superserie|gigante|circuito/i.test(String(t||'')); }
 function _esDescDefault(txt){ txt=String(txt||'').trim(); if(!txt) return true; for(var k in _SYS_DESC){ if(_SYS_DESC[k] && _SYS_DESC[k]===txt) return true; } return false; }
 function _renderSysbox(bloqueId, prev){
@@ -23193,7 +23199,7 @@ function _pausaDefault(ejId){ return _PAUSA_DEFAULT; }
 
 // Tipo de serie (color por función): calentamiento / aproximación / feeder / efectiva / test
 // Orden oficial (tabla maestra v2.0)
-const _SERIE_TIPOS = [['movi','Movilidad'],['act','Activación'],['iso','Isométrico'],['cal','Calent.'],['apr','Aprox.'],['fee','Feeder'],['pfat','P-Fatiga'],['efec','Efectiva'],['bmb','Bombeo'],['drop','Drop set'],['fallo','Fallo'],['mparc','M. Parcial'],['mcomp','M. Completo'],['test','Test']];
+const _SERIE_TIPOS = [['movi','Movilidad'],['act','Activación'],['iso','Isométrico'],['cal','Calent.'],['apr','Aprox.'],['fee','Feeder'],['pfat','P-Fatiga'],['efec','Efectiva'],['bmb','Bombeo'],['drop','Drop set'],['fallo','Fallo'],['mparc','M. Parcial'],['mcomp','M. Completo'],['core','Core'],['vol','Volumen'],['test','Test']];
 // Tabla maestra de configuración (reps / RIR / pausa) + si cuenta como serie efectiva
 const _SERIE_DEFAULTS = {
   movi: { reps:'10',    rir:'',    pausa:'',       efectiva:false },
@@ -23209,6 +23215,8 @@ const _SERIE_DEFAULTS = {
   fallo:{ reps:'10',    rir:'0',   pausa:'2 min',  efectiva:true  },
   mparc:{ reps:'12',    rir:'1',   pausa:'1 min',  efectiva:true  },
   mcomp:{ reps:'10',    rir:'2',   pausa:'2 min',  efectiva:true  },
+  core: { reps:'20',    rir:'1-2', pausa:'45 seg', efectiva:false },
+  vol:  { reps:'20',    rir:'1-2', pausa:'1 min',  efectiva:true  },
   test: { reps:'1',     rir:'0',   pausa:'5 min',  efectiva:false }
 };
 // ¿Este tipo de serie cuenta como volumen efectivo? (bombeo = configurable por el coach)
@@ -23265,6 +23273,8 @@ const _REPS_OPC = {
   fallo:['6','8','10','12'],
   mparc:['8','10','12','15','20'],
   mcomp:['6','8','10','12','15'],
+  core:['10','15','20','25','30','40'],
+  vol:['15','18','20','24','25','30','40'],
   test:['1','2','3']
 };
 function _repsOptions(tipo,cur){
@@ -27280,8 +27290,10 @@ async function cargarDesdeFirestore() {
         const localArts  = JSON.parse(localStorage.getItem('LAB_ARTICULOS') || '[]');
         if (remoteArts.length > localArts.length) localStorage.setItem('LAB_ARTICULOS', JSON.stringify(remoteArts));
       } catch(e){}
-      // Solo bajar si Firestore tiene MÁS alumnos que local
-      if (remoteAlumnos.length > localAlumnos.length) {
+      // Solo bajar de la nube si el equipo local está VACÍO (primer uso / equipo nuevo).
+      // Si ya hay datos locales, NUNCA se pisan: el local manda y se sube a la nube.
+      // (Evita que una versión vieja de la nube borre los cambios recién guardados.)
+      if (localAlumnos.length === 0 && remoteAlumnos.length > 0) {
         if (data.alumnos)         localStorage.setItem('LAB_ALUMNOS',         JSON.stringify(data.alumnos));
         if (data.planificaciones) localStorage.setItem('LAB_PLANIFICACIONES', JSON.stringify(data.planificaciones));
         if (data.objetivos)       localStorage.setItem('LAB_OBJETIVOS',       JSON.stringify(data.objetivos));
