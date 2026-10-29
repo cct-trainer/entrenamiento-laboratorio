@@ -24323,6 +24323,8 @@ function actualizarLayoutBloque(bloqueId) {
     wrap?.classList.remove('multi');
     body.querySelectorAll('.ej-arrow').forEach(a => a.remove());
   }
+  // Renumerar letras según el ORDEN actual (A1, A2, A3…) tras agregar/mover/reordenar ejercicios
+  if (typeof refreshLetras === 'function') refreshLetras(bloqueId);
 }
 
 // ================================================
