@@ -1071,8 +1071,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261029091046 por un timestamp en cada deploy
-const _APP_VERSION = '20261029091046';
+// deploy.bat reemplaza 20261029122058 por un timestamp en cada deploy
+const _APP_VERSION = '20261029122058';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -9262,6 +9262,7 @@ function _circuitPlayerHTML(b, bi, letra, grupo, serieLbl, defP, stObj){
   const nEj=ejs.length;
   let cur=window._circStation['b'+bi]; if(cur==null) cur=0; cur=Math.max(0,Math.min(nEj-1,cur));
   const en=(_LANG==='en');
+  const _prog = _esProgresiva(b.serieTipo||'');   // progresión: mismo estilo, pero sin vueltas
   // progreso total del circuito
   let tot=0,dn=0; ejs.forEach((e,ei)=>{ const n=_circNSer(e); tot+=n; dn+=_circDoneCount(bi,ei,e); });
   // rail de estaciones — B2: recorrido (timeline vertical) con nombre completo
@@ -9283,9 +9284,9 @@ function _circuitPlayerHTML(b, bi, letra, grupo, serieLbl, defP, stObj){
     +'</div>';
   });
   rail+='</div>';
-  // tarjeta de la estación actual (reutiliza _ejCard con etiqueta VUELTA)
+  // tarjeta de la estación actual — en circuito usa etiqueta VUELTA; en progresión, series normales
   const _nr=stObj&&stObj.reduce&&stObj.reduce[cur];
-  window._circLblOn=true;
+  window._circLblOn=!_prog;
   const card=_ejCard(ejs[cur], 'b'+bi+'e'+cur, letra+(cur+1), grupo, serieLbl, defP);
   window._circLblOn=false;
   // preview de las próximas estaciones de la vuelta
@@ -9295,19 +9296,19 @@ function _circuitPlayerHTML(b, bi, letra, grupo, serieLbl, defP, stObj){
     for(let i=cur+1;i<nEj;i++){ const e=ejs[i]; const isC=/bicicleta|cinta|caminat|el[ií]ptic|remo\s*erg|escalera|trote|correr|carrera|spinning|cardio|hiit|airbike|treadmill/i.test(String(e.nombre||e.ejercicio||'')); const reps=(Array.isArray(e.series)&&e.series[0]&&e.series[0].reps)||(e.ctrl&&e.ctrl.reps)||''; const dd=_circEstDone(bi,i,e);
       cards+='<div onclick="_circIr('+bi+','+i+')" style="flex:1;min-width:120px;background:#132845;border:1px solid #24365c;border-radius:10px;padding:8px 10px;cursor:pointer;'+(dd?'opacity:.5;':'')+'"><div style="font-size:10px;font-weight:900;color:#7fb0e6;">'+letra+(i+1)+(dd?' ✓':'')+'</div><div style="font-size:12px;font-weight:800;color:#e6eefc;line-height:1.15;">'+String(e.nombre||e.ejercicio||'').replace(/</g,'&lt;')+'</div><div style="font-size:10px;color:#8fa6cf;">'+(isC?(reps||'—')+' · media':(reps||'—')+' reps')+'</div></div>';
     }
-    prev='<div style="background:#0e1a30;border:1px solid #22345a;border-top:none;padding:11px 12px;"><div style="font-size:9px;font-weight:900;letter-spacing:1px;color:#6b7d99;margin-bottom:7px;">'+(en?'NEXT IN THIS ROUND':'DESPUÉS EN ESTA VUELTA')+'</div><div style="display:flex;gap:8px;flex-wrap:wrap;">'+cards+'</div></div>';
+    prev='<div style="background:#0e1a30;border:1px solid #22345a;border-top:none;padding:11px 12px;"><div style="font-size:9px;font-weight:900;letter-spacing:1px;color:#6b7d99;margin-bottom:7px;">'+(_prog?(en?'NEXT STAGES':'SIGUIENTES ETAPAS'):(en?'NEXT IN THIS ROUND':'DESPUÉS EN ESTA VUELTA'))+'</div><div style="display:flex;gap:8px;flex-wrap:wrap;">'+cards+'</div></div>';
   } else {
-    prev='<div style="background:#0e1a30;border:1px solid #22345a;border-top:none;padding:11px 12px;font-size:12px;font-weight:700;color:#8fb4e6;">'+(en?'End of the circuit — rest and repeat the round':'Fin del recorrido — descansá y repetí la vuelta')+'</div>';
+    prev='<div style="background:#0e1a30;border:1px solid #22345a;border-top:none;padding:11px 12px;font-size:12px;font-weight:700;color:#8fb4e6;">'+(_prog?(en?'End of the progression — well done':'Fin de la progresión — ¡bien ahí!'):(en?'End of the circuit — rest and repeat the round':'Fin del recorrido — descansá y repetí la vuelta'))+'</div>';
   }
   // barra de progreso + botón siguiente
   const pct = tot?Math.round(dn/tot*100):0;
   const progHTML='<div style="background:#0e1a30;border:1px solid #22345a;border-top:none;border-radius:0 0 12px 12px;padding:10px 12px;">'
-    +'<div style="display:flex;justify-content:space-between;font-size:10.5px;font-weight:800;color:#8fa6cf;margin-bottom:6px;"><span>'+(en?'Circuit progress':'Progreso del circuito')+'</span><span>'+dn+'/'+tot+' '+(en?'sets':'series')+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:10.5px;font-weight:800;color:#8fa6cf;margin-bottom:6px;"><span>'+(_prog?(en?'Progression progress':'Progreso de la progresión'):(en?'Circuit progress':'Progreso del circuito'))+'</span><span>'+dn+'/'+tot+' '+(en?'sets':'series')+'</span></div>'
     +'<div style="height:7px;background:#1b2540;border-radius:5px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#3A6EA5,#6aa0dc);border-radius:5px;transition:width .3s;"></div></div></div>';
   const navBtns='<div style="display:flex;gap:8px;margin-top:10px;">'
     +(cur>0?'<button onclick="_circPrev('+bi+')" style="width:54px;border:1px solid #2a3a57;background:rgba(58,110,165,.12);color:#8fb7e6;border-radius:12px;font-size:16px;font-weight:900;cursor:pointer;">‹</button>':'')
-    +'<button onclick="_circNext('+bi+','+nEj+')" style="flex:1;padding:14px;border:none;border-radius:12px;background:#3A6EA5;color:#fff;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">'+(cur<nEj-1?(en?'Next station ›':'Siguiente estación ›'):(en?'Back to A1 (new round) ↻':'Volver a '+letra+'1 (otra vuelta) ↻'))+'</button></div>';
-  const _tiempoNote=_nr?'<div style="font-size:11px;font-weight:700;color:#E6C766;background:rgba(214,168,84,.12);border-radius:8px;padding:6px 10px;margin:8px 0 0;">⏱ '+(en?('Today: '+_nr+' sets'):('Hoy: hacé '+_nr+' vueltas'))+'</div>':'';
+    +'<button onclick="_circNext('+bi+','+nEj+')" style="flex:1;padding:14px;border:none;border-radius:12px;background:#3A6EA5;color:#fff;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">'+(cur<nEj-1?(_prog?(en?'Next stage ›':'Siguiente etapa ›'):(en?'Next station ›':'Siguiente estación ›')):(_prog?(en?'Progression complete ✓':'Progresión completa ✓'):(en?'Back to A1 (new round) ↻':'Volver a '+letra+'1 (otra vuelta) ↻')))+'</button></div>';
+  const _tiempoNote=_nr?'<div style="font-size:11px;font-weight:700;color:#E6C766;background:rgba(214,168,84,.12);border-radius:8px;padding:6px 10px;margin:8px 0 0;">⏱ '+(en?('Today: '+_nr+(_prog?' sets':' sets')):('Hoy: hacé '+_nr+(_prog?' series':' vueltas')))+'</div>':'';
   return '<div id="circ-b'+bi+'">'+_blockHeaderV2(b)+_sysDescHTML(b)+rail+card+prev+progHTML+_tiempoNote+navBtns+_porqueBloqueHTML(b)+'</div>';
 }
 function _prioTipo(t){
@@ -9586,8 +9587,8 @@ function renderSesion() {
       }
       const _combo = /biserie|superserie|triserie|gigante|circuito/i.test(b.serieTipo||'');
       const _nEjB = (b.ejercicios||[]).length;
-      // Circuito / superserie con 2+ ejercicios → "player" de estaciones (Fusión 3): una estación a la vez
-      if(_combo && _nEjB>=2){
+      // Circuito / superserie / serie progresiva con 2+ ejercicios → "player" de estaciones (mismo estilo)
+      if((_combo || _esProgresiva(b.serieTipo||'')) && _nEjB>=2){
         const _hasPausaC = (b.ejercicios||[]).some(e => e && e.pausaActiva && e.pausaActiva.activo && Array.isArray(e.pausaActiva.items) && e.pausaActiva.items.length);
         if(!_hasPausaC){
           return '<div class="blk pfill '+((window._sccFaseCls&&window._sccFaseCls[bi])||'')+'" style="margin-bottom:16px;">'+
