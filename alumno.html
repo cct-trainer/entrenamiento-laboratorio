@@ -1071,8 +1071,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261029122220 por un timestamp en cada deploy
-const _APP_VERSION = '20261029122220';
+// deploy.bat reemplaza 20261029132124 por un timestamp en cada deploy
+const _APP_VERSION = '20261029132124';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -9003,6 +9003,16 @@ function _serieTap(sp){
     }
   }
   _updProgreso();
+  // Si la serie pertenece a un bloque "player" (circuito / superserie / progresión),
+  // re-render para que el globito de la estación pase a verde ✓ al completarla.
+  try{
+    const m=String(sp).match(/_b(\d+)e\d+_/);
+    if(m && document.getElementById('circ-b'+m[1])){
+      const _y=window.pageYOffset;
+      renderSesion();
+      window.scrollTo(0,_y);
+    }
+  }catch(e){}
 }
 function _serieNoHecha(sp){
   if(!sp) return;
@@ -9271,13 +9281,12 @@ function _circuitPlayerHTML(b, bi, letra, grupo, serieLbl, defP, stObj){
   ejs.forEach((e,ei)=>{
     const done=_circEstDone(bi,ei,e), on=(ei===cur);
     const nm=String(e.nombre||e.ejercicio||'').replace(/</g,'&lt;');
-    const isC=/bicicleta|cinta|caminat|el[ií]ptic|remo\s*erg|escalera|trote|correr|carrera|spinning|cardio|hiit|airbike|treadmill/i.test(String(e.nombre||e.ejercicio||''));
-    const reps=(Array.isArray(e.series)&&e.series[0]&&e.series[0].reps)||(e.ctrl&&e.ctrl.reps)||'';
-    const metaReps = reps ? (isC ? (reps+' · '+(en?'avg':'media')) : (reps+' '+(en?'reps':'reps'))) : '';
-    const metaTxt = [metaReps, (done&&!on?(en?'done':'hecha'):'')].filter(Boolean).join(' · ');
-    const dcls = on?'on':(done?'done':'todo');
-    const badge = (done&&!on)?'✓':(letra+(ei+1));
-    const nowLbl = on?'<div class="circ-now">▶ '+(en?'NOW':'AHORA')+'</div>':'';
+    const nser=_circNSer(e);
+    const metaSer = nser+' '+(en?(nser===1?'set':'sets'):'ser');
+    const metaTxt = [metaSer, (done?(en?'done':'hecha'):'')].filter(Boolean).join(' · ');
+    const dcls = done?'done':(on?'on':'todo');            // "hecha" (verde ✓) gana sobre "actual"
+    const badge = done?'✓':(letra+(ei+1));
+    const nowLbl = (on&&!done)?'<div class="circ-now">▶ '+(en?'NOW':'AHORA')+'</div>':'';
     rail+='<div class="circ-st'+(on?'':' off')+(done?' done':'')+'" onclick="_circIr('+bi+','+ei+')">'
       +'<div class="circ-d '+dcls+'">'+badge+'</div>'
       +'<div style="min-width:0;">'+nowLbl+'<div class="circ-nm">'+nm+'</div>'+(metaTxt?'<div class="circ-meta">'+metaTxt+'</div>':'')+'</div>'
