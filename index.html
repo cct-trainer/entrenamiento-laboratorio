@@ -3910,6 +3910,9 @@ window.addEventListener('load',function(){ try{
           <button class="pmm-left-item" id="pmm-cat-macrociclo" onclick="perfilPlanGo('macrociclo')">
             🗓️ Macrociclo
           </button>
+          <button class="pmm-left-item" id="pmm-cat-periodizacion" onclick="_perAbrir(currentAlumnoId)" style="display:none;">
+            📈 Periodización / Fases
+          </button>
           <div class="pmm-left-divider"></div>
           <button class="pmm-left-item" id="pmm-cat-ia" onclick="perfilPlanGo('ia')">
             📋 Asistente de planilla
@@ -5537,6 +5540,12 @@ window.addEventListener('load',function(){ try{
           </div>
           <div class="field"><label>Tiempo máximo de entrenamiento</label>
             <select id="f-tiempomax"><option value="120">120 min</option><option value="90">90 min</option><option value="60">60 min</option><option value="45">45 min</option><option value="30">30 min</option></select>
+          </div>
+          <div class="field"><label>Planificación</label>
+            <select id="f-planmodo">
+              <option value="comun">Común</option>
+              <option value="profesional">Profesional (periodización por fases)</option>
+            </select>
           </div>
           <div class="field"><label>Inicio</label><input type="date" id="f-inicio"></div>
         </div>
@@ -13560,6 +13569,7 @@ function renderPlanDiaEditor(diaIdx) {
     `flex:1;padding:9px 0;font-size:12px;font-weight:800;letter-spacing:.5px;border:none;cursor:pointer;border-bottom:3px solid ${active?'#C9A84C':'transparent'};background:${active?'rgba(201,168,76,.08)':'transparent'};color:${active?'#C9A84C':'#888'};transition:all .15s;`;
 
   editor.innerHTML = `
+    <div id="per-editor-banner"></div>
     <div class="plan-sesion-editor" style="margin-bottom:0;">
       <div class="plan-sesion-body">
         <div style="padding:14px 16px 4px;">
@@ -13641,6 +13651,8 @@ function renderPlanDiaEditor(diaIdx) {
         </div>
       </div>
     </div>`;
+
+  try{ if(typeof _perEditorBanner==='function') _perEditorBanner(); }catch(e){}
 
   // Restaurar bloques guardados
   const contenedor = document.getElementById(`plan-dia-bloques-${diaIdx}`);
@@ -13778,6 +13790,30 @@ function _estimarDuracionEditor(){
     +'</div>';
 }
 
+// Franja de fase (periodización profesional) arriba del editor del día, según la fecha de la sesión
+function _perEditorBanner(){
+  var host=document.getElementById('per-editor-banner'); if(!host) return;
+  host.innerHTML=''; host.style.display='none';
+  try{
+    if(typeof currentAlumnoId==='undefined' || !currentAlumnoId) return;
+    var a=getAlumnos().find(function(x){return x.id===currentAlumnoId;}); if(!a || a.plan_modo!=='profesional') return;
+    if(typeof getFaseEnFecha!=='function') return;
+    var wk=planSemanasArray[planSemEditando];
+    var fecha=(wk && wk.fechaInicio && typeof _evoAddDiasISO==='function') ? _evoAddDiasISO(wk.fechaInicio, planDiaAbierto) : '';
+    if(!fecha) return;
+    var fa=getFaseEnFecha(currentAlumnoId, fecha); if(!fa) return;
+    var col=fa.color||'#10b981';
+    var esc=function(s){ return String(s==null?'':s).replace(/</g,'&lt;'); };
+    host.style.display='block';
+    host.innerHTML='<div style="border:2px solid '+col+';border-radius:12px;overflow:hidden;margin:0 2px 12px;">'
+      +'<div style="background:'+col+';color:#fff;padding:9px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">'
+        +'<b style="font-size:13px;font-weight:900;letter-spacing:.4px;">● FASE: '+esc((fa.fase||'').toUpperCase())+' · Semana '+fa.semana_en_fase+'/'+fa.semanas_fase+'</b>'
+        +'<span style="font-size:11px;font-weight:800;background:rgba(255,255,255,.22);padding:3px 10px;border-radius:999px;white-space:nowrap;">Objetivo: '+fa.series_obj+' series/músculo · RIR '+fa.rir_obj+(fa.tecnicas_permitidas?' · técnicas OK':'')+'</span>'
+      +'</div>'
+      +(fa.explicacion?'<div style="padding:9px 14px;font-size:12px;color:#44536b;line-height:1.5;background:'+col+'0d;">'+esc(fa.explicacion)+'</div>':'')
+    +'</div>';
+  }catch(e){}
+}
 function cerrarPlanDiaEditor() {
   guardarEstadoDiaActual();
   try { if(typeof _persistPlanMes==='function') _persistPlanMes(); } catch(e){}   // guardar a disco + nube al cerrar (evita perder cambios al recargar)
@@ -14904,17 +14940,30 @@ function _evoImprimir(){
   document.getElementById('modal-evo-preview').classList.add('open');
 }
 async function _evoConfirmarImprimir(){
-  var d=_evoPendiente; if(!d) return;
+  var d=_evoPendiente; if(!d){ return; }
+  if(!window._db || typeof currentAlumnoId==='undefined' || !currentAlumnoId){ alert('No hay alumno o conexión con la base.'); return; }
+  var btn=document.getElementById('evo-confirm-btn');
+  if(btn){ btn.disabled=true; btn._txt=btn.textContent; btn.textContent='Guardando…'; }
+  var reenable=function(){ if(btn){ btn.disabled=false; btn.textContent=btn._txt||'Confirmar e imprimir'; } };
   var ref=window._db.collection('alumnos').doc(currentAlumnoId).collection('evolucion').doc(d.docId);
+  var reales={}, createdAt=new Date().toISOString();
+  // 1) Leer lo real previo, pero con límite de 5s para no colgarse si la nube no responde
   try{
-    var prev=await ref.get(); var reales={}; var createdAt=new Date().toISOString();
-    if(prev.exists){ var pd=prev.data()||{}; createdAt=pd.createdAt||createdAt; (pd.ejercicios||[]).forEach(function(e){ (e.series||[]).forEach(function(s){ reales[(e.nombre||'')+'#'+s.num]={cargaReal:s.cargaReal||'', repsReal:s.repsReal||''}; }); }); }
-    d.ejercicios.forEach(function(e){ e.series.forEach(function(s){ var r=reales[(e.nombre||'')+'#'+s.num]; if(r){ s.cargaReal=r.cargaReal; s.repsReal=r.repsReal; } }); });
-    await ref.set({ alumnoId:currentAlumnoId, planId:d.planId, sem:d.sem, dia:d.dia, mod:d.mod, fecha:d.fecha, diaLabel:d.diaLabel, ejercicios:d.ejercicios, createdAt:createdAt, updatedAt:new Date().toISOString() });
-    closeModal('modal-evo-preview');
-    if(typeof toast==='function') toast('🖨 Impreso a Evolución: '+d.fecha+' · '+d.diaLabel); else alert('Impreso a Evolución: '+d.fecha);
-    _evoMarcarImpreso(d.ejercicios);  // deja los tildes marcados
-  }catch(e){ alert('No se pudo imprimir a Evolución: '+(e&&e.message?e.message:e)); }
+    var prev=await Promise.race([ ref.get(), new Promise(function(res){ setTimeout(function(){ res(null); }, 5000); }) ]);
+    if(prev && prev.exists){ var pd=prev.data()||{}; createdAt=pd.createdAt||createdAt; (pd.ejercicios||[]).forEach(function(e){ (e.series||[]).forEach(function(s){ reales[(e.nombre||'')+'#'+s.num]={cargaReal:s.cargaReal||'', repsReal:s.repsReal||''}; }); }); }
+  }catch(e){ /* seguimos sin lo previo */ }
+  d.ejercicios.forEach(function(e){ e.series.forEach(function(s){ var r=reales[(e.nombre||'')+'#'+s.num]; if(r){ s.cargaReal=r.cargaReal; s.repsReal=r.repsReal; } }); });
+  // 2) Escribir en SEGUNDO PLANO (no bloquea): si tarda o falla, avisamos, pero la UI ya respondió
+  try{
+    ref.set({ alumnoId:currentAlumnoId, planId:d.planId, sem:d.sem, dia:d.dia, mod:d.mod, fecha:d.fecha, diaLabel:d.diaLabel, ejercicios:d.ejercicios, createdAt:createdAt, updatedAt:new Date().toISOString() })
+      .then(function(){ if(typeof toast==='function') toast('✓ Evolución sincronizada'); })
+      .catch(function(err){ if(typeof toast==='function') toast('⚠ No se pudo sincronizar a la nube: '+(err&&err.message?err.message:err),'error'); else alert('No se pudo sincronizar: '+(err&&err.message||err)); });
+  }catch(err){ if(typeof toast==='function') toast('⚠ Error al guardar: '+(err&&err.message||err),'error'); }
+  // 3) Cerrar y marcar YA (optimista) — no esperamos a la nube
+  reenable();
+  closeModal('modal-evo-preview');
+  if(typeof toast==='function') toast('🖨 Impreso a Evolución: '+d.fecha+' · '+d.diaLabel);
+  _evoMarcarImpreso(d.ejercicios);
 }
 // Re-aplica los tildes según lo impreso (para saber qué ya se usó)
 function _evoMarcarImpreso(ejercicios){
@@ -16562,6 +16611,7 @@ function openModalEditarAlumno(id) {
   const _tmE=document.getElementById('f-tiempomax'); if(_tmE) _tmE.value=String(a.tiempoMax||120);
   const _nacE=document.getElementById('f-nacionalidad'); if(_nacE) _nacE.value = a.idioma || 'es';
   const _modE=document.getElementById('f-modalidad'); if(_modE) _modE.value = a.modalidad || 'gym';
+  const _pmE=document.getElementById('f-planmodo'); if(_pmE) _pmE.value = a.plan_modo || 'comun';
   const _pinE=document.getElementById('f-pin'); if(_pinE) _pinE.value = a.pin || '';
   if(typeof _agFichaFill==='function') _agFichaFill(a.agendaDias||[], a.agendaHoras||{});
   document.getElementById('foto-preview').innerHTML = a.foto ? `<img src="${a.foto}">` : '👤';
@@ -16589,6 +16639,7 @@ function guardarAlumno() {
     pin: (document.getElementById('f-pin')?.value||''  ).trim(),
     idioma: (document.getElementById('f-nacionalidad')?.value||'es'),
     modalidad: (document.getElementById('f-modalidad')?.value||'gym'),
+    plan_modo: (document.getElementById('f-planmodo')?.value||'comun'),
     nacionalidad: (()=>{ const s=document.getElementById('f-nacionalidad'); return s&&s.selectedIndex>=0 ? s.options[s.selectedIndex].text : ''; })(),
     lesiones: document.getElementById('f-lesiones').value,
     enfermedades: document.getElementById('f-enfermedades').value,
@@ -16871,7 +16922,14 @@ function _veAbrir(semIdx, diaIdx){
   if(!alId){ toast('Abrí primero el plan de un alumno','error'); return; }
   const a = getAlumnos().find(x=>x&&x.id===alId);
   const sems = planSemanasArray;
-  const ses = (sems[semIdx] && sems[semIdx].dias && sems[semIdx].dias[diaIdx] && sems[semIdx].dias[diaIdx][0]) || null;
+  const _arr = (sems[semIdx] && sems[semIdx].dias && sems[semIdx].dias[diaIdx]) || [];
+  const _fuerzaSes = _arr.find(s=>s && s.tipoSesion!=='running' && (s.bloques||[]).length);
+  const _runSes = _arr.find(s=>s && s.tipoSesion==='running');
+  // Día de running (sin fuerza) → abrir el editor de running (el modo entrenador es solo para fuerza)
+  if(!_fuerzaSes && _runSes){
+    if(typeof _abrirRunningFocoDia==='function'){ _abrirRunningFocoDia(diaIdx, semIdx, _runSes.runBloques||[]); return; }
+  }
+  const ses = _fuerzaSes || _arr[0] || null;
   if(!ses || !(ses.bloques||[]).length){ toast('Ese día no tiene sesión','error'); return; }
   const exOrder=[];
   (ses.bloques||[]).forEach((b,bi)=>{ (b.ejercicios||[]).forEach((ej,ei)=>{ exOrder.push({bi,ei,ej,bloque:b,uid:'b'+bi+'e'+ei}); }); });
@@ -17034,6 +17092,7 @@ function openPerfilAlumno(id) {
   currentAlumnoId = id;
   const a = getAlumnos().find(x => x.id === id);
   if (!a) return;
+  if (typeof _perSyncNav === 'function') _perSyncNav(a);   // habilita "Periodización" solo si es Profesional
 
   // Mostrar items del alumno en la barra principal
   const ai = document.getElementById('nav-alumno-items');
@@ -32459,7 +32518,7 @@ async function macroGuardar() {
     <div class="modal-body" style="max-height:70vh;overflow-y:auto;"><div id="evop-body"></div></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-evo-preview')">Cancelar</button>
-      <button class="btn btn-primary" onclick="_evoConfirmarImprimir()">Confirmar e imprimir</button>
+      <button class="btn btn-primary" id="evo-confirm-btn" onclick="_evoConfirmarImprimir()">Confirmar e imprimir</button>
     </div>
   </div>
 </div>
@@ -33311,6 +33370,470 @@ function _fechaCort(f) {
   if (!f) return '';
   try { return new Date(f+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}); } catch(e){return f.slice(0,10);}
 }
+</script>
+<script>
+/* ════════════ MÓDULO: PERIODIZACIÓN / FASES DE HIPERTROFIA (aislado, no toca nada existente) ════════════ */
+(function(){
+  var DB_PER='LAB_PERIODIZACION', DB_PER_TPL='LAB_PERIODIZACION_TPL';
+  function _all(){ try{return JSON.parse(localStorage.getItem(DB_PER)||'[]');}catch(e){return [];} }
+  function _saveAll(a){ try{localStorage.setItem(DB_PER,JSON.stringify(a));}catch(e){} if(typeof _autoSyncFirebase==='function')_autoSyncFirebase(); }
+  function _tplAll(){ try{return JSON.parse(localStorage.getItem(DB_PER_TPL)||'[]');}catch(e){return [];} }
+  function _tplSave(a){ try{localStorage.setItem(DB_PER_TPL,JSON.stringify(a));}catch(e){} if(typeof _autoSyncFirebase==='function')_autoSyncFirebase(); }
+  function _uid(p){ return (p||'per')+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+  function _iso(){ return new Date().toISOString(); }
+  function _todayISO(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function _today(){ var d=new Date(); d.setHours(0,0,0,0); return d; }
+  function _esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+  function _rangoProm(v){ var s=String(v==null?'':v); var m=s.match(/(\d+(?:\.\d+)?)\s*[-–a]\s*(\d+(?:\.\d+)?)/); if(m) return (parseFloat(m[1])+parseFloat(m[2]))/2; var n=s.match(/\d+(\.\d+)?/); return n?parseFloat(n[0]):0; }
+  function _fechaCorta(iso){ try{ var p=String(iso).slice(0,10).split('-'); return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return iso||''; } }
+
+  // Fases predefinidas (editables)
+  var DEF={
+   adaptacion:{key:'adaptacion',nombre:'Adaptación',color:'#6366f1',semanas:2,series_ini:'8-10',series_fin:'8-10',reps_basicos:'10-15',reps_aislamientos:'10-15',rir_ini:4,rir_fin:3,pausas:'largas',tecnicas:false,notas:'Técnica, tolerancia y cargas de referencia (testigo).',explicacion:'Preparar el terreno. El foco es la técnica y estandarizar los patrones, no el esfuerzo: trabajás lejos del fallo (RIR 3–4), volumen bajo-moderado (8–10 series/músculo) y reps altas (10–15) para tolerancia del tejido y conexión mente-músculo. Dejás cargas de referencia con ejercicios testigo. Objetivo: llegar a la Acumulación con técnica sólida, sin dolor y con datos de partida.'},
+   acumulacion:{key:'acumulacion',nombre:'Acumulación',color:'#10b981',semanas:5,series_ini:'10-12',series_fin:'16-20',reps_basicos:'6-10',reps_aislamientos:'10-20',rir_ini:3,rir_fin:1,pausas:'1-2 min',tecnicas:true,notas:'Progresión +1-2 series/sem. Aislamientos al fallo en la última semana.',explicacion:'La fase que más construye. Acá se junta el volumen que genera la mayor parte de la hipertrofia: subís series de forma progresiva (+1–2 por semana) de 10–12 hasta 16–20 por músculo, y bajás el RIR de 3 a 1 a lo largo del bloque (al fallo recién al final, sobre todo en aislamientos). Básicos 6–10, aislamientos 10–20. Técnicas de intensidad solo en aislamientos y en las últimas semanas. Ojo con la recuperación: si la fatiga tapa el progreso, no sumes más volumen.'},
+   intensificacion:{key:'intensificacion',nombre:'Intensificación',color:'#f59e0b',semanas:3,series_ini:'8-10',series_fin:'8-10',reps_basicos:'5-8',reps_aislamientos:'8-12',rir_ini:2,rir_fin:1,pausas:'2-3 min',tecnicas:false,notas:'Volumen −20/30%. Progresar en carga con técnica firme.',explicacion:'Expresar lo ganado con más tensión mecánica. Bajás el volumen (−20/30%) para permitir cargas más altas con buena calidad. Básicos 5–8 reps a RIR 1–2, aislamientos 8–12, pausas de 2–3 min en los principales. El foco es progresar en carga con técnica firme; menos técnicas de intensidad, porque la fatiga la da el peso.'},
+   descarga:{key:'descarga',nombre:'Descarga',color:'#3b82f6',semanas:1,series_ini:'5-6',series_fin:'5-6',reps_basicos:'igual',reps_aislamientos:'igual',rir_ini:4,rir_fin:4,pausas:'cómodas',tecnicas:false,notas:'Volumen −40/50%, carga igual o algo menor.',explicacion:'Recuperar para rendir. Volumen −40/50%, carga igual o algo menor, RIR 4. No se pierde nada: se disipa la fatiga acumulada, se recupera el tejido y el sistema nervioso, y se llega fresco a la fase siguiente. Mantenés la frecuencia pero con mucho menos trabajo total.'},
+   resensibilizacion:{key:'resensibilizacion',nombre:'Resensibilización',color:'#a855f7',semanas:2,series_ini:'6-8',series_fin:'6-8',reps_basicos:'8-12',reps_aislamientos:'10-15',rir_ini:3,rir_fin:2,pausas:'medias',tecnicas:false,notas:'Cargas medias-altas. Volver a hacer "nuevo" el estímulo.',explicacion:'Volver a hacer "nuevo" el estímulo tras un bloque exigente, o sostener lo ganado en épocas de menos disponibilidad. Volumen bajo (6–8 series/músculo) con cargas medias-altas. Así, al retomar la Acumulación, volúmenes moderados vuelven a dar progreso.'}
+  };
+  var TPL={
+   estandar:{nombre:'Estándar (≈14 sem)', fases:[['adaptacion',2],['acumulacion',5],['descarga',1],['intensificacion',3],['descarga',1]]},
+   mas40:{nombre:'+40 / principiante', fases:[['adaptacion',3],['acumulacion',4],['descarga',1],['intensificacion',3],['descarga',1]]}
+  };
+
+  function _nuevaFase(key, semanas, orden){ var d=DEF[key]||DEF.acumulacion; var f=JSON.parse(JSON.stringify(d)); f.id=_uid('fase'); f.orden=(orden==null?0:orden); if(semanas!=null) f.semanas=semanas; f.semanas_override={}; return f; }
+  function _crearDesdeTpl(alumnoId, tplKey, fechaInicio, nombre){
+    var t=TPL[tplKey]||(_tplAll().find(function(x){return x.id===tplKey;})); if(!t) return null;
+    var fasesSrc = t.fases;
+    var fases = fasesSrc.map(function(x,i){
+      if(Array.isArray(x)) return _nuevaFase(x[0], x[1], i);
+      var f=JSON.parse(JSON.stringify(x)); f.id=_uid('fase'); f.orden=i; f.semanas_override=f.semanas_override||{}; return f;
+    });
+    return { id:_uid('macro'), alumno_id:alumnoId, nombre:nombre||t.nombre, fecha_inicio:fechaInicio||_todayISO(), activo:true, created_at:_iso(), updated_at:_iso(), fases:fases };
+  }
+  function _getMacro(alumnoId){ var all=_all().filter(function(m){return m.alumno_id===alumnoId;}); var act=all.filter(function(m){return m.activo;}); var pool=act.length?act:all; pool.sort(function(a,b){return String(b.created_at).localeCompare(a.created_at);}); return pool[0]||null; }
+  // Fecha base para alinear el macrociclo con el plan de fuerza del alumno (la semana más temprana); si no hay, hoy.
+  function _perFechaBase(){
+    try{
+      var planes=(getPlanificaciones()||[]).filter(function(x){return x && x.alumnoId===window._perAlumnoId && (x.tipoPlan||'fuerza')!=='running';});
+      var best=null; planes.forEach(function(pl){ (pl.semanasArray||[]).forEach(function(w){ if(w&&w.fechaInicio){ var fi=String(w.fechaInicio).slice(0,10); if(!best||fi<best) best=fi; } }); });
+      return best||_todayISO();
+    }catch(e){ return _todayISO(); }
+  }
+
+  function _estado(macro){
+    if(!macro||!macro.fases||!macro.fases.length) return null;
+    var fases=macro.fases.slice().sort(function(a,b){return (a.orden||0)-(b.orden||0);});
+    var totalSem=fases.reduce(function(s,f){return s+(parseInt(f.semanas,10)||0);},0);
+    var p=String(macro.fecha_inicio||'').slice(0,10).split('-'); var ini=(p.length===3)?new Date(+p[0],+p[1]-1,+p[2]):null;
+    if(!ini||isNaN(ini)) return {fases:fases,totalSem:totalSem,faseIdx:0,semEnFase:1,semFase:parseInt(fases[0].semanas,10)||1,semMacro:1,antes:false,fin:false};
+    var diff=Math.floor((_today()-ini)/86400000);
+    var semMacro=Math.floor(diff/7)+1;
+    if(diff<0) return {fases:fases,totalSem:totalSem,faseIdx:0,semEnFase:0,semFase:parseInt(fases[0].semanas,10)||1,semMacro:0,antes:true,fin:false};
+    var fin=semMacro>totalSem, acc=0, faseIdx=fases.length-1, semEnFase=parseInt(fases[fases.length-1].semanas,10)||1;
+    if(fin){ faseIdx=fases.length-1; semEnFase=parseInt(fases[faseIdx].semanas,10)||1; }
+    else { for(var i=0;i<fases.length;i++){ var n=parseInt(fases[i].semanas,10)||0; if(semMacro<=acc+n){ faseIdx=i; semEnFase=semMacro-acc; break; } acc+=n; } }
+    return {fases:fases,totalSem:totalSem,faseIdx:faseIdx,semEnFase:semEnFase,semFase:parseInt(fases[faseIdx].semanas,10)||1,semMacro:Math.min(semMacro,totalSem),antes:false,fin:fin};
+  }
+  function _interp(a,b,i,n){ if(n<=1) return b; return a+(b-a)*((i-1)/(n-1)); }
+  function _semParams(fase, semana){
+    var n=parseInt(fase.semanas,10)||1;
+    var ov=(fase.semanas_override||{})[String(semana)];
+    var series=Math.round(_interp(_rangoProm(fase.series_ini),_rangoProm(fase.series_fin),semana,n));
+    var rIni=parseFloat(fase.rir_ini), rFin=parseFloat(fase.rir_fin); if(isNaN(rIni))rIni=2; if(isNaN(rFin))rFin=1;
+    var rir=Math.round(_interp(rIni,rFin,semana,n)*2)/2;
+    return { series:(ov&&ov.series_obj!=null&&ov.series_obj!=='')?ov.series_obj:series, rir:(ov&&ov.rir_obj!=null&&ov.rir_obj!=='')?ov.rir_obj:rir };
+  }
+
+  // ── Función pública para usar más adelante ──
+  window.getFaseActual=function(alumnoId){
+    var m=_getMacro(alumnoId); if(!m) return null; var e=_estado(m); if(!e) return null;
+    var f=e.fases[e.faseIdx]; var p=_semParams(f, Math.max(1,e.semEnFase));
+    return { macrociclo_id:m.id, fase_id:f.id, fase:f.nombre, color:f.color, semana_en_fase:Math.max(1,e.semEnFase), semanas_fase:e.semFase, semana_macro:e.semMacro, semanas_total:e.totalSem, series_obj:p.series, rir_obj:p.rir, reps_basicos:f.reps_basicos, reps_aislamientos:f.reps_aislamientos, pausas:f.pausas, tecnicas_permitidas:!!f.tecnicas, explicacion:f.explicacion, antes:e.antes, fin:e.fin };
+  };
+
+  // ── Fase en una FECHA concreta (para el editor del día) ──
+  window.getFaseEnFecha=function(alumnoId, fechaISO){
+    var m=_getMacro(alumnoId); if(!m||!m.fases||!m.fases.length) return null;
+    var p=String(m.fecha_inicio||'').slice(0,10).split('-'); if(p.length!==3) return null; var ini=new Date(+p[0],+p[1]-1,+p[2]); if(isNaN(ini)) return null;
+    var q=String(fechaISO||'').slice(0,10).split('-'); if(q.length!==3) return null; var d=new Date(+q[0],+q[1]-1,+q[2]); if(isNaN(d)) return null;
+    var diff=Math.floor((d-ini)/86400000); if(diff<0) return null; var semMacro=Math.floor(diff/7)+1;
+    var fases=m.fases.slice().sort(function(a,b){return (a.orden||0)-(b.orden||0);});
+    var total=fases.reduce(function(s,f){return s+(parseInt(f.semanas,10)||0);},0); if(semMacro>total) return null;
+    var acc=0; for(var i=0;i<fases.length;i++){ var n=parseInt(fases[i].semanas,10)||0; if(semMacro<=acc+n){ var f=fases[i]; var se=semMacro-acc; var pr=_semParams(f,se); return {fase:f.nombre,color:f.color,semana_en_fase:se,semanas_fase:n,semana_macro:semMacro,semanas_total:total,series_obj:pr.series,rir_obj:pr.rir,reps_basicos:f.reps_basicos,reps_aislamientos:f.reps_aislamientos,pausas:f.pausas,tecnicas_permitidas:!!f.tecnicas,explicacion:f.explicacion}; } acc+=n; }
+    return null;
+  };
+  // ── Etiqueta en la ficha del alumno + visibilidad del menú ──
+  window._perSyncNav=function(a){
+    var pro=a&&a.plan_modo==='profesional';
+    var it=document.getElementById('pmm-cat-periodizacion'); if(it) it.style.display=pro?'':'none';
+    _renderTag(a);
+  };
+  function _renderTag(a){
+    var old=document.getElementById('per-fase-tag'); if(old) old.remove();
+    if(!a||a.plan_modo!=='profesional') return;
+    var fa=window.getFaseActual(a.id); if(!fa) return;
+    var cont=document.getElementById('perfil-objetivo'); if(!cont||!cont.parentNode) return;
+    var txt=fa.antes?('EMPIEZA PRONTO'):(fa.fin?'CICLO TERMINADO · armá uno nuevo':((fa.fase||'').toUpperCase()+' · S'+fa.semana_en_fase+'/'+fa.semanas_fase));
+    var tag=document.createElement('span'); tag.id='per-fase-tag';
+    tag.style.cssText='display:inline-block;margin-left:8px;font-size:10px;font-weight:900;letter-spacing:.3px;color:#fff;background:'+(fa.color||'#10b981')+';border-radius:6px;padding:2px 8px;vertical-align:middle;';
+    tag.textContent=txt;
+    cont.parentNode.insertBefore(tag, cont.nextSibling);
+  }
+
+  // ── Persistencia del macrociclo en edición ──
+  function _persist(){ var m=window._perCur; if(!m) return; m.updated_at=_iso(); var all=_all(); var i=all.findIndex(function(x){return x.id===m.id;}); if(i>=0) all[i]=m; else all.push(m); _saveAll(all); try{ var a=(getAlumnos()||[]).find(function(x){return x.id===window._perAlumnoId;}); _renderTag(a); }catch(e){} }
+
+  // ── OVERLAY / UI ──
+  window._perAbrir=function(alumnoId){
+    alumnoId=alumnoId||(typeof currentAlumnoId!=='undefined'?currentAlumnoId:null);
+    if(!alumnoId){ if(typeof toast==='function') toast('Abrí primero el perfil de un alumno','error'); return; }
+    var a=(typeof getAlumnos==='function'?getAlumnos():[]).find(function(x){return x.id===alumnoId;});
+    window._perAlumnoId=alumnoId; window._perAlumnoNom=a?(a.nombre||''):'';
+    window._perCur=_getMacro(alumnoId);
+    var ov=document.getElementById('per-ov'); if(ov) ov.remove();
+    ov=document.createElement('div'); ov.id='per-ov';
+    ov.style.cssText='position:fixed;inset:0;z-index:13000;background:#eef2f7;overflow:auto;';
+    document.body.appendChild(ov);
+    try{ document.body.style.overflow='hidden'; }catch(e){}
+    _render();
+  };
+  window._perCerrar=function(){ _perPublish(); var ov=document.getElementById('per-ov'); if(ov) ov.remove(); try{ document.body.style.overflow=''; }catch(e){} };
+  // Publica un resumen de las fases al registro del alumno (para que la app muestre la cinta de fase)
+  function _perPublish(){
+    try{
+      if(!window._perAlumnoId || typeof getAlumnos!=='function') return;
+      var m=_getMacro(window._perAlumnoId);
+      var alumnos=getAlumnos(); var al=alumnos.find(function(x){return x.id===window._perAlumnoId;}); if(!al) return;
+      if(m && m.fases && m.fases.length){ var fs=m.fases.slice().sort(function(a,b){return (a.orden||0)-(b.orden||0);}); al.periodizacion={ fecha_inicio:m.fecha_inicio, fases:fs.map(function(f){return {nombre:f.nombre,color:f.color,semanas:parseInt(f.semanas,10)||0};}) }; }
+      else { if(al.periodizacion) delete al.periodizacion; }
+      if(typeof saveAlumnos==='function') saveAlumnos(alumnos);
+    }catch(e){}
+  }
+
+  var C={navy:'#1a2a4a',blue:'#3A6EA5',blue2:'#2f5f95',gold:'#C9A84C',muted:'#7c8aa0',line:'#e4e8ef'};
+  function _render(){
+    var ov=document.getElementById('per-ov'); if(!ov) return;
+    var m=window._perCur;
+    var head='<div style="background:'+C.navy+';color:#fff;position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;">'
+      +'<div style="font-size:16px;font-weight:900;">📈 Periodización — '+_esc((window._perAlumnoNom||'').split(" ")[0]||"Alumno")+'</div>'
+      +'<button onclick="_perCerrar()" style="background:rgba(255,255,255,.12);border:none;color:#fff;font-size:20px;width:34px;height:34px;border-radius:9px;cursor:pointer;">×</button></div>';
+    var body;
+    if(!m){ body=_renderVacio(); }
+    else { body=_renderMacro(m); }
+    ov.innerHTML=head+'<div style="max-width:900px;margin:0 auto;padding:18px 16px 80px;">'+body+'</div>';
+  }
+
+  function _renderVacio(){
+    var tpls=Object.keys(TPL).map(function(k){ var t=TPL[k]; return '<button onclick="_perCrear(\''+k+'\')" style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:180px;flex:1;background:#fff;border:1px solid '+C.line+';border-radius:12px;padding:13px 15px;cursor:pointer;text-align:left;"><b style="font-size:13px;color:'+C.navy+';">'+_esc(t.nombre)+'</b><span style="font-size:10.5px;color:'+C.muted+';">'+t.fases.map(function(f){return DEF[f[0]].nombre+' '+f[1];}).join(' · ')+'</span></button>'; }).join('');
+    var mios=_tplAll().map(function(t){ return '<button onclick="_perCrear(\''+t.id+'\')" style="background:#fff;border:1px solid '+C.line+';border-radius:12px;padding:13px 15px;cursor:pointer;font-size:12.5px;font-weight:800;color:'+C.blue2+';">★ '+_esc(t.nombre)+'</button>'; }).join('');
+    return '<div style="background:#fff;border:1px solid '+C.line+';border-radius:16px;padding:22px;text-align:center;">'
+      +'<div style="font-size:40px;margin-bottom:6px;">🤖</div>'
+      +'<div style="font-size:16px;font-weight:900;color:'+C.navy+';margin-bottom:4px;">Armá el macrociclo con el asistente</div>'
+      +'<div style="font-size:12.5px;color:'+C.muted+';margin-bottom:16px;line-height:1.5;">Respondés 6 preguntas simples (o apretás "recomendado") y se arma solo: fases, semanas, series y RIR. Después lo podés retocar.</div>'
+      +'<button onclick="_wzStart()" style="background:'+C.navy+';color:#fff;border:none;border-radius:11px;padding:13px 24px;font-size:14px;font-weight:800;cursor:pointer;">🤖 Empezar el asistente</button>'
+      +'<div style="font-size:11px;color:'+C.muted+';margin:18px 0 8px;">— o creá desde una plantilla —</div>'
+      +'<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'+tpls+'</div>'
+      +(mios?'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'+mios+'</div>':'')
+      +'<button onclick="_perCrear(\'_vacio\')" style="background:#f6f9fc;border:1px dashed #cdd9ea;color:'+C.blue2+';border-radius:10px;padding:9px 14px;font-size:12px;font-weight:800;cursor:pointer;">＋ Crear vacío</button>'
+      +'</div>';
+  }
+  window._perCrear=function(tplKey){
+    var fi=_perFechaBase();
+    var m;
+    if(tplKey==='_vacio'){ m={ id:_uid('macro'), alumno_id:window._perAlumnoId, nombre:'Macrociclo', fecha_inicio:fi, activo:true, created_at:_iso(), updated_at:_iso(), fases:[_nuevaFase('acumulacion',null,0)] }; }
+    else { m=_crearDesdeTpl(window._perAlumnoId, tplKey, fi); }
+    if(!m) return;
+    // desactivar otros del alumno
+    var all=_all(); all.forEach(function(x){ if(x.alumno_id===window._perAlumnoId) x.activo=false; });
+    all.push(m); _saveAll(all);
+    window._perCur=m; _render();
+  };
+
+  function _renderMacro(m){
+    var e=_estado(m); var fases=e.fases;
+    // estado chip
+    var estTxt, estCol;
+    if(e.antes){ estTxt='Empieza el '+_fechaCorta(m.fecha_inicio); estCol=C.muted; }
+    else if(e.fin){ estTxt='Ciclo terminado'; estCol='#c0392b'; }
+    else { var fa=fases[e.faseIdx]; estTxt=fa.nombre.toUpperCase()+' · S'+e.semEnFase+'/'+e.semFase+' · Semana '+e.semMacro+'/'+e.totalSem; estCol=fa.color; }
+    var H='';
+    // Encabezado editable + estado + nuevo ciclo
+    H+='<div style="background:#fff;border:1px solid '+C.line+';border-radius:16px;padding:16px;margin-bottom:14px;">'
+      +'<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;">'
+        +'<div style="flex:1;min-width:220px;"><div style="font-size:9px;font-weight:800;color:'+C.muted+';text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Macrociclo</div>'
+          +'<input value="'+_esc(m.nombre)+'" onchange="_perSet(\'nombre\',this.value)" style="width:100%;border:1px solid #dde1ea;border-radius:8px;padding:8px 10px;font-size:14px;font-weight:800;color:'+C.navy+';font-family:inherit;"></div>'
+        +'<div><div style="font-size:9px;font-weight:800;color:'+C.muted+';text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Inicio</div>'
+          +'<input type="date" value="'+_esc(String(m.fecha_inicio).slice(0,10))+'" onchange="_perSet(\'fecha_inicio\',this.value)" style="border:1px solid #dde1ea;border-radius:8px;padding:7px 9px;font-size:13px;font-family:inherit;"></div>'
+        +'<button onclick="if(confirm(\'¿Rehacer el macrociclo con el asistente? Reemplaza el actual.\'))_wzStart()" style="background:#eef4fb;border:1px solid #cdd9ea;color:'+C.blue2+';border-radius:9px;padding:9px 12px;font-size:12px;font-weight:800;cursor:pointer;">🤖 Asistente</button>'
+        +'<button onclick="_perNuevoCiclo()" style="background:linear-gradient(135deg,#f0c75a,#d8a93a);color:#4a3608;border:none;border-radius:9px;padding:9px 14px;font-size:12px;font-weight:800;cursor:pointer;">↻ Nuevo ciclo</button>'
+      +'</div>'
+      +'<div style="margin-top:12px;"><span style="display:inline-flex;align-items:center;gap:7px;background:'+estCol+'1a;border:1px solid '+estCol+'55;color:'+estCol+';font-size:12px;font-weight:900;padding:6px 13px;border-radius:999px;">● '+_esc(estTxt)+'</span></div>'
+      // Timeline
+      +'<div style="font-size:9px;font-weight:800;color:'+C.muted+';text-transform:uppercase;letter-spacing:.5px;margin:14px 0 7px;">Línea de tiempo</div>'
+      + _timeline(m,e)
+    +'</div>';
+    // Plantillas
+    H+='<div style="background:#fff;border:1px solid '+C.line+';border-radius:16px;padding:16px;margin-bottom:14px;">'
+      +'<div style="font-size:11px;font-weight:900;color:'+C.blue+';text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;">Plantillas de macrociclo</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+      + Object.keys(TPL).map(function(k){ return '<button onclick="_perAplicarTpl(\''+k+'\')" style="background:#f6f9fc;border:1px solid '+C.line+';border-radius:9px;padding:9px 13px;font-size:12px;font-weight:800;color:'+C.blue2+';cursor:pointer;">'+_esc(TPL[k].nombre)+'</button>'; }).join('')
+      + _tplAll().map(function(t){ return '<button onclick="_perAplicarTpl(\''+t.id+'\')" style="background:#f6f9fc;border:1px solid '+C.line+';border-radius:9px;padding:9px 13px;font-size:12px;font-weight:800;color:'+C.blue2+';cursor:pointer;">★ '+_esc(t.nombre)+'</button>'; }).join('')
+      +'<button onclick="_perGuardarTpl()" style="background:#fff;border:1px dashed #cdd9ea;border-radius:9px;padding:9px 13px;font-size:12px;font-weight:800;color:'+C.blue2+';cursor:pointer;">＋ Guardar como plantilla</button>'
+      +'</div></div>';
+    // Fases
+    H+='<div style="background:#fff;border:1px solid '+C.line+';border-radius:16px;padding:16px;margin-bottom:14px;">'
+      +'<div style="font-size:11px;font-weight:900;color:'+C.blue+';text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;">Fases del macrociclo (editables)</div>';
+    fases.forEach(function(f,i){ H+=_faseCard(f, i, (!e.antes&&!e.fin&&i===e.faseIdx), e); });
+    H+='<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+      + Object.keys(DEF).map(function(k){ return '<button onclick="_perAddFase(\''+k+'\')" style="background:#f6f9fc;border:1px solid '+C.line+';border-radius:9px;padding:8px 12px;font-size:11.5px;font-weight:800;color:'+C.blue2+';cursor:pointer;">＋ '+_esc(DEF[k].nombre)+'</button>'; }).join('')
+      +'</div></div>';
+    // Progresión de la fase actual (o la primera)
+    var fProg=fases[(!e.antes&&!e.fin)?e.faseIdx:0];
+    H+=_progresion(fProg, (!e.antes&&!e.fin)?e.semEnFase:0);
+    // Auditoría
+    H+='<div style="text-align:center;margin:4px 0 10px;"><button onclick="_perAuditar()" style="background:'+C.navy+';color:#fff;border:none;border-radius:12px;padding:13px 26px;font-size:14px;font-weight:800;cursor:pointer;">🔎 Auditar el plan</button>'
+      +'<div style="font-size:11px;color:'+C.muted+';margin-top:7px;">Revisa si el macrociclo es coherente y te sugiere mejoras (vos decidís si aplicarlas).</div></div>';
+    return H;
+  }
+
+  function _timeline(m,e){
+    var fases=e.fases, tot=e.totalSem||1;
+    var segs=fases.map(function(f){ var w=((parseInt(f.semanas,10)||0)/tot*100); return '<div title="'+_esc(f.nombre)+' · '+(f.semanas)+' sem" style="width:'+w+'%;background:'+f.color+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:9.5px;font-weight:900;overflow:hidden;white-space:nowrap;">'+(w>12?_esc(f.nombre.slice(0,10)):'')+'</div>'; }).join('');
+    var todayPct=null;
+    if(!e.antes){ var done=0; for(var i=0;i<e.faseIdx;i++) done+=parseInt(fases[i].semanas,10)||0; done+=Math.max(0,(e.semEnFase||1)-1)+0.5; todayPct=Math.min(100, done/tot*100); if(e.fin) todayPct=100; }
+    return '<div style="position:relative;">'
+      +'<div style="display:flex;height:38px;border-radius:10px;overflow:hidden;border:1px solid '+C.line+';">'+segs+'</div>'
+      +(todayPct!=null?'<div style="position:absolute;top:-6px;bottom:-14px;width:2px;background:#e11d48;left:'+todayPct+'%;"><span style="position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:8.5px;font-weight:900;color:#e11d48;background:#fff;padding:1px 5px;border-radius:5px;border:1px solid #f3b4c0;white-space:nowrap;">HOY</span></div>':'')
+      +'</div>';
+  }
+
+  function _fld(lbl, campo, fid, val, w){ return '<div style="'+(w?'width:'+w+';':'flex:1;min-width:110px;')+'"><label style="display:block;font-size:8.5px;font-weight:800;letter-spacing:.5px;color:'+C.muted+';text-transform:uppercase;margin-bottom:3px;">'+lbl+'</label><input value="'+_esc(val)+'" onchange="_perSetFase(\''+fid+'\',\''+campo+'\',this.value)" style="width:100%;border:1px solid #dde1ea;border-radius:7px;padding:6px 8px;font-size:12.5px;color:#222;font-family:inherit;"></div>'; }
+  function _faseCard(f, idx, esActual, e){
+    var H='<div style="border:1px solid '+C.line+';border-left:5px solid '+f.color+';border-radius:12px;padding:13px 14px;margin-bottom:11px;'+(esActual?'box-shadow:0 0 0 2px rgba(58,110,165,.18);':'')+'">'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+        +'<span style="width:13px;height:13px;border-radius:50%;background:'+f.color+';flex-shrink:0;"></span>'
+        +'<input value="'+_esc(f.nombre)+'" onchange="_perSetFase(\''+f.id+'\',\'nombre\',this.value)" style="flex:1;border:none;border-bottom:1px solid transparent;font-size:15px;font-weight:900;color:'+C.navy+';font-family:inherit;outline:none;" onfocus="this.style.borderBottomColor=\'#cdd9ea\'" onblur="this.style.borderBottomColor=\'transparent\'">'
+        +(esActual?'<span style="font-size:9px;font-weight:900;color:#1f8f5a;background:#eef8f1;border:1px solid #c7ecd6;border-radius:6px;padding:2px 8px;white-space:nowrap;">● ACTUAL · S'+e.semEnFase+'/'+e.semFase+'</span>':'')
+        +'<span style="display:flex;gap:4px;flex-shrink:0;"><button onclick="_perMover(\''+f.id+'\',-1)" style="width:22px;height:22px;border:1px solid '+C.line+';background:#f6f9fc;border-radius:6px;cursor:pointer;color:#8a93a3;font-size:10px;">▲</button><button onclick="_perMover(\''+f.id+'\',1)" style="width:22px;height:22px;border:1px solid '+C.line+';background:#f6f9fc;border-radius:6px;cursor:pointer;color:#8a93a3;font-size:10px;">▼</button></span>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:9px;">'
+        + _fld('Semanas','semanas',f.id,f.semanas)
+        + _fld('Series/músc · inicio','series_ini',f.id,f.series_ini)
+        + _fld('Series/músc · fin','series_fin',f.id,f.series_fin)
+        + _fld('Reps básicos','reps_basicos',f.id,f.reps_basicos)
+        + _fld('Reps aislam.','reps_aislamientos',f.id,f.reps_aislamientos)
+        + _fld('RIR inicio','rir_ini',f.id,f.rir_ini)
+        + _fld('RIR fin','rir_fin',f.id,f.rir_fin)
+        + _fld('Pausas','pausas',f.id,f.pausas)
+      +'</div>'
+      +'<label style="display:flex;align-items:center;gap:8px;margin-top:11px;font-size:11.5px;font-weight:700;color:#44536b;cursor:pointer;"><input type="checkbox" '+(f.tecnicas?'checked':'')+' onchange="_perSetFase(\''+f.id+'\',\'tecnicas\',this.checked)"> Técnicas de intensidad permitidas</label>'
+      +'<div style="margin-top:9px;"><label style="display:block;font-size:8.5px;font-weight:800;letter-spacing:.5px;color:'+C.muted+';text-transform:uppercase;margin-bottom:3px;">💡 Cómo trabajar esta fase</label>'
+        +'<textarea onchange="_perSetFase(\''+f.id+'\',\'explicacion\',this.value)" style="width:100%;min-height:70px;border:1px solid #e1e8f2;border-radius:9px;padding:9px 11px;font-size:12px;line-height:1.5;color:#33415a;font-family:inherit;resize:vertical;background:#f7faff;">'+_esc(f.explicacion||'')+'</textarea></div>'
+      +'<div style="margin-top:7px;"><label style="display:block;font-size:8.5px;font-weight:800;letter-spacing:.5px;color:'+C.muted+';text-transform:uppercase;margin-bottom:3px;">Notas / objetivo</label>'
+        +'<input value="'+_esc(f.notas||'')+'" onchange="_perSetFase(\''+f.id+'\',\'notas\',this.value)" style="width:100%;border:1px solid #dde1ea;border-radius:7px;padding:6px 8px;font-size:12px;color:#222;font-family:inherit;"></div>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:11px;flex-wrap:wrap;">'
+        +'<button onclick="_perIrAFase(\''+f.id+'\')" style="background:'+f.color+';color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:12.5px;font-weight:800;cursor:pointer;">📋 Planificar esta fase →</button>'
+        +'<button onclick="_perDelFase(\''+f.id+'\')" style="font-size:11px;font-weight:700;color:#c0392b;background:none;border:none;cursor:pointer;">🗑 Quitar fase</button>'
+      +'</div>'
+    +'</div>';
+    return H;
+  }
+
+  function _progresion(f, semActual){
+    if(!f) return '';
+    var n=parseInt(f.semanas,10)||1;
+    var rows='';
+    for(var s=1;s<=n;s++){ var p=_semParams(f,s); var now=(s===semActual);
+      rows+='<tr'+(now?' style="background:#eef4fb;"':'')+'><td style="padding:7px 8px;border:1px solid #eef1f6;text-align:left;font-weight:800;color:'+C.navy+';">S'+s+(now?' ← hoy':'')+'</td>'
+        +'<td style="padding:7px 8px;border:1px solid #eef1f6;text-align:center;"><input value="'+_esc(p.series)+'" onchange="_perOverride(\''+f.id+'\','+s+',\'series_obj\',this.value)" style="width:60px;border:1px solid #dde1ea;border-radius:6px;padding:4px;text-align:center;font-size:12.5px;font-family:inherit;"></td>'
+        +'<td style="padding:7px 8px;border:1px solid #eef1f6;text-align:center;"><input value="'+_esc(p.rir)+'" onchange="_perOverride(\''+f.id+'\','+s+',\'rir_obj\',this.value)" style="width:60px;border:1px solid #dde1ea;border-radius:6px;padding:4px;text-align:center;font-size:12.5px;font-family:inherit;"></td></tr>';
+    }
+    return '<div style="background:#fff;border:1px solid '+C.line+';border-radius:16px;padding:16px;margin-bottom:14px;">'
+      +'<div style="font-size:11px;font-weight:900;color:'+C.blue+';text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;">Progresión semana a semana · '+_esc(f.nombre)+'</div>'
+      +'<table style="width:100%;border-collapse:collapse;font-size:12.5px;"><thead><tr>'
+        +'<th style="background:#f2f5fa;color:#55607a;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:8px;border:1px solid '+C.line+';text-align:left;">Semana (fase)</th>'
+        +'<th style="background:#f2f5fa;color:#55607a;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:8px;border:1px solid '+C.line+';">Series / músculo</th>'
+        +'<th style="background:#f2f5fa;color:#55607a;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:8px;border:1px solid '+C.line+';">RIR objetivo</th>'
+      +'</tr></thead><tbody>'+rows+'</tbody></table>'
+      +'<div style="font-size:11px;color:'+C.muted+';margin-top:8px;">Se calcula sola interpolando entre inicio y fin de la fase. Podés editar cualquier celda a mano.</div></div>';
+  }
+
+  // ── Handlers ──
+  function _findFase(id){ var m=window._perCur; if(!m) return null; return (m.fases||[]).find(function(f){return f.id===id;}); }
+  window._perSet=function(campo,val){ var m=window._perCur; if(!m) return; m[campo]=val; _persist(); _render(); };
+  window._perSetFase=function(fid,campo,val){ var f=_findFase(fid); if(!f) return; f[campo]=val; _persist(); if(campo==='semanas'||campo==='series_ini'||campo==='series_fin'||campo==='rir_ini'||campo==='rir_fin'||campo==='nombre') _render(); };
+  window._perMover=function(fid,dir){ var m=window._perCur; if(!m) return; var fs=m.fases.slice().sort(function(a,b){return (a.orden||0)-(b.orden||0);}); var i=fs.findIndex(function(f){return f.id===fid;}); var j=i+dir; if(i<0||j<0||j>=fs.length) return; var t=fs[i]; fs[i]=fs[j]; fs[j]=t; fs.forEach(function(f,k){f.orden=k;}); m.fases=fs; _persist(); _render(); };
+  window._perAddFase=function(key){ var m=window._perCur; if(!m) return; var f=_nuevaFase(key,null,(m.fases||[]).length); m.fases.push(f); _persist(); _render(); };
+  window._perDelFase=function(fid){ var m=window._perCur; if(!m) return; if((m.fases||[]).length<=1){ if(typeof toast==='function')toast('El macrociclo necesita al menos una fase'); return; } if(!confirm('¿Quitar esta fase?')) return; m.fases=m.fases.filter(function(f){return f.id!==fid;}); m.fases.sort(function(a,b){return (a.orden||0)-(b.orden||0);}).forEach(function(f,k){f.orden=k;}); _persist(); _render(); };
+  window._perOverride=function(fid,sem,campo,val){ var f=_findFase(fid); if(!f) return; f.semanas_override=f.semanas_override||{}; f.semanas_override[String(sem)]=f.semanas_override[String(sem)]||{}; f.semanas_override[String(sem)][campo]=val; _persist(); };
+  window._perAplicarTpl=function(tplKey){ if(!confirm('¿Reemplazar las fases por esta plantilla? (el inicio y el nombre se mantienen)')) return; var m=window._perCur; if(!m) return; var nuevo=_crearDesdeTpl(m.alumno_id, tplKey, m.fecha_inicio, m.nombre); if(!nuevo){ return; } m.fases=nuevo.fases; _persist(); _render(); };
+  window._perGuardarTpl=function(){ var m=window._perCur; if(!m) return; var nom=prompt('Nombre de la plantilla:', m.nombre||'Mi plantilla'); if(!nom) return; var tpls=_tplAll(); tpls.push({ id:_uid('tpl'), nombre:nom, fases:JSON.parse(JSON.stringify(m.fases)), created_at:_iso() }); _tplSave(tpls); if(typeof toast==='function') toast('★ Plantilla guardada'); _render(); };
+  window._perNuevoCiclo=function(){ var m=window._perCur; if(!m) return; var e=_estado(m); var tot=e?e.totalSem:0; var fi=m.fecha_inicio; try{ var p=String(m.fecha_inicio).slice(0,10).split('-'); var d=new Date(+p[0],+p[1]-1,+p[2]); d.setDate(d.getDate()+tot*7); fi=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }catch(e2){} if(!confirm('¿Crear un ciclo nuevo (copia de este) que arranca el '+_fechaCorta(fi)+'?')) return; var copia=JSON.parse(JSON.stringify(m)); copia.id=_uid('macro'); copia.fecha_inicio=fi; copia.created_at=_iso(); copia.updated_at=_iso(); copia.activo=true; (copia.fases||[]).forEach(function(f){ f.id=_uid('fase'); }); var all=_all(); all.forEach(function(x){ if(x.alumno_id===m.alumno_id) x.activo=false; }); all.push(copia); _saveAll(all); window._perCur=copia; _render(); if(typeof toast==='function') toast('↻ Nuevo ciclo creado'); };
+
+  // ── "Planificar esta fase": lleva al editor de la semana que corresponde a la fase ──
+  window._perIrAFase=function(faseId){
+    var m=window._perCur; if(!m||!m.fases) return;
+    var fases=m.fases.slice().sort(function(a,b){return (a.orden||0)-(b.orden||0);});
+    var acc=0, fase=null, startW=0;
+    for(var i=0;i<fases.length;i++){ if(fases[i].id===faseId){ fase=fases[i]; startW=acc; break; } acc+=parseInt(fases[i].semanas,10)||0; }
+    if(!fase) return;
+    var p=String(m.fecha_inicio||'').slice(0,10).split('-'); if(p.length!==3){ if(typeof toast==='function') toast('Poné fecha de inicio al macrociclo'); return; }
+    var d=new Date(+p[0],+p[1]-1,+p[2]); d.setDate(d.getDate()+startW*7);
+    var fechaISO=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    var planes=[]; try{ planes=(getPlanificaciones()||[]).filter(function(x){return x && x.alumnoId===m.alumno_id && (x.tipoPlan||'fuerza')!=='running';}); }catch(e){}
+    var foundPlan=null, foundWeek=0;
+    planes.forEach(function(pl){ (pl.semanasArray||[]).forEach(function(w,wi){ if(w&&w.fechaInicio){ var fi=String(w.fechaInicio).slice(0,10); var pp=fi.split('-'); if(pp.length===3){ var dd=new Date(+pp[0],+pp[1]-1,+pp[2]); dd.setDate(dd.getDate()+6); var y=dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0'); if(fechaISO>=fi && fechaISO<=y){ foundPlan=pl; foundWeek=wi; } } } }); });
+    _perCerrar();
+    if(foundPlan){
+      try{ if(typeof abrirPlanFuerzaExistente==='function') abrirPlanFuerzaExistente(foundPlan.id); }catch(e){}
+      setTimeout(function(){ try{ if(typeof abrirPlanDiaEditor==='function') abrirPlanDiaEditor(0, foundWeek); }catch(e){} if(typeof toast==='function') toast('📋 '+fase.nombre+' · semana del '+fechaISO); },420);
+    } else {
+      try{ if(typeof perfilPlanGo==='function') perfilPlanGo('fuerza'); }catch(e){}
+      if(typeof toast==='function') toast('No hay un plan de fuerza en las fechas de '+fase.nombre+' ('+fechaISO+'). Alineá el inicio del macrociclo con tu plan, o creá el mes.','error');
+    }
+  };
+
+  // ──────── ASISTENTE AUTOMÁTICO (wizard de 6 preguntas, con "recomendado") ────────
+  var WZ=[
+   {key:'objetivo', q:'¿Cuál es el objetivo del bloque?', h:'Define el énfasis de las fases y los rangos.', opts:[{v:'hipertrofia',b:'Hipertrofia',s:'Ganar músculo'},{v:'recomp',b:'Recomposición',s:'Bajar grasa, mantener músculo'},{v:'fuerza_hiper',b:'Fuerza-hipertrofia',s:'Músculo + más carga'},{v:'mantenimiento',b:'Mantenimiento',s:'Sostener lo ganado'}], rec:function(ans,a){ return 'hipertrofia'; }},
+   {key:'nivel', q:'¿Nivel del alumno?', h:'Define el volumen de arranque, el techo y la progresión.', opts:[{v:'principiante',b:'Principiante',s:'menos de 1 año'},{v:'intermedio',b:'Intermedio',s:'1 a 3 años'},{v:'avanzado',b:'Avanzado',s:'más de 3 años'}], rec:function(ans,a){ var n=((a&&a.nivel)||'').toLowerCase(); if(/princip/.test(n))return 'principiante'; if(/avanz/.test(n))return 'avanzado'; return 'intermedio'; }},
+   {key:'duracion', q:'¿De cuánto tiempo disponés?', h:'Cuántas semanas va a durar el macrociclo.', opts:[{v:'8',b:'Corto',s:'≈ 8 semanas'},{v:'12',b:'Estándar',s:'≈ 12 semanas'},{v:'16',b:'Largo',s:'≈ 16 semanas'}], rec:function(ans,a){ return '12'; }},
+   {key:'descarga', q:'¿Cada cuántas semanas una descarga?', h:'Tu microciclo: semanas de progresión seguidas de 1 suave para recuperar.', opts:[{v:'3',b:'3 + 1',s:'3 prog · 1 descarga'},{v:'4',b:'4 + 1',s:'4 prog · 1 descarga'},{v:'5',b:'5 + 1',s:'5 prog · 1 descarga'},{v:'7',b:'7 + 1',s:'7 prog · 1 descarga'}], rec:function(ans,a){ if(ans.recup==='cuesta')return '4'; if(ans.nivel==='avanzado')return '6'; if(ans.nivel==='principiante')return '4'; return '5'; }},
+   {key:'recup', q:'¿Cómo recupera / edad?', h:'Ajusta la frecuencia de descargas y el techo de volumen.', opts:[{v:'bien',b:'Recupera bien',s:'Joven, descansa bien'},{v:'normal',b:'Normal',s:'Recuperación promedio'},{v:'cuesta',b:'Le cuesta o +40',s:'Con más cautela'}], rec:function(ans,a){ var ed=0; try{ if(a&&a.nacimiento){ ed=(new Date().getFullYear()-new Date(a.nacimiento).getFullYear()); } }catch(e){} if(ed>=45)return 'cuesta'; return 'normal'; }},
+   {key:'extras', q:'¿Incluimos fases extra?', h:'Adaptación al inicio e intensificación (más carga, menos volumen) al final.', opts:[{v:'ambas',b:'Ambas',s:'Adaptación + Intensificación'},{v:'adapt',b:'Solo adaptación',s:'Arranque suave'},{v:'intens',b:'Solo intensificación',s:'Cierre más fuerte'},{v:'ninguna',b:'Ninguna',s:'Solo acumulación + descarga'}], rec:function(ans,a){ return 'ambas'; }},
+   {key:'situacion', q:'¿Cómo llega el alumno a este bloque?', h:'Define si conviene arrancar con adaptación y qué tan conservador empezar.', opts:[{v:'seguido',b:'Entrenando seguido',s:'Sin parates recientes'},{v:'parate',b:'Volviendo de un parate',s:'Estuvo 2+ semanas sin entrenar'},{v:'cero',b:'Arranca de cero',s:'Poca o nula experiencia reciente'}], rec:function(ans,a){ return 'seguido'; }},
+   {key:'tecnicas_exp', q:'¿Experiencia con técnicas de intensidad?', h:'Drop sets, rest-pause, parciales, etc. Define si se habilitan en el bloque.', opts:[{v:'si',b:'Sí, las usa',s:'Las tolera bien'},{v:'poca',b:'Poca',s:'Alguna vez'},{v:'no',b:'No',s:'Mejor no usarlas aún'}], rec:function(ans,a){ if(ans.nivel==='principiante')return 'no'; if(ans.nivel==='avanzado')return 'si'; return 'poca'; }},
+   {key:'enfasis', q:'¿Hay algún grupo a priorizar?', h:'Para orientar el bloque (queda anotado; el volumen extra lo repartís vos al armar).', opts:[{v:'general',b:'General',s:'Todo el cuerpo parejo'},{v:'gluteos',b:'Glúteos / piernas',s:'Tren inferior'},{v:'espalda',b:'Espalda',s:'Tracciones'},{v:'pecho_hombros',b:'Pecho / hombros',s:'Empujes'},{v:'brazos',b:'Brazos',s:'Bíceps / tríceps'}], rec:function(ans,a){ return 'general'; }}
+  ];
+  function _wzAlumno(){ try{ return (getAlumnos()||[]).find(function(x){return x.id===window._perAlumnoId;})||{}; }catch(e){ return {}; } }
+  function _wzRecDe(i, ans){ try{ return WZ[i].rec(ans||{}, _wzAlumno()); }catch(e){ return (WZ[i].opts[0]||{}).v; } }
+  window._wzStart=function(){ window._perWz={step:0, ans:{}}; _wzRender(); };
+  function _wzRender(){
+    var ov=document.getElementById('per-ov'); if(!ov) return;
+    var wz=window._perWz, i=wz.step, Q=WZ[i]; var rec=_wzRecDe(i, wz.ans);
+    var prog=WZ.map(function(_,k){ return '<span style="height:5px;flex:1;border-radius:3px;background:'+(k<=i?C.blue:'#e4e8ef')+';"></span>'; }).join('');
+    var opts=Q.opts.map(function(o){ var sel=(wz.ans[Q.key]===o.v); var isRec=(o.v===rec);
+      return '<div onclick="_wzSet(\''+o.v+'\')" style="position:relative;border:1.5px solid '+(sel?C.blue:C.line)+';background:'+(sel?'#eef4fb':'#fff')+';border-radius:12px;padding:12px 15px;cursor:pointer;min-width:150px;flex:1;'+(sel?'box-shadow:0 0 0 2px rgba(58,110,165,.15);':'')+'">'
+        +(isRec?'<span style="position:absolute;top:-9px;right:8px;background:#1f8f5a;color:#fff;font-size:8px;font-weight:900;padding:2px 7px;border-radius:999px;">✓ RECOMENDADO</span>':'')
+        +'<b style="display:block;font-size:13.5px;color:'+C.navy+';">'+o.b+'</b><span style="font-size:10.5px;color:'+C.muted+';">'+o.s+'</span></div>'; }).join('');
+    var body='<div style="background:#fff;border:1px solid '+C.line+';border-radius:16px;padding:20px;max-width:720px;margin:0 auto;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;"><span style="font-size:11px;font-weight:800;color:'+C.muted+';">Paso '+(i+1)+' de '+WZ.length+'</span>'
+        +'<button onclick="_wzTodo()" style="background:linear-gradient(135deg,#f0c75a,#d8a93a);color:#4a3608;border:none;border-radius:9px;padding:8px 13px;font-size:11.5px;font-weight:800;cursor:pointer;">⚡ Armar todo recomendado</button></div>'
+      +'<div style="display:flex;gap:6px;margin-bottom:16px;">'+prog+'</div>'
+      +'<div style="font-size:17px;font-weight:900;color:'+C.navy+';margin-bottom:3px;">'+Q.q+'</div>'
+      +'<div style="font-size:12px;color:'+C.muted+';margin-bottom:14px;">'+Q.h+'</div>'
+      +'<div style="display:flex;gap:9px;flex-wrap:wrap;">'+opts+'</div>'
+      +'<div style="margin-top:12px;"><button onclick="_wzUsarRec()" style="background:#eef8f1;border:1px solid #c7ecd6;color:#1f8f5a;border-radius:10px;padding:9px 14px;font-size:12px;font-weight:800;cursor:pointer;">🤔 No sé — usar el recomendado</button></div>'
+      +'<div style="display:flex;justify-content:space-between;margin-top:18px;">'
+        +'<button onclick="_wzBack()" style="background:#fff;border:1px solid '+C.line+';color:'+C.blue2+';border-radius:10px;padding:11px 18px;font-size:13px;font-weight:800;cursor:pointer;">'+(i===0?'✕ Cancelar':'‹ Atrás')+'</button>'
+        +'<button onclick="_wzNext()" style="background:'+C.navy+';color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:800;cursor:pointer;">'+(i===WZ.length-1?'✓ Armar macrociclo':'Siguiente ›')+'</button></div>'
+    +'</div>';
+    ov.innerHTML='<div style="background:'+C.navy+';color:#fff;position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;"><div style="font-size:16px;font-weight:900;">🤖 Asistente — '+_esc((window._perAlumnoNom||"").split(" ")[0]||"Alumno")+'</div><button onclick="_perCerrar()" style="background:rgba(255,255,255,.12);border:none;color:#fff;font-size:20px;width:34px;height:34px;border-radius:9px;cursor:pointer;">×</button></div><div style="padding:22px 16px 60px;">'+body+'</div>';
+  }
+  window._wzSet=function(v){ window._perWz.ans[WZ[window._perWz.step].key]=v; _wzRender(); };
+  window._wzUsarRec=function(){ var i=window._perWz.step; window._perWz.ans[WZ[i].key]=_wzRecDe(i,window._perWz.ans); _wzNext(); };
+  window._wzBack=function(){ var wz=window._perWz; if(wz.step===0){ window._perCur=null; _render(); return; } wz.step--; _wzRender(); };
+  window._wzNext=function(){ var wz=window._perWz, i=wz.step; if(wz.ans[WZ[i].key]==null) wz.ans[WZ[i].key]=_wzRecDe(i,wz.ans); if(i<WZ.length-1){ wz.step++; _wzRender(); } else { _wzBuild(wz.ans); } };
+  window._wzTodo=function(){ var ans={}; for(var i=0;i<WZ.length;i++){ ans[WZ[i].key]=_wzRecDe(i,ans); } _wzBuild(ans); };
+  function _wzBuild(ans){
+    var lvl=ans.nivel||'intermedio';
+    var acum=({ principiante:{si:'8-10',sf:'14-16',ri:3,rf:2}, intermedio:{si:'10-12',sf:'16-20',ri:3,rf:1}, avanzado:{si:'12-14',sf:'18-22',ri:3,rf:1} })[lvl]||{si:'10-12',sf:'16-20',ri:3,rf:1};
+    if(ans.recup==='cuesta') acum.rf=Math.max(1,acum.rf);
+    var T=parseInt(ans.duracion,10)||12, cad=parseInt(ans.descarga,10)||5;
+    var conAdapt=(ans.extras==='ambas'||ans.extras==='adapt'), conIntens=(ans.extras==='ambas'||ans.extras==='intens');
+    // Situación de partida: si vuelve de parate o arranca de cero → siempre adaptación
+    if(ans.situacion==='parate'||ans.situacion==='cero') conAdapt=true;
+    // Técnicas de intensidad: según experiencia
+    var tecOK = (ans.tecnicas_exp==='si'||ans.tecnicas_exp==='poca');
+    acum.tecnicas = tecOK;
+    var aSem=(lvl==='principiante'||ans.recup==='cuesta'||ans.situacion==='cero')?3:2, iSem=(lvl==='avanzado')?3:2;
+    var fases=[], orden=0;
+    function push(key, semanas, over){ var f=_nuevaFase(key, semanas, orden++); if(over){ for(var k in over) f[k]=over[k]; } fases.push(f); }
+    if(conAdapt) push('adaptacion', aSem);
+    var rem=T-(conAdapt?aSem:0)-(conIntens?iSem:0)-1; if(rem<2) rem=2;
+    var guard=0;
+    var aov={series_ini:acum.si,series_fin:acum.sf,rir_ini:acum.ri,rir_fin:acum.rf,tecnicas:acum.tecnicas};
+    while(rem>=(cad+1) && guard<6){ push('acumulacion', cad, aov); push('descarga',1); rem-=(cad+1); guard++; }
+    if(rem>=2){ push('acumulacion', rem, aov); rem=0; }
+    if(conIntens) push('intensificacion', iSem);
+    push('descarga', 1);
+    var nomObj=({hipertrofia:'Hipertrofia',recomp:'Recomposición',fuerza_hiper:'Fuerza-hipertrofia',mantenimiento:'Mantenimiento'})[ans.objetivo]||'Hipertrofia';
+    var nomNiv=({principiante:'Principiante',intermedio:'Intermedio',avanzado:'Avanzado'})[lvl]||'';
+    var m={ id:_uid('macro'), alumno_id:window._perAlumnoId, nombre:nomObj+' · '+nomNiv, fecha_inicio:_perFechaBase(), activo:true, created_at:_iso(), updated_at:_iso(), fases:fases, config:{objetivo:ans.objetivo,nivel:lvl,duracion:T,descarga:cad,recup:ans.recup,extras:ans.extras,situacion:ans.situacion,tecnicas_exp:ans.tecnicas_exp,enfasis:ans.enfasis} };
+    var all=_all(); all.forEach(function(x){ if(x.alumno_id===window._perAlumnoId) x.activo=false; }); all.push(m); _saveAll(all);
+    window._perCur=m; window._perWz=null; _render(); _perPublish();
+    if(typeof toast==='function') toast('✓ Macrociclo armado automáticamente');
+  }
+
+  // ──────── AUDITORÍA del macrociclo (reglas, con recomendaciones aplicables) ────────
+  window._perAuditar=function(){
+    var m=window._perCur; if(!m||!m.fases||!m.fases.length){ return; }
+    var cfg=m.config||{}; var a=_wzAlumno();
+    var age=0; try{ if(a&&a.nacimiento) age=new Date().getFullYear()-new Date(a.nacimiento).getFullYear(); }catch(e){}
+    var fases=m.fases.slice().sort(function(x,y){return (x.orden||0)-(y.orden||0);});
+    var total=fases.reduce(function(s,f){return s+(parseInt(f.semanas,10)||0);},0);
+    var cad=parseInt(cfg.descarga,10)||6;
+    var finds=[];
+    function ok(t){ finds.push({sev:'ok',txt:t}); }
+    function warn(t,fix){ finds.push({sev:'warn',txt:t,fix:fix||null}); }
+    // 1) RIR debe bajar en acumulación
+    fases.forEach(function(f){ if(f.key==='acumulacion'){ var ri=parseFloat(f.rir_ini),rf=parseFloat(f.rir_fin); if(!isNaN(ri)&&!isNaN(rf)&&ri<=rf){ warn('En "'+f.nombre+'" el RIR no baja ('+f.rir_ini+'→'+f.rir_fin+'). La intensidad debería aumentar a lo largo del bloque.', function(){ f.rir_fin=Math.max(0,ri-2); }); } } });
+    // 2) Volumen según nivel (fin de acumulación)
+    var volFin=0,cuenta=0; fases.forEach(function(f){ if(f.key==='acumulacion'){ volFin+=_rangoProm(f.series_fin); cuenta++; } });
+    if(cuenta){ volFin=volFin/cuenta;
+      if(cfg.nivel==='principiante' && volFin>18) warn('El volumen de llegada ('+Math.round(volFin)+' series/músc) es alto para un principiante. Conviene techo ~14–16.', function(){ fases.forEach(function(f){ if(f.key==='acumulacion') f.series_fin='14-16'; }); });
+      if(cfg.nivel==='avanzado' && volFin<16) warn('El volumen de llegada ('+Math.round(volFin)+' series/músc) es bajo para un avanzado. Podría llegar a ~18–22.', function(){ fases.forEach(function(f){ if(f.key==='acumulacion') f.series_fin='18-22'; }); });
+    }
+    // 3) Bloque de acumulación más largo que la cadencia de descarga
+    fases.forEach(function(f){ if(f.key==='acumulacion'){ var n=parseInt(f.semanas,10)||0; if(n>cad){ warn('El bloque "'+f.nombre+'" tiene '+n+' semanas seguidas sin descarga (tu cadencia es '+cad+'+1). Conviene acortarlo o meter una descarga.', function(){ f.semanas=cad; }); } } });
+    // 4) Si vuelve de parate / arranca de cero y no hay adaptación
+    var hayAdapt=fases.some(function(f){return f.key==='adaptacion';});
+    if((cfg.situacion==='parate'||cfg.situacion==='cero') && !hayAdapt){ warn('El alumno '+(cfg.situacion==='cero'?'arranca de cero':'vuelve de un parate')+' pero el plan no tiene fase de adaptación. Conviene agregar una al inicio.', function(){ var nf=_nuevaFase('adaptacion', cfg.situacion==='cero'?3:2, -1); m.fases.push(nf); m.fases.sort(function(x,y){return (x.orden||0)-(y.orden||0);}).forEach(function(f,k){f.orden=k;}); }); }
+    // 5) Debe terminar con descarga
+    if(fases[fases.length-1] && fases[fases.length-1].key!=='descarga'){ warn('El macrociclo no termina con una descarga. Conviene cerrar con una semana suave.', function(){ var nf=_nuevaFase('descarga',1,fases.length); m.fases.push(nf); }); }
+    // 6) Técnicas de intensidad con recuperación limitada
+    var tecOn=fases.some(function(f){return !!f.tecnicas;});
+    if(tecOn && (cfg.recup==='cuesta'||age>=45)){ warn('Hay técnicas de intensidad activadas y la recuperación es limitada'+(age>=45?' (+'+age+' años)':'')+'. Conviene moderarlas (dejarlas solo en aislamientos y al final).', function(){ fases.forEach(function(f){ f.tecnicas=false; }); }); }
+    // 7) Duración total
+    if(total<6) warn('El bloque es muy corto ('+total+' sem) para ver progreso real de hipertrofia. Lo ideal son 8+ semanas.');
+    if(total>20) warn('El bloque es muy largo ('+total+' sem). Pensá en dividirlo en dos macrociclos con un objetivo cada uno.');
+    // 8) Intensificación sin acumulación suficiente
+    var semAcum=fases.filter(function(f){return f.key==='acumulacion';}).reduce(function(s,f){return s+(parseInt(f.semanas,10)||0);},0);
+    if(fases.some(function(f){return f.key==='intensificacion';}) && semAcum<4) warn('Hay intensificación pero poca acumulación previa ('+semAcum+' sem). La fuerza se construye mejor sobre una base de volumen.');
+    if(!finds.some(function(f){return f.sev==='warn';})) ok('El macrociclo es coherente: progresión de volumen y RIR correctas, descargas en su lugar y cierre adecuado. ✅');
+    _perAuditRender(finds);
+  };
+  var _perAuditFixes=[];
+  function _perAuditRender(finds){
+    _perAuditFixes=finds.filter(function(f){return f.sev==='warn'&&f.fix;}).map(function(f){return f.fix;});
+    var hayFix=_perAuditFixes.length>0;
+    var items=finds.map(function(f){
+      var col=f.sev==='ok'?'#1f8f5a':'#b5701d', ic=f.sev==='ok'?'✓':'⚠️', bg=f.sev==='ok'?'#eef8f1':'#fff6e3', bd=f.sev==='ok'?'#c7ecd6':'#f0d79a';
+      return '<div style="display:flex;gap:9px;background:'+bg+';border:1px solid '+bd+';border-radius:10px;padding:10px 12px;margin-bottom:8px;"><span style="font-size:14px;flex-shrink:0;">'+ic+'</span><span style="font-size:12.5px;color:'+col+';line-height:1.45;font-weight:600;">'+f.txt+'</span></div>';
+    }).join('');
+    var ov=document.getElementById('per-audit'); if(ov) ov.remove();
+    ov=document.createElement('div'); ov.id='per-audit';
+    ov.style.cssText='position:fixed;inset:0;z-index:14000;background:rgba(6,10,18,.6);display:flex;align-items:flex-start;justify-content:center;padding:28px 14px 60px;overflow:auto;';
+    ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+    ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:520px;width:100%;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);" onclick="event.stopPropagation()">'
+      +'<div style="background:'+C.navy+';color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;"><b style="font-size:16px;">🔎 Auditoría del plan</b><button onclick="var o=document.getElementById(\'per-audit\');if(o)o.remove();" style="background:none;border:none;color:#9fb4d2;font-size:22px;cursor:pointer;">×</button></div>'
+      +'<div style="padding:16px 16px 10px;max-height:70vh;overflow:auto;">'+items+'</div>'
+      +(hayFix?'<div style="padding:4px 16px 16px;"><div style="font-size:12.5px;font-weight:800;color:'+C.navy+';margin-bottom:10px;">¿Querés que aplique las recomendaciones y readapte el plan?</div>'
+        +'<div style="display:flex;gap:8px;"><button onclick="_perAplicarAuditoria()" style="flex:1;background:#1f8f5a;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;">✓ Sí, readaptar</button>'
+        +'<button onclick="var o=document.getElementById(\'per-audit\');if(o)o.remove();" style="flex:1;background:#eef2f8;color:'+C.blue2+';border:1px solid '+C.line+';border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;">No, dejar como está</button></div></div>'
+        :'<div style="padding:4px 16px 18px;text-align:center;"><button onclick="var o=document.getElementById(\'per-audit\');if(o)o.remove();" style="background:#eef2f8;color:'+C.blue2+';border:1px solid '+C.line+';border-radius:10px;padding:11px 20px;font-size:13px;font-weight:800;cursor:pointer;">Cerrar</button></div>')
+      +'</div>';
+    document.body.appendChild(ov);
+  }
+  window._perAplicarAuditoria=function(){
+    try{ _perAuditFixes.forEach(function(fx){ try{ fx(); }catch(e){} }); }catch(e){}
+    // renumerar órdenes por las dudas
+    if(window._perCur&&window._perCur.fases){ window._perCur.fases.sort(function(x,y){return (x.orden||0)-(y.orden||0);}).forEach(function(f,k){f.orden=k;}); }
+    _persist(); _perPublish(); _render();
+    var o=document.getElementById('per-audit'); if(o) o.remove();
+    if(typeof toast==='function') toast('✓ Plan readaptado según la auditoría');
+  };
+})();
 </script>
 </body>
 </html>

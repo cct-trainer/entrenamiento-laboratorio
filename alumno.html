@@ -1071,8 +1071,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261029132124 por un timestamp en cada deploy
-const _APP_VERSION = '20261029132124';
+// deploy.bat reemplaza 20261030115815 por un timestamp en cada deploy
+const _APP_VERSION = '20261030115815';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -9474,6 +9474,28 @@ function _descargarPlanillaExcel(){
   if(window._xlsxStyled && window.XLSX){ gen(); return; }
   const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js'; s.onload=function(){ window._xlsxStyled=true; gen(); }; s.onerror=function(){ alert('No se pudo cargar la librería de Excel (¿sin internet?)'); }; document.head.appendChild(s);
 }
+// ── Cinta de FASE (periodización profesional) — variante A ──
+function _faseActualAl(){
+  try{
+    if(!_data || _data.plan_modo!=='profesional') return null;
+    var per=_data.periodizacion; if(!per || !Array.isArray(per.fases) || !per.fases.length) return null;
+    var p=String(per.fecha_inicio||'').slice(0,10).split('-'); if(p.length!==3) return null;
+    var ini=new Date(+p[0],+p[1]-1,+p[2]); if(isNaN(ini)) return null;
+    var hoy=new Date(); hoy.setHours(0,0,0,0);
+    var diff=Math.floor((hoy-ini)/86400000); if(diff<0) return null;
+    var semMacro=Math.floor(diff/7)+1, acc=0;
+    for(var i=0;i<per.fases.length;i++){ var n=parseInt(per.fases[i].semanas,10)||0; if(semMacro<=acc+n){ return {nombre:per.fases[i].nombre||'', color:per.fases[i].color||'#10b981', sem:semMacro-acc, total:n}; } acc+=n; }
+    return null;
+  }catch(e){ return null; }
+}
+function _faseCintaHTML(){
+  var f=_faseActualAl(); if(!f) return '';
+  var col=f.color||'#10b981'; var en=(typeof _LANG!=='undefined'&&_LANG==='en');
+  return '<div style="display:flex;align-items:center;gap:8px;padding:8px 16px;margin:0 -16px 12px;font-size:11px;font-weight:900;letter-spacing:.4px;color:var(--text);background:linear-gradient(90deg,'+col+'33,'+col+'0f);border-bottom:2px solid '+col+';">'
+    +'<span style="width:9px;height:9px;border-radius:50%;background:'+col+';flex-shrink:0;"></span>'
+    +(en?'PHASE: ':'FASE: ')+String(f.nombre).toUpperCase().replace(/</g,'&lt;')
+    +'<span style="margin-left:auto;font-weight:800;color:'+col+';font-size:10.5px;">'+(en?'Week ':'Semana ')+f.sem+(en?' of ':' de ')+f.total+'</span></div>';
+}
 function renderSesion() {
   const ctn=document.getElementById('sesion-ctn');
   if (_diaIdx===null||!_plan) { ctn.innerHTML=''; return; }
@@ -9664,7 +9686,7 @@ function renderSesion() {
     ? '<div style="margin-top:10px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;font-weight:800;color:#7fb0e6;background:rgba(96,165,224,.10);border:1px solid rgba(96,165,224,.28);border-radius:12px;padding:10px;">👁️ '+(_LANG==='en'?'Your coach reviewed this workout':'Tu coach vio tu entrenamiento')+'</div>'
     : '';
 
-  ctn.innerHTML= back + vistaTabs + tabs +
+  ctn.innerHTML= back + vistaTabs + tabs + _faseCintaHTML() +
     // Foto limpia arriba (con un pequeño degradado final hacia el rectángulo)
     '<div style="position:relative;height:220px;margin:0 -16px;background:#0a0a12 url(\''+_sesImg+'\') center/cover no-repeat;">'+
       '<div style="position:absolute;left:0;right:0;bottom:0;height:64px;background:linear-gradient(to bottom, transparent, var(--ses-panel));"></div>'+
