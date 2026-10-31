@@ -34274,12 +34274,12 @@ function _fechaCort(f) {
       +'<div class="cpe-card"><h2>⚙️ Datos generales</h2>'
         +'<div class="cpe-row c3">'
           +'<div class="cpe-fg"><label>Nombre del plan</label><input value="'+V('nombre')+'" oninput="_cpeSet(\'nombre\',this.value)"></div>'
-          +'<div class="cpe-fg"><label>Objetivo principal</label><input value="'+V('objetivo')+'" oninput="_cpeSet(\'objetivo\',this.value)"></div>'
-          +'<div class="cpe-fg"><label>Disponibilidad semanal</label><input value="'+V('dias')+'" placeholder="ej. 4 días" oninput="_cpeSet(\'dias\',this.value)"></div>'
           +'<div class="cpe-fg"><label>Fecha de inicio</label><input type="date" value="'+V('fecha_inicio')+'" oninput="_cpeSet(\'fecha_inicio\',this.value)"></div>'
           +'<div class="cpe-fg"><label>Fin previsto</label><input type="date" value="'+V('fecha_fin')+'" oninput="_cpeSet(\'fecha_fin\',this.value)"></div>'
-          +'<div class="cpe-fg"><label>Prioridades</label><input value="'+V('prioridades')+'" oninput="_cpeSet(\'prioridades\',this.value)"></div>'
         +'</div>'
+        +'<div class="cpe-fg"><label>Objetivo principal</label>'+_chips(OPC.objetivo,p.objetivo,'objetivo')+'</div>'
+        +'<div class="cpe-fg"><label>Disponibilidad semanal (días)</label>'+_chipsM(OPC.dias,p.dias,'dias')+'</div>'
+        +'<div class="cpe-fg"><label>Prioridades</label>'+_chipsM(OPC.prioridades,p.prioridades,'prioridades')+'</div>'
         +'<div class="cpe-fg"><label>Observaciones generales</label><textarea oninput="_cpeSet(\'obs\',this.value)">'+V('obs')+'</textarea></div>'
       +'</div>'
       +'<div class="cpe-card"><h2>🗓️ Mesociclos <span class="cpe-muted" style="font-weight:700;">· '+((p.mesos||[]).length)+'</span></h2>'
@@ -34333,27 +34333,25 @@ function _fechaCort(f) {
     return '<h1>Ficha del alumno · <span class="cpe-muted">'+_esc(a.nombre||'')+'</span></h1>'
       +'<p class="cpe-lead">Revisá y actualizá la info del alumno. Queda disponible durante toda la planificación. Los datos de salud son <b>🔒 privados</b> (no se publican en la app del alumno).</p>'
       +'<div class="cpe-ai-bar">✨ <button class="cpe-ai-btn" onclick="_cpeAiFicha()">Rellenar automáticamente</button><span class="cap">Completa lo que falte según el perfil del alumno. Nunca pisa lo que cargaste a mano. No completa datos de salud.</span></div>'
-      +'<div class="cpe-card"><h2>🎯 Objetivos</h2><div class="cpe-row c2">'
-        +'<div class="cpe-fg"><label>Objetivo principal</label><input value="'+PV('objetivo')+'" oninput="_cpeSet(\'objetivo\',this.value)"></div>'
-        +'<div class="cpe-fg"><label>Objetivos secundarios</label><input value="'+PV('objetivosSec')+'" oninput="_cpeSet(\'objetivosSec\',this.value)"></div>'
-      +'</div></div>'
-      +'<div class="cpe-card"><h2>🏋️ Experiencia y contexto</h2><div class="cpe-row c2">'
-        +'<div class="cpe-fg"><label>Experiencia / antecedentes</label><textarea oninput="_cpeSet(\'ficha.experiencia\',this.value)">'+FV('experiencia')+'</textarea></div>'
-        +'<div class="cpe-fg"><label>Entrenamiento actual y otros deportes</label><textarea oninput="_cpeSet(\'ficha.actual\',this.value)">'+FV('actual')+'</textarea></div>'
-        +'</div><div class="cpe-row c3">'
-        +'<div class="cpe-fg"><label>Días disponibles</label><input value="'+PV('dias')+'" oninput="_cpeSet(\'dias\',this.value)"></div>'
-        +'<div class="cpe-fg"><label>Duración por sesión</label><input value="'+PV('duracionSesion')+'" oninput="_cpeSet(\'duracionSesion\',this.value)"></div>'
-        +'<div class="cpe-fg"><label>Lugar / equipamiento</label><input value="'+PV('lugar')+'" oninput="_cpeSet(\'lugar\',this.value)"></div>'
-        +'</div><div class="cpe-fg"><label>Preferencias y ejercicios que le cuestan</label><textarea oninput="_cpeSet(\'ficha.preferencias\',this.value)">'+FV('preferencias')+'</textarea></div>'
+      +'<div class="cpe-card"><h2>🎯 Objetivos</h2>'
+        +'<div class="cpe-fg"><label>Objetivo principal <span class="cpe-muted">(uno)</span></label>'+_chips(OPC.objetivo,p.objetivo,'objetivo')+'</div>'
+        +'<div class="cpe-fg" style="margin:0;"><label>Objetivos secundarios <span class="cpe-muted">(los que quieras)</span></label>'+_chipsM(OPC.objetivosSec,p.objetivosSec,'objetivosSec')+'</div>'
+      +'</div>'
+      +'<div class="cpe-card"><h2>🏋️ Experiencia y contexto</h2>'
+        +'<div class="cpe-fg"><label>Experiencia / nivel</label>'+_chips(OPC.experiencia,f.experiencia,'ficha.experiencia')+'</div>'
+        +'<div class="cpe-fg"><label>Entrenamiento actual y otros deportes</label>'+_chipsM(OPC.actividades,f.actual,'ficha.actual')+'</div>'
+        +'<div class="cpe-fg"><label>Días disponibles</label>'+_chipsM(OPC.dias,p.dias,'dias')+'</div>'
+        +'<div class="cpe-row c2"><div class="cpe-fg"><label>Duración por sesión</label>'+_chips(OPC.duracion,p.duracionSesion,'duracionSesion')+'</div>'
+        +'<div class="cpe-fg"><label>Lugar / equipamiento</label>'+_chips(OPC.lugar,p.lugar,'lugar')+'</div></div>'
+        +'<div class="cpe-fg" style="margin:0;"><label>Preferencias y ejercicios que le cuestan</label>'+_chipsM(OPC.preferencias,f.preferencias,'ficha.preferencias')+'</div>'
       +'</div>'
       +'<div class="cpe-card" style="border-color:#f0d9a8;background:#fffdf8;"><h2>🩺 Salud y restricciones <span style="font-size:9.5px;font-weight:800;color:#9a5a00;background:#fdf3e0;border:1px solid #f0d9a8;border-radius:6px;padding:2px 7px;">🔒 privado</span></h2>'
-        +'<div class="cpe-row c2">'
-        +'<div class="cpe-fg"><label>Molestias / lesiones / restricciones</label><textarea oninput="_cpeSet(\'ficha.salud.molestias\',this.value)">'+SV('molestias')+'</textarea></div>'
-        +'<div class="cpe-fg"><label>Indicaciones profesionales informadas</label><textarea oninput="_cpeSet(\'ficha.salud.indicaciones\',this.value)">'+SV('indicaciones')+'</textarea></div>'
-        +'</div><div class="cpe-row c3">'
-        +'<div class="cpe-fg"><label>Descanso (hs/noche)</label><input value="'+SV('descanso')+'" oninput="_cpeSet(\'ficha.salud.descanso\',this.value)"></div>'
-        +'<div class="cpe-fg"><label>Estrés percibido</label>'+_sel(['Bajo','Medio','Alto'],sal.estres,'ficha.salud.estres')+'</div>'
-        +'<div class="cpe-fg"><label>Recuperación percibida</label>'+_sel(['Buena','Regular','Mala'],sal.recuperacion,'ficha.salud.recuperacion')+'</div>'
+        +'<div class="cpe-fg"><label>Molestias / lesiones / restricciones</label>'+_chipsM(OPC.molestias,sal.molestias,'ficha.salud.molestias')+'</div>'
+        +'<div class="cpe-fg"><label>Indicaciones profesionales informadas</label>'+_chipsM(OPC.indicaciones,sal.indicaciones,'ficha.salud.indicaciones')+'</div>'
+        +'<div class="cpe-row c3">'
+        +'<div class="cpe-fg"><label>Descanso (hs/noche)</label>'+_chips(OPC.descanso,sal.descanso,'ficha.salud.descanso')+'</div>'
+        +'<div class="cpe-fg"><label>Estrés percibido</label><div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:2px;">'+['Bajo','Medio','Alto'].map(function(o){return '<span onclick="_cpeChip(\'ficha.salud.estres\',\''+o+'\')" style="'+_chipCss(sal.estres===o)+'">'+o+'</span>';}).join('')+'</div></div>'
+        +'<div class="cpe-fg"><label>Recuperación percibida</label><div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:2px;">'+['Buena','Regular','Mala'].map(function(o){return '<span onclick="_cpeChip(\'ficha.salud.recuperacion\',\''+o+'\')" style="'+_chipCss(sal.recuperacion===o)+'">'+o+'</span>';}).join('')+'</div></div>'
         +'</div></div>'
       +'<div class="cpe-card"><h2>📅 Fechas relevantes</h2><div class="cpe-muted" style="margin-bottom:8px;">Competencias, vacaciones o interrupciones previstas.</div>'
         +_fechasRelev(f)+'<button class="cpe-btn ghost sm" onclick="_cpeFechaAdd()">＋ Agregar fecha</button></div>'
@@ -34391,7 +34389,7 @@ function _fechaCort(f) {
     var ev=p.evaluaciones||[]; var ob=p.objetivosSeguim||[];
     var evRows = ev.length ? ev.map(function(e,i){ return '<tr style="border-bottom:1px solid #eef1f6;">'
       +'<td style="padding:4px;width:120px;"><input type="date" value="'+_esc(e.fecha||'')+'" oninput="_cpeEvalSet('+i+',\'fecha\',this.value)"></td>'
-      +'<td style="padding:4px;"><input value="'+_esc(e.prueba||'')+'" placeholder="prueba/variable" oninput="_cpeEvalSet('+i+',\'prueba\',this.value)"></td>'
+      +'<td style="padding:4px;"><input list="cpe-dl-prueba" value="'+_esc(e.prueba||'')+'" placeholder="prueba/variable" oninput="_cpeEvalSet('+i+',\'prueba\',this.value)"></td>'
       +'<td style="padding:4px;width:120px;"><input value="'+_esc(e.resultado||'')+'" placeholder="resultado" oninput="_cpeEvalSet('+i+',\'resultado\',this.value)"></td>'
       +'<td style="padding:4px;"><input value="'+_esc(e.condiciones||'')+'" placeholder="condiciones/obs." oninput="_cpeEvalSet('+i+',\'condiciones\',this.value)"></td>'
       +'<td style="padding:4px;width:120px;"><input type="date" value="'+_esc(e.reeval||'')+'" oninput="_cpeEvalSet('+i+',\'reeval\',this.value)"></td>'
@@ -34405,7 +34403,8 @@ function _fechaCort(f) {
       +'<td style="padding:4px;width:90px;"><input value="'+_esc(o.plazo||'')+'" placeholder="plazo" oninput="_cpeObjSet('+i+',\'plazo\',this.value)"></td>'
       +'<td style="padding:4px;width:30px;"><button class="cpe-btn ghost sm" onclick="_cpeObjDel('+i+')">🗑</button></td></tr>'; }).join('')
       : '<tr><td colspan="6" class="cpe-muted" style="padding:10px;text-align:center;">Sin objetivos de seguimiento.</td></tr>';
-    return '<h1>Evaluación inicial y objetivos</h1>'
+    var dlP='<datalist id="cpe-dl-prueba">'+['Press banca RM','Press banca 5RM','Sentadilla RM','Peso muerto RM','Dominadas máx.','Flexiones máx.','Plancha (tiempo)','Movilidad de hombro','Movilidad de cadera','Salto vertical','Test de 1 km','Perímetro de brazo','Perímetro de cintura','Peso corporal','% graso'].map(function(o){return '<option value="'+o+'">';}).join('')+'</datalist>';
+    return dlP+'<h1>Evaluación inicial y objetivos</h1>'
       +'<p class="cpe-lead">Registrá las evaluaciones que elijas — sin batería obligatoria. Las reevaluaciones se agregan como filas nuevas (no reemplazan el resultado inicial).</p>'
       +'<div class="cpe-ai-bar">✨ <button class="cpe-ai-btn" onclick="_cpeAiEval()">Sugerir evaluaciones y objetivos</button><span class="cap">Propone pruebas y metas coherentes con el objetivo. Vos editás o borrás cada una.</span></div>'
       +'<div class="cpe-card"><h2>🧪 Evaluaciones</h2><table style="width:100%;border-collapse:collapse;font-size:11.5px;">'
@@ -34419,6 +34418,7 @@ function _fechaCort(f) {
       +'<div class="cpe-nav"><button class="cpe-btn ghost" onclick="_cpeGo(\'ficha\')">‹ Ficha</button><button class="cpe-btn pri" onclick="_cpeGo(\'general\')">Siguiente: Macrociclo ›</button></div>';
   }
   function _selRaw(opts,val,handler){ return '<select onchange="'+handler+'">'+opts.map(function(o){return '<option'+(o===val?' selected':'')+'>'+o+'</option>';}).join('')+'</select>'; }
+  function _selOtro(opts,val,handler){ var has=opts.indexOf(val)>=0; var h='<select onchange="'+handler+'"><option value="">—</option>'; opts.forEach(function(o){ h+='<option'+(val===o?' selected':'')+'>'+_esc(o)+'</option>'; }); if(val&&!has) h+='<option selected>'+_esc(val)+'</option>'; h+='</select>'; return h; }
   window._cpeEvalAdd=function(){ var p=_plan(); if(!p.evaluaciones)p.evaluaciones=[]; p.evaluaciones.push({fecha:_today(),prueba:'',resultado:'',condiciones:'',reeval:''}); _touch(); _render(); };
   window._cpeEvalSet=function(i,k,v){ var p=_plan(); if(p.evaluaciones[i]){p.evaluaciones[i][k]=v; _touch();} };
   window._cpeEvalDel=function(i){ var p=_plan(); p.evaluaciones.splice(i,1); _touch(); _render(); };
@@ -34490,7 +34490,7 @@ function _fechaCort(f) {
       +'<div class="cpe-card"><h2>🧱 Datos del mesociclo</h2><div class="cpe-row c3">'
         +'<div class="cpe-fg"><label>Nombre</label><input value="'+MV('nombre')+'" oninput="_cpeMesoField(\'nombre\',this.value)"></div>'
         +'<div class="cpe-fg"><label>Fase (color)</label>'+_selRaw(['adaptacion','acumulacion','intensificacion','descarga','resensibilizacion','especifica','otro'],m.fase,'_cpeMesoField(\'fase\',this.value)')+'</div>'
-        +'<div class="cpe-fg"><label>Frecuencia</label><input value="'+MV('frecuencia')+'" oninput="_cpeMesoField(\'frecuencia\',this.value)"></div>'
+        +'<div class="cpe-fg"><label>Frecuencia</label>'+_selOtro(OPC.frecuencia,m.frecuencia,'_cpeMesoField(\'frecuencia\',this.value)')+'</div>'
         +'<div class="cpe-fg"><label>Desde</label><input type="date" value="'+MV('desde')+'" oninput="_cpeMesoField(\'desde\',this.value)"></div>'
         +'<div class="cpe-fg"><label>Hasta</label><input type="date" value="'+MV('hasta')+'" oninput="_cpeMesoField(\'hasta\',this.value)"></div>'
         +'<div class="cpe-fg"><label>Semanas</label><input type="number" value="'+MV('semanas')+'" oninput="_cpeMesoField(\'semanas\',this.value)"></div>'
@@ -34499,8 +34499,8 @@ function _fechaCort(f) {
         +'<div class="cpe-fg"><label>Objetivo específico</label><input value="'+MV('objetivo')+'" oninput="_cpeMesoField(\'objetivo\',this.value)"></div>'
         +'</div>'
         +'<div class="cpe-fg"><label>Capacidades / patrones / grupos prioritarios</label><div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:4px;">'+pills+'</div></div>'
-        +'<div class="cpe-row c2"><div class="cpe-fg"><label>Criterio de progresión</label><textarea oninput="_cpeMesoField(\'progresion\',this.value)">'+MV('progresion')+'</textarea></div>'
-        +'<div class="cpe-fg"><label>Criterios de evaluación y ajuste</label><textarea oninput="_cpeMesoField(\'ajuste\',this.value)">'+MV('ajuste')+'</textarea></div></div>'
+        +'<div class="cpe-fg"><label>Criterio de progresión</label>'+_chipsF(OPC.progresionMeso,m.progresion,'meso','progresion')+'</div>'
+        +'<div class="cpe-fg"><label>Criterios de evaluación y ajuste</label>'+_chipsF(OPC.ajusteMeso,m.ajuste,'meso','ajuste')+'</div>'
         +'<label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;margin-top:4px;"><input type="checkbox" style="width:auto;" '+(m.descarga?'checked':'')+' onchange="_cpeMesoField(\'descarga\',this.checked)"> Es (o incluye) semana de descarga</label>'
       +'</div>'
       +'<div class="cpe-card"><h2>📆 Microciclos</h2><table style="width:100%;border-collapse:collapse;font-size:11.5px;"><tbody>'+micRows+'</tbody></table>'
@@ -34541,9 +34541,10 @@ function _fechaCort(f) {
         +'<div class="cpe-fg"><label>Nombre / número</label><input value="'+IV('nombre')+'" oninput="_cpeMicroField(\'nombre\',this.value)"></div>'
         +'<div class="cpe-fg"><label>Desde</label><input type="date" value="'+IV('desde')+'" oninput="_cpeMicroField(\'desde\',this.value)"></div>'
         +'<div class="cpe-fg"><label>Hasta</label><input type="date" value="'+IV('hasta')+'" oninput="_cpeMicroField(\'hasta\',this.value)"></div>'
-        +'<div class="cpe-fg"><label>Objetivo</label><input value="'+IV('objetivo')+'" oninput="_cpeMicroField(\'objetivo\',this.value)"></div>'
-        +'<div class="cpe-fg"><label>Progresión vs micro anterior</label><input value="'+IV('progresion')+'" oninput="_cpeMicroField(\'progresion\',this.value)"></div>'
-        +'</div></div>'
+        +'</div>'
+        +'<div class="cpe-fg"><label>Objetivo</label>'+_chipsF(OPC.objMicro,mi.objetivo,'micro','objetivo')+'</div>'
+        +'<div class="cpe-fg" style="margin:0;"><label>Progresión vs micro anterior</label>'+_chipsF(OPC.progMicro,mi.progresion,'micro','progresion')+'</div>'
+        +'</div>'
       +'<div class="cpe-card"><h2>🗓️ Calendario</h2><div style="display:grid;grid-template-columns:repeat('+Math.min(7,dias.length)+',1fr);gap:7px;">'+grid+'</div>'
         +'<div style="margin-top:10px;"><button class="cpe-btn ghost sm" onclick="_cpeMicroDup(\''+m.id+'\',\''+mi.id+'\')">⧉ Duplicar este microciclo</button></div></div>'
       +'<div class="cpe-nav"><button class="cpe-btn ghost" onclick="_cpeOpenMeso(\''+m.id+'\')">‹ Mesociclo</button><button class="cpe-btn pri" onclick="_cpeGo(\'vista\')">Vista general ›</button></div>';
@@ -34577,6 +34578,73 @@ function _fechaCort(f) {
   // ═══════════════ SESIÓN (constructor) ═══════════════
   var SERIE_TIPOS={movi:'Movilidad',apr:'Aproximación',efec:'Efectiva',cal:'V. a la calma',core:'Core',vol:'Volumen'};
   function _selTipo(val,handler){ return '<select onchange="'+handler+'" style="font-size:11px;">'+Object.keys(SERIE_TIPOS).map(function(k){return '<option value="'+k+'"'+(val===k?' selected':'')+'>'+SERIE_TIPOS[k]+'</option>';}).join('')+'</select>'; }
+
+  // ══ OPCIONES para tildar (todo con botones, escribir solo como último recurso) ══
+  var OPC={
+    objetivo:['Hipertrofia general','Hipertrofia tren superior','Hipertrofia tren inferior','Ganar fuerza','Fuerza máxima','Recomposición / bajar grasa','Salud y movilidad','Rendimiento deportivo','Resistencia','Mantenimiento'],
+    objetivosSec:['Mejorar postura','Core y estabilidad','Movilidad de hombro','Movilidad de cadera','Mejorar técnica','Prevención de lesiones','Estética','Resistencia'],
+    experiencia:['Principiante (menos de 1 año)','Intermedio (1–3 años)','Avanzado (más de 3 años)','Vuelve de un parate'],
+    actividades:['Gimnasio','Running','Fútbol','Pádel','Natación','Ciclismo','Funcional','Crossfit','Ninguna'],
+    dias:['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
+    duracion:['30–45 min','45–60 min','60–75 min','75–90 min','Más de 90 min'],
+    lugar:['Gimnasio completo','Gimnasio básico','Casa con mancuernas','Casa sin equipo','Aire libre'],
+    preferencias:['Prefiere mancuerna','Prefiere barra','Prefiere máquinas','Le cuesta peso muerto','Le cuesta sentadilla','Le cuesta press','Molestia en dominadas'],
+    molestias:['Lumbar','Cervical','Hombro','Rodilla','Cadera','Muñeca','Codo','Tobillo','Ninguna'],
+    indicaciones:['Evitar peso muerto pesado','Evitar impacto','Evitar trabajo sobre la cabeza','Reforzar core','Rango controlado','Sin restricción'],
+    descanso:['Menos de 6 h','6–7 h','7–8 h','Más de 8 h'],
+    prioridades:['Volumen','Intensidad','Técnica','Movilidad','Core','Déficit calórico'],
+    frecuencia:['2× semana','3× semana','4× semana','5× semana','6× semana'],
+    progresionMeso:['Doble progresión (reps→carga)','Progresión de carga','Progresión de reps','Progresión de series','RIR/RPE autoregulado'],
+    ajusteMeso:['Subir carga si RIR supera el objetivo','Mantener carga','Autoregulado por RPE','Bajar si hay fatiga'],
+    objMicro:['Entrada de volumen','Subir volumen','Mantener','Descarga','Test / reevaluación'],
+    progMicro:['+1 serie por ejercicio','Más carga','Más reps','Igual que la anterior','Menos carga (descarga)'],
+    objDia:['Empuje','Tracción','Tren inferior','Full body','Core','Cardio / running','Movilidad'],
+    equipo:['Principiante · gym completo','Intermedio · gym completo','Avanzado · gym completo','Casa con mancuernas','Casa sin equipo'],
+    reps:['5','6','8','10','12','15','20','30'],
+    rir:['0','1','2','3','4'],
+    pausa:['30 s','45 s','60 s','90 s','120 s','150 s','180 s']
+  };
+  function _js(s){ return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+  function _chipCss(sel){ return 'cursor:pointer;font-size:11px;font-weight:700;border-radius:999px;padding:6px 12px;'+(sel?'background:#2f5f95;color:#fff;border:1px solid #2f5f95;':'background:#f6f9fc;color:#55607a;border:1px solid #e4e8ef;'); }
+  // Selección simple (un valor)
+  function _chips(opts,val,path){
+    var inList=false;
+    var h='<div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:2px;">';
+    opts.forEach(function(o){ var sel=(val===o); if(sel)inList=true; h+='<span onclick="_cpeChip(\''+_js(path)+'\',\''+_js(o)+'\')" style="'+_chipCss(sel)+'">'+_esc(o)+'</span>'; });
+    var custom=(val && !inList);
+    h+='<span onclick="_cpeChipOtro(this)" style="cursor:pointer;font-size:11px;font-weight:700;border-radius:999px;padding:6px 12px;'+(custom?'background:#2f5f95;color:#fff;border:1px solid #2f5f95;':'background:#fff;color:#8795ab;border:1px dashed #cdd6e2;')+'">✎ Otro…</span>';
+    h+='</div>';
+    h+='<input value="'+_esc(custom?val:'')+'" oninput="_cpeSet(\''+_js(path)+'\',this.value)" placeholder="Escribir otro…" data-otro="1" style="margin-top:7px;display:'+(custom?'block':'none')+';">';
+    return h;
+  }
+  // Selección múltiple (lista separada por comas)
+  function _chipsM(opts,val,path){
+    var arr=String(val||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+    var h='<div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:2px;">';
+    opts.forEach(function(o){ var sel=arr.indexOf(o)>=0; h+='<span onclick="_cpeChipM(\''+_js(path)+'\',\''+_js(o)+'\')" style="'+_chipCss(sel)+'">'+_esc(o)+'</span>'; });
+    arr.filter(function(x){return opts.indexOf(x)<0;}).forEach(function(x){ h+='<span onclick="_cpeChipM(\''+_js(path)+'\',\''+_js(x)+'\')" style="'+_chipCss(true)+'">'+_esc(x)+' ✕</span>'; });
+    h+='<span onclick="_cpeChipOtro(this)" style="cursor:pointer;font-size:11px;font-weight:700;border-radius:999px;padding:6px 12px;background:#fff;color:#8795ab;border:1px dashed #cdd6e2;">✎ Otro…</span>';
+    h+='</div>';
+    h+='<input placeholder="Escribir y Enter para agregar…" data-otro="1" onkeydown="if(event.key===\'Enter\'){event.preventDefault();_cpeChipMAdd(\''+_js(path)+'\',this);}" style="margin-top:7px;display:none;">';
+    return h;
+  }
+  window._cpeChip=function(path,val){ var cur=_getPath(path); _cpeSet(path, cur===val?'':val); _render(); };
+  window._cpeChipM=function(path,val){ var arr=String(_getPath(path)||'').split(',').map(function(s){return s.trim();}).filter(Boolean); var i=arr.indexOf(val); if(i>=0)arr.splice(i,1); else arr.push(val); _cpeSet(path, arr.join(', ')); _render(); };
+  window._cpeChipMAdd=function(path,inp){ var v=(inp.value||'').trim(); if(!v)return; var arr=String(_getPath(path)||'').split(',').map(function(s){return s.trim();}).filter(Boolean); if(arr.indexOf(v)<0)arr.push(v); _cpeSet(path, arr.join(', ')); _render(); };
+  window._cpeChipOtro=function(el){ try{ var inp=el.parentNode.parentNode.querySelector('input[data-otro]'); if(inp){ inp.style.display='block'; inp.focus(); } el.style.background='#2f5f95'; el.style.color='#fff'; }catch(e){} };
+  function _getPath(path){ var p=_plan(); if(!p)return ''; var parts=path.split('.'); var o=p; for(var i=0;i<parts.length;i++){ if(o==null)return ''; o=o[parts[i]]; } return o==null?'':o; }
+  // chips para objetos anidados (meso/micro/ses) — selección simple
+  function _scopeObj(scope){ return scope==='meso'?_meso():scope==='micro'?_micro():scope==='ses'?_sesion():null; }
+  window._cpeFieldChip=function(scope,key,val){ var o=_scopeObj(scope); if(!o)return; o[key]=(o[key]===val?'':val); _touch(); _render(); };
+  window._cpeFieldOtro=function(scope,key,val){ var o=_scopeObj(scope); if(!o)return; o[key]=val; _touch(); };
+  function _chipsF(opts,val,scope,key){
+    var inList=false; var h='<div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:2px;">';
+    opts.forEach(function(o){ var sel=(val===o); if(sel)inList=true; h+='<span onclick="_cpeFieldChip(\''+scope+'\',\''+key+'\',\''+_js(o)+'\')" style="'+_chipCss(sel)+'">'+_esc(o)+'</span>'; });
+    var custom=(val && !inList);
+    h+='<span onclick="_cpeChipOtro(this)" style="cursor:pointer;font-size:11px;font-weight:700;border-radius:999px;padding:6px 12px;'+(custom?'background:#2f5f95;color:#fff;border:1px solid #2f5f95;':'background:#fff;color:#8795ab;border:1px dashed #cdd6e2;')+'">✎ Otro…</span></div>';
+    h+='<input value="'+_esc(custom?val:'')+'" oninput="_cpeFieldOtro(\''+scope+'\',\''+key+'\',this.value)" data-otro="1" placeholder="Escribir otro…" style="margin-top:7px;display:'+(custom?'block':'none')+';">';
+    return h;
+  }
   function _scrSesion(){
     var se=_sesion(); var mi=_micro(); var m=_meso(); if(!se) return _scrStub('mesos');
     function SV(x){return _esc(se[x]||'');}
@@ -34584,16 +34652,19 @@ function _fechaCort(f) {
     var pubBtn = se.estado==='publicada'
       ? '<button class="cpe-btn ghost sm" onclick="_cpeSesEstado(\'borrador\')">↩︎ Pasar a borrador</button>'
       : '<button class="cpe-btn ok sm" onclick="_cpeSesPublicar()">🚀 Publicar sesión</button>';
-    return '<h1>Sesión · '+_esc(se.nombre||'')+' <span class="cpe-muted" style="font-size:13px;">('+_fc(se.dia)+')</span></h1>'
+    var dls='<datalist id="cpe-dl-reps">'+OPC.reps.concat(['40 s','60 s','400 m','800 m','1 km']).map(function(o){return '<option value="'+o+'">';}).join('')+'</datalist>'
+      +'<datalist id="cpe-dl-rir">'+OPC.rir.map(function(o){return '<option value="'+o+'">';}).join('')+'</datalist>'
+      +'<datalist id="cpe-dl-pausa">'+OPC.pausa.map(function(o){return '<option value="'+o+'">';}).join('')+'</datalist>';
+    return dls+'<h1>Sesión · '+_esc(se.nombre||'')+' <span class="cpe-muted" style="font-size:13px;">('+_fc(se.dia)+')</span></h1>'
       +'<p class="cpe-lead">El ejercicio va debajo del bloque y las series dentro del ejercicio. Aproximación y efectivas quedan diferenciadas (solo las efectivas cuentan para el volumen).</p>'
       +'<div class="cpe-ai-bar">✨ <button class="cpe-ai-btn" onclick="_cpeAiSesion()">Rellenar la sesión</button><span class="cap">Propone bloques, ejercicios y series según la fase, el equipo y lo que le cuesta al alumno. Carga estimada marcada con ⚑.</span></div>'
       +'<div class="cpe-card"><h2>🧾 Cabecera</h2><div class="cpe-row c3">'
         +'<div class="cpe-fg"><label>Nombre</label><input value="'+SV('nombre')+'" oninput="_cpeSesField(\'nombre\',this.value)"></div>'
         +'<div class="cpe-fg"><label>Modalidad</label>'+_selRaw(['gimnasio','casa','running'],se.modalidad,'_cpeSesField(\'modalidad\',this.value)')+'</div>'
         +'<div class="cpe-fg"><label>Prioridad</label>'+_selRaw(['Alta','Media','Opcional'],se.prioridad,'_cpeSesField(\'prioridad\',this.value)')+'</div>'
-        +'<div class="cpe-fg"><label>Duración prevista</label><input value="'+SV('duracion')+'" oninput="_cpeSesField(\'duracion\',this.value)"></div>'
-        +'<div class="cpe-fg"><label>Nivel / equipamiento</label><input value="'+SV('equipo')+'" oninput="_cpeSesField(\'equipo\',this.value)"></div>'
-        +'<div class="cpe-fg"><label>Objetivo del día</label><input value="'+SV('objetivo')+'" oninput="_cpeSesField(\'objetivo\',this.value)"></div>'
+        +'<div class="cpe-fg"><label>Duración prevista</label>'+_selOtro(OPC.duracion,se.duracion,'_cpeSesField(\'duracion\',this.value)')+'</div>'
+        +'<div class="cpe-fg"><label>Nivel / equipamiento</label>'+_selOtro(OPC.equipo,se.equipo,'_cpeSesField(\'equipo\',this.value)')+'</div>'
+        +'<div class="cpe-fg"><label>Objetivo del día</label>'+_selOtro(OPC.objDia,se.objetivo,'_cpeSesField(\'objetivo\',this.value)')+'</div>'
         +'</div><div class="cpe-fg"><label>Indicaciones generales</label><textarea oninput="_cpeSesField(\'indicaciones\',this.value)">'+SV('indicaciones')+'</textarea></div>'
         +'<div class="cpe-fg" style="margin:0;"><label>📝 Notas internas del entrenador <span style="font-size:9px;color:#9a5a00;">(privadas, no las ve el alumno)</span></label><textarea oninput="_cpeSesField(\'notasInternas\',this.value)">'+_esc(se.notasInternas||'')+'</textarea></div>'
       +'</div>'
@@ -34616,10 +34687,10 @@ function _fechaCort(f) {
       return '<tr style="border-bottom:1px solid #f0f2f6;">'
         +'<td style="padding:4px 6px;width:30px;color:#8795ab;">'+(si+1)+'</td>'
         +'<td style="padding:4px 6px;width:120px;">'+_selTipo(s.tipo,'_cpeSerField('+bi+','+ei+','+si+',\'tipo\',this.value)')+'</td>'
-        +'<td style="padding:4px 6px;"><input value="'+_esc(s.reps||s.dur||'')+'" placeholder="reps/tiempo/dist" oninput="_cpeSerField('+bi+','+ei+','+si+',\'reps\',this.value)" style="font-size:11px;"></td>'
+        +'<td style="padding:4px 6px;"><input list="cpe-dl-reps" value="'+_esc(s.reps||s.dur||'')+'" placeholder="reps/tiempo/dist" oninput="_cpeSerField('+bi+','+ei+','+si+',\'reps\',this.value)" style="font-size:11px;"></td>'
         +'<td style="padding:4px 6px;width:90px;"><input value="'+_esc(s.carga||'')+'" placeholder="carga" oninput="_cpeSerField('+bi+','+ei+','+si+',\'carga\',this.value)" style="font-size:11px;"></td>'
-        +'<td style="padding:4px 6px;width:60px;"><input value="'+_esc(s.rir||'')+'" placeholder="RIR" oninput="_cpeSerField('+bi+','+ei+','+si+',\'rir\',this.value)" style="font-size:11px;"></td>'
-        +'<td style="padding:4px 6px;width:70px;"><input value="'+_esc(s.pausa||'')+'" placeholder="pausa" oninput="_cpeSerField('+bi+','+ei+','+si+',\'pausa\',this.value)" style="font-size:11px;"></td>'
+        +'<td style="padding:4px 6px;width:60px;"><input list="cpe-dl-rir" value="'+_esc(s.rir||'')+'" placeholder="RIR" oninput="_cpeSerField('+bi+','+ei+','+si+',\'rir\',this.value)" style="font-size:11px;"></td>'
+        +'<td style="padding:4px 6px;width:70px;"><input list="cpe-dl-pausa" value="'+_esc(s.pausa||'')+'" placeholder="pausa" oninput="_cpeSerField('+bi+','+ei+','+si+',\'pausa\',this.value)" style="font-size:11px;"></td>'
         +'<td style="padding:4px 6px;width:26px;"><button class="cpe-btn ghost sm" onclick="_cpeSerDel('+bi+','+ei+','+si+')" style="padding:3px 6px;">×</button></td></tr>';
     }).join('');
     return '<div style="padding:9px 12px;border-bottom:1px solid #eef1f6;">'
