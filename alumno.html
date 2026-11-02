@@ -1071,8 +1071,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261101223451 por un timestamp en cada deploy
-const _APP_VERSION = '20261101223451';
+// deploy.bat reemplaza 20261101225056 por un timestamp en cada deploy
+const _APP_VERSION = '20261101225056';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2127,7 +2127,10 @@ function renderRutina() {
     const _hoyW = _hoyISO();
     let _semReal = 0, _anyDate = false;
     sems.forEach((s,i)=>{ if(s.fechaInicio){ _anyDate=true; if(s.fechaInicio<=_hoyW) _semReal=i; } });
-    weekEl.innerHTML = '<div class="slabel" style="margin-bottom:7px;">'+(_LANG==='en'?'WEEKS':'SEMANAS')+'</div><div class="wk-seg">'
+    const _wkFases = sems.map(s=> (s && s.fechaInicio) ? _faseColorDeFecha(s.fechaInicio) : null);
+    const _anyFase = _wkFases.some(f=>f);
+    const _segStyle = _anyFase ? ' style="background:#12243d;border-color:#20405f;"' : '';
+    weekEl.innerHTML = '<div class="slabel" style="margin-bottom:7px;">'+(_LANG==='en'?'WEEKS':'SEMANAS')+'</div><div class="wk-seg"'+_segStyle+'>'
       + sems.map((s,i)=>{
           const on = i===_semIdx;
           const rel = _anyDate ? (i<_semReal?'past':(i>_semReal?'future':'current')) : 'current';
@@ -2138,9 +2141,16 @@ function renderRutina() {
           const st = on ? ' now' : (rel==='past'?' done':'');
           const attrs = ' onclick="_selSemana('+i+')"';
           const nlbl = on ? ((_LANG==='en'?'Week ':'Semana ')+(i+1)) : ((_LANG==='en'?'W':'S')+(i+1));
-          return '<button class="wk-s'+st+'"'+attrs+'><span class="ws-n">'+nlbl+'</span>'+(rango?'<span class="ws-d">'+rango+'</span>':'')+'</button>';
+          const fz = _wkFases[i];
+          let fst='', nStyle='', dStyle='';
+          if(fz){
+            fst=' style="background:'+fz.color+';'+(rel==='past'?'opacity:.72;':'')+(on?'box-shadow:0 0 0 2px #fff, 0 0 0 5px '+fz.color+'55;':'')+'"';
+            nStyle=' style="color:#fff;"'; dStyle=' style="color:rgba(255,255,255,.9);"';
+          }
+          return '<button class="wk-s'+st+'"'+attrs+fst+'><span class="ws-n"'+nStyle+'>'+nlbl+'</span>'+(rango?'<span class="ws-d"'+dStyle+'>'+rango+'</span>':'')+'</button>';
         }).join('')
-      + '</div>';
+      + '</div>'
+      + (_anyFase ? _semLegendHTML(_wkFases) : '');
   }
 
   const hoyStr = _hoyISO();
@@ -9487,6 +9497,31 @@ function _faseActualAl(){
     for(var i=0;i<per.fases.length;i++){ var n=parseInt(per.fases[i].semanas,10)||0; if(semMacro<=acc+n){ return {nombre:per.fases[i].nombre||'', color:per.fases[i].color||'#10b981', sem:semMacro-acc, total:n}; } acc+=n; }
     return null;
   }catch(e){ return null; }
+}
+// Color de la fase a la que pertenece una fecha (para pintar la cinta de SEMANAS por fase)
+function _faseColorDeFecha(fechaISO){
+  try{
+    if(!_data || _data.plan_modo!=='profesional') return null;
+    var per=_data.periodizacion; if(!per || !Array.isArray(per.fases) || !per.fases.length) return null;
+    var p=String(per.fecha_inicio||'').slice(0,10).split('-'); if(p.length!==3) return null;
+    var ini=new Date(+p[0],+p[1]-1,+p[2]); if(isNaN(ini)) return null;
+    var q=String(fechaISO||'').slice(0,10).split('-'); if(q.length!==3) return null;
+    var d=new Date(+q[0],+q[1]-1,+q[2]); if(isNaN(d)) return null;
+    var diff=Math.floor((d-ini)/86400000); if(diff<0) return null;
+    var semMacro=Math.floor(diff/7)+1, acc=0;
+    for(var i=0;i<per.fases.length;i++){ var n=parseInt(per.fases[i].semanas,10)||0; if(semMacro<=acc+n){ return {nombre:per.fases[i].nombre||'', color:per.fases[i].color||'#10b981'}; } acc+=n; }
+    return null;
+  }catch(e){ return null; }
+}
+function _semLegendHTML(weekFases){
+  try{
+    var seen={}, items=[];
+    (weekFases||[]).forEach(function(f){ if(f && f.nombre && !seen[f.nombre]){ seen[f.nombre]=1; items.push(f); } });
+    if(!items.length) return '';
+    return '<div style="display:flex;gap:12px;flex-wrap:wrap;margin:-16px 0 20px;font-size:10px;color:var(--muted);">'
+      +items.map(function(f){ return '<span style="display:inline-flex;align-items:center;gap:5px;"><i style="width:10px;height:10px;border-radius:3px;background:'+f.color+';display:inline-block;"></i>'+String(f.nombre).replace(/</g,'&lt;')+'</span>'; }).join('')
+      +'</div>';
+  }catch(e){ return ''; }
 }
 function _faseCintaHTML(){
   var f=_faseActualAl(); if(!f) return '';

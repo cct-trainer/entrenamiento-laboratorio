@@ -34128,7 +34128,7 @@ function _fechaCort(f) {
     if(typeof window.perImportarDesdePlan!=='function') return;
     var base=p.fecha_inicio||_today(); if(typeof _getLunesDe==='function'){ try{ base=_getLunesDe(base); }catch(e){} }
     var data={ nombre:(p.nombre||'Plan'), fecha_inicio:base, fases:p.mesos.map(function(m){ return {id:m.id, fase:m.fase, nombre:m.nombre, color:(FASE_COL[m.fase]||FASE_COL.otro), semanas:parseInt(m.semanas,10)||0, objetivo:m.objetivo}; }) };
-    window.perImportarDesdePlan(p.alumnoId, data, true); // true = NO publicar a la app del alumno
+    window.perImportarDesdePlan(p.alumnoId, data, false); // publica SOLO las fases (periodización) a la app del alumno — NO crea planes vacíos
   }
   // Busca una planificación de fuerza EXISTENTE del alumno. NO crea planes vacíos (evita ensuciar la app del alumno).
   function _cpeAsegurarPlanif(p){
