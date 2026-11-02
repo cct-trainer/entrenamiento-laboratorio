@@ -12426,7 +12426,11 @@ function renderPlanMes() {
     const _add=(iso,d)=>{ const p=String(iso).slice(0,10).split('-'); const x=new Date(+p[0],+p[1]-1,+p[2]); x.setDate(x.getDate()+d); return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); };
     const _MES=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
     const _fc=(iso)=>{ const p=String(iso).slice(0,10).split('-'); return (+p[2])+' '+_MES[(+p[1])-1]; };
-    let gh=''; let acc=0; const usados={};
+    let gh='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 14px;padding:10px 14px;background:#fff;border:1px solid #e4e8ef;border-radius:12px;">'
+      +'<span style="font-size:12px;font-weight:800;color:#55607a;">📈 Plan organizado por fases</span>'
+      +'<button onclick="if(typeof _cpeVerFases===\'function\')_cpeVerFases(currentAlumnoId)" style="border:1px solid #2f5f95;background:#2f5f95;color:#fff;font-size:11.5px;font-weight:800;border-radius:9px;padding:8px 14px;cursor:pointer;white-space:nowrap;">‹ Volver a las fases</button>'
+      +'</div>';
+    let acc=0; const usados={};
     _macroInfo.fases.forEach(fase=>{
       const sem=parseInt(fase.semanas,10)||0;
       const pStart=_add(_macroInfo.fecha_inicio, acc*7);
@@ -34191,6 +34195,15 @@ function _fechaCort(f) {
     cpeAbrir(ctx.alumnoId);
     S.planId=ctx.planId; _cache=null; S.mesoId=ctx.mesoId; S.microId=null; S.sesionId=null; S.editMeso=false;
     _go('meso');
+  };
+  // Abre el módulo directamente en la vista de Fases del plan más reciente del alumno
+  // (para el botón "Volver a las fases" dentro del planificador).
+  window._cpeVerFases=function(alumnoId){
+    alumnoId=alumnoId||(typeof currentAlumnoId!=='undefined'?currentAlumnoId:null);
+    var a=_al(alumnoId); if(a && a.plan_modo!=='profesional'){ _toast('«Crear plan» es para alumnos Profesional'); return; }
+    cpeAbrir(alumnoId);
+    var mine=_all().filter(function(p){return p.alumnoId===alumnoId;}).sort(function(a,b){return (b.actualizado||0)-(a.actualizado||0);});
+    if(mine.length){ S.planId=mine[0].id; _cache=null; S.mesoId=null; S.microId=null; S.sesionId=null; S.editMeso=false; _go('mesos'); }
   };
   function _nuevoPlan(alumnoId, base){
     var a=_al(alumnoId);
