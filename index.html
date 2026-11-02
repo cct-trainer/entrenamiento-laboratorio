@@ -34400,6 +34400,9 @@ function _fechaCort(f) {
         +_miniTimeline(p)
         +'<div style="margin-top:10px;"><button class="cpe-btn pri sm" onclick="_cpeGo(\'mesos\')">Abrir línea de tiempo de mesociclos ›</button></div>'
       +'</div>'
+      +((p.mesos&&p.mesos.length)?('<div class="cpe-card" style="border-color:#7c5cff;background:#faf9ff;"><h2>📝 Prompt para diseñar el plan</h2>'
+        +'<div class="cpe-muted" style="margin-bottom:10px;">Genera un prompt con todo el plan (alumno, objetivos, fases y parámetros) para llevar a tu proyecto entrenador + planificador y que diseñe las sesiones.</div>'
+        +'<button class="cpe-ai-btn" onclick="_cpePrompt()">📝 Generar prompt del plan</button></div>'):'')
       +'<div class="cpe-nav"><button class="cpe-btn ghost" onclick="_cpeGo(\'eval\')">‹ Evaluaciones</button><button class="cpe-btn pri" onclick="_cpeGo(\'mesos\')">Fases ›</button></div>';
   }
   function _miniTimeline(p){
@@ -34471,6 +34474,84 @@ function _fechaCort(f) {
     parts.push(enfoque);
     return _devBox('📋 Conclusión de la ficha', parts.join(' '));
   }
+
+  // ═══════════════ PROMPT PARA DISEÑAR EL PLAN ═══════════════
+  function _cpeGenerarPrompt(p){
+    var a=_al(p.alumnoId)||{}; var f=p.ficha||{}; var sal=f.salud||{};
+    var nivel=_nivelTxt(p);
+    var enf=_lista(p.objetivosSec), dias=_lista(p.dias), dur=_lista(p.duracionSesion);
+    var L=[];
+    L.push('Actuá como mi planificador de entrenamiento basado en evidencia (Schoenfeld, Helms, Israetel, Nuckols). Diseñá el PLAN DE ENTRENAMIENTO DETALLADO (sesiones por día, bloques, ejercicios, series diferenciando aproximación de efectivas, reps, carga estimada y RIR/descansos) para el siguiente alumno, respetando la estructura de fases de abajo. Progresión coherente semana a semana dentro de cada fase.');
+    L.push('');
+    L.push('== ALUMNO ==');
+    L.push('Nombre: '+(a.nombre||p.alumnoNom||'—'));
+    L.push('Nivel: '+nivel+(f.experiencia?' ('+f.experiencia+')':''));
+    L.push('Objetivo principal: '+(p.objetivo||'—'));
+    if(enf.length) L.push('Énfasis (lo que más falta): '+enf.join(', '));
+    if(dias.length) L.push('Días disponibles: '+dias.join(', ')+' ('+dias.length+' días)');
+    if(dur.length) L.push('Duración por sesión: '+dur.join(' o '));
+    if(p.lugar) L.push('Lugar / equipamiento: '+p.lugar);
+    if(f.actual) L.push('Entrenamiento actual / otros deportes: '+f.actual);
+    if(f.preferencias) L.push('Preferencias / lo que le cuesta: '+f.preferencias);
+    if(sal.molestias||sal.indicaciones) L.push('Salud / restricciones: '+[sal.molestias,sal.indicaciones].filter(Boolean).join(' · '));
+    if((p.objetivosSeguim||[]).length) L.push('Objetivos con meta: '+p.objetivosSeguim.map(function(o){return (o.desc||'')+(o.meta?' ('+o.meta+')':'');}).filter(Boolean).join(' · '));
+    if((p.evaluaciones||[]).length) L.push('Evaluaciones iniciales: '+p.evaluaciones.map(function(e){return (e.prueba||'')+(e.resultado?': '+e.resultado:'');}).filter(Boolean).join(' · '));
+    L.push('');
+    L.push('== MACROCICLO: '+(p.nombre||'Plan')+' ==');
+    if(p.fecha_inicio||p.fecha_fin) L.push('Fechas: '+(p.fecha_inicio?_fc(p.fecha_inicio):'?')+' → '+(p.fecha_fin?_fc(p.fecha_fin):'?'));
+    if(p.prioridades) L.push('Prioridades: '+p.prioridades);
+    if(p.obs) L.push('Observaciones: '+p.obs);
+    L.push('');
+    L.push('== FASES (mesociclos) ==');
+    (p.mesos||[]).forEach(function(m,i){
+      L.push((i+1)+') '+(m.nombre||'Fase').toUpperCase()+' — '+(m.semanas||0)+' semanas ('+_fc(m.desde)+'–'+_fc(m.hasta)+')');
+      var det=[];
+      if(m.seriesObj) det.push('series objetivo/músculo: '+m.seriesObj);
+      if(m.rirObj) det.push('RIR: '+m.rirObj);
+      if(m.frecuencia) det.push('frecuencia: '+m.frecuencia);
+      if(m.foco&&m.foco.length) det.push('foco: '+m.foco.join(', '));
+      if(m.progresion) det.push('progresión: '+m.progresion);
+      if(m.ajuste) det.push('ajuste: '+m.ajuste);
+      if(m.objetivo) det.push('objetivo: '+m.objetivo);
+      if(m.descarga) det.push('(semana/fase de descarga)');
+      if(det.length) L.push('   · '+det.join(' · '));
+    });
+    L.push('');
+    L.push('== QUÉ NECESITO ==');
+    L.push('1) Para cada día disponible, una sesión con bloques (movilidad/preparación → principal → complementario) y ejercicios acordes a las preferencias y restricciones.');
+    L.push('2) Por ejercicio: series (diferenciando aproximación de efectivas), reps, carga estimada (marcar para confirmar) y RIR, con sus descansos.');
+    L.push('3) Progresión semana a semana dentro de cada fase, respetando series objetivo y RIR de cada mesociclo.');
+    L.push('4) Respetar las restricciones de salud (ej. evitar lo indicado por el profesional). Dar alternativas de ejercicio cuando corresponda.');
+    return L.join('\n');
+  }
+  window._cpePrompt=function(){
+    var p=_plan(); if(!p) return;
+    if(!p.mesos || !p.mesos.length){ _toast('Armá primero las fases (usá «Rellenar automáticamente»)'); return; }
+    var txt=_cpeGenerarPrompt(p);
+    var ov=document.getElementById('cpe-ov')||document.body;
+    var old=document.getElementById('cpe-prompt-modal'); if(old) old.remove();
+    var m=document.createElement('div'); m.id='cpe-prompt-modal';
+    m.style.cssText='position:fixed;inset:0;z-index:14200;background:rgba(10,20,35,.55);display:flex;align-items:center;justify-content:center;padding:20px;font-family:\'Inter\',Arial,sans-serif;';
+    m.innerHTML='<div style="background:#fff;border-radius:16px;max-width:740px;width:100%;max-height:86vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px -20px rgba(0,0,0,.55);">'
+      +'<div style="padding:14px 18px;border-bottom:1px solid #e4e8ef;display:flex;align-items:center;justify-content:space-between;gap:10px;"><span style="font-size:14px;font-weight:900;color:#1f2d47;">📝 Prompt para diseñar el plan</span><button onclick="var x=document.getElementById(\'cpe-prompt-modal\');if(x)x.remove();" style="border:none;background:#f0f2f6;width:30px;height:30px;border-radius:8px;cursor:pointer;font-weight:800;">✕</button></div>'
+      +'<div style="padding:13px 18px 4px;font-size:11.5px;color:#55607a;line-height:1.5;">Copiá este prompt y pegalo en tu <b>proyecto entrenador + planificador</b> para que diseñe las sesiones detalladas a partir de esta estructura.</div>'
+      +'<textarea id="cpe-prompt-txt" readonly style="flex:1;margin:10px 18px;border:1px solid #e4e8ef;border-radius:10px;padding:12px;font-size:12px;font-family:ui-monospace,Menlo,Consolas,monospace;line-height:1.55;color:#1a2230;resize:none;min-height:300px;background:#fbfcfe;">'+_esc(txt)+'</textarea>'
+      +'<div style="padding:12px 18px;border-top:1px solid #e4e8ef;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;"><button class="cpe-btn ghost" onclick="var x=document.getElementById(\'cpe-prompt-modal\');if(x)x.remove();">Cerrar</button><button class="cpe-btn ghost" onclick="_cpeCopiarPrompt()">📋 Copiar</button><button class="cpe-btn pri" onclick="_cpeAbrirProyecto()">🚀 Copiar y abrir mi proyecto</button></div>'
+    +'</div>';
+    ov.appendChild(m);
+  };
+  window._cpeCopiarPrompt=function(){
+    var t=document.getElementById('cpe-prompt-txt'); if(!t) return;
+    try{ t.select(); t.setSelectionRange(0,999999); document.execCommand('copy'); }catch(e){}
+    try{ if(navigator.clipboard) navigator.clipboard.writeText(t.value); }catch(e){}
+    _toast('✓ Prompt copiado al portapapeles');
+  };
+  var _CPE_PROYECTO_URL='https://claude.ai/project/01a14808-444f-7052-932d-68568e3b93c3';
+  window._cpeAbrirProyecto=function(){
+    try{ _cpeCopiarPrompt(); }catch(e){}
+    try{ window.open(_CPE_PROYECTO_URL,'_blank'); }catch(e){}
+    _toast('✓ Prompt copiado · abriendo ENTRENADOR + PLANILLA');
+  };
 
   // ═══════════════ FICHA ═══════════════
   function _scrFicha(){
@@ -34608,6 +34689,9 @@ function _fechaCort(f) {
       +'<div class="cpe-ai-bar">✨ <button class="cpe-ai-btn" onclick="_cpeAiGeneral()">Armar secuencia automáticamente</button><span class="cap">Propone fases y duraciones según objetivo, nivel y fechas. Solo si no hay mesociclos.</span></div>'
       +'<div class="cpe-card"><h2>🗓️ Línea de tiempo</h2><div style="display:flex;gap:10px;overflow-x:auto;padding:4px 2px 10px;">'+cards+add+'</div></div>'
       +(aviso?'<div class="cpe-note warn">'+aviso+'</div>':'')
+      +((ms&&ms.length)?('<div class="cpe-card" style="border-color:#7c5cff;background:#faf9ff;"><h2>📝 Prompt para diseñar el plan</h2>'
+        +'<div class="cpe-muted" style="margin-bottom:10px;">Con las fases ya armadas, generá el prompt para tu proyecto entrenador + planificador.</div>'
+        +'<button class="cpe-ai-btn" onclick="_cpePrompt()">📝 Generar prompt del plan</button></div>'):'')
       +'<div class="cpe-nav"><button class="cpe-btn ghost" onclick="_cpeGo(\'general\')">‹ Macrociclo</button><button class="cpe-btn pri" onclick="_cpeIrAPlanificacion()">📅 Abrir mi planificación ›</button></div>';
   }
   function _avisoFechas(p){
