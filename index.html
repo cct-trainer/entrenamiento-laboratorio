@@ -34512,7 +34512,8 @@ function _fechaCort(f) {
     if(sal.molestias||sal.indicaciones) L.push('Salud / restricciones: '+[sal.molestias,sal.indicaciones].filter(Boolean).join(' · '));
     if((p.objetivosSeguim||[]).length) L.push('Objetivos con meta: '+p.objetivosSeguim.map(function(o){return (o.desc||'')+(o.meta?' ('+o.meta+')':'');}).filter(Boolean).join(' · '));
     if((p.evaluaciones||[]).length) L.push('Evaluaciones iniciales: '+p.evaluaciones.map(function(e){return (e.prueba||'')+(e.resultado?': '+e.resultado:'');}).filter(Boolean).join(' · '));
-    var _mi=_medidasResumen(p.medidas); if(_mi) L.push('Medidas iniciales: '+_mi);
+    var _mv=_medidaVigente(p); var _mi=_medidasResumen(_mv); if(_mi) L.push('Medidas'+(_mv&&_mv.fecha?(' ('+_fc(_mv.fecha)+')'):'')+': '+_mi);
+    if((p.medidasHist||[]).length>1){ L.push('Historial de medidas: '+p.medidasHist.slice().sort(function(x,y){return String(x.fecha||'').localeCompare(String(y.fecha||''));}).map(function(s){return _fc(s.fecha)+(s.peso?' '+s.peso+'kg':'')+(s.bf!=null?' '+s.bf+'%':'');}).join(' → ')); }
     var _an=_cpeAnalisis(p);
     if(_an.imc!=null || _an.bf!=null){ var _e=[]; if(_an.imc!=null)_e.push('IMC '+_an.imc+' ('+_an.imcCat+')'); if(_an.bf!=null)_e.push('% graso '+_an.bf+' ('+_an.bfSrc+')'); L.push('Estimaciones de composición: '+_e.join(' · ')); L.push('Énfasis sugerido por composición: '+_an.conclusion); L.push('Proyección: '+_an.proyeccion); }
     L.push('');
@@ -34684,17 +34685,13 @@ function _fechaCort(f) {
         +'<div style="margin-top:4px;"><button class="cpe-btn ghost sm" onclick="_cpeEvalAdd()">＋ Agregar evaluación</button></div></div>'
       +'<div class="cpe-card"><h2>🎯 Objetivos con seguimiento</h2>'+obCards
         +'<div style="margin-top:4px;"><button class="cpe-btn ghost sm" onclick="_cpeObjAdd()">＋ Agregar objetivo</button></div></div>'
-      +'<div class="cpe-card"><h2>📏 Medidas corporales iniciales</h2>'
-        +'<div class="cpe-muted" style="margin-bottom:10px;">Según el objetivo, cargá las medidas de partida. Al completarlas te saco IMC y % graso estimado, con una conclusión de dónde hacer énfasis. Todo entra en el prompt.</div>'
-        +_medidasGrid((p.medidas||{}), function(k){return '_cpeSet(\'medidas.'+k+'\',this.value);_cpeEstimUpd()';})
-        +'<div id="cpe-estim">'+_cpeEstimHTML(p)+'</div>'
-      +'</div>'
+      +_medidasCardEval(p)
       +'<div class="cpe-nav"><button class="cpe-btn ghost" onclick="_cpeGo(\'ficha\')">‹ Ficha</button><button class="cpe-btn pri" onclick="_cpeGo(\'general\')">Siguiente: Macrociclo ›</button></div>';
   }
   function _selRaw(opts,val,handler){ return '<select onchange="'+handler+'">'+opts.map(function(o){return '<option'+(o===val?' selected':'')+'>'+o+'</option>';}).join('')+'</select>'; }
   function _selOtro(opts,val,handler){ var has=opts.indexOf(val)>=0; var h='<select onchange="'+handler+'"><option value="">—</option>'; opts.forEach(function(o){ h+='<option'+(val===o?' selected':'')+'>'+_esc(o)+'</option>'; }); if(val&&!has) h+='<option selected>'+_esc(val)+'</option>'; h+='</select>'; return h; }
   // ── Medidas corporales (iniciales y por fase) ──
-  var _MEDIDAS=[['peso','Peso (kg)'],['altura','Altura (cm)'],['grasa','% graso'],['cintura','Cintura (cm)'],['cadera','Cadera (cm)'],['pecho','Pecho (cm)'],['hombros','Hombros (cm)'],['brazo','Brazo (cm)'],['muslo','Muslo (cm)'],['pantorrilla','Pantorrilla (cm)']];
+  var _MEDIDAS=[['peso','Peso (kg)'],['altura','Altura (cm)'],['grasa','% graso'],['cuello','Cuello (cm)'],['cintura','Cintura (cm)'],['cadera','Cadera (cm)'],['pecho','Pecho (cm)'],['hombros','Hombros (cm)'],['brazo','Brazo (cm)'],['muslo','Muslo (cm)'],['pantorrilla','Pantorrilla (cm)']];
   function _medidasGrid(vals, callFn){
     vals=vals||{};
     return '<div class="cpe-row c3">'+_MEDIDAS.map(function(f){ return '<div class="cpe-fg"><label>'+f[1]+'</label><input value="'+_esc(vals[f[0]]||'')+'" inputmode="decimal" placeholder="—" oninput="'+callFn(f[0])+'"></div>'; }).join('')+'</div>'
@@ -34703,18 +34700,26 @@ function _fechaCort(f) {
   function _medidasResumen(vals){ if(!vals) return ''; return _MEDIDAS.map(function(f){ return vals[f[0]]?(f[1].replace(/\s*\(.*\)/,'')+': '+vals[f[0]]):''; }).filter(Boolean).join(' · ')+(vals.obs?(' · '+vals.obs):''); }
   window._cpeMesoMedida=function(k,v){ var m=_meso(); if(!m)return; if(!m.medidas)m.medidas={}; m.medidas[k]=v; _touch(); };
   function _num(v){ var n=parseFloat(String(v==null?'':v).replace(',','.').replace(/[^0-9.]/g,'')); return isFinite(n)?n:null; }
-  // Estimaciones de composición corporal + énfasis + proyección
-  function _cpeAnalisis(p){
-    var med=p.medidas||{}; var a=_al(p.alumnoId)||{};
+  // Estimaciones de composición corporal + énfasis + proyección.
+  // med = objeto con medidas (y opcionalmente edad/sexo); a = alumno (respaldo de edad/sexo); p = plan (objetivo/énfasis)
+  function _cpeAnalisisDe(med, a, p){
+    med=med||{}; a=a||{};
     var peso=_num(med.peso), alt=_num(med.altura); var r={};
     if(peso&&alt){ var h=alt/100; r.imc=Math.round(peso/(h*h)*10)/10; r.imcCat=r.imc<18.5?'bajo peso':(r.imc<25?'normal':(r.imc<30?'sobrepeso':'obesidad')); }
-    var edad=_num(a.edad); if(!edad && a.fechaNacimiento){ try{ var fn=new Date(a.fechaNacimiento); if(!isNaN(fn)) edad=Math.floor((Date.now()-fn.getTime())/(365.25*864e5)); }catch(e){} }
-    var sx=String(a.sexo||a.genero||a.sex||'').toLowerCase(); var esM=/^m|masc|hom|var/.test(sx); var esF=/^f|fem|muj/.test(sx);
-    var bfIn=_num(med.grasa);
+    var edad=_num(med.edad)||_num(a.edad); if(!edad && a.fechaNacimiento){ try{ var fn=new Date(a.fechaNacimiento); if(!isNaN(fn)) edad=Math.floor((Date.now()-fn.getTime())/(365.25*864e5)); }catch(e){} }
+    var sx=String(med.sexo||a.sexo||a.genero||a.sex||'').toLowerCase(); var esM=/^m|masc|hom|var/.test(sx); var esF=/^f|fem|muj/.test(sx);
+    var bfIn=_num(med.grasa), cuello=_num(med.cuello), cint=_num(med.cintura), cad=_num(med.cadera);
     if(bfIn){ r.bf=Math.round(bfIn*10)/10; r.bfSrc='medido'; }
-    else if(r.imc && edad && (esM||esF)){ var bf=1.20*r.imc + 0.23*edad - 10.8*(esM?1:0) - 5.4; if(bf<3)bf=3; r.bf=Math.round(bf*10)/10; r.bfSrc='estimado'; }
-    else if(r.imc){ r.bfFalta=true; }
-    var obj=(p.objetivo||'').toLowerCase(); var enf=_lista(p.objetivosSec);
+    else if(alt && cuello && cint && (esM || (esF && cad))){
+      // Método Navy (US Navy) con cm y log10
+      var lg=function(x){return Math.log(x)/Math.LN10;}; var bfn;
+      if(esM){ bfn=495/(1.0324 - 0.19077*lg(cint-cuello) + 0.15456*lg(alt)) - 450; }
+      else { bfn=495/(1.29579 - 0.35004*lg(cint+cad-cuello) + 0.22100*lg(alt)) - 450; }
+      if(isFinite(bfn)){ if(bfn<3)bfn=3; r.bf=Math.round(bfn*10)/10; r.bfSrc='Navy'; }
+    }
+    if(r.bf==null && r.imc && edad && (esM||esF)){ var bf=1.20*r.imc + 0.23*edad - 10.8*(esM?1:0) - 5.4; if(bf<3)bf=3; r.bf=Math.round(bf*10)/10; r.bfSrc='estimado'; }
+    else if(r.bf==null && r.imc){ r.bfFalta=true; }
+    p=p||{}; var obj=(p.objetivo||'').toLowerCase(); var enf=_lista(p.objetivosSec);
     var altoBF=(r.bf!=null)&&((esF&&r.bf>=30)||(!esF&&r.bf>=20)||r.imcCat==='sobrepeso'||r.imcCat==='obesidad');
     var conc=[];
     if(/hipertrof|masa/.test(obj)){ conc.push(altoBF?'Recomposición: priorizar fuerza y volumen con déficit leve, cuidando la calidad de las ganancias':'Superávit calórico controlado con volumen progresivo para maximizar hipertrofia'); }
@@ -34732,6 +34737,13 @@ function _fechaCort(f) {
     r.proyeccion=proy.join('; ')+'.';
     return r;
   }
+  // Fuente de medidas vigente: última medición guardada por fecha, si no el borrador, si no las viejas
+  function _medidaVigente(p){
+    if(p.medidasHist && p.medidasHist.length) return p.medidasHist.slice().sort(function(a,b){return String(b.fecha||'').localeCompare(String(a.fecha||''));})[0];
+    if(p.medidaDraft && Object.keys(p.medidaDraft).length) return p.medidaDraft;
+    return p.medidas||{};
+  }
+  function _cpeAnalisis(p){ return _cpeAnalisisDe(_medidaVigente(p), _al(p.alumnoId)||{}, p); }
   function _cpeEstimHTML(p){
     var r=_cpeAnalisis(p);
     if(r.imc==null && r.bf==null) return '<div class="cpe-muted" style="margin-top:8px;">Cargá al menos <b>peso</b> y <b>altura</b> para estimar IMC y % graso.</div>';
@@ -34743,6 +34755,49 @@ function _fechaCort(f) {
     return _devBox('🧮 Estimaciones y proyección', ch+falta+'<div style="margin-top:8px;"><b>Énfasis sugerido:</b> '+_esc(r.conclusion)+'</div><div style="margin-top:4px;"><b>Proyección de entrenamiento:</b> '+_esc(r.proyeccion)+'</div>');
   }
   window._cpeEstimUpd=function(){ try{ var el=document.getElementById('cpe-estim'); if(el) el.innerHTML=_cpeEstimHTML(_plan()); }catch(e){} };
+  window._cpeGenEstim=function(){
+    var p=_plan(); if(!p) return; var d=p.medidaDraft||{};
+    if(!_num(d.peso)||!_num(d.altura)){ _toast('Cargá al menos peso y altura'); return; }
+    var r=_cpeAnalisisDe(d, _al(p.alumnoId)||{}, p);
+    var snap={ id:_uid(), fecha:(d.fecha||_today()) };
+    _MEDIDAS.forEach(function(f){ if(d[f[0]]!=null && d[f[0]]!=='') snap[f[0]]=d[f[0]]; });
+    if(d.obs) snap.obs=d.obs; if(d.edad) snap.edad=d.edad; if(d.sexo) snap.sexo=d.sexo;
+    snap.imc=r.imc; snap.imcCat=r.imcCat; snap.bf=r.bf; snap.bfSrc=r.bfSrc; snap.conclusion=r.conclusion; snap.proyeccion=r.proyeccion;
+    if(!p.medidasHist)p.medidasHist=[];
+    p.medidasHist.unshift(snap);
+    _touch(); _render(); _toast('✓ Medición guardada ('+_fc(snap.fecha)+')');
+  };
+  window._cpeMedidaDel=function(id){ var p=_plan(); if(!p||!p.medidasHist)return; if(!confirm('¿Eliminar esta medición?'))return; p.medidasHist=p.medidasHist.filter(function(s){return s.id!==id;}); _touch(); _render(); };
+  function _medidasCardEval(p){
+    var a=_al(p.alumnoId)||{}; var d=p.medidaDraft||{};
+    var sxA=String(a.sexo||a.genero||'').toLowerCase();
+    var sexoVal=d.sexo||(/^m|masc/.test(sxA)?'Masculino':(/^f|fem/.test(sxA)?'Femenino':''));
+    var hist=(p.medidasHist||[]).slice().sort(function(x,y){return String(y.fecha||'').localeCompare(String(x.fecha||''));});
+    var histHTML = hist.length ? hist.map(function(s){
+      return '<div style="border:1px solid #e4e8ef;border-radius:11px;padding:11px 13px;margin-bottom:9px;background:#fff;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">'
+          +'<div style="font-size:12px;font-weight:800;color:#1f2d47;">📅 '+_fc(s.fecha)+'</div>'
+          +'<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'+(s.imc!=null?'<span class="cpe-badge cpe-b-act">IMC '+s.imc+'</span>':'')+(s.bf!=null?'<span class="cpe-badge" style="background:#efeaff;color:#5a3fd0;">% graso '+s.bf+(s.bfSrc?' ('+s.bfSrc+')':'')+'</span>':'')+'<button class="cpe-btn ghost sm" onclick="_cpeMedidaDel(\''+s.id+'\')">🗑</button></div>'
+        +'</div>'
+        +'<div class="cpe-muted" style="margin-top:6px;font-size:11px;">'+_esc(_medidasResumen(s))+'</div>'
+        +(s.conclusion?'<div style="font-size:11px;color:#55607a;margin-top:5px;"><b>Énfasis:</b> '+_esc(s.conclusion)+'</div>':'')
+        +(s.proyeccion?'<div style="font-size:11px;color:#55607a;margin-top:3px;"><b>Proyección:</b> '+_esc(s.proyeccion)+'</div>':'')
+      +'</div>';
+    }).join('') : '<div class="cpe-muted">Sin mediciones guardadas todavía. Cargá y tocá «Generar».</div>';
+    var ultimo = hist.length ? _devBox('🧮 Última medición · '+_fc(hist[0].fecha), (hist[0].imc!=null?'<b>IMC:</b> '+hist[0].imc+' ('+hist[0].imcCat+') &nbsp; ':'')+(hist[0].bf!=null?'<b>% graso:</b> '+hist[0].bf+' ('+hist[0].bfSrc+')':'')+'<div style="margin-top:6px;"><b>Énfasis sugerido:</b> '+_esc(hist[0].conclusion||'')+'</div><div style="margin-top:3px;"><b>Proyección:</b> '+_esc(hist[0].proyeccion||'')+'</div>') : '';
+    return '<div class="cpe-card"><h2>📏 Medidas corporales</h2>'
+      +'<div class="cpe-muted" style="margin-bottom:10px;">Cargá las medidas con su <b>fecha</b> y tocá «Generar estimaciones». Te saca IMC, % graso y la conclusión, y queda guardada por fecha para seguir el progreso.</div>'
+      +'<div class="cpe-row c3">'
+        +'<div class="cpe-fg"><label>Fecha de la medición</label><input type="date" value="'+_esc(d.fecha||_today())+'" oninput="_cpeSet(\'medidaDraft.fecha\',this.value)"></div>'
+        +'<div class="cpe-fg"><label>Edad</label><input inputmode="numeric" value="'+_esc(d.edad||a.edad||'')+'" placeholder="años" oninput="_cpeSet(\'medidaDraft.edad\',this.value)"></div>'
+        +'<div class="cpe-fg"><label>Sexo</label>'+_selRaw(['','Masculino','Femenino'], sexoVal, '_cpeSet(\'medidaDraft.sexo\',this.value)')+'</div>'
+      +'</div>'
+      +_medidasGrid(d, function(k){return '_cpeSet(\'medidaDraft.'+k+'\',this.value)';})
+      +'<div style="margin-top:10px;"><button class="cpe-ai-btn" onclick="_cpeGenEstim()">🧮 Generar estimaciones y proyección</button></div>'
+      +ultimo
+      +'<div style="margin-top:14px;"><div style="font-size:11px;font-weight:800;color:#8795ab;margin-bottom:8px;">📅 HISTORIAL DE MEDICIONES (por fecha)</div>'+histHTML+'</div>'
+    +'</div>';
+  }
   window._cpeEvalAdd=function(){ var p=_plan(); if(!p.evaluaciones)p.evaluaciones=[]; p.evaluaciones.push({fecha:_today(),prueba:'',resultado:'',condiciones:'',reeval:''}); _touch(); _render(); };
   window._cpeEvalSet=function(i,k,v){ var p=_plan(); if(p.evaluaciones[i]){p.evaluaciones[i][k]=v; _touch();} };
   window._cpeEvalDel=function(i){ var p=_plan(); p.evaluaciones.splice(i,1); _touch(); _render(); };
