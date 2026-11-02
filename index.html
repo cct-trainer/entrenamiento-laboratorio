@@ -34512,6 +34512,9 @@ function _fechaCort(f) {
     if(sal.molestias||sal.indicaciones) L.push('Salud / restricciones: '+[sal.molestias,sal.indicaciones].filter(Boolean).join(' · '));
     if((p.objetivosSeguim||[]).length) L.push('Objetivos con meta: '+p.objetivosSeguim.map(function(o){return (o.desc||'')+(o.meta?' ('+o.meta+')':'');}).filter(Boolean).join(' · '));
     if((p.evaluaciones||[]).length) L.push('Evaluaciones iniciales: '+p.evaluaciones.map(function(e){return (e.prueba||'')+(e.resultado?': '+e.resultado:'');}).filter(Boolean).join(' · '));
+    var _mi=_medidasResumen(p.medidas); if(_mi) L.push('Medidas iniciales: '+_mi);
+    var _an=_cpeAnalisis(p);
+    if(_an.imc!=null || _an.bf!=null){ var _e=[]; if(_an.imc!=null)_e.push('IMC '+_an.imc+' ('+_an.imcCat+')'); if(_an.bf!=null)_e.push('% graso '+_an.bf+' ('+_an.bfSrc+')'); L.push('Estimaciones de composición: '+_e.join(' · ')); L.push('Énfasis sugerido por composición: '+_an.conclusion); L.push('Proyección: '+_an.proyeccion); }
     L.push('');
     L.push('== MACROCICLO: '+(p.nombre||'Plan')+' ==');
     if(p.fecha_inicio||p.fecha_fin) L.push('Fechas: '+(p.fecha_inicio?_fc(p.fecha_inicio):'?')+' → '+(p.fecha_fin?_fc(p.fecha_fin):'?'));
@@ -34531,6 +34534,7 @@ function _fechaCort(f) {
       if(m.objetivo) det.push('objetivo: '+m.objetivo);
       if(m.descarga) det.push('(semana/fase de descarga)');
       if(det.length) L.push('   · '+det.join(' · '));
+      var _mf=_medidasResumen(m.medidas); if(_mf) L.push('   · Medidas en esta fase: '+_mf);
     });
     L.push('');
     L.push('== QUÉ NECESITO ==');
@@ -34538,7 +34542,26 @@ function _fechaCort(f) {
     L.push('2) Por ejercicio: series (diferenciando aproximación de efectivas), reps, carga estimada (marcar para confirmar) y RIR, con sus descansos.');
     L.push('3) Progresión semana a semana dentro de cada fase, respetando series objetivo y RIR de cada mesociclo.');
     L.push('4) Respetar las restricciones de salud (ej. evitar lo indicado por el profesional). Dar alternativas de ejercicio cuando corresponda.');
+    L.push('');
+    L.push('== CONCLUSIÓN: QUÉ DEBERÍAMOS TRABAJAR ==');
+    L.push(_cpeConclusionTxt(p));
+    L.push('');
+    L.push('== PREGUNTA FINAL ==');
+    L.push('Con el objetivo, las medidas y todos estos datos: de TODOS mis entrenadores, ¿cuál está MÁS PREPARADO para armar este plan? Evaluá y recomendá UNO solo, justificando por qué es el más adecuado para este alumno y este objetivo. Cerrá con una conclusión breve de qué deberíamos priorizar.');
     return L.join('\n');
+  }
+  function _cpeConclusionTxt(p){
+    var enf=_lista(p.objetivosSec); var nivel=_nivelTxt(p); var obj=(p.objetivo||'').toLowerCase();
+    var parts=[];
+    if(/hipertrof|masa/.test(obj)){ parts.push('Priorizar volumen progresivo'); if(enf.length) parts.push('con foco en '+enf.join(', ')); parts.push('siguiendo perímetros musculares fase a fase'); }
+    else if(/grasa|recompos|definici/.test(obj)){ parts.push('Sostener fuerza y volumen suficiente en déficit, siguiendo peso, % graso y cintura fase a fase'); }
+    else if(/fuerza/.test(obj)){ parts.push('Priorizar intensidad en los básicos con técnica firme y progresión de carga fase a fase'); }
+    else if(/salud|movilidad/.test(obj)){ parts.push('Dosis moderada, técnica y movilidad en las zonas de hincapié'); }
+    else { parts.push('Construir una base sólida y medir el progreso fase a fase'); }
+    parts.push('ajustar volumen/carga según recuperación (nivel '+nivel+')');
+    var mi=_medidasResumen(p.medidas);
+    if(mi) parts.push('usar las medidas de partida como referencia para evaluar el progreso en cada fase');
+    return parts.join('; ')+'.';
   }
   window._cpePrompt=function(){
     var p=_plan(); if(!p) return;
@@ -34661,10 +34684,65 @@ function _fechaCort(f) {
         +'<div style="margin-top:4px;"><button class="cpe-btn ghost sm" onclick="_cpeEvalAdd()">＋ Agregar evaluación</button></div></div>'
       +'<div class="cpe-card"><h2>🎯 Objetivos con seguimiento</h2>'+obCards
         +'<div style="margin-top:4px;"><button class="cpe-btn ghost sm" onclick="_cpeObjAdd()">＋ Agregar objetivo</button></div></div>'
+      +'<div class="cpe-card"><h2>📏 Medidas corporales iniciales</h2>'
+        +'<div class="cpe-muted" style="margin-bottom:10px;">Según el objetivo, cargá las medidas de partida. Al completarlas te saco IMC y % graso estimado, con una conclusión de dónde hacer énfasis. Todo entra en el prompt.</div>'
+        +_medidasGrid((p.medidas||{}), function(k){return '_cpeSet(\'medidas.'+k+'\',this.value);_cpeEstimUpd()';})
+        +'<div id="cpe-estim">'+_cpeEstimHTML(p)+'</div>'
+      +'</div>'
       +'<div class="cpe-nav"><button class="cpe-btn ghost" onclick="_cpeGo(\'ficha\')">‹ Ficha</button><button class="cpe-btn pri" onclick="_cpeGo(\'general\')">Siguiente: Macrociclo ›</button></div>';
   }
   function _selRaw(opts,val,handler){ return '<select onchange="'+handler+'">'+opts.map(function(o){return '<option'+(o===val?' selected':'')+'>'+o+'</option>';}).join('')+'</select>'; }
   function _selOtro(opts,val,handler){ var has=opts.indexOf(val)>=0; var h='<select onchange="'+handler+'"><option value="">—</option>'; opts.forEach(function(o){ h+='<option'+(val===o?' selected':'')+'>'+_esc(o)+'</option>'; }); if(val&&!has) h+='<option selected>'+_esc(val)+'</option>'; h+='</select>'; return h; }
+  // ── Medidas corporales (iniciales y por fase) ──
+  var _MEDIDAS=[['peso','Peso (kg)'],['altura','Altura (cm)'],['grasa','% graso'],['cintura','Cintura (cm)'],['cadera','Cadera (cm)'],['pecho','Pecho (cm)'],['hombros','Hombros (cm)'],['brazo','Brazo (cm)'],['muslo','Muslo (cm)'],['pantorrilla','Pantorrilla (cm)']];
+  function _medidasGrid(vals, callFn){
+    vals=vals||{};
+    return '<div class="cpe-row c3">'+_MEDIDAS.map(function(f){ return '<div class="cpe-fg"><label>'+f[1]+'</label><input value="'+_esc(vals[f[0]]||'')+'" inputmode="decimal" placeholder="—" oninput="'+callFn(f[0])+'"></div>'; }).join('')+'</div>'
+      +'<div class="cpe-fg" style="margin:0;"><label>Observaciones de medidas</label><input value="'+_esc(vals.obs||'')+'" oninput="'+callFn('obs')+'"></div>';
+  }
+  function _medidasResumen(vals){ if(!vals) return ''; return _MEDIDAS.map(function(f){ return vals[f[0]]?(f[1].replace(/\s*\(.*\)/,'')+': '+vals[f[0]]):''; }).filter(Boolean).join(' · ')+(vals.obs?(' · '+vals.obs):''); }
+  window._cpeMesoMedida=function(k,v){ var m=_meso(); if(!m)return; if(!m.medidas)m.medidas={}; m.medidas[k]=v; _touch(); };
+  function _num(v){ var n=parseFloat(String(v==null?'':v).replace(',','.').replace(/[^0-9.]/g,'')); return isFinite(n)?n:null; }
+  // Estimaciones de composición corporal + énfasis + proyección
+  function _cpeAnalisis(p){
+    var med=p.medidas||{}; var a=_al(p.alumnoId)||{};
+    var peso=_num(med.peso), alt=_num(med.altura); var r={};
+    if(peso&&alt){ var h=alt/100; r.imc=Math.round(peso/(h*h)*10)/10; r.imcCat=r.imc<18.5?'bajo peso':(r.imc<25?'normal':(r.imc<30?'sobrepeso':'obesidad')); }
+    var edad=_num(a.edad); if(!edad && a.fechaNacimiento){ try{ var fn=new Date(a.fechaNacimiento); if(!isNaN(fn)) edad=Math.floor((Date.now()-fn.getTime())/(365.25*864e5)); }catch(e){} }
+    var sx=String(a.sexo||a.genero||a.sex||'').toLowerCase(); var esM=/^m|masc|hom|var/.test(sx); var esF=/^f|fem|muj/.test(sx);
+    var bfIn=_num(med.grasa);
+    if(bfIn){ r.bf=Math.round(bfIn*10)/10; r.bfSrc='medido'; }
+    else if(r.imc && edad && (esM||esF)){ var bf=1.20*r.imc + 0.23*edad - 10.8*(esM?1:0) - 5.4; if(bf<3)bf=3; r.bf=Math.round(bf*10)/10; r.bfSrc='estimado'; }
+    else if(r.imc){ r.bfFalta=true; }
+    var obj=(p.objetivo||'').toLowerCase(); var enf=_lista(p.objetivosSec);
+    var altoBF=(r.bf!=null)&&((esF&&r.bf>=30)||(!esF&&r.bf>=20)||r.imcCat==='sobrepeso'||r.imcCat==='obesidad');
+    var conc=[];
+    if(/hipertrof|masa/.test(obj)){ conc.push(altoBF?'Recomposición: priorizar fuerza y volumen con déficit leve, cuidando la calidad de las ganancias':'Superávit calórico controlado con volumen progresivo para maximizar hipertrofia'); }
+    else if(/grasa|recompos|definici/.test(obj)){ conc.push('Déficit calórico moderado sosteniendo fuerza y volumen para preservar músculo'); }
+    else if(/fuerza/.test(obj)){ conc.push('Priorizar intensidad en los básicos con buena recuperación'); }
+    else if(/salud|movilidad/.test(obj)){ conc.push('Dosis moderada, técnica y movilidad'); }
+    else { conc.push('Construir una base sólida de fuerza y técnica'); }
+    if(enf.length) conc.push('énfasis en '+enf.join(', '));
+    if(r.imcCat==='bajo peso') conc.push('IMC bajo: asegurar ingesta suficiente');
+    r.conclusion=conc.join('; ')+'.';
+    var proy=[];
+    if(/hipertrof|masa/.test(obj)) proy.push('Progresión de volumen fase a fase, midiendo perímetros musculares');
+    else if(/grasa|recompos|definici/.test(obj)) proy.push('Seguir peso, % graso y cintura cada fase, ajustando el déficit');
+    else proy.push('Reevaluar medidas y fuerza al final de cada fase para ajustar');
+    r.proyeccion=proy.join('; ')+'.';
+    return r;
+  }
+  function _cpeEstimHTML(p){
+    var r=_cpeAnalisis(p);
+    if(r.imc==null && r.bf==null) return '<div class="cpe-muted" style="margin-top:8px;">Cargá al menos <b>peso</b> y <b>altura</b> para estimar IMC y % graso.</div>';
+    var chip=function(t){ return '<span style="display:inline-block;font-size:11px;font-weight:800;color:#5a3fd0;background:#efeaff;border:1px solid #d9d2f5;border-radius:999px;padding:4px 11px;margin:0 6px 6px 0;">'+t+'</span>'; };
+    var ch='';
+    if(r.imc!=null) ch+=chip('IMC '+r.imc+' · '+r.imcCat);
+    if(r.bf!=null) ch+=chip('% graso '+r.bf+' ('+r.bfSrc+')');
+    var falta=r.bfFalta?'<div class="cpe-muted" style="margin-top:4px;font-size:10.5px;">Para estimar el % graso, cargá <b>edad</b> y <b>sexo</b> en el perfil del alumno, o el % graso medido.</div>':'';
+    return _devBox('🧮 Estimaciones y proyección', ch+falta+'<div style="margin-top:8px;"><b>Énfasis sugerido:</b> '+_esc(r.conclusion)+'</div><div style="margin-top:4px;"><b>Proyección de entrenamiento:</b> '+_esc(r.proyeccion)+'</div>');
+  }
+  window._cpeEstimUpd=function(){ try{ var el=document.getElementById('cpe-estim'); if(el) el.innerHTML=_cpeEstimHTML(_plan()); }catch(e){} };
   window._cpeEvalAdd=function(){ var p=_plan(); if(!p.evaluaciones)p.evaluaciones=[]; p.evaluaciones.push({fecha:_today(),prueba:'',resultado:'',condiciones:'',reeval:''}); _touch(); _render(); };
   window._cpeEvalSet=function(i,k,v){ var p=_plan(); if(p.evaluaciones[i]){p.evaluaciones[i][k]=v; _touch();} };
   window._cpeEvalDel=function(i){ var p=_plan(); p.evaluaciones.splice(i,1); _touch(); _render(); };
@@ -34758,6 +34836,10 @@ function _fechaCort(f) {
         +'<button class="cpe-btn pri" onclick="_cpeIrAPlanificacion()" style="background:'+col+';">🏋️ Abrir las semanas y sesiones</button></div>'
       +'<div class="cpe-card"><h2>📆 Semanas de esta fase</h2><table style="width:100%;border-collapse:collapse;font-size:11.5px;"><tbody>'+micRows+'</tbody></table>'
         +'<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;"><button class="cpe-btn ghost sm" onclick="_cpeMicroAdd(\''+m.id+'\')">＋ Agregar semana</button></div></div>'
+      +'<div class="cpe-card"><h2>📏 Medidas de esta fase</h2>'
+        +'<div class="cpe-muted" style="margin-bottom:10px;">Registrá las medidas al llegar a esta fase, para seguir el progreso contra las iniciales. También entran en el prompt.</div>'
+        +_medidasGrid((m.medidas||{}), function(k){return '_cpeMesoMedida(\''+k+'\',this.value)';})
+      +'</div>'
       +'<div style="margin:2px 0 14px;"><button class="cpe-btn ghost sm" onclick="_cpeToggleEditMeso()">'+(S.editMeso?'▲ Ocultar edición del mesociclo':'✎ Editar mesociclo (fechas, objetivos, RIR)')+'</button></div>'
       +paramsCard
       +'<div class="cpe-nav"><button class="cpe-btn ghost" onclick="_cpeGo(\'mesos\')">‹ Fases</button><button class="cpe-btn pri" onclick="_cpeIrAPlanificacion()">🏋️ Abrir semanas y sesiones ›</button></div>';
