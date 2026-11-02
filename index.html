@@ -1612,10 +1612,11 @@ body.coach-bg-on .alu-daybar{ background:rgba(255,255,255,.9); }
 /* Tipo de serie · filo de color a la izquierda (opción B) */
 .serie-tipo-sel{ border:none;background:transparent;font-size:11px;font-weight:800;font-family:inherit;cursor:pointer;color:#6b7280;padding:2px;outline:none;text-align:center; }
 /* Conversor libras ⇄ kilos por serie */
-.peso-wrap{ display:flex;align-items:center;gap:3px; }
-.peso-wrap > input{ flex:1;min-width:0; }
-.conv-btn{ flex-shrink:0;width:23px;height:23px;border:1px solid #d5deea;background:#f4f7fb;color:#2f5f95;border-radius:6px;font-size:12px;font-weight:900;cursor:pointer;line-height:1;padding:0;font-family:inherit; }
+.peso-wrap{ display:flex;align-items:stretch;gap:0;border:1.5px solid #cfd8e6;border-radius:10px;overflow:hidden;background:#fff; }
+.peso-wrap > input{ flex:1;min-width:0;border:none !important;border-radius:0 !important;text-align:center;background:#fff;box-shadow:none !important; }
+.conv-btn{ flex-shrink:0;width:26px;border:none;border-left:1px solid #e4e8ef;background:#f4f7fb;color:#2f5f95;border-radius:0;font-size:12px;font-weight:900;cursor:pointer;line-height:1;padding:0;font-family:inherit; }
 .conv-btn:hover{ background:#e6eefb; }
+.peso-alt{ flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#15795a;background:#eef9f3;border-left:1px solid #cdeedd;padding:0 9px;white-space:nowrap;min-width:52px;line-height:1.1; }
 .repsbox{ position:relative;display:inline-block;width:96px; }
 .reps-pick{ width:100%;border:1px solid #d5deea;background:#fff;border-radius:8px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;color:#1a2a4a;padding:7px 6px;outline:none;text-align:center; }
 .reps-pick:focus{ border-color:#3A6EA5; }
@@ -15305,7 +15306,7 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
         tr.innerHTML = `<td class="serie-num-cell"><span class="evo-serie-chk" title="Incluir esta serie en Evolución" onclick="_evoTogSerie(this)"></span> ${prefix} ${si+1}</td>
           <td class="serie-tipo-cell"><select class="serie-tipo-sel" onchange="_serieTipoSel(this)">${_serieTipoOptions(tipo)}</select></td>
           <td class="serie-reps-cell">${_repsCell(tipo, s.reps||'')}</td>
-          <td><div class="peso-wrap"><input type="text" value="${s.peso||''}" oninput="_barraCalc(this)" onfocus="_abrirPesoPicker(this,'${ejId}')"><button type="button" class="conv-btn" title="Convertir libras ⇄ kilos" onmousedown="event.preventDefault()" onclick="_convPeso(this)">⇄</button></div></td>
+          <td><div class="peso-wrap"><input type="text" placeholder="${_pesoUnit()==='lb'?'Lb':'Kg'}" value="${s.peso||''}" oninput="_barraCalc(this);_pesoAltUpd(this)" onfocus="_abrirPesoPicker(this,'${ejId}')"><span class="peso-alt" title="equivalente en la otra unidad">${_pesoAltCalc(s.peso||'')||'—'}</span><button type="button" class="conv-btn" title="Convertir libras ⇄ kilos" onmousedown="event.preventDefault()" onclick="_convPeso(this)">⇄</button></div></td>
           <td><input type="text" value="${s.rir||''}"></td>
           <td><input type="text" value="${s.pausa||''}"></td>
           <td><button class="btn-del-row" onclick="this.closest('tr').remove();_renumRows('${tbodyId}','${prefix}')">×</button></td>`;
@@ -22495,6 +22496,19 @@ function eliminarEjercicio(ejId, bloqueId) {
 function _pesoUnit() {
   try { return localStorage.getItem('SOCC_PESO_UNIT') === 'lb' ? 'lb' : 'kg'; } catch(e) { return 'kg'; }
 }
+// ── Peso en lb + kg a la vez (Opción F): el input es la unidad principal, el chip muestra la otra ──
+function _pesoAltCalc(val){
+  var n=parseFloat(String(val==null?'':val).replace(',','.').replace(/[^0-9.]/g,''));
+  if(!isFinite(n)||n<=0) return '';
+  if(_pesoUnit()==='lb'){ return (Math.round((n/2.2046)*10)/10).toString().replace('.',',')+' kg'; }
+  return (Math.round((n*2.2046)*10)/10).toString().replace('.',',')+' lb';
+}
+function _pesoAltUpd(inp){
+  try{ var w=inp.closest('.peso-wrap'); if(!w) return; var s=w.querySelector('.peso-alt'); if(!s) return;
+    var t=_pesoAltCalc(inp.value); s.textContent=t||'—'; s.style.opacity=t?'1':'.4';
+  }catch(e){}
+}
+function _pesoAltRefreshAll(){ try{ document.querySelectorAll('.peso-wrap > input').forEach(function(i){ _pesoAltUpd(i); }); }catch(e){} }
 // ── Cardio: Reps→Tiempo, Peso→Intensidad ──
 function _esEjCardio(n){ return /bicicleta|cinta|caminat|el[ií]ptic|remo\s*erg|escalera|stair|trote|troted|correr|carrera|spinning|\bspin\b|cardio|hiit|airbike|assault|treadmill|remoergo/i.test(String(n||'')); }
 function _ajustarCardioHeaders(ejId){
@@ -22514,6 +22528,8 @@ function _togglePesoUnit() {
   if (!confirm('¿Cambiar la unidad de peso de ' + actual.toUpperCase() + ' a ' + nu.toUpperCase() + '?\n\nOjo: no convierte los números cargados, solo cambia la etiqueta de la columna.')) return;
   try { localStorage.setItem('SOCC_PESO_UNIT', nu); } catch(e) {}
   document.querySelectorAll('.peso-unit').forEach(el => { el.textContent = nu; });
+  document.querySelectorAll('.peso-wrap > input').forEach(i => { i.placeholder = (nu==='lb'?'Lb':'Kg'); });
+  try { _pesoAltRefreshAll(); } catch(e) {}
   if (typeof toast === 'function') toast('Unidad de peso: ' + nu.toUpperCase());
 }
 
@@ -23481,7 +23497,7 @@ function _makeSerieRow(ejId, tbodyId, prefix, num, defaults) {
     <td class="serie-num-cell"><span class="evo-serie-chk" title="Incluir esta serie en Evolución" onclick="_evoTogSerie(this)"></span> ${prefix} ${num}</td>
     <td class="serie-tipo-cell"><select class="serie-tipo-sel" onchange="_serieTipoSel(this)">${_serieTipoOptions(tipo)}</select></td>
     <td class="serie-reps-cell">${_repsCell(tipo, d.reps||'')}</td>
-    <td><div class="peso-wrap"><input type="text" placeholder="Kg"   value="${d.peso||''}" oninput="_barraCalc(this)" onfocus="_abrirPesoPicker(this,'${ejId}')"><button type="button" class="conv-btn" title="Convertir libras ⇄ kilos" onmousedown="event.preventDefault()" onclick="_convPeso(this)">⇄</button></div></td>
+    <td><div class="peso-wrap"><input type="text" placeholder="${_pesoUnit()==='lb'?'Lb':'Kg'}"   value="${d.peso||''}" oninput="_barraCalc(this);_pesoAltUpd(this)" onfocus="_abrirPesoPicker(this,'${ejId}')"><span class="peso-alt" title="equivalente en la otra unidad">${_pesoAltCalc(d.peso||'')||'—'}</span><button type="button" class="conv-btn" title="Convertir libras ⇄ kilos" onmousedown="event.preventDefault()" onclick="_convPeso(this)">⇄</button></div></td>
     <td><input type="text" placeholder="RIR"  value="${d.rir||''}"></td>
     <td><input type="text" placeholder="Pausa" value="${d.pausa||_pausaDefault(ejId)}"></td>
     <td><button class="btn-del-row" onclick="this.closest('tr').remove();_renumRows('${tbodyId}','${prefix}')">×</button></td>`;
