@@ -1107,8 +1107,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261104150319 por un timestamp en cada deploy
-const _APP_VERSION = '20261104150319';
+// deploy.bat reemplaza 20261104151024 por un timestamp en cada deploy
+const _APP_VERSION = '20261104151024';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3059,13 +3059,15 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
       if(_tecR.tipo==='fst7' && _tecP.descanso){ const m=String(_tecP.descanso).match(/\d+/); if(m) _restSec=parseInt(m[0]); }
       let _isoSec = 0;
       if(_tecR.tipo==='iso_hold' && _tecP.seg){ const m=String(_tecP.seg).match(/\d+/); if(m) _isoSec=parseInt(m[0]); }
+      var _rbC=(typeof _TIPO_COACH!=='undefined'&&s&&s.tipo&&_TIPO_COACH[s.tipo])?_TIPO_COACH[s.tipo].c:'';
+      var _rbb=_rbC?('border-bottom:3px solid '+_rbC+';'):'';
       return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+(done?' s-done':'')+'" data-pausa="'+(window._circLblOn?20:(_segDe(s.pausa)||defPausa))+'" data-rest="'+_restSec+'" data-iso="'+_isoSec+'" '+touch+'>'+
-        '<td style="'+tdBase+'font-size:11px;font-weight:800;cursor:pointer;border-radius:11px 0 0 11px;'+((typeof _TIPO_COACH!=='undefined'&&s&&s.tipo&&_TIPO_COACH[s.tipo])?('box-shadow:inset 6px 0 0 '+_TIPO_COACH[s.tipo].c+';'):'')+'" onclick="event.stopPropagation();_serieTap(\''+sp+'\')">'+serieLbl+'</td>'+
-        '<td style="'+tdBase+'">'+repsCel+((_uni && !/\blado\b/i.test(String(repsVal)))?'<div style="font-size:8.5px;font-weight:800;color:#8a63c9;margin-top:1px;line-height:1;">c/lado</div>':'')+'</td>'+
-        (hasPeso  ? '<td style="'+tdBase+'">'+pesoCel+_cuHtml+_barraCel+_totCel+'</td>' : '')+
-        (hasRir   ? '<td style="'+tdBase+'">'+rirCel+'</td>' : '')+
-        (hasPausa ? '<td style="'+tdBase+'font-size:11px;">'+pausaCel+'</td>' : '')+
-        '<td style="'+tdBase+'padding:10px 4px;border-radius:0 11px 11px 0;">'+delBtn+'</td>'+
+        '<td style="'+tdBase+_rbb+'font-size:11px;font-weight:800;cursor:pointer;border-radius:11px 0 0 11px;" onclick="event.stopPropagation();_serieTap(\''+sp+'\')">'+serieLbl+'</td>'+
+        '<td style="'+tdBase+_rbb+'">'+repsCel+((_uni && !/\blado\b/i.test(String(repsVal)))?'<div style="font-size:8.5px;font-weight:800;color:#8a63c9;margin-top:1px;line-height:1;">c/lado</div>':'')+'</td>'+
+        (hasPeso  ? '<td style="'+tdBase+_rbb+'">'+pesoCel+_cuHtml+_barraCel+_totCel+'</td>' : '')+
+        (hasRir   ? '<td style="'+tdBase+_rbb+'">'+rirCel+'</td>' : '')+
+        (hasPausa ? '<td style="'+tdBase+_rbb+'font-size:11px;">'+pausaCel+'</td>' : '')+
+        '<td style="'+tdBase+_rbb+'padding:10px 4px;border-radius:0 11px 11px 0;">'+delBtn+'</td>'+
       '</tr>';
     }
     // Series extra agregadas y borradas por el alumno (persistentes)
