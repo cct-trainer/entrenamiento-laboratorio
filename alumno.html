@@ -1072,8 +1072,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261104071840 por un timestamp en cada deploy
-const _APP_VERSION = '20261104071840';
+// deploy.bat reemplaza 20261104072604 por un timestamp en cada deploy
+const _APP_VERSION = '20261104072604';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2128,7 +2128,7 @@ function renderRutina() {
     const _hoyW = _hoyISO();
     let _semReal = 0, _anyDate = false;
     sems.forEach((s,i)=>{ if(s.fechaInicio){ _anyDate=true; if(s.fechaInicio<=_hoyW) _semReal=i; } });
-    const _wkFases = sems.map(s=> (s && s.fechaInicio) ? _faseColorDeFecha(s.fechaInicio) : null);
+    const _wkFases = sems.map((s,i)=> _faseColorPorIndice(i) || ((s && s.fechaInicio) ? _faseColorDeFecha(s.fechaInicio) : null));
     const _anyFase = _wkFases.some(f=>f);
     const _segStyle = _anyFase ? ' style="background:#12243d;border-color:#20405f;"' : '';
     weekEl.innerHTML = '<div class="slabel" style="margin-bottom:7px;">'+(_LANG==='en'?'WEEKS':'SEMANAS')+'</div><div class="wk-seg"'+_segStyle+'>'
@@ -9525,6 +9525,16 @@ function _faseActualAl(){
   }catch(e){ return null; }
 }
 // Color de la fase a la que pertenece una fecha (para pintar la cinta de SEMANAS por fase)
+// Color de fase por índice de semana (0-based) — robusto, no depende de fechas exactas
+function _faseColorPorIndice(i){
+  try{
+    if(!_data || _data.plan_modo!=='profesional') return null;
+    var per=_data.periodizacion; if(!per || !Array.isArray(per.fases) || !per.fases.length) return null;
+    var acc=0;
+    for(var k=0;k<per.fases.length;k++){ var n=parseInt(per.fases[k].semanas,10)||0; if(i < acc+n){ return {nombre:per.fases[k].nombre||'', color:per.fases[k].color||'#10b981'}; } acc+=n; }
+    return null;
+  }catch(e){ return null; }
+}
 function _faseColorDeFecha(fechaISO){
   try{
     if(!_data || _data.plan_modo!=='profesional') return null;

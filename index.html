@@ -23161,29 +23161,29 @@ function _objExplicacion(o){
     var ps=o.porSerie.filter(function(p){return p&&p.incluida&&p.reps!=null;});
     return 'Objetivo por serie: '+ps.map(function(p,i){ return 'S'+(i+1)+' → '+(p.reps!=null?p.reps+' reps':'')+(p.peso!=null?(' · '+_objFmt(p.peso)+' kg'):'')+(p.rir!=null?(' · RIR '+p.rir):''); }).join('; ')+'.';
   }
-  if(o.carga==null) return '';
   var ser=o.series||3;
   var rmin=o.repMin, rmax=o.repMax;
   var meta=(rmax!=null)?rmax:(rmin!=null?rmin:'');
-  var t='Completá las <b>'+ser+'</b> series de <b>'+meta+'</b> repeticiones con <b>'+_objFmt(o.carga)+' kg</b>';
+  var t='Completá las <b>'+ser+'</b> series de <b>'+meta+'</b> repeticiones'+(o.carga!=null?(' con <b>'+_objFmt(o.carga)+' kg</b>'):'');
   if(o.rir!=null) t+=', manteniendo aproximadamente <b>'+o.rir+'</b> repetició'+(o.rir===1?'n':'nes')+' en reserva';
   t+=(o.tecnica?' y una ejecución técnica adecuada.':'.');
   return t;
 }
 // ¿El objetivo tiene datos para mostrar/evaluar? (uniforme con carga, o individual con series)
-function _objTieneDatos(o){ if(!o||!o.on) return false; if(o.modo==='individual') return Array.isArray(o.porSerie)&&o.porSerie.filter(function(p){return p&&p.incluida&&p.reps!=null;}).length>0; return o.carga!=null; }
+function _objTieneDatos(o){ if(!o||!o.on) return false; if(o.modo==='individual') return Array.isArray(o.porSerie)&&o.porSerie.filter(function(p){return p&&p.incluida&&p.reps!=null;}).length>0; return (o.carga!=null)||(o.repMax!=null)||(o.repMin!=null)||(o.series!=null); }
 // Tarjeta "Objetivo de la sesión" (visible sin abrir el editor)
 function _objBannerHTML(o){
   if(!_objTieneDatos(o)) return '';
   var head;
   if(o.modo==='individual'){
     var ps=(o.porSerie||[]).filter(function(p){return p&&p.incluida&&p.reps!=null;});
-    head='<div style="font-size:12px;color:#3f3570;"><b>'+ps.length+' series con objetivos propios</b></div>';
+    head='<div style="font-size:10px;font-weight:800;color:#6c5ce7;margin-bottom:4px;">QUÉ CUMPLIR EN CADA SERIE</div><div style="display:flex;flex-direction:column;gap:3px;">'
+      +ps.map(function(p){ return '<div style="font-size:12px;color:#3f3570;"><b>Serie '+(p.idx+1)+':</b> '+p.reps+' reps'+(p.peso!=null?(' · '+_objFmt(p.peso)+' kg'):'')+(p.rir!=null?(' · RIR '+p.rir):'')+'</div>'; }).join('')+'</div>';
   } else {
     var rango=(o.repMin!=null&&o.repMax!=null)?(o.repMin+'–'+o.repMax):(o.repMax||o.repMin||'');
     var prox=(o.incremento!=null)?_progRedondear(o.carga+o.incremento,o.redondeo||o.incremento):null;
     var li=function(k,v){ return '<div style="font-size:12px;color:#3f3570;"><b>'+k+':</b> '+v+'</div>'; };
-    head='<div style="display:flex;flex-wrap:wrap;gap:4px 16px;">'+li('Carga',_objFmt(o.carga)+' kg')+li('Series',(o.series||3))+li('Repeticiones',rango)+(o.rir!=null?li('RIR objetivo',o.rir):'')+(prox!=null?li('Próxima al cumplir',_objFmt(prox)+' kg'):'')+'</div>';
+    head='<div style="display:flex;flex-wrap:wrap;gap:4px 16px;">'+(o.carga!=null?li('Carga',_objFmt(o.carga)+' kg'):'')+li('Series',(o.series||3))+li('Repeticiones',rango)+(o.rir!=null?li('RIR objetivo',o.rir):'')+(prox!=null?li('Próxima al cumplir',_objFmt(prox)+' kg'):'')+'</div>';
   }
   return '<div style="background:#f6f4ff;border:1px solid #d8d0f2;border-left:4px solid #6c5ce7;border-radius:10px;padding:11px 13px;margin:2px 0 8px;">'
     +'<div style="font-size:11px;font-weight:900;letter-spacing:.5px;color:#6c5ce7;margin-bottom:6px;">🎯 OBJETIVO DE LA SESIÓN</div>'
@@ -23200,7 +23200,7 @@ function _objPreview(ejId){
     } else {
       var rango=(o.repMin!=null&&o.repMax!=null)?(o.repMin+'–'+o.repMax):'';
       var prox=(o.incremento!=null)?_progRedondear(o.carga+o.incremento, o.redondeo||o.incremento):null;
-      var head='<b>Objetivo:</b> '+(o.series||3)+' × '+(rango||(o.repMax||o.repMin||''))+' con '+_objFmt(o.carga)+' kg'+(o.rir!=null?(' · RIR '+o.rir):'')+(prox!=null?(' · al cumplir → <b>'+_objFmt(prox)+' kg</b>'):'');
+      var head='<b>Objetivo:</b> '+(o.series||3)+' × '+(rango||(o.repMax||o.repMin||''))+(o.carga!=null?(' con '+_objFmt(o.carga)+' kg'):'')+(o.rir!=null?(' · RIR '+o.rir):'')+(prox!=null?(' · al cumplir → <b>'+_objFmt(prox)+' kg</b>'):'');
       box.innerHTML='<div style="background:#f6f4ff;border:1px solid #ddd6f5;border-radius:9px;padding:10px 12px;font-size:12px;color:#4a3f8f;line-height:1.5;">'+head+'<div style="margin-top:6px;color:#5b5080;">'+_objExplicacion(o)+'</div></div>';
     }
   }
