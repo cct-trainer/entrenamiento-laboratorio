@@ -170,7 +170,8 @@ html.light .wk-chip.on .wk-n{color:var(--gold);}
 .wk-chip.wk-future .wk-d{color:#c99a2e;opacity:.8;}
 /* Selector de semanas · control segmentado (barra azul, semana en curso en blanco) */
 .wk-seg{display:flex;background:#3A6EA5;border:1px solid #4a86c4;border-radius:14px;padding:4px;gap:3px;overflow-x:auto;box-shadow:0 5px 12px -9px rgba(0,0,0,.55);margin-bottom:22px;}
-.wk-s{flex:1 1 0;min-width:56px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 6px;border-radius:11px;border:none;background:transparent;cursor:pointer;font-family:inherit;transition:.15s;}
+.wk-s{position:relative;overflow:hidden;flex:1 1 0;min-width:56px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px 9px;border-radius:11px;border:none;background:rgba(255,255,255,.05);cursor:pointer;font-family:inherit;transition:.15s;}
+.ws-bar{position:absolute;top:0;left:0;right:0;height:4px;}
 .wk-s .ws-n{font-size:12px;font-weight:800;color:#d6e3f4;white-space:nowrap;}
 .wk-s .ws-d{font-size:8.5px;font-weight:600;color:#a9c6e6;white-space:nowrap;}
 .wk-s.done .ws-n::after{content:" ✓";color:#fff;font-size:10px;}
@@ -1071,8 +1072,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261102131435 por un timestamp en cada deploy
-const _APP_VERSION = '20261102131435';
+// deploy.bat reemplaza 20261103231521 por un timestamp en cada deploy
+const _APP_VERSION = '20261103231521';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2138,16 +2139,16 @@ function renderRutina() {
           if (s.fechaInicio){ const l=new Date(s.fechaInicio+'T12:00:00'); const d=new Date(l); d.setDate(d.getDate()+6);
             const dd=x=>x.getDate(), mm=x=>x.toLocaleDateString(_LANG==='en'?'en-US':'es-AR',{month:'short'}).replace('.','');
             rango = mm(l)===mm(d) ? (dd(l)+' – '+dd(d)+' '+mm(l)) : (dd(l)+' '+mm(l)+' – '+dd(d)+' '+mm(d)); }
-          const st = on ? ' now' : (rel==='past'?' done':'');
+          const st = on ? ' now' : (rel==='past'?' done':(rel==='future'?' next':''));
           const attrs = ' onclick="_selSemana('+i+')"';
-          const nlbl = on ? ((_LANG==='en'?'Week ':'Semana ')+(i+1)) : ((_LANG==='en'?'W':'S')+(i+1));
+          const nlbl = (_LANG==='en'?'W':'S')+(i+1);   // siempre corto (S1), incluso la activa
           const fz = _wkFases[i];
-          let fst='', nStyle='', dStyle='';
+          let fst='', barHTML='';
           if(fz){
-            fst=' style="background:'+fz.color+';'+(rel==='past'?'opacity:.72;':'')+(on?'box-shadow:0 0 0 2px #fff, 0 0 0 5px '+fz.color+'55;':'')+'"';
-            nStyle=' style="color:#fff;"'; dStyle=' style="color:rgba(255,255,255,.9);"';
+            barHTML='<span class="ws-bar" style="background:'+fz.color+';'+(rel==='past'?'opacity:.6;':'')+'"></span>';
+            if(on) fst=' style="background:#22364f;box-shadow:0 0 0 2px #0e1b2e,0 0 0 4px '+fz.color+';"';
           }
-          return '<button class="wk-s'+st+'"'+attrs+fst+'><span class="ws-n"'+nStyle+'>'+nlbl+'</span>'+(rango?'<span class="ws-d"'+dStyle+'>'+rango+'</span>':'')+'</button>';
+          return '<button class="wk-s'+st+'"'+attrs+fst+'>'+barHTML+'<span class="ws-n">'+nlbl+'</span>'+(rango?'<span class="ws-d">'+rango+'</span>':'')+'</button>';
         }).join('')
       + '</div>'
       + (_anyFase ? _semLegendHTML(_wkFases) : '');
@@ -2449,6 +2450,31 @@ function _movRepsPill(ej){
   r=r.replace(/\s*(por\s*lado|c\/\s*lado|cada lado)/ig,'').trim();
   return n+' × '+(r||'—');
 }
+// Tarjeta "Objetivo de la sesión" para el alumno (solo lectura)
+function _objBannerAlumno(ej){
+  var o=ej&&ej.objetivo; if(!o||!o.on) return '';
+  var esc=function(s){return String(s==null?'':s).replace(/</g,'&lt;');};
+  var fmt=function(n){ return (n==null||!isFinite(n))?'':String(Math.round(n*10)/10).replace('.',','); };
+  var en=(typeof _LANG!=='undefined'&&_LANG==='en');
+  var tit=en?'SESSION GOAL':'OBJETIVO DE LA SESIÓN';
+  var resumen, expl;
+  var psList=(o.modo==='individual'&&Array.isArray(o.porSerie))?o.porSerie.filter(function(p){return p&&p.incluida&&p.reps!=null;}):null;
+  if(psList&&psList.length){
+    resumen=psList.map(function(p,i){ return 'S'+(i+1)+': '+p.reps+(p.peso!=null?(' × '+fmt(p.peso)+' kg'):'')+(p.rir!=null?(' · RIR '+p.rir):''); }).join(' &nbsp; ');
+    expl=en?'Each set has its own goal (reps, weight and RIR).':'Cada serie tiene su propio objetivo (reps, peso y RIR).';
+  } else {
+    if(o.carga==null) return '';
+    var rango=(o.repMin!=null&&o.repMax!=null)?(o.repMin+'–'+o.repMax):(o.repMax||o.repMin||'');
+    var meta=(o.repMax!=null)?o.repMax:(o.repMin!=null?o.repMin:'');
+    resumen=(o.series||3)+' × '+esc(rango)+' · '+fmt(o.carga)+' kg'+(o.rir!=null?(' · RIR '+o.rir):'');
+    if(en){ expl='Complete the '+(o.series||3)+' sets of '+meta+' reps with '+fmt(o.carga)+' kg'+(o.rir!=null?(', keeping ~'+o.rir+' in reserve'):'')+(o.tecnica?' and good technique.':'.'); }
+    else { expl='Completá las '+(o.series||3)+' series de '+meta+' repeticiones con '+fmt(o.carga)+' kg'+(o.rir!=null?(', manteniendo ~'+o.rir+' en reserva'):'')+(o.tecnica?' y buena técnica.':'.'); }
+  }
+  return '<div style="background:#efeaff;border:1px solid #6c5ce7;border-left:4px solid #6c5ce7;border-radius:10px;padding:10px 12px;margin:0 0 10px;">'
+    +'<div style="font-size:10px;font-weight:900;letter-spacing:.5px;color:#5a4bd0;margin-bottom:5px;">🎯 '+tit+'</div>'
+    +'<div style="font-size:12px;color:#3f3570;font-weight:700;">'+resumen+'</div>'
+    +'<div style="font-size:11.5px;color:#5b5080;line-height:1.5;margin-top:5px;">'+esc(expl)+'</div></div>';
+}
 function _movCardHTML(ej, uid, label, grupo, serieLbl, defP){
   var esc=function(s){return String(s==null?'':s).replace(/</g,'&lt;');};
   var nombre=esc((ej&&ej.nombre)||'—');
@@ -2462,7 +2488,7 @@ function _movCardHTML(ej, uid, label, grupo, serieLbl, defP){
         +'<span class="movx-reps">'+pill+'</span>'
         +'<button class="movx-chev" title="'+(_LANG==='en'?'Details':'Ver detalle')+'" onclick="_movToggle(\''+uid+'\',event)">&#9662;</button>'
       +'</div>'
-      +'<div class="movx-det">'+full+'</div>'
+      +'<div class="movx-det">'+_objBannerAlumno(ej)+full+'</div>'
     +'</div></div>';
 }
 function _movToggle(uid,e){ if(e)e.stopPropagation(); var c=document.getElementById('movc-'+uid); if(c) c.classList.toggle('open'); }
