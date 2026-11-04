@@ -23761,10 +23761,13 @@ function _setBarra(ejId, val){
   }
   _barraRefresh(ejId);
 }
+// Persiste el cambio del coach en el acto (para que no se pierda al reabrir)
+function _barraPersist(){ try{ if(typeof guardarEstadoDiaActual==='function') guardarEstadoDiaActual(); }catch(e){} try{ if(typeof _persistPlanMes==='function') _persistPlanMes(); }catch(e){} }
 function _toggleBarra(ejId){
   var hid=document.getElementById(ejId+'-barra');
   var cur=hid?_barraNum(hid.value):0;
   _setBarra(ejId, cur>0 ? 0 : 20);
+  _barraPersist();
 }
 function _barraSelChange(ejId){
   var sel=document.getElementById(ejId+'-barra-sel'); if(!sel) return;
@@ -23775,6 +23778,7 @@ function _barraSelChange(ejId){
   } else {
     _setBarra(ejId, sel.value);
   }
+  _barraPersist();
 }
 // Calcula y muestra el desglose (barra + discos · por lado) debajo de un input de peso
 function _barraCalc(inp){
@@ -24104,8 +24108,8 @@ function seleccionarEjercicio(ejId, bloqueId, nombreOIdx) {
   if (ex.unilateral !== undefined) _setEjExec(ejId, ex.unilateral ? 1 : 0);
   // Nota automática de equipamiento
   _setEquipoNote(ejId, ex.equipo || '');
-  // Barra: auto-activar (20 kg olímpica por defecto) si la biblioteca marca el ejercicio como "Barra"
-  if(typeof _setBarra==='function' && /barra/i.test(ex.equipo||'')) _setBarra(ejId, 20);
+  // Barra: auto-activar (20 kg olímpica) SOLO si es barra cargada; NO para ejercicios que cuelgan/suspenden de una barra ni de peso corporal
+  if(typeof _setBarra==='function' && /barra/i.test(ex.equipo||'') && !/colgad|suspend|domin|pull.?up|chin.?up|barra\s*fija|peso\s*corporal|corporal|isom[eé]tric|plancha|\bhang/i.test(((ex.nombre||'')+' '+(ex.equipo||'')).toLowerCase())) _setBarra(ejId, 20);
   // Inclinación: mostrar el selector si es un ejercicio de banco/press
   if(typeof _inclSync==='function') _inclSync(ejId);
   // Ajuste de máquina guardado para este alumno → autocompletar
