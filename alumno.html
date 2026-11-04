@@ -829,6 +829,40 @@ const SERIE_TIPOS = {
   preago:        { icon:'⚡', label:'Preagotamiento',    color:'#fb923c' },
   postago:       { icon:'🔋', label:'Postagotamiento',   color:'#86efac' },
 };
+// Tipo de serie PRESCRITO por el coach (claves cal/apr/efec/clu...) → color + explicación para el alumno
+const _TIPO_COACH = {
+  movi: {c:'#0ea5a5', t:'Movilidad',      x:'Ejercicios suaves para mejorar el rango de movimiento y preparar la articulación. No es trabajo de fuerza.', ej:''},
+  act:  {c:'#1f8f66', t:'Activación',     x:'Trabajo liviano para despertar el músculo objetivo antes de la parte pesada.', ej:''},
+  iso:  {c:'#a78bfa', t:'Isométrico',     x:'Mantenés la posición sin moverte, aguantando la tensión por un tiempo.', ej:''},
+  cal:  {c:'#f97316', t:'Calentamiento',  x:'Series livianas para preparar el músculo y la articulación. Trabajás lejos del esfuerzo máximo, sin cansarte.', ej:'No cuentan como serie efectiva: son preparación.'},
+  apr:  {c:'#d99a0b', t:'Aproximación',   x:'Subís la carga de a poco, serie a serie, hasta llegar al peso de trabajo.', ej:'Ej: 60 - 70 - 80 kg antes de tu peso objetivo.'},
+  fee:  {c:'#a67c1e', t:'Feeder',         x:'Serie muy corta y liviana, justo antes de la efectiva, para sentir el movimiento.', ej:''},
+  pfat: {c:'#b5651d', t:'Pre-fatiga',     x:'Un ejercicio de aislamiento antes del principal para llegar más cargado al músculo objetivo.', ej:''},
+  efec: {c:'#3f9c62', t:'Efectiva',       x:'La serie que cuenta para el estímulo. Acá das el esfuerzo objetivo, cerca del RIR marcado. Son las que generan el progreso.', ej:'Ej: 3 series de 8 con 90 kg a RIR 2.'},
+  clu:  {c:'#8a4fff', t:'Cluster',        x:'Una serie partida en mini-bloques de pocas repeticiones, con una pausa muy corta (10 a 20 seg) entre cada bloque. Esa micro-pausa te deja mover más peso o hacer más reps de calidad.', ej:'Ej: 2+2+2 = tres mini-series de 2 reps con 15 seg de descanso entre ellas.'},
+  bmb:  {c:'#c24b86', t:'Bombeo',         x:'Repeticiones altas con poco descanso para llenar el músculo de sangre.', ej:''},
+  drop: {c:'#1f6fb0', t:'Drop set',       x:'Al llegar al fallo, bajás el peso y seguís sin descanso para exprimir más repeticiones.', ej:''},
+  fallo:{c:'#334155', t:'Fallo',          x:'Llevás la serie hasta no poder completar una repetición más con buena técnica.', ej:''},
+  mparc:{c:'#c2691e', t:'Medio parcial',  x:'Repeticiones en un rango parcial del movimiento, en la zona más difícil.', ej:''},
+  mcomp:{c:'#2f6f4f', t:'Medio completo', x:'Repeticiones en el rango completo del movimiento.', ej:''},
+  core: {c:'#c2691e', t:'Core',           x:'Trabajo de zona media (abdomen y lumbares) para estabilidad.', ej:''},
+  vol:  {c:'#a5438b', t:'Volumen',        x:'Series de repeticiones altas enfocadas en acumular trabajo.', ej:''},
+  test: {c:'#2f5f90', t:'Test',           x:'Serie para medir tu fuerza máxima o marca en el ejercicio.', ej:''}
+};
+function _tipoSerieExplicar(k){
+  var i=(typeof _TIPO_COACH!=='undefined')?_TIPO_COACH[k]:null; if(!i) return;
+  var ov=document.getElementById('tipo-serie-ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='tipo-serie-ov'; ov.onclick=function(e){ if(e.target.id==='tipo-serie-ov') _tipoSerieCerrar(); }; document.body.appendChild(ov); }
+  ov.style.cssText='position:fixed;inset:0;background:rgba(4,10,20,.72);display:flex;align-items:flex-end;justify-content:center;z-index:9999;';
+  ov.innerHTML='<div style="background:#13233b;border:1px solid #2a476e;border-top:3px solid '+i.c+';border-radius:18px 18px 0 0;width:100%;max-width:480px;padding:20px 18px 26px;">'
+    +'<span style="display:inline-block;font-size:10px;font-weight:900;letter-spacing:.5px;color:#fff;border-radius:6px;padding:3px 10px;margin-bottom:10px;background:'+i.c+';">'+i.t.toUpperCase()+'</span>'
+    +'<div style="font-size:18px;font-weight:900;color:#fff;margin-bottom:8px;">'+i.t+'</div>'
+    +'<div style="font-size:13.5px;color:#c3d0e2;line-height:1.6;">'+i.x+'</div>'
+    +(i.ej?'<div style="margin-top:12px;font-size:12.5px;color:#9fb6d6;background:#0e1d33;border:1px solid #27456b;border-radius:10px;padding:10px 12px;">'+i.ej+'</div>':'')
+    +'<button onclick="_tipoSerieCerrar()" style="margin-top:16px;width:100%;background:#2f5f95;color:#fff;border:none;border-radius:11px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;">Entendido</button>'
+    +'</div>';
+}
+function _tipoSerieCerrar(){ var ov=document.getElementById('tipo-serie-ov'); if(ov) ov.style.display='none'; }
 let DS = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1073,8 +1107,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261104141630 por un timestamp en cada deploy
-const _APP_VERSION = '20261104141630';
+// deploy.bat reemplaza 20261104150319 por un timestamp en cada deploy
+const _APP_VERSION = '20261104150319';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3026,7 +3060,7 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
       let _isoSec = 0;
       if(_tecR.tipo==='iso_hold' && _tecP.seg){ const m=String(_tecP.seg).match(/\d+/); if(m) _isoSec=parseInt(m[0]); }
       return '<tr id="sr_'+sp+'" class="serie-row'+(omitida?' s-omitida':'')+(done?' s-done':'')+'" data-pausa="'+(window._circLblOn?20:(_segDe(s.pausa)||defPausa))+'" data-rest="'+_restSec+'" data-iso="'+_isoSec+'" '+touch+'>'+
-        '<td style="'+tdBase+'font-size:11px;font-weight:800;cursor:pointer;border-radius:11px 0 0 11px;" onclick="event.stopPropagation();_serieTap(\''+sp+'\')">'+serieLbl+'</td>'+
+        '<td style="'+tdBase+'font-size:11px;font-weight:800;cursor:pointer;border-radius:11px 0 0 11px;'+((typeof _TIPO_COACH!=='undefined'&&s&&s.tipo&&_TIPO_COACH[s.tipo])?('box-shadow:inset 6px 0 0 '+_TIPO_COACH[s.tipo].c+';'):'')+'" onclick="event.stopPropagation();_serieTap(\''+sp+'\')">'+serieLbl+'</td>'+
         '<td style="'+tdBase+'">'+repsCel+((_uni && !/\blado\b/i.test(String(repsVal)))?'<div style="font-size:8.5px;font-weight:800;color:#8a63c9;margin-top:1px;line-height:1;">c/lado</div>':'')+'</td>'+
         (hasPeso  ? '<td style="'+tdBase+'">'+pesoCel+_cuHtml+_barraCel+_totCel+'</td>' : '')+
         (hasRir   ? '<td style="'+tdBase+'">'+rirCel+'</td>' : '')+
@@ -3082,7 +3116,10 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
     const _wrapStyle = flush
       ? 'overflow:hidden;border:none;border-radius:0;background:'+_wrapBg+';box-shadow:none;margin:0;'
       : 'overflow:hidden;border-radius:14px;border:1px solid '+_wrapBd+';background:'+_wrapBg+';box-shadow:'+_wrapSh+';margin:2px 0 2px;';
-    return '<div style="'+_wrapStyle+'"><div style="overflow-x:auto;padding:0 8px 4px;"><table style="width:100%;border-collapse:separate;border-spacing:0 6px;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div></div>'+addBtn;
+    var _legTipos={}; (arr||[]).forEach(function(s){ if(s&&s.tipo&&typeof _TIPO_COACH!=='undefined'&&_TIPO_COACH[s.tipo]) _legTipos[s.tipo]=1; });
+    var _legKeys=Object.keys(_legTipos);
+    var _legHTML = _legKeys.length ? ('<div style="display:flex;flex-wrap:wrap;gap:8px 13px;padding:9px 12px 10px;background:'+_wrapBg+';border-top:1px solid '+_fbd+';">'+_legKeys.map(function(k){ var ti=_TIPO_COACH[k]; return '<span onclick="_tipoSerieExplicar(\''+k+'\')" style="display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:'+(_wt?'#55607a':'#9aa3b5')+';cursor:pointer;"><i style="width:11px;height:11px;border-radius:3px;background:'+ti.c+';display:inline-block;flex-shrink:0;"></i>'+ti.t+'</span>'; }).join('')+'</div>') : '';
+    return '<div style="'+_wrapStyle+'"><div style="overflow-x:auto;padding:0 8px 4px;"><table style="width:100%;border-collapse:separate;border-spacing:0 6px;"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div>'+_legHTML+'</div>'+addBtn;
   }
 
   // Grid SERIES / REPS / PAUSA / RIR  (resumen de series efectivas)
