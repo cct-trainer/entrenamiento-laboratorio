@@ -15619,7 +15619,9 @@ function abrirPlanFuerzaExistente(planId) {
   renderPlanSidebar('fuerza');
   toast('Plan cargado para edicion ✓');
   // Traer automáticamente los pesos que cargó el alumno en su app
-  try{ _traerPesosAlumno(p.alumnoId, true); }catch(e){}
+  // NO auto-importar los pesos del alumno: eso pisaba la prescripción del coach con lo que cargó el alumno.
+  // (La evolución real del alumno se consulta aparte, en el módulo Evolución.)
+  // try{ _traerPesosAlumno(p.alumnoId, true); }catch(e){}
 }
 
 // ── EXPORTAR DÍA / SEMANA ────────────────────────────────────────────────────
@@ -23403,6 +23405,16 @@ function _ajustarCardioHeaders(ejId){
 }
 function _ajustarTodosCardio(){ try{ document.querySelectorAll('.ej-card').forEach(c=>{ if(c.id) _ajustarCardioHeaders(c.id); }); }catch(e){} }
 setInterval(_ajustarTodosCardio, 1500);
+// ── Anti-pérdida: volcar al plan CADA cambio del editor del día, antes de cualquier redibujo ──
+// (fase de captura → corre antes del onchange del elemento, que puede re-renderizar con datos viejos)
+document.addEventListener('change', function(e){
+  try{
+    var pg=document.getElementById('plan-editor-page');
+    if(pg && pg.classList.contains('open') && e.target && e.target.closest && e.target.closest('#plan-editor-page-content')){
+      if(typeof guardarEstadoDiaActual==='function') guardarEstadoDiaActual();
+    }
+  }catch(err){}
+}, true);
 function _infoRIR(){ alert('RIR — Repeticiones en Reserva\n\nEs cuántas repeticiones te QUEDABAN sin llegar al fallo al terminar la serie.\n\n• RIR 2 = te quedaban 2 en el tanque (podías hacer 2 más).\n• RIR 1 = te quedaba 1.\n• RIR 0 = llegaste justo al fallo, no podías ni una más.\n\nSirve para medir el esfuerzo de cada serie. Si no estás seguro, dejalo vacío.'); }
 // ── Unidad de peso POR EJERCICIO (cada máquina puede estar en kg o lb) ──
 function _cardUnit(ejId){ try{ var h=document.getElementById(ejId+'-peso-unit'); return (h&&h.value==='lb')?'lb':'kg'; }catch(e){ return _pesoUnit(); } }
