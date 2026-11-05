@@ -2483,6 +2483,7 @@ select.toolbox-input option:disabled { color: #888; }
 .plan-dia-card.plan-dia-empty-card .pdc-dia { color:#8a8f98; }
 /* ── Month view ── */
 .mes-semana-bloque { background:#eef0f3; border-radius:12px; padding:12px 12px 14px; margin-bottom:16px; border:none; transition:none; }
+.mes-semana-bloque.sem-competicion { box-shadow:0 0 0 2px #c0392b inset; background:#fbefed; }
 .mes-semana-editando { background:#eef0f3; border:none; }
 /* ── Etiquetas en fila ancha (1 por línea) ── */
 .plan-fila-list { display:flex; flex-direction:column; gap:8px; }
@@ -4957,6 +4958,7 @@ window.addEventListener('load',function(){ try{
       </div>
       <div class="run-topbar-right">
         <button class="pln-btn pln-btn-guardar" onclick="guardarPlanSemanal()" style="font-weight:700;">💾 Guardar plan</button>
+        <button class="pln-btn pln-btn-outline" onclick="(typeof _iaTraspasoAbrir==='function')?_iaTraspasoAbrir():perfilPlanGo('ia')">Asistente de planilla</button>
         <button class="pln-btn pln-btn-outline" onclick="_iaShowImportModal()" style="background:#ecfdf5;color:#059669;border-color:#10b981;">📥 Importar JSON</button>
         <button id="copiloto-toggle-btn" class="copiloto-toggle-btn" onclick="toggleCopiloto()" style="display:none;">Copiloto IA</button>
       </div>
@@ -5455,6 +5457,11 @@ window.addEventListener('load',function(){ try{
           <option value="6">6 meses</option>
         </select>
         <div style="font-size:11px;color:#888;margin-top:4px;">Al elegir una duración se arman solas las 4 fases clásicas (con su color). Después agregás o quitás semanas en cada una.</div>
+        <div style="margin-top:12px;">
+          <label style="font-weight:700;color:#1a1a1a;font-size:13px;">Fecha de competición / fin (opcional)</label>
+          <input type="date" id="crear-mes-fin" style="font-size:14px;" onchange="_previewFasesModal()">
+          <div style="font-size:11px;color:#888;margin-top:4px;">Si ya tenés la fecha, dejá la duración en blanco: las semanas y las fases se calculan desde la fecha de inicio hasta acá.</div>
+        </div>
         <div id="crear-mes-fases-preview" style="margin-top:10px;"></div>
       </div>
       <div class="field" style="margin-top:14px;">
@@ -12415,9 +12422,11 @@ function renderPlanMes() {
     try{ if(typeof getFaseEnFecha==='function' && typeof currentAlumnoId!=='undefined' && currentAlumnoId && sem.fechaInicio){ const _al=getAlumnos().find(x=>x&&x.id===currentAlumnoId); if(_al && _al.plan_modo==='profesional') _perFa=getFaseEnFecha(currentAlumnoId, sem.fechaInicio); } }catch(e){}
     _perFaseWk[semIdx] = _perFa;
     const _perBadge = _perFa ? ('<span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:900;letter-spacing:.3px;color:'+_perFa.color+';background:'+_perFa.color+'1f;border:1px solid '+_perFa.color+'55;border-radius:999px;padding:2px 9px;margin-left:8px;vertical-align:middle;">S'+_perFa.semana_en_fase+'/'+_perFa.semanas_fase+'</span>') : '';
-    return '<div class="mes-semana-bloque'+(isEd?' mes-semana-editando':'')+_estCls+'" id="mes-sem-bloque-'+semIdx+'">'
+    let _compBadge='';
+    try{ var _fc=(typeof window!=='undefined'&&window._planFechaComp)?window._planFechaComp:''; if(_fc && sem.fechaInicio){ var _csi=new Date(sem.fechaInicio+'T00:00:00'); var _csf=new Date(_csi); _csf.setDate(_csf.getDate()+6); var _ccd=new Date(_fc+'T00:00:00'); if(!isNaN(_ccd)&&_ccd>=_csi&&_ccd<=_csf){ _compBadge='<span style="display:inline-block;font-size:9px;font-weight:900;color:#fff;background:#c0392b;border-radius:999px;padding:2px 10px;margin-left:8px;vertical-align:middle;letter-spacing:.4px;">COMPETICIÓN</span>'; } } }catch(e){}
+    return '<div class="mes-semana-bloque'+(isEd?' mes-semana-editando':'')+_estCls+(_compBadge?' sem-competicion':'')+'" id="mes-sem-bloque-'+semIdx+'">'
       + '<div class="mes-semana-header">'
-        + '<div class="mes-semana-titulo-txt">SEMANA '+sem.semana+(label ? ' &nbsp;&middot;&nbsp; '+label : '')+_estBadge+_perBadge
+        + '<div class="mes-semana-titulo-txt">SEMANA '+sem.semana+(label ? ' &nbsp;&middot;&nbsp; '+label : '')+_estBadge+_perBadge+_compBadge
             +(sem.sugerida?'<span style="display:inline-block;font-size:9px;font-weight:900;color:#fff;background:#7c5cff;border-radius:999px;padding:2px 9px;margin-left:8px;vertical-align:middle;">🔁 BORRADOR SUGERIDO</span>':'')
             +(sem.estado?'<span style="display:inline-block;font-size:9.5px;font-weight:800;color:#8a5a12;background:#fff3e0;border:1px solid #f0d9a8;border-radius:999px;padding:2px 9px;margin-left:8px;vertical-align:middle;">⚠ '+String(sem.estado).replace(/</g,'&lt;').replace(/"/g,'&quot;')+'</span>':'')
           +'</div>'
@@ -15596,6 +15605,7 @@ function abrirPlanFuerzaExistente(planId) {
   planSemEditando = 0;
   planDiaAbierto  = null;
   bloqueCounter=0; ejercicioCounter=0;
+  try{ window._planFechaComp = p.fechaCompeticion || ''; }catch(e){}
   if(p.semanasArray && p.semanasArray.length) {
     planSemanasArray = _migrarTodasLasSemanas(JSON.parse(JSON.stringify(p.semanasArray)));
   } else {
@@ -22470,13 +22480,25 @@ function _buildFasesClasicas(meses){
   return [['adaptacion',adap],['acumulacion',acum],['intensificacion',inten],['descarga',desc]]
     .map(function(o){ return {fase:o[0], nombre:NOM[o[0]], semanas:o[1], color:COL[o[0]]}; });
 }
+// Semanas enteras entre dos fechas (inicio → fin)
+function _semanasEntre(iniISO, finISO){
+  try{ var a=new Date(iniISO+'T00:00:00'), b=new Date(finISO+'T00:00:00'); if(isNaN(a)||isNaN(b)) return 0; var d=Math.round((b-a)/86400000); if(d<=0) return 0; return Math.max(1, Math.round(d/7)); }catch(e){ return 0; }
+}
 function _previewFasesModal(){
   var sel=document.getElementById('crear-mes-duracion');
   var box=document.getElementById('crear-mes-fases-preview'); if(!box) return;
-  var m=sel?parseFloat(sel.value):0;
-  if(!m){ box.innerHTML='<div style="font-size:11px;color:#aaa;">Sin fases: se crea un solo mes.</div>'; return; }
-  var fases=_buildFasesClasicas(m); var total=fases.reduce(function(s,f){return s+f.semanas;},0);
-  box.innerHTML='<div style="font-size:11px;color:#555;font-weight:800;margin-bottom:7px;">Estructura clásica · '+total+' semanas</div>'
+  var ini=(document.getElementById('crear-mes-fecha')||{}).value||'';
+  var fin=(document.getElementById('crear-mes-fin')||{}).value||'';
+  var fases=null, porFecha=false;
+  if(fin && ini){ var sem=_semanasEntre(ini,fin); if(sem>0){ fases=_buildFasesClasicas(sem/4); porFecha=true; } }
+  if(!fases){
+    var m=sel?parseFloat(sel.value):0;
+    if(!m){ box.innerHTML='<div style="font-size:11px;color:#aaa;">Sin fases: se crea un solo mes.</div>'; return; }
+    fases=_buildFasesClasicas(m);
+  }
+  var total=fases.reduce(function(s,f){return s+f.semanas;},0);
+  var titulo=porFecha?('Hasta la competición · '+total+' semanas'):('Estructura clásica · '+total+' semanas');
+  box.innerHTML='<div style="font-size:11px;color:#555;font-weight:800;margin-bottom:7px;">'+titulo+'</div>'
     +'<div style="display:flex;flex-direction:column;gap:6px;">'
     +fases.map(function(f){ return '<div style="display:flex;align-items:center;gap:9px;border:1px solid #e4e8ef;border-radius:9px;padding:7px 10px;"><span style="width:12px;height:12px;border-radius:4px;background:'+f.color+';flex-shrink:0;"></span><span style="font-size:12.5px;font-weight:700;color:#1a2a4a;flex:1;">'+f.nombre+'</span><span style="font-size:11px;font-weight:800;color:#55607a;">'+f.semanas+' sem</span></div>'; }).join('')
     +'</div>';
@@ -22496,9 +22518,11 @@ function abrirModalCrearMes() {
     const primerDia = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
     fechaInput.value = primerDia.toISOString().split('T')[0];
   }
-  // Reset duración + preview de fases
+  // Reset duración + fecha de fin + preview de fases
   const durSel = document.getElementById('crear-mes-duracion');
   if (durSel) durSel.value = '';
+  const finSel = document.getElementById('crear-mes-fin');
+  if (finSel) finSel.value = '';
   try{ _previewFasesModal(); }catch(e){}
   // Limpiar modalidad
   document.querySelectorAll('input[name="crear-mes-modalidad"]').forEach(r => r.checked = false);
@@ -22527,11 +22551,14 @@ function confirmarCrearMes() {
   };
   const modalidad = modVal ? _modMap[modVal] : null;
 
-  // Duración → armar semanas por fase (estructura clásica) si se eligió
+  // Semanas por fase: si hay fecha de competición se calcula por fecha; si no, por la duración elegida
+  const finVal = document.getElementById('crear-mes-fin')?.value;
+  let fases = null;
+  if (finVal && fecha) { const sem = _semanasEntre(fecha, finVal); if (sem > 0) fases = _buildFasesClasicas(sem / 4); }
+  if (!fases && durVal) fases = _buildFasesClasicas(parseFloat(durVal));
   let semArr = [{ semana: 1, fechaInicio: fecha, dias: {} }];
   let fasesData = null;
-  if (durVal) {
-    const fases = _buildFasesClasicas(parseFloat(durVal));
+  if (fases) {
     const total = fases.reduce((s, f) => s + f.semanas, 0);
     const base = new Date(fecha + 'T00:00:00');
     semArr = [];
@@ -22557,7 +22584,8 @@ function confirmarCrearMes() {
     diasData:   {},
     semanasArray: semArr,
     createdAt:  new Date().toISOString(),
-    ...(modalidad ? { modalidad } : {})
+    ...(modalidad ? { modalidad } : {}),
+    ...(finVal ? { fechaCompeticion: finVal } : {})
   };
 
   const planes = getPlanificaciones();
