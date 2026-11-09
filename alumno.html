@@ -1107,8 +1107,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261105142621 por un timestamp en cada deploy
-const _APP_VERSION = '20261105142621';
+// deploy.bat reemplaza 20261109102517 por un timestamp en cada deploy
+const _APP_VERSION = '20261109102517';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -8585,9 +8585,32 @@ function _sesDetalleHTML(ses){
   info += row('🏋️', _compEsc(_tc(ses.lugar)||(_diaModTab===1?_t('casa'):_t('gym'))));
   info += '</div>';
   if(ses.descripcion) info += '<div style="font-size:13px;color:var(--muted);line-height:1.55;margin-top:13px;padding-top:13px;border-top:1px solid var(--border);">'+_compEsc(ses.descripcion)+'</div>';
+  // Botón "Por qué esta sesión" (si el coach cargó fundamento o algún bloque tiene porqué)
+  try{
+    var _hayPq=String(ses.porqueSesion||'').trim() || (ses.bloques||[]).some(function(b){ return String(b&&b.porque||'').trim(); });
+    if(_hayPq){
+      window._sesPorque={ fund:String(ses.porqueSesion||'').trim(), bloques:(ses.bloques||[]).map(function(b){ return {n:(b.nombre||b.tipo||''), p:String(b&&b.porque||'').trim()}; }).filter(function(x){ return x.p; }) };
+      info += '<button onclick="_abrirPorqueSesion()" style="margin-top:14px;width:100%;background:#1a2a4a;color:#fff;border:none;border-radius:11px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;"><span style="width:19px;height:19px;border:2px solid #9db6d8;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#cfe0f3;">?</span>'+(_LANG==='en'?'Why this session':'Por qué esta sesión')+'</button>';
+    }
+  }catch(e){}
   info += '</div>';
   return info;
 }
+function _abrirPorqueSesion(){
+  var d=window._sesPorque||{};
+  var esc=function(s){return String(s==null?'':s).replace(/</g,'&lt;');};
+  var nl=function(s){return esc(s).replace(/\n/g,'<br>');};
+  var en=(typeof _LANG!=='undefined'&&_LANG==='en');
+  var ov=document.getElementById('porque-ses-ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='porque-ses-ov'; ov.onclick=function(e){ if(e.target.id==='porque-ses-ov') _cerrarPorqueSesion(); }; document.body.appendChild(ov); }
+  ov.style.cssText='position:fixed;inset:0;background:rgba(6,12,24,.6);z-index:9999;display:flex;justify-content:flex-end;';
+  var secFund = d.fund ? ('<div style="background:#13233b;border:1px solid #243b57;border-radius:13px;padding:15px 16px;margin-bottom:12px;"><div style="font-size:10px;font-weight:900;letter-spacing:.7px;color:#6ea8ff;text-transform:uppercase;margin-bottom:9px;">'+(en?'Why we train this':'Qué buscamos y por qué')+'</div><div style="font-size:13.5px;color:#c3d0e2;line-height:1.6;">'+nl(d.fund)+'</div></div>') : '';
+  var blks = (d.bloques&&d.bloques.length) ? ('<div style="background:#13233b;border:1px solid #243b57;border-radius:13px;padding:15px 16px;"><div style="font-size:10px;font-weight:900;letter-spacing:.7px;color:#6ea8ff;text-transform:uppercase;margin-bottom:4px;">'+(en?'Why each block':'El porqué de cada bloque')+'</div>'+d.bloques.map(function(b){ return '<div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid #1d3047;"><span style="width:8px;height:8px;border-radius:50%;background:#2f5f95;flex-shrink:0;margin-top:6px;"></span><div><div style="font-size:12.5px;font-weight:800;color:#eaf1fb;">'+esc(b.n)+'</div><div style="font-size:12.5px;color:#9fb2cc;line-height:1.5;margin-top:2px;">'+nl(b.p)+'</div></div></div>'; }).join('')+'</div>') : '';
+  ov.innerHTML='<div style="width:100%;max-width:520px;height:100%;background:#0b1626;overflow-y:auto;box-shadow:-14px 0 40px -18px rgba(0,0,0,.6);">'
+    +'<div style="position:sticky;top:0;background:#1a2a4a;color:#fff;padding:15px 16px;display:flex;align-items:center;justify-content:space-between;"><div style="font-size:12.5px;font-weight:900;letter-spacing:.4px;">'+(en?'WHY THIS SESSION':'POR QUÉ ESTA SESIÓN')+'</div><button onclick="_cerrarPorqueSesion()" style="background:rgba(255,255,255,.12);border:none;color:#fff;width:30px;height:30px;border-radius:8px;font-size:17px;cursor:pointer;">&times;</button></div>'
+    +'<div style="padding:15px 16px 44px;">'+secFund+blks+'</div></div>';
+}
+function _cerrarPorqueSesion(){ var ov=document.getElementById('porque-ses-ov'); if(ov) ov.remove(); }
 
 // ══════════════════════════════════════════════════════════════════════════
 // "TERMINÉ MI ENTRENAMIENTO" — completa la sesión y crea la semana siguiente

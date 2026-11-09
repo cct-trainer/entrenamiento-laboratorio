@@ -13775,6 +13775,8 @@ function renderPlanDiaEditor(diaIdx) {
                 <input id="plan-ses-equipo" placeholder="Ej: Mancuernas, banda" style="width:100%;padding:7px 8px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;box-sizing:border-box;"></div>
             </div>
             <textarea id="plan-ses-desc" rows="2" placeholder="Descripción de la sesión (opcional)" style="width:100%;margin-top:8px;padding:8px 10px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;box-sizing:border-box;resize:vertical;"></textarea>
+            <div style="font-size:9px;color:#2f5f95;font-weight:800;margin:10px 0 3px;">POR QUÉ ESTA SESIÓN (el alumno lo ve con un botón)</div>
+            <textarea id="plan-ses-porque" rows="3" placeholder="Fundamento de la sesión para el alumno: qué buscamos, qué priorizamos, criterios… (podés pegar lo que te arma el prompt)" style="width:100%;padding:8px 10px;border:1.5px solid #cfe0f3;border-radius:8px;font-size:12px;box-sizing:border-box;resize:vertical;background:#f6faff;"></textarea>
             <div id="plan-ses-durcalc" style="font-size:11px;color:#059669;font-weight:700;margin-top:6px;"></div>
           </details>
         </div>
@@ -13819,6 +13821,7 @@ function renderPlanDiaEditor(diaIdx) {
   const _so=document.getElementById('plan-ses-obj');    if(_so) _so.value=sesion.objetivo||'';
   const _sq=document.getElementById('plan-ses-equipo'); if(_sq) _sq.value=sesion.equipo||'';
   const _se=document.getElementById('plan-ses-desc');   if(_se) _se.value=sesion.descripcion||'';
+  const _sp=document.getElementById('plan-ses-porque'); if(_sp) _sp.value=sesion.porqueSesion||'';
   _sesImgPrev();
   _sesActualizarDuracion(sesion.bloques||[]);
   // Restaurar tildes de lo ya impreso a Evolución (para saber qué ya se usó)
@@ -14011,6 +14014,7 @@ function _switchEditorTab(tabIdx, diaIdx) {
   const _so=document.getElementById('plan-ses-obj');    if(_so) _so.value=sesion.objetivo||'';
   const _sq=document.getElementById('plan-ses-equipo'); if(_sq) _sq.value=sesion.equipo||'';
   const _se=document.getElementById('plan-ses-desc');   if(_se) _se.value=sesion.descripcion||'';
+  const _sp=document.getElementById('plan-ses-porque'); if(_sp) _sp.value=sesion.porqueSesion||'';
   _sesImgPrev();
   // Cargar bloques
   if (sesion.bloques && sesion.bloques.length) {
@@ -14458,7 +14462,8 @@ function guardarEstadoDiaActual() {
     duracion: _g('plan-ses-dur','duracion'),
     objetivo: _g('plan-ses-obj','objetivo'),
     equipo: _g('plan-ses-equipo','equipo'),
-    descripcion: _g('plan-ses-desc','descripcion')
+    descripcion: _g('plan-ses-desc','descripcion'),
+    porqueSesion: _g('plan-ses-porque','porqueSesion')
   };
   planDiasData = planSemanasArray[planSemEditando].dias;
 }
@@ -17937,6 +17942,9 @@ const _F1RM_PCT = [
   {p:85,reps:'6',rir:'1-2'},{p:80,reps:'8',rir:'2'},{p:75,reps:'10',rir:'2-3'},
   {p:70,reps:'12',rir:'2-3'},{p:65,reps:'15',rir:'3'},{p:60,reps:'18-20',rir:'3-4'}
 ];
+// Zona de %1RM recomendada según el objetivo
+const _F1RM_ZONA = { fuerza:[85,100], hipertrofia:[65,80], resistencia:[55,64] };
+const _F1RM_OBJ_LBL = { fuerza:'Fuerza máxima', hipertrofia:'Hipertrofia', resistencia:'Resistencia' };
 // Coeficientes de transferencia por familia (ancla = 1.0). Estimaciones, ajustables.
 const _F1RM_FAM = {
   'Empuje horizontal': { 'Press de banca plano con barra':1.0, 'Press banca Smith':1.0, 'Press pecho en máquina':0.95, 'Press inclinado con barra':0.85, 'Press plano con mancuernas':0.75, 'Press inclinado con mancuernas':0.65, 'Flexiones lastradas':0.6, 'Aperturas / fly':0.45 },
@@ -18064,6 +18072,8 @@ function renderFuerza1RM(id){
   if(!al){ cont.innerHTML='<div style="padding:20px;color:#888;">Seleccioná un alumno.</div>'; return; }
   const tests=Array.isArray(al.fuerzaTests)?al.fuerzaTests.slice():[];
   const defF=al.rmFormula||'epley';
+  const _f1objG=al.rmObjetivo||'hipertrofia';
+  const _f1zona=_F1RM_ZONA[_f1objG]||_F1RM_ZONA.hipertrofia; const _zmin=_f1zona[0], _zmax=_f1zona[1];
   const hoy=new Date().toISOString().slice(0,10);
   const inp='width:100%;border:1.5px solid #dde1ea;border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit;box-sizing:border-box;';
   const lbl='font-size:10px;font-weight:800;color:#666;letter-spacing:.4px;display:block;margin-bottom:4px;';
@@ -18073,8 +18083,11 @@ function renderFuerza1RM(id){
   h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px;">'
     +'<div><div style="font-size:16px;font-weight:900;color:#1a1a2e;">💪 Perfil de Fuerza &amp; 1RM</div>'
     +'<div style="font-size:12px;color:#888;">Cargá evaluaciones, estimá el 1RM y obtené las cargas de trabajo. El historial se guarda para siempre.</div></div>'
+    +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+    +'<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:#888;">Objetivo:</span>'
+    +'<select id="f1rm-obj-global" onchange="_f1rmSetObjetivo(\''+id+'\')" style="'+inp+'width:auto;padding:6px 10px;">'+['hipertrofia','fuerza','resistencia'].map(o=>'<option value="'+o+'"'+(o===_f1objG?' selected':'')+'>'+_F1RM_OBJ_LBL[o]+'</option>').join('')+'</select></div>'
     +'<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:#888;">Fórmula por defecto:</span>'
-    +'<select id="f1rm-defform" onchange="_f1rmSetDefault(\''+id+'\')" style="'+inp+'width:auto;padding:6px 10px;">'+formOpts+'</select></div></div>';
+    +'<select id="f1rm-defform" onchange="_f1rmSetDefault(\''+id+'\')" style="'+inp+'width:auto;padding:6px 10px;">'+formOpts+'</select></div></div></div>';
 
   h+='<div style="background:#faf9ff;border:1.5px solid #e0d8fb;border-radius:14px;padding:16px;margin:12px 0 18px;">'
     +'<div style="font-size:10px;font-weight:900;color:#7c3aed;letter-spacing:.6px;margin-bottom:12px;">➕ NUEVA EVALUACIÓN</div>'
@@ -18109,7 +18122,7 @@ function renderFuerza1RM(id){
       h+='<details style="margin-top:10px;"><summary style="cursor:pointer;color:#7c3aed;font-size:12px;font-weight:700;">Ver cargas de trabajo (según 1RM)</summary>'
         +'<table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:12px;">'
         +'<tr style="color:#999;font-size:10px;"><th style="text-align:left;padding:4px;">%1RM</th><th style="text-align:left;padding:4px;">Peso</th><th style="text-align:left;padding:4px;">Reps aprox</th><th style="text-align:left;padding:4px;">RIR</th></tr>'
-        + _F1RM_PCT.map(x=>'<tr style="border-top:1px solid #eee;"><td style="padding:5px 4px;font-weight:700;">'+x.p+'%</td><td style="padding:5px 4px;color:#7c3aed;font-weight:800;">'+_r25(prRM*x.p/100)+' kg</td><td style="padding:5px 4px;">'+x.reps+'</td><td style="padding:5px 4px;color:#888;">'+x.rir+'</td></tr>').join('')
+        + _F1RM_PCT.map(x=>{ var _z=(x.p>=_zmin&&x.p<=_zmax); return '<tr style="border-top:1px solid #eee;'+(_z?'background:#eef9f1;':'')+'"><td style="padding:5px 4px;font-weight:700;">'+x.p+'%'+(_z?' <span style="font-size:8px;font-weight:900;color:#15795a;background:#d6f0e0;border-radius:5px;padding:1px 6px;letter-spacing:.3px;vertical-align:middle;">RECOMENDADO</span>':'')+'</td><td style="padding:5px 4px;color:#7c3aed;font-weight:800;">'+_r25(prRM*x.p/100)+' kg</td><td style="padding:5px 4px;">'+x.reps+'</td><td style="padding:5px 4px;color:#888;">'+x.rir+'</td></tr>'; }).join('')
         +'</table></details>';
       h+=_f1rmRelacionadosHTML(ej, prRM);
       h+='<details style="margin-top:8px;"><summary style="cursor:pointer;color:#7c3aed;font-size:12px;font-weight:700;">Historial ('+arr.length+')</summary><div style="margin-top:8px;">';
@@ -18132,6 +18145,13 @@ function _f1rmSetDefault(id){
   al.rmFormula=document.getElementById('f1rm-defform').value;
   saveAlumnos(alumnos);
   if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+}
+function _f1rmSetObjetivo(id){
+  const alumnos=getAlumnos(); const al=alumnos.find(a=>a.id===id); if(!al) return;
+  al.rmObjetivo=document.getElementById('f1rm-obj-global').value;
+  saveAlumnos(alumnos);
+  if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+  renderFuerza1RM(id);
 }
 function _f1rmGuardar(id){
   const alumnos=getAlumnos(); const al=alumnos.find(a=>a.id===id); if(!al) return;
@@ -24462,6 +24482,19 @@ function _ppReposition(){ if(_ppEl&&_ppInput){ const r=_ppInput.getBoundingClien
 function _ppOutside(e){ if(_ppEl && !_ppEl.contains(e.target) && e.target!==_ppInput) _ppClose(); }
 function _ppClose(){ if(_ppEl){ _ppEl.remove(); _ppEl=null; } _ppInput=null; document.removeEventListener('mousedown',_ppOutside,true); window.removeEventListener('scroll',_ppReposition,true); window.removeEventListener('resize',_ppReposition); }
 function _ppUse(val){ if(_ppInput){ _ppInput.value=String(val).replace(',','.'); try{ _ppInput.dispatchEvent(new Event('input',{bubbles:true})); _ppInput.dispatchEvent(new Event('change',{bubbles:true})); }catch(e){} } _ppClose(); }
+// 1RM más reciente cargado en la calculadora (Fuerza & 1RM) para un ejercicio
+function _rmDeTests(alId, ejName){
+  try{
+    const al=(typeof getAlumnos==='function'?getAlumnos():[]).find(a=>a&&a.id===alId);
+    if(!al || !Array.isArray(al.fuerzaTests) || !al.fuerzaTests.length) return null;
+    const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
+    const kej=norm(ejName); if(!kej) return null;
+    const m=al.fuerzaTests.filter(t=>{ const kt=norm(t.ejercicio); return kt===kej || (kt.length>4 && (kt.indexOf(kej)>=0 || kej.indexOf(kt)>=0)); });
+    if(!m.length) return null;
+    m.sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));
+    const rm=parseFloat(m[0].rm); return (isFinite(rm)&&rm>0)?rm:null;
+  }catch(e){ return null; }
+}
 function _abrirPesoPicker(inp, ejId){
   if(_ppInput===inp) return;   // ya abierto para esta celda
   _ppClose();
@@ -24470,7 +24503,10 @@ function _abrirPesoPicker(inp, ejId){
   const alId=ctx?ctx.id:(typeof currentAlumnoId!=='undefined'?currentAlumnoId:null);
   const uni=(typeof _statUnidad==='function')?_statUnidad():'kg';
   let _rmBase=null;
-  try{ const s=(typeof _plSerieEjercicio==='function'&&alId&&nombre)?_plSerieEjercicio(alId,nombre):[]; if(s&&s.length){ _rmBase=Math.max.apply(null, s.map(x=>x.e1rm)); } }catch(e){}
+  // 1) Prioridad: 1RM cargado en la calculadora (Fuerza & 1RM)
+  try{ _rmBase=_rmDeTests(alId, nombre); }catch(e){}
+  // 2) Fallback: estimado del historial de sesiones
+  if(!_rmBase){ try{ const s=(typeof _plSerieEjercicio==='function'&&alId&&nombre)?_plSerieEjercicio(alId,nombre):[]; if(s&&s.length){ _rmBase=Math.max.apply(null, s.map(x=>x.e1rm)); } }catch(e){} }
   if(!_rmBase) return;   // sin 1RM de referencia → dejar escribir a mano, sin popover
   const _r=x=>Math.round(x/2.5)*2.5;
   const _f=v=>String(Math.round(v*10)/10).replace('.',',');
