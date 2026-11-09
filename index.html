@@ -12060,7 +12060,9 @@ function _persistPlanMes(){
     planes[idx].semanasArray=planSemanasArray;
     planes[idx].diasData=planSemanasArray[0]?.dias||{};
     savePlanificaciones(planes);
-    if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();
+    var _aid=planes[idx].alumnoId;
+    if(_aid && typeof publicarPortalAlumno==='function') publicarPortalAlumno(_aid);   // publica solo este alumno (rápido)
+    if(typeof _autoSyncFirebase==='function') _autoSyncFirebase();                       // backup completo en segundo plano
   }
 }
 function _aplicarResultados(ses, sem, dia, resultados){
@@ -13775,10 +13777,12 @@ function renderPlanDiaEditor(diaIdx) {
                 <input id="plan-ses-equipo" placeholder="Ej: Mancuernas, banda" style="width:100%;padding:7px 8px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;box-sizing:border-box;"></div>
             </div>
             <textarea id="plan-ses-desc" rows="2" placeholder="Descripción de la sesión (opcional)" style="width:100%;margin-top:8px;padding:8px 10px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;box-sizing:border-box;resize:vertical;"></textarea>
-            <div style="font-size:9px;color:#2f5f95;font-weight:800;margin:10px 0 3px;">POR QUÉ ESTA SESIÓN (el alumno lo ve con un botón)</div>
-            <textarea id="plan-ses-porque" rows="3" placeholder="Fundamento de la sesión para el alumno: qué buscamos, qué priorizamos, criterios… (podés pegar lo que te arma el prompt)" style="width:100%;padding:8px 10px;border:1.5px solid #cfe0f3;border-radius:8px;font-size:12px;box-sizing:border-box;resize:vertical;background:#f6faff;"></textarea>
             <div id="plan-ses-durcalc" style="font-size:11px;color:#059669;font-weight:700;margin-top:6px;"></div>
           </details>
+          <div style="margin:10px 0 2px;border:1.5px solid #cfe0f3;border-radius:11px;background:#f6faff;padding:11px 12px;">
+            <div style="font-size:10px;color:#2f5f95;font-weight:900;letter-spacing:.4px;margin-bottom:5px;">POR QUÉ ESTA SESIÓN · el alumno lo ve con un botón en su app</div>
+            <textarea id="plan-ses-porque" rows="3" placeholder="Fundamento de la sesión para el alumno: qué buscamos, qué priorizamos, criterios… (podés pegar lo que te arma el prompt)" style="width:100%;padding:9px 11px;border:1.5px solid #cfe0f3;border-radius:9px;font-size:12.5px;box-sizing:border-box;resize:vertical;background:#fff;"></textarea>
+          </div>
         </div>
         <div style="display:flex;justify-content:flex-end;gap:8px;margin:2px 2px 8px;flex-wrap:wrap;">
           <button onclick="_evoSelTodas(this)" style="background:#eef2f8;border:1px solid #cdd9ea;color:#2f5f95;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">☑ Seleccionar todas las series</button>
@@ -15515,7 +15519,9 @@ function guardarPlanSemanal() {
 
   try {
     savePlanificaciones(planes);
-    if(typeof forzarSyncFirebase==='function') forzarSyncFirebase();   // subir YA a la nube (no esperar el auto-sync de 2s)
+    // Publicar YA solo el portal de este alumno (rápido) y dejar el respaldo completo en segundo plano
+    if(typeof publicarPortalAlumno==='function') publicarPortalAlumno(alumnoId);
+    if(typeof _autoSyncFirebase==='function') _autoSyncFirebase();   // backup completo, debounced, sin bloquear
     toast(alumnoDistinto ? 'Plan guardado como nuevo para el alumno seleccionado ✓' : 'Plan de fuerza guardado ✓');
     if(currentAlumnoId) {
       renderPerfilPlanificaciones(currentAlumnoId,'fuerza');
@@ -28602,6 +28608,28 @@ async function forzarSyncFirebase() {
     console.warn('Sync error:', err);
     if (typeof toast === 'function') toast('Error al sincronizar: ' + (err && err.message ? err.message : err), 'error');
   }
+}
+
+// ── Publicación LIVIANA: solo el portal de UN alumno (rápida, para que su app se actualice al toque) ──
+async function publicarPortalAlumno(alumnoId){
+  if(!window._db || !alumnoId) return;
+  try{
+    const alumnos=JSON.parse(localStorage.getItem('LAB_ALUMNOS')||'[]');
+    const al=alumnos.find(a=>a&&a.id===alumnoId); if(!al) return;
+    const planificaciones=JSON.parse(localStorage.getItem('LAB_PLANIFICACIONES')||'[]');
+    const antropometria=JSON.parse(localStorage.getItem('LAB_ANTROPOMETRIA')||'[]');
+    const planesAlumno=planificaciones.filter(p=>p && p.alumnoId===alumnoId);
+    try{ if(typeof _syncStatusIcon==='function') _syncStatusIcon('⏳','Actualizando app del alumno...'); }catch(e){}
+    await window._db.collection('alumnos').doc(alumnoId).set({
+      perfil:          al,
+      planificaciones: planesAlumno,
+      antropometria:   antropometria.filter(r=>r && r.alumnoId===alumnoId),
+      updatedAt:       new Date().toISOString(),
+      accessUntil:     al.accessUntil||'',
+      macrociclo:      al.macrociclo||null
+    }, { merge:true });
+    try{ if(typeof _syncStatusIcon==='function') _syncStatusIcon('✓','App del alumno actualizada'); }catch(e){}
+  }catch(err){ console.warn('publicarPortalAlumno:', err); try{ if(typeof _autoSyncFirebase==='function') _autoSyncFirebase(); }catch(e){} }
 }
 
 let _syncTimer = null;
