@@ -1107,8 +1107,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261109144640 por un timestamp en cada deploy
-const _APP_VERSION = '20261109144640';
+// deploy.bat reemplaza 20261110150802 por un timestamp en cada deploy
+const _APP_VERSION = '20261110150802';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1220,18 +1220,41 @@ function _slotDesactualizado(sp, ej){
 }
 // Respaldo en la nube de las ediciones del alumno (para que no se pierdan y el coach las vea)
 let _editsSyncTimer = null;
-function _syncEditsFirebase(){
+window._editsPendiente = window._editsPendiente || false;
+window._editsReintentos = 0;
+function _flushEditsFirebase(){
   if (!_db || !_alumnoId) return;
-  clearTimeout(_editsSyncTimer);
-  _editsSyncTimer = setTimeout(function(){
+  var intentar = function(){
     try {
       _db.collection('alumnos').doc(_alumnoId).set({
         pesoEdits: _pesoEdits,
         pesoEditsAt: new Date().toISOString()
-      }, { merge: true }).catch(function(){});
-    } catch(e) {}
-  }, 1500);
+      }, { merge: true })
+      .then(function(){ window._editsPendiente=false; window._editsReintentos=0; })
+      .catch(function(err){
+        window._editsPendiente=true;
+        if(window._editsReintentos < 3){ window._editsReintentos++; setTimeout(intentar, 1500*window._editsReintentos); }
+        else { try{ if(typeof toast==='function') toast(_LANG==='en'?'Could not save your data — check your connection':'No se pudo guardar tu registro — revisá tu conexión y reintentá','error'); }catch(e){} }
+      });
+    } catch(e){ window._editsPendiente=true; }
+  };
+  intentar();
 }
+function _syncEditsFirebase(){
+  if (!_db || !_alumnoId) return;
+  window._editsPendiente = true;
+  clearTimeout(_editsSyncTimer);
+  _editsSyncTimer = setTimeout(_flushEditsFirebase, 800);   // antes 1500: subimos antes para perder menos
+}
+// Red de seguridad: subir YA lo pendiente cuando el alumno cierra o sale de la app (si no, se perdía lo último)
+(function(){
+  try{
+    var flush=function(){ if(window._editsPendiente){ try{ clearTimeout(_editsSyncTimer); }catch(e){} _flushEditsFirebase(); } };
+    document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') flush(); });
+    window.addEventListener('pagehide', flush);
+    window.addEventListener('beforeunload', flush);
+  }catch(e){}
+})();
 
 const TIPOS_RUN = {
   'pasadas':     {icon:'⚡', label:'Pasadas / Intervalos', labelEn:'Intervals', color:'#f59e0b'},
@@ -1295,6 +1318,27 @@ const TIPOS_RUN = {
     const doc = await db.collection('alumnos').doc(id).get();
     if (!doc.exists) return showErr('Todavía no hay datos para este alumno. Pedile a tu coach que sincronice el portal desde su aplicación.');
     _data = doc.data();
+
+    // ── Portadas: las fotos de las sesiones viven en una subcolección aparte (no inflan el documento).
+    // Resolvemos las referencias (imagenRef) y rellenamos ses.imagen en memoria. Si algo falla, la
+    // sesión muestra su portada por defecto: nunca se rompe nada.
+    try {
+      const _refs = {};
+      const _walk = fn => (_data.planificaciones||[]).forEach(p => {
+        (p.semanasArray||[]).forEach(w => { const d=(w&&w.dias)||{}; Object.keys(d).forEach(k => (d[k]||[]).forEach(fn)); });
+        if (p.diasData) Object.keys(p.diasData).forEach(k => (p.diasData[k]||[]).forEach(fn));
+      });
+      _walk(ses => { if (ses && ses.imagenRef && !ses.imagen) _refs[ses.imagenRef] = 1; });
+      const _rk = Object.keys(_refs);
+      if (_rk.length) {
+        const _col = db.collection('alumnos').doc(id).collection('portadas');
+        const _imgMap = {};
+        await Promise.all(_rk.map(k => _col.doc(k).get()
+          .then(s => { if (s.exists) { const dd=s.data(); if (dd && dd.img) _imgMap[k]=dd.img; } })
+          .catch(()=>{})));
+        _walk(ses => { if (ses && ses.imagenRef && !ses.imagen && _imgMap[ses.imagenRef]) ses.imagen = _imgMap[ses.imagenRef]; });
+      }
+    } catch(e) { console.warn('portadas:', e); }
 
     // Idioma por nacionalidad (lo define el coach en el perfil). Arranca en ese idioma;
     // el alumno igual puede cambiarlo con el selector. (it/pt aún sin diccionario → inglés provisorio)
@@ -2970,10 +3014,12 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
     const _cuHtml = _manc ? '<div style="font-size:8.5px;font-weight:800;color:#3A6EA5;margin-top:1px;line-height:1;">c/u</div>' : '';
     const _uni = _esUnilateralEj(ej);   // unilateral → las reps son de cada lado
     const _cardio = /bicicleta|cinta|caminat|el[ií]ptic|remo\s*erg|escalera|trote|correr|carrera|spinning|cardio|hiit|airbike|treadmill/i.test(String((ej&&ej.nombre)||''));
+    const _uEj  = (ej && ej.pesoUnit==='lb') ? 'lb' : 'kg';   // unidad del peso para ESTE ejercicio
+    const _uEjU = _uEj.toUpperCase();
     const head = '<tr>'+
       '<th style="'+thStyle+'">'+(window._circLblOn?(_LANG==='en'?'ROUND':'VUELTA'):'SERIE')+'</th>'+
       '<th style="'+thStyle+'">'+(_cardio?'TIEMPO':(_uni?'REPS POR LADO':'REPS'))+'</th>'+
-      (hasPeso  ? '<th style="'+thStyle+'">'+(_cardio?'INTENSIDAD':'PESO (KG)')+'</th>' : '')+
+      (hasPeso  ? '<th style="'+thStyle+'">'+(_cardio?'INTENSIDAD':('PESO ('+_uEjU+')'))+'</th>' : '')+
       (hasRir   ? '<th style="'+thStyle+'">RIR <span onclick="_infoRIRAlumno()" style="cursor:pointer;color:#3A6EA5;font-weight:900;">ⓘ</span></th>'  : '')+
       (hasPausa ? '<th style="'+thStyle+'">PAUSA</th>': '')+
       '<th style="'+thStyle+'width:26px;"></th>'+
@@ -3017,14 +3063,14 @@ function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
             : '<input id="inp_'+sp+'_peso" type="text" inputmode="decimal" value="'+pesoRaw+'" placeholder="—" '+
               'onchange="_guardarEdit(\''+sp+'\',\'peso\',this.value)" onclick="event.stopPropagation()" '+
               'style="'+inpStyle+'">')
-        : (pesoRaw ? (_pesoEsTexto?_compEsc(pesoRaw):pesoRaw+' kg') : '—');
+        : (pesoRaw ? (_pesoEsTexto?_compEsc(pesoRaw):pesoRaw+' '+_uEj) : '—');
       // Desglose de barra (barra + discos · por lado) debajo del peso
       let _barraCel = '';
       const _barraKgR = _barraNumA(ej && ej.barra);
       if(_barraKgR>0 && !_pesoEsTexto){
         const _totR = _barraNumA(pesoRaw);
         if(pesoRaw && _totR>0){
-          if(_totR<=_barraKgR+0.001) _barraCel='<div class="barra-bd solo">'+(_LANG==='en'?'(Bar ':'(Barra ')+_barraFmtA(_barraKgR)+' kg)</div>';
+          if(_totR<=_barraKgR+0.001) _barraCel='<div class="barra-bd solo">'+(_LANG==='en'?'(Bar ':'(Barra ')+_barraFmtA(_barraKgR)+' '+_uEj+')</div>';
           else { const _ladoR=(_totR-_barraKgR)/2; _barraCel='<div class="barra-bd">'+(_LANG==='en'?'bar ':'barra ')+_barraFmtA(_barraKgR)+' + <b>'+_barraFmtA(_ladoR)+(_LANG==='en'?'/side':'/lado')+'</b></div>'; }
         }
       }

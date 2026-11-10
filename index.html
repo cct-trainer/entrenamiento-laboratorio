@@ -3850,6 +3850,7 @@ window.addEventListener('load',function(){ try{
     <button onclick="exportarRespaldoLocal()" style="background:#eef3fb;border:1px solid #cfe0f3;color:#2f5f95;padding:7px 11px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;" title="Descargar un respaldo con TODA la información (alumnos, planes, medidas, etc.)">💾 Respaldar</button>
     <button onclick="document.getElementById('imp-respaldo-file').click()" style="background:#f6f9fc;border:1px solid #ddd;color:#55607a;padding:7px 11px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;" title="Restaurar desde un archivo de respaldo">📥 Restaurar</button>
     <input type="file" id="imp-respaldo-file" accept="application/json,.json" style="display:none;" onchange="importarRespaldoLocal(this)">
+    <button onclick="liberarEspacioUI()" style="background:#fdeeec;border:1px solid #f3c9c2;color:#c0392b;padding:7px 11px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;" title="Liberar espacio del navegador (quita las fotos de portada pesadas; no toca los ejercicios)">Liberar espacio</button>
     <button onclick="limpiarStorageEmergencia()" style="background:none;border:1px solid #ddd;color:#bbb;padding:7px 12px;border-radius:5px;font-size:11px;cursor:pointer;" title="Liberar espacio si hay errores de almacenamiento">🗑</button>
   </div>
 </header>
@@ -10221,9 +10222,114 @@ function getPlanificaciones() {
   try { return JSON.parse(localStorage.getItem(DB_PLANIFICACIONES) || '[]'); }
   catch(e) { return []; }
 }
+function _liberarEspacioLocal(){
+  try{
+    var borrar=[];
+    for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i)||'';
+      if(/^LAB_REV_|^SOCC_VE_DRAFT|^SOCC_CLIP|^LAB_BLOQUE_CLIP|_undo$|_cache$|^LAB_TRIAL_TEMPLATES$/i.test(k)) borrar.push(k);
+    }
+    borrar.forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+    return borrar.length;
+  }catch(e){ return 0; }
+}
+// Quita las fotos de portada (base64) de un arreglo de planes (muta). No toca ejercicios ni series.
+function _stripFotosPlanes(plans){
+  var n=0; var s=function(ses){ if(ses && ses.imagen && String(ses.imagen).indexOf('data:')===0){ ses.imagen=''; n++; } };
+  (plans||[]).forEach(function(p){
+    (p.semanasArray||[]).forEach(function(w){ var d=(w&&w.dias)||{}; Object.keys(d).forEach(function(k){ (d[k]||[]).forEach(s); }); });
+    if(p.diasData){ Object.keys(p.diasData).forEach(function(k){ (p.diasData[k]||[]).forEach(s); }); }
+  });
+  return n;
+}
+// Clave estable de una imagen según su contenido (así dos sesiones con la misma foto no la duplican).
+function _imgPortadaKey(s){ var h=5381,i=s.length; while(i){ h=(h*33)^s.charCodeAt(--i); } return 'p'+((h>>>0).toString(36))+(s.length.toString(36)); }
+// Saca las fotos de portada (base64) del documento del alumno SIN perderlas: cada imagen queda
+// en 'imgs' para guardarse en su propia subcolección, y en el plan se deja una referencia (imagenRef).
+// Así el documento principal queda liviano (nunca supera 1 MB) y NINGUNA foto se borra.
+function _externalizarPortadas(plans){
+  var imgs={};
+  var s=function(ses){
+    if(ses && ses.imagen && String(ses.imagen).indexOf('data:')===0){
+      var k=_imgPortadaKey(ses.imagen); imgs[k]=ses.imagen; ses.imagenRef=k; ses.imagen='';
+    }
+  };
+  (plans||[]).forEach(function(p){
+    (p.semanasArray||[]).forEach(function(w){ var d=(w&&w.dias)||{}; Object.keys(d).forEach(function(k){ (d[k]||[]).forEach(s); }); });
+    if(p.diasData){ Object.keys(p.diasData).forEach(function(k){ (p.diasData[k]||[]).forEach(s); }); }
+  });
+  return imgs;
+}
+// Sube a la nube sólo las portadas NUEVAS (recuerda las ya subidas para no repetir escrituras).
+// Cada foto va a alumnos/{id}/portadas/{key} en su propio documento, para siempre.
+async function _subirPortadas(alumnoId, imgs){
+  if(!window._db || !alumnoId || !imgs) return;
+  var keys=Object.keys(imgs); if(!keys.length) return;
+  var upKey='SOCC_PORTADAS_UP_'+alumnoId, ya=[];
+  try{ ya=JSON.parse(localStorage.getItem(upKey)||'[]'); }catch(e){ ya=[]; }
+  for(var i=0;i<keys.length;i++){
+    var k=keys[i]; if(ya.indexOf(k)>=0) continue;
+    try{
+      await window._db.collection('alumnos').doc(alumnoId).collection('portadas').doc(k)
+        .set({ img: imgs[k], updatedAt: new Date().toISOString() });
+      ya.push(k);
+    }catch(e){ console.warn('portada', k, e); }
+  }
+  try{ localStorage.setItem(upKey, JSON.stringify(ya)); }catch(e){}
+}
 function savePlanificaciones(data) {
-  localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(data));
+  try {
+    localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(data));
+  } catch(e) {
+    var _q = e && (e.name==='QuotaExceededError' || e.code===22 || e.code===1014 || /quota|exceeded/i.test(String((e&&e.message)||(e&&e.name)||'')));
+    if(_q){
+      _liberarEspacioLocal();
+      try {
+        localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(data));   // reintento tras liberar cachés
+      } catch(e2){
+        // Sigue sin entrar → ofrecer quitar las fotos de portada ahí mismo
+        var _ok=false;
+        try{ _ok=(typeof confirm==='function') && confirm('El navegador se quedó sin espacio y no puedo guardar.\n\n¿Quito las FOTOS DE PORTADA de las sesiones para poder guardar ahora?\n(Solo la imagen decorativa; los ejercicios, series y cargas NO se tocan.)'); }catch(_e){}
+        if(_ok){
+          var _n=_stripFotosPlanes(data);
+          try{
+            localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(data));
+            if(typeof toast==='function') toast('Liberé espacio (quité '+_n+' foto'+(_n===1?'':'s')+' de portada) y guardé ✓');
+          } catch(e3){
+            try{ if(typeof currentAlumnoId!=='undefined' && currentAlumnoId && typeof publicarPortalAlumno==='function') publicarPortalAlumno(currentAlumnoId); }catch(_e){}
+            if(typeof toast==='function') toast('Aún sin espacio. Lo subí a la nube para no perderlo.','error');
+            throw e3;
+          }
+        } else {
+          try{ if(typeof currentAlumnoId!=='undefined' && currentAlumnoId && typeof publicarPortalAlumno==='function') publicarPortalAlumno(currentAlumnoId); }catch(_e){}
+          if(typeof toast==='function') toast('Lo subí a la nube. Cuando quieras liberar espacio, tocá "Liberar espacio" arriba.','error');
+          throw e2;
+        }
+      }
+    } else { throw e; }
+  }
   _autoSyncFirebase();
+}
+// Mide cuánto ocupa el almacenamiento local (aprox, en MB)
+function _espacioInfo(){
+  var total=0;
+  try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); total+=((localStorage.getItem(k)||'').length + (k||'').length); } }catch(e){}
+  return { mb:(total/1048576).toFixed(2) };
+}
+// Quita las fotos de portada (base64) de todas las sesiones guardadas. No toca ejercicios ni series.
+function _quitarFotosPortada(){
+  try{ var planes=getPlanificaciones(); var n=_stripFotosPlanes(planes); if(n){ try{ localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(planes)); }catch(e){} } return n; }
+  catch(e){ return 0; }
+}
+function liberarEspacioUI(){
+  var antes=_espacioInfo().mb;
+  if(!confirm('Espacio usado por la app en el navegador: '+antes+' MB (el tope es ~5 MB).\n\nPara liberar voy a:\n• Borrar cachés y borradores temporales.\n• Quitar las FOTOS DE PORTADA de las sesiones (solo la imagen decorativa; los ejercicios, series y datos NO se tocan).\n\n¿Continuar?')) return;
+  _liberarEspacioLocal();
+  var n=_quitarFotosPortada();
+  var despues=_espacioInfo().mb;
+  try{ if(typeof currentAlumnoId!=='undefined' && currentAlumnoId && typeof publicarPortalAlumno==='function') publicarPortalAlumno(currentAlumnoId); }catch(e){}
+  try{ if(typeof _autoSyncFirebase==='function') _autoSyncFirebase(); }catch(e){}
+  alert('Listo.\n\nEspacio: '+antes+' MB → '+despues+' MB.\nFotos de portada quitadas: '+n+'.\n\nYa deberías poder guardar sin problema.');
+  try{ if(currentAlumnoId && typeof renderPlanMes==='function') renderPlanMes(); }catch(e){}
 }
 function getObjetivos() {
   try { return JSON.parse(localStorage.getItem(DB_OBJETIVOS) || '[]'); }
@@ -13857,9 +13963,9 @@ function _sesSubirImagen(input){
   const file=input.files&&input.files[0]; if(!file) return;
   const reader=new FileReader();
   reader.onload=e=>{ const img=new Image(); img.onload=()=>{
-    const maxW=1000, scale=Math.min(1,maxW/img.width), w=Math.round(img.width*scale), h=Math.round(img.height*scale);
+    const maxW=640, scale=Math.min(1,maxW/img.width), w=Math.round(img.width*scale), h=Math.round(img.height*scale);
     const cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h);
-    let d; try{ d=cv.toDataURL('image/jpeg',0.72); }catch(err){ toast('No se pudo procesar la imagen','error'); return; }
+    let d; try{ d=cv.toDataURL('image/jpeg',0.6); }catch(err){ toast('No se pudo procesar la imagen','error'); return; }
     const campo=document.getElementById('plan-ses-imagen'); if(campo) campo.value=d; _sesImgPrev(); toast('Imagen cargada ✓');
   }; img.onerror=()=>toast('Archivo inválido','error'); img.src=e.target.result; };
   reader.readAsDataURL(file); input.value='';
@@ -15517,17 +15623,17 @@ function guardarPlanSemanal() {
     planSemOriginalAlumnoId = alumnoId;
   }
 
+  // El guardado en sí (si esto falla, sí es un error real de guardado)
   try {
     savePlanificaciones(planes);
-    // Publicar YA solo el portal de este alumno (rápido) y dejar el respaldo completo en segundo plano
-    if(typeof publicarPortalAlumno==='function') publicarPortalAlumno(alumnoId);
-    if(typeof _autoSyncFirebase==='function') _autoSyncFirebase();   // backup completo, debounced, sin bloquear
-    toast(alumnoDistinto ? 'Plan guardado como nuevo para el alumno seleccionado ✓' : 'Plan de fuerza guardado ✓');
-    if(currentAlumnoId) {
-      renderPerfilPlanificaciones(currentAlumnoId,'fuerza');
-      renderCalendario && renderCalendario();
-    }
-  } catch(e) { toast('Error al guardar','error'); }
+  } catch(e) { console.error('guardarPlanSemanal · savePlanificaciones:', e); return; }  /* savePlanificaciones ya avisa la causa real (ej: sin espacio) */
+  // Publicar YA solo el portal de este alumno (rápido) y dejar el respaldo completo en segundo plano
+  try{ if(typeof publicarPortalAlumno==='function') publicarPortalAlumno(alumnoId); }catch(e){ console.warn('publicar portal:',e); }
+  try{ if(typeof _autoSyncFirebase==='function') _autoSyncFirebase(); }catch(e){}
+  toast(alumnoDistinto ? 'Plan guardado como nuevo para el alumno seleccionado ✓' : 'Plan de fuerza guardado ✓');
+  // Re-dibujos posteriores: si alguno falla NO es un error de guardado (el plan ya quedó guardado)
+  try{ if(currentAlumnoId){ renderPerfilPlanificaciones(currentAlumnoId,'fuerza'); renderCalendario && renderCalendario(); } }
+  catch(e){ console.warn('guardarPlanSemanal · re-dibujo posterior:', e); }
 }
 
 // ── Migración: alinea todas las semanas al lunes sin perder ninguna sesión ───
@@ -28574,7 +28680,11 @@ async function forzarSyncFirebase() {
     const _fallidos = [];
     for (const al of alumnos) {
       try {
-        const planesAlumno = _enrichPlanes(planificaciones.filter(p => p.alumnoId === al.id));
+        let planesAlumno = _enrichPlanes(planificaciones.filter(p => p.alumnoId === al.id));
+        // Las fotos de portada (base64) se mueven a la subcolección 'portadas' (no se borran):
+        // el doc queda liviano, no supera 1 MB y no falla ninguna escritura (incluidos sus pesos).
+        var _imgsAl={};
+        try{ planesAlumno = JSON.parse(JSON.stringify(planesAlumno)); _imgsAl=_externalizarPortadas(planesAlumno); }catch(_e){}
         // merge:true → preserva los campos escritos por el alumno
         // (antroAlumno, antroUnlock, actividad, feedbackHistorial)
         await window._db.collection('alumnos').doc(al.id).set({
@@ -28587,6 +28697,7 @@ async function forzarSyncFirebase() {
           accessUntil:     al.accessUntil || '',
           macrociclo:      al.macrociclo   || null,
         }, { merge: true });
+        try{ await _subirPortadas(al.id, _imgsAl); }catch(_e){}
       } catch (errAl) {
         _fallidos.push(al.nombre || al.id);
         console.warn('No se pudo publicar el portal de', al.nombre || al.id, errAl);
@@ -28618,7 +28729,11 @@ async function publicarPortalAlumno(alumnoId){
     const al=alumnos.find(a=>a&&a.id===alumnoId); if(!al) return;
     const planificaciones=JSON.parse(localStorage.getItem('LAB_PLANIFICACIONES')||'[]');
     const antropometria=JSON.parse(localStorage.getItem('LAB_ANTROPOMETRIA')||'[]');
-    const planesAlumno=planificaciones.filter(p=>p && p.alumnoId===alumnoId);
+    var planesAlumno=planificaciones.filter(p=>p && p.alumnoId===alumnoId);
+    // Las fotos de portada (base64) se mueven a la subcolección 'portadas' (no se borran):
+    // el documento del alumno queda liviano, nunca supera 1 MB y ninguna escritura (ni sus pesos) falla.
+    var _imgs={};
+    try{ planesAlumno=JSON.parse(JSON.stringify(planesAlumno)); _imgs=_externalizarPortadas(planesAlumno); }catch(e){}
     try{ if(typeof _syncStatusIcon==='function') _syncStatusIcon('⏳','Actualizando app del alumno...'); }catch(e){}
     await window._db.collection('alumnos').doc(alumnoId).set({
       perfil:          al,
@@ -28628,6 +28743,7 @@ async function publicarPortalAlumno(alumnoId){
       accessUntil:     al.accessUntil||'',
       macrociclo:      al.macrociclo||null
     }, { merge:true });
+    try{ await _subirPortadas(alumnoId, _imgs); }catch(e){}
     try{ if(typeof _syncStatusIcon==='function') _syncStatusIcon('✓','App del alumno actualizada'); }catch(e){}
   }catch(err){ console.warn('publicarPortalAlumno:', err); try{ if(typeof _autoSyncFirebase==='function') _autoSyncFirebase(); }catch(e){} }
 }
