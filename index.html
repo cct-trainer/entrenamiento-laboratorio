@@ -23040,6 +23040,36 @@ function refreshLetrasTodos() {
   document.querySelectorAll('#plan-editor-page-content .bloque-wrap').forEach(b => { if(b.id) refreshLetras(b.id); });
 }
 
+// ── Cronómetro libre por ejercicio (start / pausa / reiniciar) ──────────────
+function _cronoFmt(ms){
+  var t=Math.floor(ms/1000);
+  var h=Math.floor(t/3600), m=Math.floor((t%3600)/60), s=t%60;
+  var mm=(h>0 && m<10?'0':'')+m, ss=(s<10?'0':'')+s;
+  return (h>0 ? (h+':'+mm+':'+ss) : (m+':'+ss));
+}
+function _cronoToggle(btn){
+  if(btn._t){ // está corriendo → pausar
+    clearInterval(btn._t); btn._t=null;
+    btn._acc=(btn._acc||0)+(Date.now()-btn._start);
+    btn.textContent=_cronoFmt(btn._acc);
+    btn.style.background='#fff'; btn.style.color='#1a1a2e';
+  } else { // arrancar / reanudar
+    btn._start=Date.now();
+    btn.style.background='#16a34a'; btn.style.color='#fff';
+    btn._t=setInterval(function(){
+      var ms=(btn._acc||0)+(Date.now()-btn._start);
+      btn.textContent=_cronoFmt(ms);
+    },200);
+  }
+}
+function _cronoReset(btn){
+  var b=btn.parentElement && btn.parentElement.querySelector('.ej-crono-btn');
+  if(!b) return;
+  if(b._t){ clearInterval(b._t); b._t=null; }
+  b._acc=0; b._start=0;
+  b.textContent='0:00'; b.style.background='#fff'; b.style.color='#1a1a2e';
+}
+
 function addEjercicio(bloqueId) {
   ejercicioCounter++;
   const ejId = 'ej-' + ejercicioCounter;
@@ -23088,6 +23118,10 @@ function addEjercicio(bloqueId) {
         <select id="${ejId}-incl" class="ej-incl ej-incl-sel" onchange="_inclSel('${ejId}')">${_inclOptions('')}</select>
       </div>
       <input type="hidden" class="ej-incl-val" id="${ejId}-incl-val" value="">
+      <div class="ej-crono" style="display:inline-flex;align-items:center;gap:4px;background:#f1f3f7;border:1px solid #e0e0e0;border-radius:7px;padding:2px;flex-shrink:0;" title="Cronómetro: tocá el tiempo para arrancar o parar; ↺ para reiniciar">
+        <button type="button" class="ej-crono-btn" onclick="_cronoToggle(this)" style="border:none;background:#fff;color:#1a1a2e;font-size:11px;font-weight:700;padding:5px 9px;border-radius:5px;cursor:pointer;min-width:48px;font-variant-numeric:tabular-nums;">0:00</button>
+        <button type="button" class="ej-crono-rst" onclick="_cronoReset(this)" title="Reiniciar" style="border:none;background:transparent;color:#888;font-size:13px;line-height:1;padding:4px 7px;border-radius:5px;cursor:pointer;">↺</button>
+      </div>
       <button class="ej-btn-stat" onclick="_abrirStatsCoach('${ejId}')" title="Estadísticas del ejercicio (peso máximo)">📊</button>
       <button class="ej-btn-sep" onclick="separarEjercicio('${ejId}','${bloqueId}')" title="Separar este ejercicio en un bloque nuevo">⇱</button>
       <button class="ej-btn-del" onclick="eliminarEjercicio('${ejId}','${bloqueId}')">🗑</button>
