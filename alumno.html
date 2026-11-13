@@ -1108,8 +1108,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261112231038 por un timestamp en cada deploy
-const _APP_VERSION = '20261112231038';
+// deploy.bat reemplaza 20261112235912 por un timestamp en cada deploy
+const _APP_VERSION = '20261112235912';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1329,7 +1329,10 @@ const TIPOS_RUN = {
         (p.semanasArray||[]).forEach(w => { const d=(w&&w.dias)||{}; Object.keys(d).forEach(k => (d[k]||[]).forEach(fn)); });
         if (p.diasData) Object.keys(p.diasData).forEach(k => (p.diasData[k]||[]).forEach(fn));
       });
-      _walk(ses => { if (ses && ses.imagenRef && !ses.imagen) _refs[ses.imagenRef] = 1; });
+      _walk(ses => {
+        if (ses && ses.imagenRef && !ses.imagen) _refs[ses.imagenRef] = 1;
+        if (ses && ses.posterRef && !ses.poster) _refs[ses.posterRef] = 1;
+      });
       const _rk = Object.keys(_refs);
       if (_rk.length) {
         const _col = db.collection('alumnos').doc(id).collection('portadas');
@@ -1337,7 +1340,10 @@ const TIPOS_RUN = {
         await Promise.all(_rk.map(k => _col.doc(k).get()
           .then(s => { if (s.exists) { const dd=s.data(); if (dd && dd.img) _imgMap[k]=dd.img; } })
           .catch(()=>{})));
-        _walk(ses => { if (ses && ses.imagenRef && !ses.imagen && _imgMap[ses.imagenRef]) ses.imagen = _imgMap[ses.imagenRef]; });
+        _walk(ses => {
+          if (ses && ses.imagenRef && !ses.imagen && _imgMap[ses.imagenRef]) ses.imagen = _imgMap[ses.imagenRef];
+          if (ses && ses.posterRef && !ses.poster && _imgMap[ses.posterRef]) ses.poster = _imgMap[ses.posterRef];
+        });
       }
     } catch(e) { console.warn('portadas:', e); }
 
@@ -8640,8 +8646,32 @@ function _sesDetalleHTML(ses){
       info += '<button onclick="_abrirPorqueSesion()" style="margin-top:14px;width:100%;background:#1a2a4a;color:#fff;border:none;border-radius:11px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;"><span style="width:19px;height:19px;border:2px solid #9db6d8;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#cfe0f3;">?</span>'+(_LANG==='en'?'Why this session':'Por qué esta sesión')+'</button>';
     }
   }catch(e){}
+  // Botón "Descargar póster" (si el coach subió uno a esta sesión)
+  try{
+    if(ses && ses.poster){
+      window._sesPosterData = ses.poster;
+      window._sesPosterNombre = String(ses.nombre||'sesion').replace(/[^\w\-]+/g,'_').slice(0,40) || 'sesion';
+      info += '<button onclick="_descargarPosterSesion()" style="margin-top:10px;width:100%;background:#2f5f95;color:#fff;border:none;border-radius:11px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>'+(_LANG==='en'?'Download poster':'Descargar póster')+'</button>';
+    }
+  }catch(e){}
   info += '</div>';
   return info;
+}
+function _posterDL(data){
+  try{ var a=document.createElement('a'); a.href=data; a.download=(window._sesPosterNombre||'poster')+'.jpg'; document.body.appendChild(a); a.click(); a.remove(); }
+  catch(e){ try{ window.open(data,'_blank'); }catch(_){} }
+}
+function _descargarPosterSesion(){
+  var data=window._sesPosterData; if(!data) return;
+  try{
+    if(navigator.share && navigator.canShare){
+      fetch(data).then(function(r){return r.blob();}).then(function(blob){
+        var file=new File([blob],(window._sesPosterNombre||'poster')+'.jpg',{type:'image/jpeg'});
+        if(navigator.canShare({files:[file]})){ navigator.share({files:[file]}).catch(function(){ _posterDL(data); }); }
+        else _posterDL(data);
+      }).catch(function(){ _posterDL(data); });
+    } else { _posterDL(data); }
+  }catch(e){ _posterDL(data); }
 }
 function _abrirPorqueSesion(){
   var d=window._sesPorque||{};

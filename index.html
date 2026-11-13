@@ -10252,6 +10252,9 @@ function _externalizarPortadas(plans){
     if(ses && ses.imagen && String(ses.imagen).indexOf('data:')===0){
       var k=_imgPortadaKey(ses.imagen); imgs[k]=ses.imagen; ses.imagenRef=k; ses.imagen='';
     }
+    if(ses && ses.poster && String(ses.poster).indexOf('data:')===0){
+      var kp=_imgPortadaKey(ses.poster); imgs[kp]=ses.poster; ses.posterRef=kp; ses.poster='';
+    }
   };
   (plans||[]).forEach(function(p){
     (p.semanasArray||[]).forEach(function(w){ var d=(w&&w.dias)||{}; Object.keys(d).forEach(function(k){ (d[k]||[]).forEach(s); }); });
@@ -13855,6 +13858,14 @@ function renderPlanDiaEditor(diaIdx) {
               <button type="button" onclick="document.getElementById('plan-ses-imgfile').click()" style="white-space:nowrap;font-size:12px;padding:8px 12px;border:1px solid #dde1ea;border-radius:8px;background:#f4f6fb;cursor:pointer;">📁 Subir foto</button>
               <input type="file" id="plan-ses-imgfile" accept="image/*" style="display:none;" onchange="_sesSubirImagen(this)">
             </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed #e4e8ef;">
+              <div style="font-size:9px;color:#888;font-weight:800;white-space:nowrap;">PÓSTER DESCARGABLE</div>
+              <button type="button" onclick="document.getElementById('plan-ses-posterfile').click()" style="white-space:nowrap;font-size:12px;padding:8px 12px;border:1px solid #dde1ea;border-radius:8px;background:#f4f6fb;cursor:pointer;">Subir póster</button>
+              <input type="file" id="plan-ses-posterfile" accept="image/*" style="display:none;" onchange="_sesSubirPoster(this)">
+              <input type="hidden" id="plan-ses-poster">
+              <span style="font-size:10px;color:#9aa6b5;">el alumno lo descarga desde su sesión</span>
+            </div>
+            <div id="plan-ses-posterprev" style="margin-top:6px;"></div>
             <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
               <div style="font-size:9px;color:#888;font-weight:800;white-space:nowrap;">PORTADA POR MÚSCULO</div>
               <select id="plan-ses-imgcat" onchange="_sesCatChange()" style="flex:1;padding:7px 8px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;">
@@ -13924,6 +13935,7 @@ function renderPlanDiaEditor(diaIdx) {
   const _si=document.getElementById('plan-ses-imagen'); if(_si) _si.value=sesion.imagen||'';
   const _scz=document.getElementById('plan-ses-imgcat'); if(_scz) _scz.value=sesion.imagenCat||'';
   try{ _sesImgPrev(); }catch(e){}
+  const _sp=document.getElementById('plan-ses-poster'); if(_sp) _sp.value=sesion.poster||''; try{ _sesPosterPrev(); }catch(e){}
   const _set=document.getElementById('plan-ses-etiqueta'); if(_set) _set.value=sesion.etiqueta||'';
   const _sl=document.getElementById('plan-ses-lugar');  if(_sl) _sl.value=sesion.lugar||'';
   const _sd=document.getElementById('plan-ses-dif');    if(_sd) _sd.value=sesion.dificultad||'';
@@ -13970,6 +13982,32 @@ function _sesSubirImagen(input){
   }; img.onerror=()=>toast('Archivo inválido','error'); img.src=e.target.result; };
   reader.readAsDataURL(file); input.value='';
 }
+// ── Póster descargable de la sesión (lo sube el coach, lo baja el alumno) ──
+// Se comprime para no superar el límite de 1 MB por documento (base64 < ~950 KB).
+function _sesSubirPoster(input){
+  const file=input.files&&input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{ const img=new Image(); img.onload=()=>{
+    function render(w,qq){ var h=Math.round(img.height*(w/img.width)); var cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h); return cv.toDataURL('image/jpeg',qq); }
+    var d='';
+    try{
+      var w=Math.min(1080,img.width), q=0.85, guard=0;
+      d=render(w,q);
+      while(d.length>950000 && guard<10){ if(q>0.55){ q-=0.1; } else { w=Math.round(w*0.85); } d=render(w,q); guard++; }
+    }catch(err){ toast('No se pudo procesar el póster','error'); return; }
+    if(d.length>1000000){ toast('El póster es muy pesado incluso comprimido. Probá una imagen más liviana.','error'); return; }
+    var campo=document.getElementById('plan-ses-poster'); if(campo) campo.value=d;
+    _sesPosterPrev(); toast('Póster cargado ✓');
+  }; img.onerror=()=>toast('Archivo inválido','error'); img.src=e.target.result; };
+  reader.readAsDataURL(file); input.value='';
+}
+function _sesPosterPrev(){
+  var el=document.getElementById('plan-ses-posterprev'); if(!el) return;
+  var v=(document.getElementById('plan-ses-poster')?.value||'').trim();
+  if(v){ el.innerHTML='<div style="position:relative;display:inline-block;max-width:100%;"><img src="'+v.replace(/"/g,'&quot;')+'" style="max-width:100%;max-height:300px;object-fit:contain;border-radius:8px;background:#0d0d1a;display:block;"><button type="button" onclick="_sesPosterQuitar()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">Quitar</button></div>'; }
+  else { el.innerHTML=''; }
+}
+function _sesPosterQuitar(){ var c=document.getElementById('plan-ses-poster'); if(c) c.value=''; _sesPosterPrev(); }
 function _serieDurCoach(reps){
   const s=String(reps||'').toLowerCase(); let m;
   if((m=s.match(/(\d+)\s*seg/))) return parseInt(m[1]);
@@ -14117,6 +14155,7 @@ function _switchEditorTab(tabIdx, diaIdx) {
   const _si=document.getElementById('plan-ses-imagen'); if(_si) _si.value=sesion.imagen||'';
   const _scz=document.getElementById('plan-ses-imgcat'); if(_scz) _scz.value=sesion.imagenCat||'';
   try{ _sesImgPrev(); }catch(e){}
+  const _sp=document.getElementById('plan-ses-poster'); if(_sp) _sp.value=sesion.poster||''; try{ _sesPosterPrev(); }catch(e){}
   const _set=document.getElementById('plan-ses-etiqueta'); if(_set) _set.value=sesion.etiqueta||'';
   const _sl=document.getElementById('plan-ses-lugar');  if(_sl) _sl.value=sesion.lugar||'';
   const _sd=document.getElementById('plan-ses-dif');    if(_sd) _sd.value=sesion.dificultad||'';
@@ -14566,6 +14605,7 @@ function guardarEstadoDiaActual() {
     bloques, nombre: _nombreSesion,
     etiqueta: _g('plan-ses-etiqueta','etiqueta'),
     imagen: _g('plan-ses-imagen','imagen'),
+    poster: _g('plan-ses-poster','poster'),
     imagenCat: _g('plan-ses-imgcat','imagenCat'),
     lugar: _g('plan-ses-lugar','lugar'),
     dificultad: _g('plan-ses-dif','dificultad'),
