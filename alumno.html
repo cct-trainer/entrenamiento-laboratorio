@@ -1108,8 +1108,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261113100809 por un timestamp en cada deploy
-const _APP_VERSION = '20261113100809';
+// deploy.bat reemplaza 20261113132601 por un timestamp en cada deploy
+const _APP_VERSION = '20261113132601';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1384,12 +1384,9 @@ const TIPOS_RUN = {
       }
     } catch(e) {}
 
-    // ── Control de acceso ────────────────────────────────────────────────────
-    if (_data.accessUntil) {
-      const hasta = new Date(_data.accessUntil + 'T23:59:59');
-      if (hasta < new Date()) {
-        return _showAccesoBloqueado(_data.accessUntil);
-      }
+    // ── Control de acceso: bloqueado SOLO si el coach dio de baja al cliente (fuera de servicio) ──
+    if ((_data.perfil && _data.perfil.baja === true) || _data.baja === true) {
+      return _showFueraDeServicio();
     }
 
     const planes = _data.planificaciones || [];
@@ -1424,6 +1421,20 @@ const TIPOS_RUN = {
   }
 })();
 
+function _showFueraDeServicio() {
+  try{ var l=document.getElementById('loading'); if(l) l.style.display='none'; }catch(e){}
+  var nombre = (_data && _data.perfil && _data.perfil.nombre) ? String(_data.perfil.nombre).split(' ')[0] : '';
+  var wa = _WA_COACH.replace(/\D/g,'');
+  document.body.innerHTML =
+    '<div style="min-height:100vh;background:#0d0d1a;display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,sans-serif;">'
+    + '<div style="max-width:360px;width:100%;text-align:center;">'
+    + '<div style="width:64px;height:64px;margin:0 auto 16px;border-radius:50%;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);display:flex;align-items:center;justify-content:center;">'
+    + '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ef8f8f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>'
+    + '<div style="color:#fff;font-size:18px;font-weight:800;margin-bottom:8px;">' + (nombre ? ('Hola, ' + nombre) : 'Acceso suspendido') + '</div>'
+    + '<div style="color:#9aa0b5;font-size:14px;line-height:1.6;margin-bottom:22px;">Tu acceso a la aplicación está <b style="color:#e8e8f0;">suspendido</b> por el momento. Si querés retomar, hablá con tu coach.</div>'
+    + '<a href="https://wa.me/' + wa + '?text=' + encodeURIComponent('Hola Christian, quiero retomar mi entrenamiento en la app.') + '" target="_blank" style="display:block;background:linear-gradient(135deg,#8FB0D6,#3A6EA5);color:#0d0d1a;border-radius:14px;padding:15px;font-size:15px;font-weight:900;text-decoration:none;">Hablar con Christian</a>'
+    + '</div></div>';
+}
 async function _showAccesoBloqueado(hasta) {
   document.getElementById('loading').style.display='none';
   const fmtHasta = hasta
