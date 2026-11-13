@@ -4220,9 +4220,9 @@ window.addEventListener('load',function(){ try{
         </div>
         <div class="module-content">
           <div class="perfil-subtabs">
-            <button class="perfil-subtab active" onclick="switchPerfilSubtab('plan','fuerza')">🟣 Profesional</button>
+            <button class="perfil-subtab" onclick="switchPerfilSubtab('plan','fuerza')" style="display:none;">🟣 Profesional</button>
             <button class="perfil-subtab" onclick="switchPerfilSubtab('plan','running')" style="display:none;">Running</button>
-            <button class="perfil-subtab" onclick="switchPerfilSubtab('plan','estandar')">⚪ Estándar</button>
+            <button class="perfil-subtab active" onclick="switchPerfilSubtab('plan','estandar')">⚪ Estándar</button>
           </div>
           <div id="plan-sub-fuerza" class="perfil-subcontent active">
             <div id="pro-nav"></div>
@@ -17591,7 +17591,7 @@ function openPerfilAlumno(id) {
     if (firstTab) firstTab.classList.add('active');
     document.getElementById('plan-sub-fuerza')?.classList.add('active');
   }
-  try{ _cuerpoPlanHeader(); var _sv=(currentAlumnoId&&localStorage.getItem('LAB_PLAN_SUBTAB_'+currentAlumnoId))||'estandar'; if(_sv&&_sv!=='fuerza'&&document.getElementById('plan-sub-'+_sv)){ setTimeout(function(){ try{switchPerfilSubtab('plan',_sv);}catch(e){} },0); } }catch(e){}
+  try{ _cuerpoPlanHeader(); var _sv=(currentAlumnoId&&localStorage.getItem('LAB_PLAN_SUBTAB_'+currentAlumnoId))||'estandar'; if(_sv==='fuerza'||_sv==='running')_sv='estandar'; if(_sv&&document.getElementById('plan-sub-'+_sv)){ setTimeout(function(){ try{switchPerfilSubtab('plan',_sv);}catch(e){} },0); } }catch(e){}
   showView('perfil');
 
 }
@@ -18083,7 +18083,7 @@ function switchPerfilSection(sec) {
         const firstTab = secEl.querySelector('.perfil-subtab');
         if (firstTab) firstTab.classList.add('active');
         document.getElementById('plan-sub-fuerza')?.classList.add('active');
-        try{ _cuerpoPlanHeader(); var _sv=(currentAlumnoId&&localStorage.getItem('LAB_PLAN_SUBTAB_'+currentAlumnoId))||'estandar'; if(_sv&&_sv!=='fuerza'&&document.getElementById('plan-sub-'+_sv)){ setTimeout(function(){ try{switchPerfilSubtab('plan',_sv);}catch(e){} },0); } }catch(e){}
+        try{ _cuerpoPlanHeader(); var _sv=(currentAlumnoId&&localStorage.getItem('LAB_PLAN_SUBTAB_'+currentAlumnoId))||'estandar'; if(_sv==='fuerza'||_sv==='running')_sv='estandar'; if(_sv&&document.getElementById('plan-sub-'+_sv)){ setTimeout(function(){ try{switchPerfilSubtab('plan',_sv);}catch(e){} },0); } }catch(e){}
       }
     }
     if (sec === 'seguimiento')   renderMediciones(currentAlumnoId);
