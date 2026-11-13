@@ -4223,7 +4223,6 @@ window.addEventListener('load',function(){ try{
             <button class="perfil-subtab active" onclick="switchPerfilSubtab('plan','fuerza')">🟣 Profesional</button>
             <button class="perfil-subtab" onclick="switchPerfilSubtab('plan','running')" style="display:none;">Running</button>
             <button class="perfil-subtab" onclick="switchPerfilSubtab('plan','estandar')">⚪ Estándar</button>
-            <button class="perfil-subtab" onclick="switchPerfilSubtab('plan','hibrido')">Híbrido</button>
           </div>
           <div id="plan-sub-fuerza" class="perfil-subcontent active">
             <div id="pro-nav"></div>
@@ -4236,9 +4235,6 @@ window.addEventListener('load',function(){ try{
           </div>
           <div id="plan-sub-estandar" class="perfil-subcontent">
             <div id="perfil-plan-estandar"></div>
-          </div>
-          <div id="plan-sub-hibrido" class="perfil-subcontent">
-            <div class="plan-list" id="perfil-plan-list-hibrido"></div>
           </div>
           <div id="plan-sub-calendario" class="perfil-subcontent">
             <div class="cal-header">
@@ -18657,7 +18653,6 @@ function switchPerfilSubtab(group, sub) {
       const _cuerpoBtns = `<button class="btn btn-primary" onclick="crearMesFuerza()" style="font-size:12px;background:#1a3a6a;">📅 Agregar mes</button><button class="btn" onclick="perfilPlanGo('macrociclo')" style="font-size:12px;margin-left:6px;background:#eef1f6;color:#1a2a4a;border:1px solid #d5deea;border-radius:10px;padding:9px 14px;font-weight:700;">🗓️ Macrociclo</button><button class="btn" onclick="perfilPlanGo('ia')" style="font-size:12px;margin-left:6px;background:#eef1f6;color:#1a2a4a;border:1px solid #d5deea;border-radius:10px;padding:9px 14px;font-weight:700;">📋 Asistente de planilla</button>`;
       if (sub === 'fuerza')     btn.innerHTML = _cuerpoBtns;
       else if (sub === 'running') btn.innerHTML = `<button class="btn btn-primary" style="background:#141414;" onclick="crearPlanRunning()">+ Nueva sesión running</button>`;
-      else if (sub === 'hibrido') btn.innerHTML = `<button class="btn btn-primary" style="background:#1a2a4a;" onclick="hibNuevo()">+ Nueva sesión híbrida</button>`;
       else if (sub === 'estandar') btn.innerHTML = _cuerpoBtns;
       else btn.innerHTML = '';
     }
@@ -18673,7 +18668,6 @@ function switchPerfilSubtab(group, sub) {
   if (!currentAlumnoId) return;
   if (sub === 'fuerza')      { renderPerfilPlanificaciones(currentAlumnoId,'fuerza'); try{ _renderResumenPlan(currentAlumnoId,'profesional'); }catch(e){} }
   if (sub === 'running')       renderPerfilPlanificaciones(currentAlumnoId,'running');
-  if (sub === 'hibrido')       { try{ renderHibridoList(currentAlumnoId); }catch(e){} }
   if (sub === 'estandar')      renderEstandar(currentAlumnoId);
   if (sub === 'calendario')    initCalendario(currentAlumnoId);
   if (sub === 'fuerza1rm')     renderFuerza1RM(currentAlumnoId);
@@ -36463,261 +36457,6 @@ function _fechaCort(f) {
     return '<div class="cpe-stub"><div class="ic">'+s.ic+'</div><div class="t">'+s.t+'</div>'
       +'<div class="cpe-muted">Esta pantalla se habilita en la <b>'+s.e+'</b>. La estructura y la navegación ya funcionan;<br>el plan se guarda como borrador desde ahora.</div></div>'+nav;
   }
-})();
-</script>
-
-<!-- ═══════════════ MÓDULO SESIÓN HÍBRIDA (running + fuerza · estilo HYROX) ═══════════════ -->
-<!-- Aislado: tipoPlan:'hibrido'. No toca fuerza ni running. Se puede quitar borrando este bloque. -->
-<style>
-#hib-ed{position:fixed;inset:0;z-index:9000;background:#eef2f7;display:none;flex-direction:column;}
-#hib-ed.on{display:flex;}
-.hib-top{background:#1a2a4a;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
-.hib-top input.hib-titulo{flex:1;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#fff;border-radius:9px;padding:9px 12px;font-size:14px;font-weight:700;font-family:inherit;min-width:0;}
-.hib-top input.hib-titulo::placeholder{color:#9db6d8;}
-.hib-top button{border:none;border-radius:9px;padding:9px 15px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;}
-.hib-top .hib-cancel{background:rgba(255,255,255,.14);color:#fff;}
-.hib-top .hib-save{background:#16a34a;color:#fff;}
-.hib-body{flex:1;overflow-y:auto;padding:18px 14px 80px;}
-.hib-wrap{max-width:720px;margin:0 auto;}
-.hib-pal{display:flex;flex-wrap:wrap;gap:7px;background:#fff;border:1px solid #e2e8f1;border-radius:12px;padding:11px;margin-bottom:16px;}
-.hib-pal .t{font-size:10px;font-weight:900;color:#8795ab;letter-spacing:.5px;width:100%;margin-bottom:2px;}
-.hib-add{display:inline-flex;align-items:center;gap:6px;border:1px dashed #c6d2e2;background:#f7fafd;color:#33415c;border-radius:9px;padding:7px 11px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;}
-.hib-add .d{width:9px;height:9px;border-radius:3px;}
-.hib-blk{background:#fff;border:1px solid #e2e8f1;border-radius:13px;margin-bottom:11px;overflow:hidden;border-left:5px solid #ccc;}
-.hib-bh{display:flex;align-items:center;gap:9px;padding:10px 12px;background:#fafcff;border-bottom:1px solid #eef2f8;}
-.hib-bh .tag{font-size:9.5px;font-weight:900;letter-spacing:.5px;padding:3px 8px;border-radius:6px;color:#fff;text-transform:uppercase;white-space:nowrap;}
-.hib-bh .nm{flex:1;border:1px solid #e4e9f1;border-radius:7px;padding:6px 9px;font-size:13px;font-weight:700;color:#1a2a4a;font-family:inherit;min-width:0;}
-.hib-bh .acts{display:flex;gap:3px;}
-.hib-bh .acts button{border:1px solid #e3e8f0;background:#fff;color:#7a869c;border-radius:6px;min-width:26px;height:26px;font-size:12px;cursor:pointer;font-family:inherit;}
-.hib-bb{padding:11px 12px;}
-.hib-fg{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
-.hib-fg.two{grid-template-columns:repeat(2,1fr);}
-.hib-fl{display:flex;flex-direction:column;gap:4px;}
-.hib-fl label{font-size:9.5px;font-weight:800;color:#8795ab;letter-spacing:.4px;text-transform:uppercase;}
-.hib-fl input,.hib-fl select{border:1.5px solid #e2e8f1;border-radius:8px;padding:8px 9px;font-size:12.5px;color:#243a5e;background:#fff;font-weight:600;font-family:inherit;width:100%;}
-.hib-seg{display:inline-flex;background:#eef2f8;border-radius:7px;padding:2px;margin-bottom:9px;}
-.hib-seg button{border:none;background:transparent;font-size:11px;font-weight:700;padding:5px 11px;border-radius:5px;color:#7a869c;cursor:pointer;font-family:inherit;}
-.hib-seg button.on{background:#fff;color:#1a2a4a;box-shadow:0 1px 3px rgba(0,0,0,.08);}
-.hib-circ{border:2px dashed #b887e0;background:#faf6ff;border-radius:14px;padding:12px;margin-bottom:11px;}
-.hib-circ .ch{display:flex;align-items:center;gap:9px;margin-bottom:10px;flex-wrap:wrap;}
-.hib-circ .ch .ct{font-size:11px;font-weight:900;color:#7b3fb3;letter-spacing:.4px;text-transform:uppercase;}
-.hib-circ .vz{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #e4d4f3;border-radius:8px;padding:4px 8px;font-size:11.5px;font-weight:800;color:#7b3fb3;}
-.hib-circ .vz input{width:40px;border:none;font-size:14px;font-weight:900;color:#7b3fb3;text-align:center;font-family:inherit;}
-.hib-circ .pausas{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px;}
-.hib-circ .pausas .pz{flex:1;min-width:150px;background:#fff;border:1px solid #ecdcfa;border-radius:9px;padding:7px 9px;}
-.hib-circ .pausas .pz label{font-size:9px;font-weight:800;color:#9a76c4;letter-spacing:.3px;text-transform:uppercase;display:block;margin-bottom:3px;}
-.hib-circ .pausas .pz input{width:100%;border:1px solid #ecdcfa;border-radius:6px;padding:5px 7px;font-size:12.5px;font-weight:700;color:#5e2d8f;font-family:inherit;}
-.hib-circ .cadd{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
-.hib-empty{text-align:center;color:#8795ab;font-size:12px;padding:16px;border:1px dashed #d3deeb;border-radius:10px;background:#f8fafc;}
-.hib-list-item{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #e2e8f1;border-radius:12px;padding:12px 14px;margin-bottom:9px;}
-.hib-list-item .li-main{flex:1;}
-.hib-list-item .li-t{font-size:14px;font-weight:800;color:#1a2a4a;}
-.hib-list-item .li-s{font-size:11.5px;color:#7a869c;margin-top:2px;}
-.hib-list-item button{border:none;border-radius:8px;padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
-.hib-chooser{position:fixed;inset:0;z-index:9100;background:rgba(15,25,45,.55);display:none;align-items:center;justify-content:center;padding:18px;}
-.hib-chooser.on{display:flex;}
-.hib-chooser .box{background:#fff;border-radius:16px;max-width:460px;width:100%;padding:20px;}
-.hib-chooser .box h3{font-size:16px;font-weight:900;color:#1a2a4a;margin-bottom:4px;}
-.hib-chooser .box p{font-size:12px;color:#7a869c;margin-bottom:14px;}
-.hib-chooser .opt{border:2px solid #e2e8f1;border-radius:12px;padding:13px;cursor:pointer;margin-bottom:9px;transition:.15s;}
-.hib-chooser .opt:hover{border-color:#2f5f95;background:#f6f9fd;}
-.hib-chooser .opt .ot{font-size:14px;font-weight:900;color:#17294a;}
-.hib-chooser .opt .od{font-size:11.5px;color:#6a768e;margin-top:3px;line-height:1.5;}
-</style>
-
-<div class="hib-chooser" id="hib-chooser" onclick="if(event.target.id==='hib-chooser')_hibChooserClose()">
-  <div class="box">
-    <h3>Nueva sesión híbrida</h3>
-    <p>Running + fuerza en una misma sesión. Elegí desde dónde arrancar:</p>
-    <div class="opt" onclick="_hibCrear('vacio')"><div class="ot">Personalizado</div><div class="od">Empezás con una sesión vacía y agregás los bloques que quieras.</div></div>
-    <div class="opt" onclick="_hibCrear('hyrox')"><div class="ot">Plantilla tipo HYROX</div><div class="od">Precarga 8 estaciones con una carrera de 1 km antes de cada una. Todo editable.</div></div>
-    <button onclick="_hibChooserClose()" style="width:100%;margin-top:4px;background:#f0f0f0;color:#333;border:none;border-radius:9px;padding:10px;font-weight:700;cursor:pointer;font-family:inherit;">Cancelar</button>
-  </div>
-</div>
-
-<div id="hib-ed">
-  <div class="hib-top">
-    <input class="hib-titulo" id="hib-titulo" type="text" placeholder="Nombre de la sesión (ej: Híbrido · Carol)">
-    <button class="hib-cancel" onclick="_hibCerrar()">Cancelar</button>
-    <button class="hib-save" onclick="_hibGuardar()">Guardar</button>
-  </div>
-  <div class="hib-body"><div class="hib-wrap">
-    <div class="hib-pal">
-      <span class="t">AGREGAR BLOQUE</span>
-      <span class="hib-add" onclick="_hibAdd('cal')"><span class="d" style="background:#f59e0b"></span>Calentamiento</span>
-      <span class="hib-add" onclick="_hibAdd('run')"><span class="d" style="background:#3b82f6"></span>Running</span>
-      <span class="hib-add" onclick="_hibAdd('str')"><span class="d" style="background:#16a34a"></span>Fuerza / Estación</span>
-      <span class="hib-add" onclick="_hibAdd('rec')"><span class="d" style="background:#94a3b8"></span>Recuperación</span>
-      <span class="hib-add" onclick="_hibAdd('calma')"><span class="d" style="background:#0d9488"></span>Vuelta a la calma</span>
-      <span class="hib-add" onclick="_hibAdd('circ')" style="border-style:solid;border-color:#b887e0;color:#7b3fb3;background:#faf6ff;"><span class="d" style="background:#7b3fb3"></span>Agrupar en circuito</span>
-    </div>
-    <div id="hib-blocks"></div>
-  </div></div>
-</div>
-
-<script>
-(function(){
-  var HIB_META={ cal:{c:'#f59e0b',l:'Calentamiento'}, run:{c:'#3b82f6',l:'Running'}, str:{c:'#16a34a',l:'Estación'}, rec:{c:'#94a3b8',l:'Recuperación'}, calma:{c:'#0d9488',l:'Vuelta a la calma'}, circ:{c:'#7b3fb3',l:'Circuito'} };
-  var HIB_HYROX=[['SkiErg','1000','m',''],['Empuje de trineo','50','m','total'],['Arrastre de trineo','50','m','total'],['Burpees con salto horizontal','80','m',''],['Remo','1000','m',''],['Caminata del granjero','200','m','mano'],['Estocadas con bolsa','100','m','total'],['Wall balls','100','reps','']];
-  function _esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function _uid(){ return 'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
-
-  function _blank(t){
-    if(t==='cal')   return {t:'cal',nombre:'Calentamiento',duracion:'8 min',inten:'RPE 3-4',indic:''};
-    if(t==='run')   return {t:'run',nombre:'Carrera',modo:'dist',dist:'',distU:'m',dur:'',ritmo:'',inten:'',pasadas:'',recupTipo:'tiempo',recupVal:'',indic:''};
-    if(t==='str')   return {t:'str',nombre:'',tarea:'reps',series:'',reps:'',carga:'',criterio:'total',dist:'',distU:'m',dur:'',inten:'',descanso:'',obs:''};
-    if(t==='rec')   return {t:'rec',modo:'tiempo',val:'90 s'};
-    if(t==='calma') return {t:'calma',nombre:'Vuelta a la calma',duracion:'5 min',indic:''};
-    if(t==='circ')  return {t:'circ',vueltas:3,pausaEj:'30 s',pausaVuelta:'2 min',bloques:[]};
-  }
-  function _hyroxBloques(){
-    var out=[];
-    HIB_HYROX.forEach(function(st,i){
-      out.push({t:'run',nombre:'Carrera '+(i+1),modo:'dist',dist:'1',distU:'km',dur:'',ritmo:'',inten:'',pasadas:'',recupTipo:'tiempo',recupVal:'',indic:''});
-      if(st[2]==='reps') out.push({t:'str',nombre:st[0],tarea:'reps',series:'1',reps:st[1],carga:'',criterio:st[3]||'total',dist:'',distU:'m',dur:'',inten:'',descanso:'',obs:''});
-      else out.push({t:'str',nombre:st[0],tarea:'dist',series:'1',reps:'',carga:'',criterio:st[3]||'',dist:st[1],distU:st[2],dur:'',inten:'',descanso:'',obs:''});
-    });
-    return out;
-  }
-
-  // ── navegación por path: "i" (top) o "i.j" (hijo de circuito i) ──
-  function _node(path){
-    var S=window._hibCur; if(!S) return null;
-    var parts=String(path).split('.');
-    if(parts.length===1){ return {arr:S.bloques, idx:+parts[0], blk:S.bloques[+parts[0]]}; }
-    var circ=S.bloques[+parts[0]];
-    return {arr:circ.bloques, idx:+parts[1], blk:circ.bloques[+parts[1]]};
-  }
-
-  window._hibEdit=function(el,rerender){
-    var n=_node(el.getAttribute('data-p')); if(!n||!n.blk) return;
-    n.blk[el.getAttribute('data-f')]=el.value;
-    if(rerender) _render();
-  };
-  window._hibAdd=function(t,circPath){
-    if(!window._hibCur) return;
-    if(typeof circPath!=='undefined' && circPath!==null){ var c=window._hibCur.bloques[+circPath]; if(c&&c.bloques) c.bloques.push(_blank(t)); }
-    else window._hibCur.bloques.push(_blank(t));
-    _render();
-  };
-  window._hibDel=function(path){ var n=_node(path); if(n){ n.arr.splice(n.idx,1); _render(); } };
-  window._hibDup=function(path){ var n=_node(path); if(n){ n.arr.splice(n.idx+1,0,JSON.parse(JSON.stringify(n.blk))); _render(); } };
-  window._hibMove=function(path,dir){ var n=_node(path); if(!n)return; var j=n.idx+dir; if(j<0||j>=n.arr.length)return; var tmp=n.arr[n.idx]; n.arr[n.idx]=n.arr[j]; n.arr[j]=tmp; _render(); };
-
-  function _fl(label,path,field,val,ph){ return '<div class="hib-fl"><label>'+label+'</label><input data-p="'+path+'" data-f="'+field+'" value="'+_esc(val)+'" placeholder="'+(ph||'')+'" onchange="_hibEdit(this)"></div>'; }
-  function _flSel(label,path,field,val,opts,rr){ var o=opts.map(function(x){return '<option value="'+x[0]+'"'+(val===x[0]?' selected':'')+'>'+x[1]+'</option>';}).join(''); return '<div class="hib-fl"><label>'+label+'</label><select data-p="'+path+'" data-f="'+field+'" onchange="_hibEdit(this,'+(rr?'true':'false')+')">'+o+'</select></div>'; }
-
-  function _blockBody(b,path){
-    if(b.t==='cal'||b.t==='calma'){
-      return '<div class="hib-fg">'+_fl('Duración',path,'duracion',b.duracion,'8 min')+(b.t==='cal'?_fl('Intensidad',path,'inten',b.inten,'RPE 3-4'):'')+_fl('Indicaciones',path,'indic',b.indic,'')+'</div>';
-    }
-    if(b.t==='rec'){
-      return '<div class="hib-fg two">'+_flSel('Tipo',path,'modo',b.modo,[['tiempo','Por tiempo'],['dist','Por distancia']])+_fl(b.modo==='dist'?'Distancia':'Duración',path,'val',b.val,b.modo==='dist'?'200 m':'90 s')+'</div>';
-    }
-    if(b.t==='run'){
-      var seg='<div class="hib-seg"><button class="'+(b.modo==='dist'?'on':'')+'" onclick="_hibSetModo(\''+path+'\',\'dist\')">Por distancia</button><button class="'+(b.modo==='tiempo'?'on':'')+'" onclick="_hibSetModo(\''+path+'\',\'tiempo\')">Por tiempo</button></div>';
-      var f=b.modo==='dist'
-        ? _fl('Distancia',path,'dist',b.dist,'600')+_flSel('Unidad',path,'distU',b.distU,[['m','m'],['km','km']])
-        : _fl('Duración',path,'dur',b.dur,'20 min')+'<div></div>';
-      f+=_fl('Ritmo objetivo',path,'ritmo',b.ritmo,'5:10 min/km')+_fl('Intensidad (RPE/zona)',path,'inten',b.inten,'Zona 4 · RPE 7')+_fl('Pasadas',path,'pasadas',b.pasadas,'1')+_flSel('Recup.',path,'recupTipo',b.recupTipo,[['tiempo','Por tiempo'],['dist','Por distancia']])+_fl('Recuperación',path,'recupVal',b.recupVal,'60 s')+_fl('Indicaciones',path,'indic',b.indic,'');
-      return seg+'<div class="hib-fg">'+f+'</div>';
-    }
-    if(b.t==='str'){
-      var tareaSel=_flSel('Tarea',path,'tarea',b.tarea,[['reps','Series y reps'],['dist','Distancia'],['tiempo','Tiempo']],true);
-      var f=tareaSel;
-      if(b.tarea==='reps'){ f+=_fl('Series',path,'series',b.series,'3')+_fl('Reps',path,'reps',b.reps,'10'); }
-      else if(b.tarea==='dist'){ f+=_fl('Distancia',path,'dist',b.dist,'50')+_flSel('Unidad',path,'distU',b.distU,[['m','m'],['km','km']]); }
-      else { f+=_fl('Duración',path,'dur',b.dur,'40 s')+'<div></div>'; }
-      f+=_fl('Carga',path,'carga',b.carga,'ej: 24')+_flSel('Criterio',path,'criterio',b.criterio,[['total','Total'],['mano','Por mano'],['','—']])+_fl('Intensidad (RIR/RPE)',path,'inten',b.inten,'RIR 2')+_fl('Descanso',path,'descanso',b.descanso,'90 s')+_fl('Observaciones',path,'obs',b.obs,'técnica, setup...');
-      return '<div class="hib-fg">'+f+'</div>';
-    }
-    return '';
-  }
-  window._hibSetModo=function(path,modo){ var n=_node(path); if(n&&n.blk){ n.blk.modo=modo; _render(); } };
-
-  function _blockCard(b,path){
-    var m=HIB_META[b.t]||{c:'#999',l:b.t};
-    var nameField = (b.t==='rec') ? '<span class="nm" style="border:none;background:transparent;">Recuperación</span>' : '<input class="nm" data-p="'+path+'" data-f="nombre" value="'+_esc(b.nombre)+'" placeholder="Nombre del bloque" onchange="_hibEdit(this)">';
-    return '<div class="hib-blk" style="border-left-color:'+m.c+'">'
-      +'<div class="hib-bh"><span class="tag" style="background:'+m.c+'">'+m.l+'</span>'+nameField
-      +'<span class="acts"><button title="Subir" onclick="_hibMove(\''+path+'\',-1)">↑</button><button title="Bajar" onclick="_hibMove(\''+path+'\',1)">↓</button><button title="Duplicar" onclick="_hibDup(\''+path+'\')">⧉</button><button title="Eliminar" onclick="_hibDel(\''+path+'\')">×</button></span></div>'
-      +'<div class="hib-bb">'+_blockBody(b,path)+'</div></div>';
-  }
-
-  function _circCard(b,i){
-    var inner=(b.bloques||[]).map(function(cb,j){ return _blockCard(cb,i+'.'+j); }).join('') || '<div class="hib-empty">Circuito vacío — agregá bloques abajo.</div>';
-    return '<div class="hib-circ">'
-      +'<div class="ch"><span class="ct">Circuito</span>'
-      +'<span class="vz">Vueltas: <input type="number" min="1" data-p="'+i+'" data-f="vueltas" value="'+_esc(b.vueltas)+'" onchange="_hibEdit(this)"></span>'
-      +'<span class="acts" style="margin-left:auto;display:flex;gap:3px;"><button style="border:1px solid #e3d4f3;background:#fff;color:#7b3fb3;border-radius:6px;min-width:26px;height:26px;cursor:pointer;" title="Subir" onclick="_hibMove(\''+i+'\',-1)">↑</button><button style="border:1px solid #e3d4f3;background:#fff;color:#7b3fb3;border-radius:6px;min-width:26px;height:26px;cursor:pointer;" title="Bajar" onclick="_hibMove(\''+i+'\',1)">↓</button><button style="border:1px solid #e3d4f3;background:#fff;color:#7b3fb3;border-radius:6px;min-width:26px;height:26px;cursor:pointer;" title="Eliminar circuito" onclick="_hibDel(\''+i+'\')">×</button></span></div>'
-      +'<div>'+inner+'</div>'
-      +'<div class="cadd"><span class="hib-add" onclick="_hibAdd(\'run\','+i+')"><span class="d" style="background:#3b82f6"></span>+ Running</span><span class="hib-add" onclick="_hibAdd(\'str\','+i+')"><span class="d" style="background:#16a34a"></span>+ Estación</span><span class="hib-add" onclick="_hibAdd(\'rec\','+i+')"><span class="d" style="background:#94a3b8"></span>+ Recuperación</span></div>'
-      +'<div class="pausas"><div class="pz"><label>Pausa entre ejercicios</label><input data-p="'+i+'" data-f="pausaEj" value="'+_esc(b.pausaEj)+'" placeholder="30 s" onchange="_hibEdit(this)"></div><div class="pz"><label>Pausa entre vueltas</label><input data-p="'+i+'" data-f="pausaVuelta" value="'+_esc(b.pausaVuelta)+'" placeholder="2 min" onchange="_hibEdit(this)"></div></div>'
-      +'</div>';
-  }
-
-  function _render(){
-    var S=window._hibCur; if(!S) return;
-    var cont=document.getElementById('hib-blocks'); if(!cont) return;
-    if(!S.bloques.length){ cont.innerHTML='<div class="hib-empty">Sesión vacía. Agregá bloques desde arriba, o creá un circuito para alternar carrera y fuerza.</div>'; return; }
-    cont.innerHTML=S.bloques.map(function(b,i){ return b.t==='circ' ? _circCard(b,i) : _blockCard(b,''+i); }).join('');
-  }
-
-  // ── crear / abrir / guardar / cerrar ──
-  window.hibNuevo=function(){ document.getElementById('hib-chooser').classList.add('on'); };
-  window._hibChooserClose=function(){ document.getElementById('hib-chooser').classList.remove('on'); };
-  window._hibCrear=function(tipo){
-    _hibChooserClose();
-    if(!currentAlumnoId){ if(typeof toast==='function') toast('Elegí un alumno primero','error'); return; }
-    window._hibCur={ id:_uid(), alumnoId:currentAlumnoId, tipoPlan:'hibrido', titulo:(tipo==='hyrox'?'HYROX':'Híbrido'), fecha:new Date().toISOString().slice(0,10), bloques:(tipo==='hyrox'?_hyroxBloques():[]), createdAt:new Date().toISOString() };
-    document.getElementById('hib-titulo').value=window._hibCur.titulo;
-    _render();
-    document.getElementById('hib-ed').classList.add('on');
-  };
-  window.hibAbrir=function(id){
-    var p=(typeof getPlanificaciones==='function'?getPlanificaciones():[]).find(function(x){return x&&x.id===id;});
-    if(!p) return;
-    window._hibCur=JSON.parse(JSON.stringify(p));
-    if(!Array.isArray(window._hibCur.bloques)) window._hibCur.bloques=[];
-    document.getElementById('hib-titulo').value=window._hibCur.titulo||'';
-    _render();
-    document.getElementById('hib-ed').classList.add('on');
-  };
-  window._hibCerrar=function(){ document.getElementById('hib-ed').classList.remove('on'); window._hibCur=null; };
-  window._hibGuardar=function(){
-    var S=window._hibCur; if(!S) return;
-    S.titulo=(document.getElementById('hib-titulo').value||'').trim()||'Híbrido';
-    S.updatedAt=new Date().toISOString();
-    var planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]);
-    var i=planes.findIndex(function(x){return x&&x.id===S.id;});
-    if(i>=0) planes[i]=JSON.parse(JSON.stringify(S)); else planes.push(JSON.parse(JSON.stringify(S)));
-    if(typeof savePlanificaciones==='function') savePlanificaciones(planes);
-    try{ if(typeof publicarPortalAlumno==='function'&&S.alumnoId) publicarPortalAlumno(S.alumnoId); }catch(e){}
-    if(typeof toast==='function') toast('Sesión híbrida guardada ✓');
-    _hibCerrar();
-    try{ renderHibridoList(currentAlumnoId); }catch(e){}
-  };
-  window._hibEliminar=function(id){
-    if(!confirm('¿Eliminar esta sesión híbrida? No se puede deshacer.')) return;
-    var planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]).filter(function(x){return !(x&&x.id===id);});
-    if(typeof savePlanificaciones==='function') savePlanificaciones(planes);
-    try{ if(typeof publicarPortalAlumno==='function'&&currentAlumnoId) publicarPortalAlumno(currentAlumnoId); }catch(e){}
-    try{ renderHibridoList(currentAlumnoId); }catch(e){}
-  };
-
-  // ── lista en la pestaña Híbrido ──
-  window.renderHibridoList=function(alId){
-    var cont=document.getElementById('perfil-plan-list-hibrido'); if(!cont) return;
-    var planes=(typeof getPlanificaciones==='function'?getPlanificaciones():[]).filter(function(p){return p&&p.alumnoId===alId&&p.tipoPlan==='hibrido';});
-    if(!planes.length){ cont.innerHTML='<div class="hib-empty" style="margin-top:8px;">Todavía no hay sesiones híbridas. Tocá <b>“+ Nueva sesión híbrida”</b> para crear una (running + fuerza en la misma sesión).</div>'; return; }
-    cont.innerHTML=planes.map(function(p){
-      var nb=(p.bloques||[]).length, circ=(p.bloques||[]).filter(function(b){return b.t==='circ';}).length;
-      var sub=nb+' bloque'+(nb===1?'':'s')+(circ?(' · '+circ+' circuito'+(circ===1?'':'s')):'')+(p.fecha?(' · '+p.fecha):'');
-      return '<div class="hib-list-item"><div class="li-main"><div class="li-t">'+_esc(p.titulo||'Híbrido')+'</div><div class="li-s">'+sub+'</div></div>'
-        +'<button style="background:#1a2a4a;color:#fff;" onclick="hibAbrir(\''+p.id+'\')">Abrir</button>'
-        +'<button style="background:#fdeaea;color:#c0392b;" onclick="_hibEliminar(\''+p.id+'\')">Eliminar</button></div>';
-    }).join('');
-  };
 })();
 </script>
 </body>

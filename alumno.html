@@ -773,10 +773,6 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="m7.5 13.5 2.5-3 3 2.5 2-2.5"/><path d="M17 17H7l-2-8h14l-2 8z"/></svg>
       <span data-i18n="nav_running">R. RUNNING</span>
     </button>
-    <button class="nb" id="nb-hibrido" onclick="_hibAlumnoAbrir()" style="display:none;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h7l3 5"/><path d="M4 17h5l3-5"/><path d="M15 7h5M15 17h5"/><path d="M18 4l2 3l-2 3M18 14l2 3l-2 3"/></svg>
-      <span>HÍBRIDO</span>
-    </button>
     <button class="nb" id="nb-medidas" onclick="goTab('medidas')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4l-14 14l-4 -4z"/><path d="M16 7l-1.5 -1.5"/><path d="M13 10l-1.5 -1.5"/><path d="M10 13l-1.5 -1.5"/><path d="M7 16l-1.5 -1.5"/></svg>
       <span data-i18n="nav_medidas">DATOS</span>
@@ -1103,7 +1099,7 @@ function _mesNombreDe(plan, i){
 }
 function _selSemana(i){ _semIdx=i; _diaIdx=null; renderRutina(); }
 
-let _data=null, _plan=null, _planRun=null, _planesFuerza=[], _planesHibrido=[], _planIdx=0, _semIdx=0, _diaIdx=null, _runDiaIdx=null, _diaModTab=0;
+let _data=null, _plan=null, _planRun=null, _planesFuerza=[], _planIdx=0, _semIdx=0, _diaIdx=null, _runDiaIdx=null, _diaModTab=0;
 let _WA_COACH='5491133379873'; // número del coach para "Iniciar clase por WhatsApp"
 let _runSemanas=[], _runSemIdx=0;
 let _ejStore = {};   // { uid: ej }  — para re-render de cards
@@ -1111,8 +1107,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261112214020 por un timestamp en cada deploy
-const _APP_VERSION = '20261112214020';
+// deploy.bat reemplaza 20261112221028 por un timestamp en cada deploy
+const _APP_VERSION = '20261112221028';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1391,10 +1387,8 @@ const TIPOS_RUN = {
 
     const planes = _data.planificaciones || [];
     // Separar planes de fuerza y running — el coach puede OCULTAR meses (p.oculto) para que el alumno no los vea
-    _planesFuerza        = planes.filter(p => p.tipoPlan !== 'running' && p.tipoPlan !== 'hibrido' && !p.oculto);
+    _planesFuerza        = planes.filter(p => p.tipoPlan !== 'running' && !p.oculto);
     const planesRunning  = planes.filter(p => p.tipoPlan === 'running' && !p.oculto);
-    _planesHibrido       = planes.filter(p => p.tipoPlan === 'hibrido' && !p.oculto);
-    try{ const _nbh=document.getElementById('nb-hibrido'); if(_nbh) _nbh.style.display = _planesHibrido.length ? '' : 'none'; }catch(e){}
     // Abrir primero el mes marcado como ACTIVO; si no hay, el último
     const _activoIdx = _planesFuerza.findIndex(p => p && p.activo);
     _planIdx = _activoIdx >= 0 ? _activoIdx : (_planesFuerza.length ? _planesFuerza.length - 1 : 0);
@@ -11707,154 +11701,6 @@ function renderStats() {
     });
   }
 }
-</script>
-
-<!-- ═══════════════ VISTA ALUMNO · SESIÓN HÍBRIDA (running + fuerza) ═══════════════ -->
-<!-- Aislado: solo actúa sobre planes tipoPlan:'hibrido'. Se puede quitar borrando este bloque. -->
-<style>
-#hal{position:fixed;inset:0;z-index:9000;background:var(--bg,#0a1420);display:none;flex-direction:column;}
-#hal.on{display:flex;}
-.hal-top{display:flex;align-items:center;gap:10px;padding:14px 16px calc(12px + env(safe-area-inset-top,0));background:var(--card,#12243d);border-bottom:1px solid var(--border,#21405f);flex-shrink:0;}
-.hal-top .bk{background:transparent;border:none;color:var(--text,#eaf1fb);font-size:22px;cursor:pointer;line-height:1;}
-.hal-top .tt{flex:1;font-size:15px;font-weight:900;color:var(--text,#eaf1fb);}
-.hal-body{flex:1;overflow-y:auto;padding:14px 13px calc(40px + env(safe-area-inset-bottom,0));max-width:560px;margin:0 auto;width:100%;}
-.hal-ab{background:var(--card,#12243d);border:1px solid var(--border,#21405f);border-radius:14px;margin-bottom:10px;overflow:hidden;border-left:4px solid #557;}
-.hal-abh{display:flex;align-items:center;gap:9px;padding:11px 13px;}
-.hal-abh .tg{font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 8px;border-radius:6px;color:#fff;text-transform:uppercase;white-space:nowrap;}
-.hal-abh .nm{font-size:13.5px;font-weight:800;color:var(--text,#eaf1fb);flex:1;}
-.hal-abb{padding:0 13px 12px;}
-.hal-specs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;}
-.hal-specs .sp{background:rgba(0,0,0,.18);border:1px solid var(--border,#284869);border-radius:8px;padding:6px 10px;}
-.hal-specs .sp label{font-size:8.5px;font-weight:800;color:var(--muted,#7f93b4);letter-spacing:.3px;display:block;}
-.hal-specs .sp .v{font-size:13px;font-weight:800;color:#bcd3ef;}
-.hal-reg{background:rgba(0,0,0,.22);border:1px dashed #2f557c;border-radius:10px;padding:10px;}
-.hal-reg .rt{font-size:9.5px;font-weight:900;color:#6ea8ff;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;}
-.hal-reg .rg{display:grid;gap:8px;}
-.hal-reg .ri{display:flex;flex-direction:column;gap:3px;}
-.hal-reg .ri label{font-size:9px;font-weight:700;color:#8ea7cc;}
-.hal-reg .ri input{background:rgba(0,0,0,.3);border:1.5px solid #2f557c;border-radius:8px;padding:8px;color:#dfeaf8;font-size:13px;font-weight:700;text-align:center;font-family:inherit;width:100%;}
-.hal-circ{border:2px solid #7b3fb3;background:rgba(123,63,179,.08);border-radius:14px;padding:11px;margin-bottom:10px;}
-.hal-circ .ach{display:flex;align-items:center;gap:9px;margin-bottom:9px;flex-wrap:wrap;}
-.hal-circ .ach .vt{font-size:11px;font-weight:900;color:#c89bf0;letter-spacing:.4px;text-transform:uppercase;}
-.hal-circ .ach .vb{background:rgba(123,63,179,.2);border:1px solid #5a3a85;color:#d9bdf5;border-radius:7px;padding:3px 9px;font-size:11px;font-weight:800;}
-.hal-vuelta{border:1px solid #4a3270;border-radius:11px;padding:9px;margin-bottom:9px;background:rgba(0,0,0,.14);}
-.hal-vuelta .vh{font-size:10px;font-weight:900;color:#b58fe0;letter-spacing:.4px;text-transform:uppercase;margin-bottom:8px;}
-.hal-pausa{font-size:11px;color:#b58fe0;text-align:center;margin:3px 0 2px;}
-.hal-res{background:var(--card,#0e1d33);border:1px solid #28456b;border-radius:14px;padding:14px;margin-top:12px;}
-.hal-res .rh{font-size:11px;font-weight:900;color:#8fb0e6;letter-spacing:.5px;text-transform:uppercase;margin-bottom:11px;}
-.hal-res .rr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1d3550;}
-.hal-res .rr:last-child{border-bottom:none;}
-.hal-res .rr .l{font-size:12.5px;color:#aec3e2;}
-.hal-res .rr .v{font-size:14px;font-weight:900;color:var(--text,#eaf1fb);}
-.hal-fin{width:100%;background:#2f5f95;color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;margin-top:12px;cursor:pointer;font-family:inherit;}
-.hal-fin.done{background:#1f8f5a;}
-.hal-pick{padding:16px 14px;}
-.hal-pick .pi{display:flex;align-items:center;gap:11px;background:var(--card,#12243d);border:1px solid var(--border,#21405f);border-radius:12px;padding:13px;margin-bottom:9px;cursor:pointer;}
-.hal-pick .pi .t{font-size:14px;font-weight:800;color:var(--text,#eaf1fb);}
-.hal-pick .pi .s{font-size:11px;color:var(--muted,#7f93b4);margin-top:2px;}
-</style>
-<div id="hal">
-  <div class="hal-top"><button class="bk" onclick="_halCerrar()">‹</button><div class="tt" id="hal-tt">Sesión híbrida</div></div>
-  <div class="hal-body" id="hal-body"></div>
-</div>
-<script>
-(function(){
-  var HMETA={ cal:{c:'#f59e0b',l:'Calentamiento'}, run:{c:'#3b82f6',l:'Running'}, str:{c:'#16a34a',l:'Estación'}, rec:{c:'#94a3b8',l:'Recuperación'}, calma:{c:'#0d9488',l:'Vuelta a la calma'} };
-  var _halPlan=null, _halSaveT=null;
-  function _esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function _reg(){ try{ _data.hibLog=_data.hibLog||{}; if(_halPlan) _data.hibLog[_halPlan.id]=_data.hibLog[_halPlan.id]||{}; return _halPlan?_data.hibLog[_halPlan.id]:{}; }catch(e){ return {}; } }
-  window._halRegVal=function(key,f){ var r=_reg(); return (r[key]&&r[key][f]!=null)?r[key][f]:''; };
-  window._halReg=function(key,f,val){ var r=_reg(); r[key]=r[key]||{}; r[key][f]=val; _halSaveDeb(); };
-  function _halSaveDeb(){ clearTimeout(_halSaveT); _halSaveT=setTimeout(_halSave,900); }
-  function _halSave(){
-    try{ localStorage.setItem('SOCC_HIB_'+_alumnoId, JSON.stringify(_data.hibLog||{})); }catch(e){}
-    try{ if(window._db && _alumnoId) _db.collection('alumnos').doc(_alumnoId).set({ hibLog:_data.hibLog||{} }, {merge:true}); }catch(e){}
-  }
-
-  function _specs(items){ var h=items.filter(function(x){return x[1]!==''&&x[1]!=null;}).map(function(x){return '<div class="sp"><label>'+x[0]+'</label><div class="v">'+_esc(x[1])+'</div></div>';}).join(''); return h?'<div class="hal-specs">'+h+'</div>':''; }
-  function _runSpecs(b){ var d=b.modo==='dist'?((b.dist||'')+' '+(b.distU||'m')):(b.dur||''); return _specs([['Distancia/Tiempo',d],['Ritmo obj.',b.ritmo],['Intensidad',b.inten],['Pasadas',b.pasadas],['Recuperación',b.recupVal?(b.recupVal+(b.recupTipo==='dist'?'':'')):''],['Indicaciones',b.indic]]); }
-  function _strSpecs(b){ var tv = b.tarea==='reps'?((b.series||'')+' x '+(b.reps||'')):(b.tarea==='dist'?((b.dist||'')+' '+(b.distU||'m')):(b.dur||'')); var cg=b.carga?(b.carga+(b.criterio==='mano'?' · por mano':(b.criterio==='total'?' · total':''))):''; return _specs([['Trabajo',tv],['Carga',cg],['Intensidad',b.inten],['Descanso',b.descanso],['Obs.',b.obs]]); }
-
-  function _regRun(key){ return '<div class="hal-reg"><div class="rt">Registrar</div><div class="rg" style="grid-template-columns:repeat(3,1fr);">'
-    +_ri(key,'tiempo','Tiempo','mm:ss')+_ri(key,'ritmo','Ritmo real','/km')+_ri(key,'rpe','RPE','1–10')+'</div></div>'; }
-  function _regStr(b,key){ var first = b.tarea==='reps'?_ri(key,'reps','Reps hechas',''):(b.tarea==='dist'?_ri(key,'dist','Distancia',''):_ri(key,'tiempo','Tiempo',''));
-    return '<div class="hal-reg"><div class="rt">Registrar</div><div class="rg" style="grid-template-columns:repeat(3,1fr);">'
-    +first+_ri(key,'carga','Carga usada','')+_ri(key,'rpe','RPE','1–10')+'</div></div>'; }
-  function _ri(key,f,label,ph){ return '<div class="ri"><label>'+label+'</label><input value="'+_esc(_halRegVal(key,f))+'" placeholder="'+ph+'" onchange="_halReg(\''+key+'\',\''+f+'\',this.value)"></div>'; }
-
-  function _blockHTML(b,key,showReg){
-    var m=HMETA[b.t]||{c:'#888',l:b.t};
-    var body='';
-    if(b.t==='cal'||b.t==='calma') body=_specs([['Duración',b.duracion],['Intensidad',b.inten],['Indicaciones',b.indic]]);
-    else if(b.t==='rec') body=_specs([[b.modo==='dist'?'Distancia':'Duración',b.val]]);
-    else if(b.t==='run') body=_runSpecs(b)+(showReg?_regRun(key):'');
-    else if(b.t==='str') body=_strSpecs(b)+(showReg?_regStr(b,key):'');
-    var nm = b.t==='rec'?'Recuperación':_esc(b.nombre||m.l);
-    return '<div class="hal-ab" style="border-left-color:'+m.c+'"><div class="hal-abh"><span class="tg" style="background:'+m.c+'">'+m.l+'</span><span class="nm">'+nm+'</span></div><div class="hal-abb">'+body+'</div></div>';
-  }
-
-  function _toM(val,unit){ var n=parseFloat(String(val).replace(',','.'))||0; return unit==='km'?n*1000:n; }
-
-  window._halAbrirSesion=function(plan){
-    _halPlan=plan;
-    try{ var ls=localStorage.getItem('SOCC_HIB_'+_alumnoId); if(ls){ _data.hibLog=Object.assign({}, JSON.parse(ls), _data.hibLog||{}); } }catch(e){}
-    document.getElementById('hal-tt').textContent=plan.titulo||'Sesión híbrida';
-    var carreraM=0, equipoM=0, html='';
-    (plan.bloques||[]).forEach(function(b,i){
-      if(b.t==='circ'){
-        var vueltas=Math.max(1,parseInt(b.vueltas,10)||1);
-        html+='<div class="hal-circ"><div class="ach"><span class="vt">Circuito · '+vueltas+' vuelta'+(vueltas===1?'':'s')+'</span>'+(b.pausaVuelta?'<span class="vb">entre vueltas: '+_esc(b.pausaVuelta)+'</span>':'')+'</div>';
-        for(var v=1; v<=vueltas; v++){
-          html+='<div class="hal-vuelta"><div class="vh">Vuelta '+v+'</div>';
-          (b.bloques||[]).forEach(function(cb,j){
-            var key='b'+i+'_'+j+'_v'+v;
-            html+=_blockHTML(cb,key,cb.t==='run'||cb.t==='str');
-            if(cb.t==='run'){ carreraM+=_toM(cb.dist,cb.distU)*(parseInt(cb.pasadas,10)||1); }
-            if(cb.t==='str'&&cb.tarea==='dist'){ equipoM+=_toM(cb.dist,cb.distU); }
-          });
-          html+='</div>';
-          if(b.pausaEj) html+='<div class="hal-pausa">Pausa entre ejercicios: '+_esc(b.pausaEj)+'</div>';
-        }
-        html+='</div>';
-      } else {
-        var key='b'+i;
-        html+=_blockHTML(b,key,b.t==='run'||b.t==='str');
-        if(b.t==='run'){ carreraM+=_toM(b.dist,b.distU)*(parseInt(b.pasadas,10)||1); }
-        if(b.t==='str'&&b.tarea==='dist'){ equipoM+=_toM(b.dist,b.distU); }
-      }
-    });
-    // resumen
-    var km=(carreraM/1000);
-    html+='<div class="hal-res"><div class="rh">Resumen de la sesión</div>'
-      +'<div class="rr"><span class="l">Carrera (km corridos)</span><span class="v">'+(km?km.toFixed(km>=10?0:2).replace('.',',')+' km':'—')+'</span></div>'
-      +'<div class="rr"><span class="l">Metros con equipo / carga</span><span class="v">'+(equipoM?Math.round(equipoM)+' m':'—')+'</span></div>'
-      +'</div>';
-    var done = (_reg()._done);
-    html+='<button class="hal-fin'+(done?' done':'')+'" onclick="_halFinalizar()">'+(done?'Entrenamiento guardado ✓ — tocá para actualizar':'Finalizar y guardar entrenamiento')+'</button>';
-    document.getElementById('hal-body').innerHTML=html;
-    document.getElementById('hal').classList.add('on');
-    window.scrollTo(0,0);
-  };
-
-  window._halFinalizar=function(){
-    var r=_reg(); r._done=new Date().toISOString().slice(0,10); _halSave();
-    try{ if(typeof toast==='function') toast('Entrenamiento guardado ✓'); }catch(e){}
-    var b=document.querySelector('#hal .hal-fin'); if(b){ b.classList.add('done'); b.textContent='Entrenamiento guardado ✓ — tocá para actualizar'; }
-  };
-  window._halCerrar=function(){ document.getElementById('hal').classList.remove('on'); _halPlan=null; };
-
-  window._hibAlumnoAbrir=function(){
-    var planes=(typeof _planesHibrido!=='undefined'?_planesHibrido:[])||[];
-    if(!planes.length){ try{ if(typeof toast==='function') toast('No hay sesiones híbridas'); }catch(e){} return; }
-    if(planes.length===1){ _halAbrirSesion(planes[0]); return; }
-    // varias → lista para elegir
-    var html='<div class="hal-pick">'+planes.map(function(p){ var nb=(p.bloques||[]).length; return '<div class="pi" onclick="_halPick(\''+p.id+'\')"><div><div class="t">'+_esc(p.titulo||'Híbrido')+'</div><div class="s">'+nb+' bloque'+(nb===1?'':'s')+(p.fecha?(' · '+p.fecha):'')+'</div></div></div>'; }).join('')+'</div>';
-    document.getElementById('hal-tt').textContent='Sesiones híbridas';
-    document.getElementById('hal-body').innerHTML=html;
-    document.getElementById('hal').classList.add('on');
-  };
-  window._halPick=function(id){ var p=((typeof _planesHibrido!=='undefined'?_planesHibrido:[])||[]).find(function(x){return x&&x.id===id;}); if(p) _halAbrirSesion(p); };
-})();
 </script>
 </body>
 </html>
