@@ -18794,6 +18794,7 @@ function renderSidebarAlumno(id) {
       <button onclick="_abrirLoQueQuiere('${id}')" style="width:100%;display:flex;align-items:center;gap:11px;background:#fff;border:none;border-bottom:1px solid #eef1f6;color:#1f2d47;font-size:12px;font-weight:600;padding:12px 13px;cursor:pointer;font-family:inherit;text-align:left;transition:background .12s;" onmouseover="this.style.background='#f5f7fb'" onmouseout="this.style.background='#fff'"><span style="flex:1;">Lo que quiere el alumno</span><span style="color:#c4ccd8;">›</span></button>
       <button onclick="_verLogros('${id}')" style="width:100%;display:flex;align-items:center;gap:11px;background:#fff;border:none;border-bottom:1px solid #eef1f6;color:#1f2d47;font-size:12px;font-weight:600;padding:12px 13px;cursor:pointer;font-family:inherit;text-align:left;transition:background .12s;" onmouseover="this.style.background='#f5f7fb'" onmouseout="this.style.background='#fff'"><span style="flex:1;">Logros y récords</span><span style="color:#c4ccd8;">›</span></button>
       <button onclick="_verSustituciones('${id}')" style="width:100%;display:flex;align-items:center;gap:11px;background:#fff;border:none;border-bottom:1px solid #eef1f6;color:#1f2d47;font-size:12px;font-weight:600;padding:12px 13px;cursor:pointer;font-family:inherit;text-align:left;transition:background .12s;" onmouseover="this.style.background='#f5f7fb'" onmouseout="this.style.background='#fff'"><span style="flex:1;">Sustituciones de ejercicios</span><span style="color:#c4ccd8;">›</span></button>
+      <button onclick="_copiarLinkRevision('${id}')" style="width:100%;display:flex;align-items:center;gap:11px;background:#fff;border:none;border-bottom:1px solid #eef1f6;color:#1f2d47;font-size:12px;font-weight:600;padding:12px 13px;cursor:pointer;font-family:inherit;text-align:left;transition:background .12s;" onmouseover="this.style.background='#f5f7fb'" onmouseout="this.style.background='#fff'"><span style="flex:1;">Revisión trimestral · copiar link</span><span style="color:#C9A84C;font-weight:800;">↗</span></button>
       <button onclick="openModalEditarAlumno('${id}')" style="width:100%;display:flex;align-items:center;gap:11px;background:#fff;border:none;color:#55607a;font-size:12px;font-weight:600;padding:12px 13px;cursor:pointer;font-family:inherit;text-align:left;transition:background .12s;" onmouseover="this.style.background='#f5f7fb'" onmouseout="this.style.background='#fff'"><span style="flex:1;">Editar perfil</span><span style="color:#c4ccd8;">›</span></button>
     </div>
 
@@ -18901,6 +18902,17 @@ function _toggleBaja(id) {
   try { renderSidebarAlumno(id); } catch(e){}
   try { if (typeof publicarPortalAlumno === 'function') publicarPortalAlumno(id); } catch(e){}
   try { if (typeof forzarSyncFirebase === 'function') forzarSyncFirebase(); } catch(e){}
+}
+// Copia el link del formulario de revisión trimestral YA personalizado para este alumno
+function _copiarLinkRevision(id){
+  var a=((typeof getAlumnos==='function'?getAlumnos():[])||[]).find(function(x){return x&&x.id===id;})||{};
+  var nombre=(a.nombre||'').trim();
+  var url='https://cct-trainer.github.io/entrenamiento-laboratorio/formulario-trimestral.html?id='+encodeURIComponent(id)+(nombre?('&alumno='+encodeURIComponent(nombre)):'');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url)
+      .then(function(){ if(typeof toast==='function') toast('Link de revisión copiado — mandáselo por WhatsApp'); })
+      .catch(function(){ prompt('Copiá este link y mandáselo al alumno:', url); });
+  } else { prompt('Copiá este link y mandáselo al alumno:', url); }
 }
 
 async function _generarReporteMensual() {
