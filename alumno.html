@@ -834,6 +834,7 @@ const _TIPO_COACH = {
   movi: {c:'#0ea5a5', t:'Movilidad',      x:'Ejercicios suaves para mejorar el rango de movimiento y preparar la articulación. No es trabajo de fuerza.', ej:''},
   act:  {c:'#1f8f66', t:'Activación',     x:'Trabajo liviano para despertar el músculo objetivo antes de la parte pesada.', ej:''},
   iso:  {c:'#a78bfa', t:'Isométrico',     x:'Mantenés la posición sin moverte, aguantando la tensión por un tiempo.', ej:''},
+  tiempo:{c:'#0891b2', t:'Tiempo',        x:'Trabajás durante un tiempo fijo (por ejemplo 30 seg) en vez de contar repeticiones.', ej:'Ej: 40 seg de trabajo continuo.'},
   cal:  {c:'#f97316', t:'Calentamiento',  x:'Series livianas para preparar el músculo y la articulación. Trabajás lejos del esfuerzo máximo, sin cansarte.', ej:'No cuentan como serie efectiva: son preparación.'},
   apr:  {c:'#d99a0b', t:'Aproximación',   x:'Subís la carga de a poco, serie a serie, hasta llegar al peso de trabajo.', ej:'Ej: 60 - 70 - 80 kg antes de tu peso objetivo.'},
   fee:  {c:'#a67c1e', t:'Feeder',         x:'Serie muy corta y liviana, justo antes de la efectiva, para sentir el movimiento.', ej:''},
@@ -1107,8 +1108,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261112221028 por un timestamp en cada deploy
-const _APP_VERSION = '20261112221028';
+// deploy.bat reemplaza 20261112231038 por un timestamp en cada deploy
+const _APP_VERSION = '20261112231038';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;

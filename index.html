@@ -22924,6 +22924,8 @@ function toggleCardioBloque(bloqueId, data) {
 const _CARDIO_PARA = {
   'HIIT':'Alterna esfuerzos muy intensos con pausas cortas. Mejora la capacidad cardiovascular y la quema de grasa en poco tiempo, y mantiene el metabolismo elevado durante horas.',
   'Caminata en cinta':'Trabajo aeróbico suave y continuo. Mejora la resistencia de base y la salud cardiovascular, y ayuda a recuperar sin generar fatiga.',
+  'Correr en cinta':'Carrera continua sobre cinta, con ritmo e inclinación controlados. Mejora la resistencia aeróbica y permite regular el esfuerzo con precisión.',
+  'Correr en calle':'Carrera al aire libre. Suma trabajo de terreno e impacto real, y mejora la resistencia y la economía de carrera adaptándose al ritmo propio.',
   'Bicicleta estática':'Cardio de bajo impacto. Mejora la resistencia y la capacidad aeróbica cuidando las articulaciones.',
   'Elíptica':'Cardio de bajo impacto que suma tren superior e inferior. Buena para resistencia general sin cargar las rodillas.',
   'Remo ergómetro':'Cardio de cuerpo completo. Trabaja resistencia y potencia aeróbica sumando espalda, piernas y core.',
@@ -22941,7 +22943,7 @@ function _cardioParaSync(bloqueId){
   else { box.style.display='none'; box.innerHTML=''; }
 }
 function renderCardioPanel(bloqueId, data) {
-  const acts = ['Caminata en cinta','Bicicleta estática','Descanso activo','Descanso pasivo','Elíptica','Remo ergómetro','HIIT','Otro'];
+  const acts = ['Caminata en cinta','Correr en cinta','Correr en calle','Bicicleta estática','Descanso activo','Descanso pasivo','Elíptica','Remo ergómetro','HIIT','Otro'];
   return '<div class="cardio-panel" id="'+bloqueId+'-cardio-panel">' +
     '<div class="cardio-act-row">' +
       '<span class="cardio-act-label">Actividad</span>' +
@@ -24453,12 +24455,13 @@ function _pausaDefault(ejId){ return _PAUSA_DEFAULT; }
 
 // Tipo de serie (color por función): calentamiento / aproximación / feeder / efectiva / test
 // Orden oficial (tabla maestra v2.0)
-const _SERIE_TIPOS = [['movi','Movilidad'],['act','Activación'],['iso','Isométrico'],['cal','Calent.'],['apr','Aprox.'],['fee','Feeder'],['pfat','P-Fatiga'],['efec','Efectiva'],['clu','Cluster'],['bmb','Bombeo'],['drop','Drop set'],['fallo','Fallo'],['mparc','M. Parcial'],['mcomp','M. Completo'],['core','Core'],['vol','Volumen'],['test','Test']];
+const _SERIE_TIPOS = [['movi','Movilidad'],['act','Activación'],['iso','Isométrico'],['tiempo','Tiempo'],['cal','Calent.'],['apr','Aprox.'],['fee','Feeder'],['pfat','P-Fatiga'],['efec','Efectiva'],['clu','Cluster'],['bmb','Bombeo'],['drop','Drop set'],['fallo','Fallo'],['mparc','M. Parcial'],['mcomp','M. Completo'],['core','Core'],['vol','Volumen'],['test','Test']];
 // Tabla maestra de configuración (reps / RIR / pausa) + si cuenta como serie efectiva
 const _SERIE_DEFAULTS = {
   movi: { reps:'10',    rir:'',    pausa:'',       efectiva:false },
   act:  { reps:'15',    rir:'2',   pausa:'1 min',  efectiva:false },
   iso:  { reps:'30 seg',rir:'',    pausa:'1 min',  efectiva:false, tiempo:true },
+  tiempo:{ reps:'30 seg',rir:'',   pausa:'1 min',  efectiva:true,  tiempo:true },
   cal:  { reps:'15',    rir:'4',   pausa:'1 min',  efectiva:false },
   apr:  { reps:'6',     rir:'3',   pausa:'1 min',  efectiva:false },
   fee:  { reps:'3',     rir:'2',   pausa:'2 min',  efectiva:false },
@@ -24518,6 +24521,7 @@ const _REPS_OPC = {
   movi:['8','10','12'],
   act:['10','12','15','20'],
   iso:['25 seg','30 seg','35 seg','40 seg','1 min'],
+  tiempo:['10 seg','15 seg','20 seg','30 seg','40 seg','45 seg','60 seg'],
   cal:['10','12','15','20'],
   apr:['3','4','5','6'],
   fee:['2','3','5'],
