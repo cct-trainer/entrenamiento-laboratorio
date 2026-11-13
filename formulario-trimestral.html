@@ -44,7 +44,7 @@ input::placeholder,textarea::placeholder{color:#5f7698;}
 </style></head>
 <body>
 <div class="top">
-  <div class="cc">CC</div>
+  <img src="https://cct-trainer.github.io/entrenamiento-laboratorio/icon-512.png" alt="Christian Cattaneo" style="width:66px;height:66px;border-radius:15px;margin-bottom:12px;box-shadow:0 8px 20px -8px rgba(0,0,0,.65);" onerror="this.style.display='none'">
   <h1>Revisión Trimestral</h1>
   <div class="sub">Christian Cattaneo · Entrenamiento basado en evidencia<br>Tu respuesta nos ayuda a ajustar tu plan para los próximos 3 meses.</div>
 </div>
@@ -290,8 +290,13 @@ function enviar(){
     document.getElementById('gracias').style.display='block';
     window.scrollTo({top:0,behavior:'smooth'});
   }
-  if(_db){
-    _db.collection('revisiones').add(doc).then(finish).catch(function(e){ console.warn(e); finish(); });
+  var ALID=(new URLSearchParams(location.search)).get('id')||'';
+  if(_db && ALID){
+    try{
+      firebase.firestore().collection('alumnos').doc(ALID)
+        .set({ revisiones: firebase.firestore.FieldValue.arrayUnion(doc) }, { merge:true })
+        .then(finish).catch(function(e){ console.warn(e); finish(); });
+    }catch(e){ finish(); }
   } else { finish(); }
 }
 </script>
