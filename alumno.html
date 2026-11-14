@@ -1108,8 +1108,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261114172647 por un timestamp en cada deploy
-const _APP_VERSION = '20261114172647';
+// deploy.bat reemplaza 20261114173409 por un timestamp en cada deploy
+const _APP_VERSION = '20261114173409';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -9703,7 +9703,7 @@ function _faseIdxActualAl(){ return _faseIdxDeFechaAl(_hoyISO()); }
 // Visibilidad CRUDA de una semana según su fase (sin red de seguridad)
 function _semVisibleAlRaw(sem){
   try{
-    if(!_data || _data.plan_modo!=='profesional') return true;
+    if(!_data) return true;
     var per=_data&&_data.periodizacion; if(!per||!Array.isArray(per.fases)||!per.fases.length) return true;
     var fi=sem&&sem.fechaInicio; if(!fi) return true;
     // La semana que contiene HOY siempre se ve (red de seguridad)
