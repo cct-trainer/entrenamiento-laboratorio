@@ -12528,18 +12528,18 @@ function renderPlanMes() {
       + '</div>';
 
     const _objVal = String(sem.objetivo||'').replace(/"/g,'&quot;');
-    // Fase (periodización profesional) de esta semana → aureola + badge
+    // Fase automática del macrociclo DESACTIVADA: las fases las pone el coach por semana (botón «+ fase»)
     let _perFa=null;
-    try{ if(typeof getFaseEnFecha==='function' && typeof currentAlumnoId!=='undefined' && currentAlumnoId && sem.fechaInicio){ const _al=getAlumnos().find(x=>x&&x.id===currentAlumnoId); if(_al && _al.plan_modo==='profesional') _perFa=getFaseEnFecha(currentAlumnoId, sem.fechaInicio); } }catch(e){}
-    _perFaseWk[semIdx] = _perFa;
-    const _perBadge = _perFa ? ('<span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:900;letter-spacing:.3px;color:'+_perFa.color+';background:'+_perFa.color+'1f;border:1px solid '+_perFa.color+'55;border-radius:999px;padding:2px 9px;margin-left:8px;vertical-align:middle;">S'+_perFa.semana_en_fase+'/'+_perFa.semanas_fase+'</span>') : '';
+    _perFaseWk[semIdx] = null;
+    const _perBadge = '';
     let _compBadge='';
     try{ var _fc=(typeof window!=='undefined'&&window._planFechaComp)?window._planFechaComp:''; if(_fc && sem.fechaInicio){ var _csi=new Date(sem.fechaInicio+'T00:00:00'); var _csf=new Date(_csi); _csf.setDate(_csf.getDate()+6); var _ccd=new Date(_fc+'T00:00:00'); if(!isNaN(_ccd)&&_ccd>=_csi&&_ccd<=_csf){ _compBadge='<span style="display:inline-block;font-size:9px;font-weight:900;color:#fff;background:#c0392b;border-radius:999px;padding:2px 10px;margin-left:8px;vertical-align:middle;letter-spacing:.4px;">COMPETICIÓN</span>'; } } }catch(e){}
     const _faseNom = String(sem.faseNombre||'').trim();
+    const _faseCol = _colorDeFase(_faseNom);   // violeta por defecto, color de fase si la tiene
     const _faseBadge = _faseNom
-      ? '<span onclick="event.stopPropagation();_editarFaseSemana('+semIdx+')" title="Editar nombre de fase" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:900;letter-spacing:.3px;color:#2f5f95;background:#eef3fb;border:1px solid #cfe0f3;border-radius:999px;padding:2px 10px;margin-left:8px;vertical-align:middle;cursor:pointer;">'+_faseNom.replace(/</g,'&lt;').replace(/"/g,'&quot;')+'</span>'
-      : '<span onclick="event.stopPropagation();_editarFaseSemana('+semIdx+')" title="Poner nombre de fase" style="display:inline-block;font-size:9px;font-weight:800;color:#8795ab;background:#f4f6fb;border:1px dashed #d5deea;border-radius:999px;padding:2px 9px;margin-left:8px;vertical-align:middle;cursor:pointer;">+ fase</span>';
-    return '<div class="mes-semana-bloque'+(isEd?' mes-semana-editando':'')+_estCls+(_compBadge?' sem-competicion':'')+'" id="mes-sem-bloque-'+semIdx+'">'
+      ? '<span onclick="event.stopPropagation();_editarFaseSemana('+semIdx+')" title="Editar nombre de fase" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:900;letter-spacing:.3px;color:#fff;background:'+_faseCol+';border:1px solid '+_faseCol+';border-radius:999px;padding:2px 10px;margin-left:8px;vertical-align:middle;cursor:pointer;">'+_faseNom.replace(/</g,'&lt;').replace(/"/g,'&quot;')+'</span>'
+      : '<span onclick="event.stopPropagation();_editarFaseSemana('+semIdx+')" title="Poner nombre de fase (opcional)" style="display:inline-block;font-size:9px;font-weight:800;color:#8795ab;background:#f4f6fb;border:1px dashed #d5deea;border-radius:999px;padding:2px 9px;margin-left:8px;vertical-align:middle;cursor:pointer;">+ fase</span>';
+    return '<div class="mes-semana-bloque'+(isEd?' mes-semana-editando':'')+_estCls+(_compBadge?' sem-competicion':'')+'" id="mes-sem-bloque-'+semIdx+'" style="border-left:6px solid '+_faseCol+';">'
       + '<div class="mes-semana-header">'
         + '<div class="mes-semana-titulo-txt">SEMANA '+sem.semana+(label ? ' &nbsp;&middot;&nbsp; '+label : '')+_estBadge+_perBadge+_compBadge+_faseBadge
             +(sem.sugerida?'<span style="display:inline-block;font-size:9px;font-weight:900;color:#fff;background:#7c5cff;border-radius:999px;padding:2px 9px;margin-left:8px;vertical-align:middle;">🔁 BORRADOR SUGERIDO</span>':'')
@@ -12554,8 +12554,7 @@ function renderPlanMes() {
     + '</div>';
   });
   // ── Vista AGRUPADA POR FASE (alumno Profesional con periodización) ──
-  let _macroInfo=null;
-  try{ if(typeof perMacroInfo==='function' && currentAlumnoId){ const _al2=(typeof getAlumnos==='function'?getAlumnos():[]).find(x=>x&&x.id===currentAlumnoId); if(_al2 && _al2.plan_modo==='profesional') _macroInfo=perMacroInfo(currentAlumnoId); } }catch(e){}
+  let _macroInfo=null;   // Vista por FASES desactivada a pedido del coach: siempre lista plana de semanas correlativas
   if(_macroInfo && _macroInfo.fecha_inicio && _macroInfo.fases && _macroInfo.fases.length){
     const _add=(iso,d)=>{ const p=String(iso).slice(0,10).split('-'); const x=new Date(+p[0],+p[1]-1,+p[2]); x.setDate(x.getDate()+d); return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); };
     const _MES=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
@@ -13058,15 +13057,32 @@ function _mostrarGraficoEjercicio(bIdx, eIdx, diaIdx) {
 }
 
 // ── Gestión de semanas ────────────────────────────────────────────────────────
+// Re-fecha todas las semanas de forma CORRELATIVA a partir de la primera (+7 días cada una) y renumera
+function _redatarSemanasCorrelativo(){
+  if(!Array.isArray(planSemanasArray) || !planSemanasArray.length) return;
+  var base = planSemanasArray[0].fechaInicio || new Date().toISOString().split('T')[0];
+  planSemanasArray[0].fechaInicio = base;
+  for(var i=1;i<planSemanasArray.length;i++){
+    var d=new Date(planSemanasArray[i-1].fechaInicio+'T12:00:00'); d.setDate(d.getDate()+7);
+    planSemanasArray[i].fechaInicio = d.toISOString().split('T')[0];
+  }
+  planSemanasArray.forEach(function(s,i){ s.semana=i+1; if(!s.dias) s.dias={}; });
+}
+// Color de la semana: violeta por defecto; si tiene fase, el color de esa fase
+function _colorDeFase(nombre){
+  var n=String(nombre||'').trim().toLowerCase();
+  if(!n) return '#7c5cff';                                   // violeta (sin fase)
+  if(n.indexOf('adapt')>=0) return '#7c5cff';                // adaptación · violeta
+  if(n.indexOf('acumul')>=0) return '#22a06b';               // acumulación · verde
+  if(n.indexOf('intens')>=0) return '#e8822e';               // intensificación · naranja
+  if(n.indexOf('realiz')>=0||n.indexOf('pico')>=0||n.indexOf('compet')>=0) return '#e3493b'; // realización/competición · rojo
+  if(n.indexOf('descarga')>=0||n.indexOf('deload')>=0||n.indexOf('recup')>=0) return '#3A6EA5'; // descarga · azul
+  return '#22a06b';                                          // cualquier otra fase nombrada · verde
+}
 function agregarSemana() {
   guardarEstadoDiaActual();
-  const last = planSemanasArray[planSemanasArray.length - 1];
-  const base = last.fechaInicio || new Date().toISOString().split('T')[0];
-  const next = new Date(base + 'T12:00:00');
-  next.setDate(next.getDate() + 7);
-  let faseNombre = '';
-  try { faseNombre = (prompt('Nombre de la fase para esta semana (opcional).\nDejalo vacío para que siga como semana estándar:', '') || '').trim(); } catch(e) {}
-  planSemanasArray.push({ semana: planSemanasArray.length + 1, fechaInicio: next.toISOString().split('T')[0], dias: {}, faseNombre: faseNombre });
+  planSemanasArray.push({ semana: planSemanasArray.length + 1, fechaInicio: '', dias: {}, faseNombre: '' });
+  _redatarSemanasCorrelativo();
   renderPlanMes();
 }
 // Editar / poner el nombre de fase de una semana (estándar)
@@ -13139,13 +13155,11 @@ function copiarSemana(semIdx) {
   guardarEstadoDiaActual();
   _guardarUndoSnapshot('semana copiada');
   const src  = planSemanasArray[semIdx];
-  const last = planSemanasArray[planSemanasArray.length - 1];
-  const base = last.fechaInicio || new Date().toISOString().split('T')[0];
-  const next = new Date(base + 'T12:00:00');
-  next.setDate(next.getDate() + 7);
-  planSemanasArray.push({ semana: planSemanasArray.length + 1, fechaInicio: next.toISOString().split('T')[0], dias: JSON.parse(JSON.stringify(src.dias)) });
+  // La copia va JUSTO DEBAJO de la semana copiada (correlativa), no al final
+  planSemanasArray.splice(semIdx+1, 0, { semana:0, fechaInicio:'', dias: JSON.parse(JSON.stringify(src.dias||{})), faseNombre: src.faseNombre||'' });
+  _redatarSemanasCorrelativo();
   renderPlanMes();
-  setTimeout(() => { const el=document.getElementById('mes-sem-bloque-'+(planSemanasArray.length-1)); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }, 80);
+  setTimeout(() => { const el=document.getElementById('mes-sem-bloque-'+(semIdx+1)); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }, 80);
   const _t = document.createElement('div');
   _t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.35);';
   _t.innerHTML='<span>📋 Semana copiada</span><button onclick="deshacerUltimaEliminacion();this.closest(\'div\').remove();" style="background:#C9A84C;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:800;cursor:pointer;">DESHACER</button>';
@@ -13157,7 +13171,7 @@ function eliminarSemana(semIdx) {
   if(planSemanasArray.length <= 1) return;
   if(planDiaAbierto !== null && planSemEditando === semIdx) planDiaAbierto = null;
   planSemanasArray.splice(semIdx, 1);
-  planSemanasArray.forEach((s,i) => s.semana = i+1);
+  _redatarSemanasCorrelativo();
   if(planSemEditando >= planSemanasArray.length) planSemEditando = planSemanasArray.length - 1;
   planDiasData = planSemanasArray[planSemEditando].dias;
   renderPlanMes();
