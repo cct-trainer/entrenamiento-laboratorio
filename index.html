@@ -12575,10 +12575,16 @@ function renderPlanMes() {
       const col=fase.color||'#64748b';
       const inner = idxs.length ? idxs.map(wi=>_blocks[wi]).join('')
         : '<div style="padding:14px 6px;font-size:12px;color:#8795ab;text-align:center;font-weight:600;">Todavía no cargaste semanas en esta fase. Tocá «Agregar semana» para empezar.</div>';
+      var _vm=fase.verAlumno||'auto';
+      var _vmTxt=_vm==='ver'?'👁 Visible siempre':(_vm==='ocultar'?'🙈 Oculto al alumno':'🔵 Auto (mes actual)');
+      var _vmBtn='<button onclick="event.stopPropagation();_perCycleVerMes(currentAlumnoId,\''+fase.id+'\',\''+_vm+'\')" title="Qué ve el alumno de este mes. Auto = solo cuando es el mes en curso. Tocá para cambiar: Auto → Visible siempre → Oculto." style="font-size:10px;font-weight:800;border:none;background:rgba(255,255,255,.26);color:#fff;border-radius:999px;padding:4px 11px;cursor:pointer;white-space:nowrap;">'+_vmTxt+'</button>';
       gh+='<div class="mes-fase-grupo" style="border:1px solid '+col+';box-shadow:0 0 0 3px '+col+'1f;border-radius:16px;overflow:hidden;margin-bottom:18px;">'
         +'<div style="background:'+col+';color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">'
           +'<span style="font-size:14px;font-weight:900;letter-spacing:.4px;display:inline-flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.9);"></span>'+String(fase.nombre).toUpperCase()+'</span>'
-          +'<span style="font-size:10.5px;font-weight:800;background:rgba(255,255,255,.22);padding:3px 10px;border-radius:999px;">'+sem+' sem · '+_fc(pStart)+' → '+_fc(pEnd)+' · '+(fase.series_obj||'')+' ser/músc · RIR '+(fase.rir_obj||'')+'</span>'
+          +'<span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+            +'<span style="font-size:10.5px;font-weight:800;background:rgba(255,255,255,.22);padding:3px 10px;border-radius:999px;">'+sem+' sem · '+_fc(pStart)+' → '+_fc(pEnd)+' · '+(fase.series_obj||'')+' ser/músc · RIR '+(fase.rir_obj||'')+'</span>'
+            +_vmBtn
+          +'</span>'
         +'</div>'
         +'<div style="padding:12px 12px 4px;background:'+col+'0c;">'+inner
           +'<div class="mes-agregar-zona" style="margin-top:2px;"><button class="mes-btn-agregar" onclick="_perAgregarSemanaFaseFecha(\''+fase.id+'\',\''+pStart+'\',\''+pEnd+'\')" style="border-color:'+col+';color:'+col+';">&#65291; Agregar semana a '+String(fase.nombre)+'</button></div>'
@@ -12611,19 +12617,28 @@ function _addDias(iso,n){ const p=String(iso).slice(0,10).split('-'); const d=ne
 function _perAgregarSemanaFaseFecha(faseId, pStart, pEnd){
   try{
     if(!Array.isArray(planSemanasArray)) planSemanasArray=[];
-    const used={}; planSemanasArray.forEach(w=>{ if(w.fechaInicio) used[String(w.fechaInicio).slice(0,10)]=true; });
-    let cand=null, d=pStart;
-    for(let k=0;k<60 && d<=pEnd;k++){ if(!used[d]){ cand=d; break; } d=_addDias(d,7); }
-    if(!cand){
-      if(typeof perCrecerFase==='function' && currentAlumnoId) perCrecerFase(currentAlumnoId, faseId, 1);
-      cand=_addDias(pEnd,1);
+    // Semanas que YA están cargadas dentro del rango de esta fase (mes)
+    const enFase = planSemanasArray.filter(w=>{ const fi=w.fechaInicio?String(w.fechaInicio).slice(0,10):''; return fi && fi>=pStart && fi<=pEnd; })
+                                   .sort((a,b)=>String(a.fechaInicio).localeCompare(String(b.fechaInicio)));
+    let cand;
+    if(enFase.length){
+      // Nueva semana = la ÚLTIMA semana de la fase + 7 días (sigue en orden y con el mismo día de la semana que la que tiene carga)
+      cand=_addDias(String(enFase[enFase.length-1].fechaInicio).slice(0,10),7);
+    } else {
+      // Fase vacía → arranca al comienzo del rango de la fase
+      cand=pStart;
     }
+    // Si la nueva semana se pasa del rango de la fase, agrandamos la fase +1 para que la contenga
+    if(cand>pEnd){ if(typeof perCrecerFase==='function' && currentAlumnoId) perCrecerFase(currentAlumnoId, faseId, 1); }
+    // Evitar que coincida con una fecha ya usada (por las dudas)
+    const used={}; planSemanasArray.forEach(w=>{ if(w.fechaInicio) used[String(w.fechaInicio).slice(0,10)]=true; });
+    for(let g=0; g<200 && used[cand]; g++){ cand=_addDias(cand,7); }
     planSemanasArray.push({ semana:0, fechaInicio:cand, dias:{} });
     planSemanasArray.sort((a,b)=>String(a.fechaInicio||'').localeCompare(String(b.fechaInicio||'')));
     planSemanasArray.forEach((w,i)=>{ w.semana=i+1; if(!w.dias)w.dias={}; });
     if(typeof _persistPlanMes==='function') _persistPlanMes();
     if(typeof renderPlanMes==='function') renderPlanMes();
-    if(typeof toast==='function') toast('✓ Semana agregada a la fase');
+    if(typeof toast==='function') toast('✓ Semana agregada');
   }catch(e){ console.warn('agregar semana fase:',e); }
 }
 function _pmToggleOlder(){
@@ -34792,7 +34807,24 @@ function _fechaCort(f) {
   window.perMacroInfo=function(alumnoId){
     var m=_getMacro(alumnoId); if(!m||!m.fases||!m.fases.length) return null;
     var fs=m.fases.slice().sort(function(a,b){return (a.orden||0)-(b.orden||0);});
-    return { fecha_inicio:m.fecha_inicio, fases:fs.map(function(f){ var pr=_semParams(f,1); return {id:f.id,nombre:f.nombre,color:f.color,semanas:parseInt(f.semanas,10)||0,series_obj:pr.series,rir_obj:pr.rir}; }) };
+    return { fecha_inicio:m.fecha_inicio, fases:fs.map(function(f){ var pr=_semParams(f,1); return {id:f.id,nombre:f.nombre,color:f.color,semanas:parseInt(f.semanas,10)||0,series_obj:pr.series,rir_obj:pr.rir,verAlumno:f.verAlumno||'auto'}; }) };
+  };
+  // Cambia qué ve el alumno de una fase (mes): 'auto' (solo el mes actual) | 'ver' (siempre) | 'ocultar'
+  window._perSetVerMes=function(alumnoId, faseId, estado){
+    var m=_getMacro(alumnoId); if(!m||!m.fases) return false;
+    var f=m.fases.find(function(x){return x.id===faseId;}); if(!f) return false;
+    f.verAlumno=(estado==='ver'||estado==='ocultar')?estado:'auto'; m.updated_at=_iso();
+    var all=_all(); var i=all.findIndex(function(x){return x.id===m.id;}); if(i>=0) all[i]=m; else all.push(m); _saveAll(all);
+    _perPublishFor(alumnoId); return true;
+  };
+  window._perCycleVerMes=function(alumnoId, faseId, cur){
+    var order=['auto','ver','ocultar']; var k=order.indexOf(cur); if(k<0)k=0; var nxt=order[(k+1)%3];
+    if(window._perSetVerMes(alumnoId, faseId, nxt)){
+      try{ if(typeof renderPlanMes==='function') renderPlanMes(); }catch(e){}
+      try{ if(typeof forzarSyncFirebase==='function') forzarSyncFirebase(); }catch(e){}
+      var msg=nxt==='ver'?'👁 El alumno verá este mes siempre':(nxt==='ocultar'?'🙈 Este mes queda oculto al alumno':'🔵 Automático: el alumno lo ve solo cuando es el mes actual');
+      try{ if(typeof toast==='function') toast(msg); }catch(e){}
+    }
   };
   // Importa las fases armadas en el módulo "Crear plan de entrenamiento" al macrociclo de periodización
   // (así el planificador de fuerza las muestra agrupadas/coloreadas por fase).
@@ -34829,7 +34861,7 @@ function _fechaCort(f) {
   function _perPublishFor(alumnoId){
     try{
       var m=_getMacro(alumnoId); var alumnos=getAlumnos(); var al=alumnos.find(function(x){return x.id===alumnoId;}); if(!al) return;
-      if(m&&m.fases&&m.fases.length){ var fs=m.fases.slice().sort(function(a,b){return (a.orden||0)-(b.orden||0);}); al.periodizacion={fecha_inicio:m.fecha_inicio, fases:fs.map(function(f){return {nombre:f.nombre,color:f.color,semanas:parseInt(f.semanas,10)||0};})}; }
+      if(m&&m.fases&&m.fases.length){ var fs=m.fases.slice().sort(function(a,b){return (a.orden||0)-(b.orden||0);}); al.periodizacion={fecha_inicio:m.fecha_inicio, fases:fs.map(function(f){return {nombre:f.nombre,color:f.color,semanas:parseInt(f.semanas,10)||0,verAlumno:f.verAlumno||'auto'};})}; }
       else { if(al.periodizacion) delete al.periodizacion; }
       if(typeof saveAlumnos==='function') saveAlumnos(alumnos);
     }catch(e){}

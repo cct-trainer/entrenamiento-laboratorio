@@ -1108,8 +1108,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261113145819 por un timestamp en cada deploy
-const _APP_VERSION = '20261113145819';
+// deploy.bat reemplaza 20261114172647 por un timestamp en cada deploy
+const _APP_VERSION = '20261114172647';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2136,7 +2136,9 @@ function renderPlan() {
 // ── RUTINA ────────────────────────────────────────────────────────────────
 function movSem(d) {
   if (!_plan) return;
-  const n = _semIdx+d, max = (_plan.semanasArray||[]).length-1;
+  const sems=_plan.semanasArray||[], max=sems.length-1;
+  let n=_semIdx+d;
+  while(n>=0 && n<=max && !_semVisibleAl(sems[n])) n+=d;   // saltar meses ocultos al alumno
   if (n<0||n>max) return;
   _semIdx=n; _diaIdx=null; renderRutina();
 }
@@ -2192,7 +2194,14 @@ function renderRutina() {
     document.getElementById('sesion-ctn').innerHTML=noData('📋','Sin plan asignado','Tu coach aún no cargó tu planificación.');
     return;
   }
-  const sems=_plan.semanasArray, sem=sems[_semIdx];
+  const sems=_plan.semanasArray;
+  // Si la semana seleccionada quedó oculta al alumno, saltar a la visible más cercana
+  if(sems.length && !_semVisibleAl(sems[_semIdx])){
+    let _v=-1,_best=1e9;
+    sems.forEach((s,i)=>{ if(_semVisibleAl(s)){ const dd=Math.abs(i-_semIdx); if(dd<_best){_best=dd;_v=i;} } });
+    if(_v>=0) _semIdx=_v;
+  }
+  const sem=sems[_semIdx];
 
   // ── MES DE TRABAJO (navegación mes anterior / siguiente) ──
   const mesNavEl = document.getElementById('mes-nav');
@@ -2230,6 +2239,7 @@ function renderRutina() {
     const _segStyle = _anyFase ? ' style="background:#12243d;border-color:#20405f;"' : '';
     weekEl.innerHTML = '<div class="slabel" style="margin-bottom:7px;">'+(_LANG==='en'?'WEEKS':'SEMANAS')+'</div><div class="wk-seg"'+_segStyle+'>'
       + sems.map((s,i)=>{
+          if(!_semVisibleAl(s)) return '';   // mes oculto al alumno
           const on = i===_semIdx;
           const rel = _anyDate ? (i<_semReal?'past':(i>_semReal?'future':'current')) : 'current';
           let rango='';
@@ -9674,6 +9684,47 @@ function _faseActualAl(){
     for(var i=0;i<per.fases.length;i++){ var n=parseInt(per.fases[i].semanas,10)||0; if(semMacro<=acc+n){ return {nombre:per.fases[i].nombre||'', color:per.fases[i].color||'#10b981', sem:semMacro-acc, total:n}; } acc+=n; }
     return null;
   }catch(e){ return null; }
+}
+// Índice de fase (mes) 0-based al que pertenece una fecha, según la periodización; -1 si no cae en ninguna
+function _faseIdxDeFechaAl(fechaISO){
+  try{
+    var per=_data&&_data.periodizacion; if(!per||!Array.isArray(per.fases)||!per.fases.length) return -1;
+    var p=String(per.fecha_inicio||'').slice(0,10).split('-'); if(p.length!==3) return -1;
+    var ini=new Date(+p[0],+p[1]-1,+p[2]); if(isNaN(ini)) return -1;
+    var q=String(fechaISO||'').slice(0,10).split('-'); if(q.length!==3) return -1;
+    var d=new Date(+q[0],+q[1]-1,+q[2]); if(isNaN(d)) return -1;
+    var diff=Math.floor((d-ini)/86400000); if(diff<0) return -1;
+    var semMacro=Math.floor(diff/7)+1, acc=0;
+    for(var i=0;i<per.fases.length;i++){ var n=parseInt(per.fases[i].semanas,10)||0; if(semMacro<=acc+n) return i; acc+=n; }
+    return -1;
+  }catch(e){ return -1; }
+}
+function _faseIdxActualAl(){ return _faseIdxDeFechaAl(_hoyISO()); }
+// Visibilidad CRUDA de una semana según su fase (sin red de seguridad)
+function _semVisibleAlRaw(sem){
+  try{
+    if(!_data || _data.plan_modo!=='profesional') return true;
+    var per=_data&&_data.periodizacion; if(!per||!Array.isArray(per.fases)||!per.fases.length) return true;
+    var fi=sem&&sem.fechaInicio; if(!fi) return true;
+    // La semana que contiene HOY siempre se ve (red de seguridad)
+    var hoy=_hoyISO(); var e=new Date(fi+'T12:00:00'); e.setDate(e.getDate()+6); var fin=_dISO(e);
+    if(hoy>=fi && hoy<=fin) return true;
+    var fidx=_faseIdxDeFechaAl(fi); if(fidx<0) return true; // fuera del macro → se muestra
+    var estado=(per.fases[fidx]&&per.fases[fidx].verAlumno)||'auto';
+    if(estado==='ocultar') return false;
+    if(estado==='ver') return true;
+    var actual=_faseIdxActualAl(); // 'auto' → solo si es el mes (fase) actual
+    return actual<0 ? true : (fidx===actual);
+  }catch(e){ return true; }
+}
+// Visibilidad con red de seguridad: si NINGUNA semana del plan quedaría visible, se muestran todas
+function _semVisibleAl(sem){
+  try{
+    if(_semVisibleAlRaw(sem)) return true;
+    var sems=(_plan&&_plan.semanasArray)||[];
+    for(var i=0;i<sems.length;i++){ if(_semVisibleAlRaw(sems[i])) return false; }
+    return true; // ninguna visible → mostrar todo para no dejar al alumno sin nada
+  }catch(e){ return true; }
 }
 // Color de la fase a la que pertenece una fecha (para pintar la cinta de SEMANAS por fase)
 // Color de fase por índice de semana (0-based) — robusto, no depende de fechas exactas
