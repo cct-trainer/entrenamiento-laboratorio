@@ -1108,8 +1108,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261114175546 por un timestamp en cada deploy
-const _APP_VERSION = '20261114175546';
+// deploy.bat reemplaza 20261116151458 por un timestamp en cada deploy
+const _APP_VERSION = '20261116151458';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -2985,12 +2985,50 @@ function _toggleWb(el){
   body.style.maxHeight = open ? '0px' : (body.scrollHeight+30)+'px';
   if(arr) arr.style.transform = open ? '' : 'rotate(90deg)';
 }
+// Tarjeta de un ejercicio de CARDIO dentro de un bloque (lo ve el alumno)
+function _ejCardCardio(ej, uid, ejLabel){
+  var c = ej.cardio || {};
+  var esc=function(s){ return String(s==null?'':s).replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+  var en=(typeof _LANG!=='undefined'&&_LANG==='en');
+  var titulo = esc(ej.nombre || c.actividad || 'Cardio');
+  var rows = [
+    ['⏱️', en?'Duration':'Duración', c.duracion],
+    ['❤️', en?'Intensity / HR zone':'Intensidad / Zona FC', c.zona],
+    ['🏃', en?'Speed':'Velocidad', c.velocidad ? (c.velocidad+' km/h') : ''],
+    ['⛰️', en?'Incline':'Inclinación', c.inclinacion],
+    ['⏸️', en?'Rest':'Pausa', c.pausa],
+    ['💪', 'RPE', c.rpe]
+  ].filter(function(r){ return r[2] && String(r[2]).trim(); });
+  var _isLight = document.documentElement.classList.contains('light');
+  var cardBg=_isLight?'#ffffff':'#0f141c', txt=_isLight?'#20242c':'#eef1f5', sub=_isLight?'#5b6472':'#9aa6ba', line=_isLight?'#e6ebf2':'#1c2430', acc='#7b5cd6';
+  var chips = rows.map(function(r){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 11px;background:'+(_isLight?'#f6f8fb':'#121926')+';border:1px solid '+line+';border-radius:10px;">'
+      +'<span style="font-size:14px;flex-shrink:0;">'+r[0]+'</span>'
+      +'<div style="min-width:0;"><div style="font-size:8.5px;font-weight:800;letter-spacing:.5px;color:'+sub+';text-transform:uppercase;">'+esc(r[1])+'</div>'
+      +'<div style="font-size:14px;font-weight:800;color:'+txt+';">'+esc(r[2])+'</div></div></div>';
+  }).join('');
+  var obs = (c.observaciones && String(c.observaciones).trim())
+    ? '<div style="margin-top:10px;font-size:12.5px;line-height:1.5;color:'+txt+';background:'+(_isLight?'#f3effd':'#1a1530')+';border:1px solid '+(_isLight?'#e0d7f7':'#2d2350')+';border-radius:10px;padding:10px 12px;">'+esc(c.observaciones)+'</div>' : '';
+  var nota = (ej.nota && String(ej.nota).trim())
+    ? '<div style="margin-top:8px;font-size:12px;font-style:italic;color:'+sub+';">✏️ '+esc(ej.nota)+'</div>' : '';
+  return '<div id="'+uid+'-card" style="border:1px solid '+line+';border-left:4px solid '+acc+';border-radius:14px;background:'+cardBg+';padding:14px 15px;margin-bottom:12px;">'
+    +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;flex-wrap:wrap;">'
+      +(ejLabel?'<span style="font-size:11px;font-weight:900;color:#fff;background:'+acc+';border-radius:7px;padding:3px 8px;flex-shrink:0;">'+esc(ejLabel)+'</span>':'')
+      +'<span style="font-size:9px;font-weight:900;letter-spacing:.6px;color:'+acc+';background:'+acc+'1f;border:1px solid '+acc+'55;border-radius:999px;padding:3px 9px;flex-shrink:0;">🏃 CARDIO</span>'
+      +'<span style="font-size:15px;font-weight:900;color:'+txt+';min-width:0;">'+titulo+'</span>'
+    +'</div>'
+    +(chips?'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;">'+chips+'</div>':'<div style="font-size:12px;color:'+sub+';">'+(en?'No details loaded.':'Sin detalles cargados.')+'</div>')
+    +obs+nota
+  +'</div>';
+}
 function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
   ejLabel = ejLabel || '';   // etiqueta del ejercicio (A1, B2…)
   grupo   = grupo || '';     // grupo muscular / nombre del bloque → badge dorado superior
   serieLbl = serieLbl || (_LANG==='en'?'Straight set':'Serie simple');  // tipo de serie → banda azul
   defPausa = defPausa || 60; // pausa por defecto (seg) cuando el coach no la cargó
   _ejStore[uid] = ej; // guardar para re-render posterior
+  // ── Ejercicio de CARDIO dentro del bloque ──
+  if(ej && ej.tipoEj === 'cardio'){ return _ejCardCardio(ej, uid, ejLabel); }
 
   // Usar series vivas (modificadas por menú contextual) si existen
   const live = _liveData[uid];

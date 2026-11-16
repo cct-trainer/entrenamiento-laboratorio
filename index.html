@@ -14549,6 +14549,15 @@ function guardarEstadoDiaActual() {
     const ejercicios = [];
     ejCards.forEach(eEl => {
       const eId    = eEl.id;
+      // ── Ejercicio de CARDIO dentro del bloque (A2 = correr, etc.) ──
+      if(eEl.dataset.ejtipo === 'cardio'){
+        const _ecName = eEl.querySelector('.ej-nombre-input')?.value.trim() || '';
+        const _g = (s)=>document.getElementById(eId+'-ec-'+s)?.value.trim() || '';
+        const _ecNota = eEl.querySelector('.ej-nota-input')?.value.trim() || '';
+        const _cardioEj = { actividad:_g('actividad'), duracion:_g('duracion'), zona:_g('zona'), velocidad:_g('velocidad'), inclinacion:_g('inclinacion'), pausa:_g('pausa'), rpe:_g('rpe'), observaciones:_g('obs') };
+        if(_ecName || _cardioEj.actividad || _cardioEj.duracion) ejercicios.push({ nombre:_ecName||_cardioEj.actividad||'Cardio', tipoEj:'cardio', cardio:_cardioEj, nota:_ecNota });
+        return;
+      }
       const eName  = eEl.querySelector('.ej-nombre-input')?.value.trim() || '';
       const ctrl   = {
         series: document.getElementById(eId+'-ctrl-series')?.value||'',
@@ -15549,6 +15558,13 @@ function addEjercicioEnDia(bloqueId, diaIdx, datosPrevios) {
     // Restaurar nombre
     const nInp = document.querySelector(`#${ejId} .ej-nombre-input`);
     if(nInp && datosPrevios.nombre) nInp.value = datosPrevios.nombre;
+    // Restaurar modo CARDIO (ejercicio de cardio dentro del bloque)
+    if(datosPrevios.tipoEj === 'cardio'){
+      if(typeof _setEjModo==='function') _setEjModo(ejId, 'cardio');
+      const _c = datosPrevios.cardio || {};
+      const _setEc = (s,v)=>{ const e=document.getElementById(ejId+'-ec-'+s); if(e!=null && v!=null && v!=='') e.value=v; };
+      _setEc('actividad',_c.actividad); _setEc('duracion',_c.duracion); _setEc('zona',_c.zona); _setEc('velocidad',_c.velocidad); _setEc('inclinacion',_c.inclinacion); _setEc('pausa',_c.pausa); _setEc('rpe',_c.rpe); _setEc('obs',_c.observaciones);
+    }
     // Restaurar aclaración de ejecución
     const notaInp = document.querySelector(`#${ejId} .ej-nota-input`);
     if(notaInp && datosPrevios.nota) notaInp.value = datosPrevios.nota;
@@ -23200,12 +23216,16 @@ function addEjercicio(bloqueId) {
   const mostrarDropset = !['Movilidad','Activación'].includes(bloqueTipo);
 
   const div = document.createElement('div');
-  div.className = 'ej-card'; div.id = ejId;
+  div.className = 'ej-card'; div.id = ejId; div.dataset.ejtipo = 'fuerza';
   div.innerHTML = `
     <div class="ej-head">
       <span class="evo-ej-chk" title="Incluir este ejercicio en Evolución" onclick="_evoTogEj(this)"></span>
       <span class="drag-handle" draggable="true" data-type="ej" title="Arrastrar para mover ejercicio">⠿</span>
       <span class="ej-letra" style="display:${letra?'inline-block':'none'}">${letra}</span>
+      <div class="ej-modo-tog" style="display:inline-flex;background:#eef2f7;border:1px solid #d7deea;border-radius:8px;padding:2px;flex-shrink:0;margin-right:4px;" title="¿Este ejercicio es de fuerza o de cardio?">
+        <button type="button" id="${ejId}-modo-f" onclick="_setEjModo('${ejId}','fuerza')" style="border:none;background:#fff;color:#1a1a2e;font-size:11px;font-weight:700;padding:5px 9px;border-radius:6px;cursor:pointer;">💪 Fuerza</button>
+        <button type="button" id="${ejId}-modo-c" onclick="_setEjModo('${ejId}','cardio')" style="border:none;background:transparent;color:#888;font-size:11px;font-weight:700;padding:5px 9px;border-radius:6px;cursor:pointer;">🏃 Cardio</button>
+      </div>
       <div class="ej-nombre-wrap">
         <input class="ej-nombre-input" type="text"
           placeholder="Escribí para buscar ejercicio..."
@@ -23263,7 +23283,7 @@ function addEjercicio(bloqueId) {
       <span id="${ejId}-setup-hint" style="display:none;font-size:10px;font-weight:800;color:#1f8f5a;white-space:nowrap;flex-shrink:0;" title="Configuración guardada para este alumno">✓ guardado</span>
     </div>
 
-    <div style="padding: 0 0 4px;">
+    <div id="${ejId}-fuerza-body" style="padding: 0 0 4px;">
 
       <!-- SERIES (única sección) -->
       <div class="series-section">
@@ -23355,6 +23375,21 @@ function addEjercicio(bloqueId) {
 
     </div>
 
+    <div id="${ejId}-cardio-body" style="display:none;padding:2px 0 8px;">
+      <div class="cardio-fields-grid">
+        <div class="cardio-field"><label>ACTIVIDAD</label>
+          <select id="${ejId}-ec-actividad">${['Correr en cinta','Correr en calle','Caminata en cinta','Bicicleta estática','Elíptica','Remo ergómetro','Escalera','HIIT','Descanso activo','Otro'].map(a=>'<option>'+a+'</option>').join('')}</select></div>
+        <div class="cardio-field"><label>DURACIÓN</label><input id="${ejId}-ec-duracion" type="text" placeholder="ej: 20 min"></div>
+        <div class="cardio-field"><label>INTENSIDAD / ZONA FC</label><input id="${ejId}-ec-zona" type="text" placeholder="ej: Zona 2 / 65%"></div>
+        <div class="cardio-field"><label>VELOCIDAD (km/h)</label><input id="${ejId}-ec-velocidad" type="text" placeholder="ej: 6.5"></div>
+        <div class="cardio-field"><label>INCLINACIÓN (%)</label><input id="${ejId}-ec-inclinacion" type="text" placeholder="ej: 2%"></div>
+        <div class="cardio-field"><label>PAUSA</label><input id="${ejId}-ec-pausa" type="text" placeholder="ej: 1 min"></div>
+        <div class="cardio-field"><label>RPE (1-10)</label><input id="${ejId}-ec-rpe" type="text" placeholder="ej: 6/10"></div>
+      </div>
+      <div class="cardio-field cardio-obs-wrap" style="margin-top:8px;"><label>OBSERVACIONES</label>
+        <textarea id="${ejId}-ec-obs" placeholder="instrucciones, progresión, notas…"></textarea></div>
+    </div>
+
     <div id="${ejId}-ficha-toggle-wrap" style="display:none;">
       <div class="ej-ficha-toggle" onclick="toggleFichaEj('${ejId}')">
         <span id="${ejId}-ficha-toggle-icon">ⓘ</span>
@@ -23366,6 +23401,21 @@ function addEjercicio(bloqueId) {
 `;
   body.appendChild(div);
   refreshLetras(bloqueId);   // renumerar el bloque (1 ejercicio → letra sola; 2+ → A1, A2…)
+}
+// Cambia un ejercicio entre FUERZA (series) y CARDIO (actividad/duración/intensidad…)
+function _setEjModo(ejId, modo){
+  var card=document.getElementById(ejId); if(!card) return;
+  var cardio = (modo==='cardio');
+  card.dataset.ejtipo = cardio ? 'cardio' : 'fuerza';
+  var fb=document.getElementById(ejId+'-fuerza-body');
+  var cb=document.getElementById(ejId+'-cardio-body');
+  if(fb) fb.style.display = cardio ? 'none' : '';
+  if(cb) cb.style.display = cardio ? '' : 'none';
+  var bf=document.getElementById(ejId+'-modo-f'), bc=document.getElementById(ejId+'-modo-c');
+  if(bf){ bf.style.background=cardio?'transparent':'#fff'; bf.style.color=cardio?'#888':'#1a1a2e'; }
+  if(bc){ bc.style.background=cardio?'#fff':'transparent'; bc.style.color=cardio?'#1a1a2e':'#888'; }
+  // Ocultar controles propios de fuerza en el encabezado cuando es cardio
+  if(cardio){ ['-barra-wrap','-incl-wrap','-manc-wrap'].forEach(function(s){ var e=document.getElementById(ejId+s); if(e) e.style.display='none'; }); }
 }
 
 // ══════════ OBJETIVO DE RENDIMIENTO Y PROGRESIÓN (por ejercicio) ══════════
