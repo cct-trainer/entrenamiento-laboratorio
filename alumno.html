@@ -1108,8 +1108,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261116152206 por un timestamp en cada deploy
-const _APP_VERSION = '20261116152206';
+// deploy.bat reemplaza 20261116154259 por un timestamp en cada deploy
+const _APP_VERSION = '20261116154259';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -3011,6 +3011,23 @@ function _ejCardCardio(ej, uid, ejLabel){
     ? '<div style="margin-top:10px;font-size:12.5px;line-height:1.5;color:'+txt+';background:'+(_isLight?'#f3effd':'#1a1530')+';border:1px solid '+(_isLight?'#e0d7f7':'#2d2350')+';border-radius:10px;padding:10px 12px;">'+esc(c.observaciones)+'</div>' : '';
   var nota = (ej.nota && String(ej.nota).trim())
     ? '<div style="margin-top:8px;font-size:12px;font-style:italic;color:'+sub+';">✏️ '+esc(ej.nota)+'</div>' : '';
+  // Vueltas / series marcables (el alumno toca cada una al terminarla)
+  var _sp=(_semIdx||0)+'_'+(_diaIdx||0)+'_'+uid;
+  var nS=Math.max(1, parseInt(c.series,10)||1);
+  var vueltasHTML='';
+  if(nS>0){
+    var vr='';
+    for(var k=0;k<nS;k++){
+      var sp=_sp+'_efec_'+k;
+      var vdone=(typeof _getEdit==='function' && _getEdit(sp,'done')==='1');
+      vr+='<div id="sr_'+sp+'" class="'+(vdone?'s-done':'')+'" onclick="_serieTap(\''+sp+'\')" style="display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid '+line+';border-radius:10px;cursor:pointer;background:'+(_isLight?'#f6f8fb':'#121926')+';-webkit-tap-highlight-color:transparent;">'
+        +'<span class="s-num'+(vdone?' on':'')+'">'+(k+1)+'</span>'
+        +'<span style="font-size:13px;font-weight:800;color:'+txt+';">'+(en?('Round '+(k+1)):('Vuelta '+(k+1)))+'</span>'
+        +'<span style="margin-left:auto;font-size:10px;font-weight:700;color:'+sub+';">'+(en?'tap when done':'tocá al terminar')+'</span>'
+      +'</div>';
+    }
+    vueltasHTML='<div style="margin-top:12px;"><div style="font-size:8.5px;font-weight:800;letter-spacing:.5px;color:'+sub+';text-transform:uppercase;margin-bottom:6px;">'+(en?'Rounds':'Vueltas')+'</div><div style="display:flex;flex-direction:column;gap:7px;">'+vr+'</div></div>';
+  }
   return '<div id="'+uid+'-card" style="border:1px solid '+line+';border-left:4px solid '+acc+';border-radius:14px;background:'+cardBg+';padding:14px 15px;margin-bottom:12px;">'
     +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;flex-wrap:wrap;">'
       +(ejLabel?'<span style="font-size:11px;font-weight:900;color:#fff;background:'+acc+';border-radius:7px;padding:3px 8px;flex-shrink:0;">'+esc(ejLabel)+'</span>':'')
@@ -3018,7 +3035,7 @@ function _ejCardCardio(ej, uid, ejLabel){
       +'<span style="font-size:15px;font-weight:900;color:'+txt+';min-width:0;">'+titulo+'</span>'
     +'</div>'
     +(chips?'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;">'+chips+'</div>':'<div style="font-size:12px;color:'+sub+';">'+(en?'No details loaded.':'Sin detalles cargados.')+'</div>')
-    +obs+nota
+    +vueltasHTML+obs+nota
   +'</div>';
 }
 function _ejCard(ej, uid, ejLabel, grupo, serieLbl, defPausa) {
@@ -9459,7 +9476,7 @@ function _circNext(bi, nEj){ const cur=window._circStation['b'+bi]||0; _circIr(b
 function _circPrev(bi){ const cur=window._circStation['b'+bi]||0; if(cur>0) _circIr(bi,cur-1); }
 // series efectivas hechas de una estación (para progreso/estado)
 function _circSerieKey(bi,ei,i){ return (_semIdx||0)+'_'+(_diaIdx||0)+'_b'+bi+'e'+ei+'_efec_'+i; }
-function _circNSer(ej){ return (Array.isArray(ej.series)&&ej.series.length)?ej.series.length:(parseInt(ej&&ej.ctrl&&ej.ctrl.series,10)||1); }
+function _circNSer(ej){ if(ej&&ej.tipoEj==='cardio'){ return Math.max(1, parseInt(ej.cardio&&ej.cardio.series,10)||1); } return (Array.isArray(ej.series)&&ej.series.length)?ej.series.length:(parseInt(ej&&ej.ctrl&&ej.ctrl.series,10)||1); }
 function _circDoneCount(bi,ei,ej){ let c=0,n=_circNSer(ej); for(let i=0;i<n;i++){ if(_getEdit(_circSerieKey(bi,ei,i),'done')==='1') c++; } return c; }
 function _circEstDone(bi,ei,ej){ return _circDoneCount(bi,ei,ej)>=_circNSer(ej); }
 // bloque circular renderizado como "player" de estaciones (Fusión 3)
