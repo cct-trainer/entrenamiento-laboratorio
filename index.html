@@ -17422,6 +17422,27 @@ function _veRender(){
   let ex='';
   st.exOrder.forEach(x=>{
     const ej=x.ej; const letra='ABCDEFGHIJ'[x.bi]||(x.bi+1); const etq=letra+(x.ei+1);
+    // ── Ejercicio de CARDIO dentro del bloque ──
+    if(ej.tipoEj==='cardio'){
+      const c=ej.cardio||{};
+      const vbtnC=(ej.video)?'<button class="ve-vbtn" onclick="_veVideo(\''+x.uid+'\')">▶ Video</button>':'';
+      const cch=[];
+      if(c.duracion) cch.push('<span class="ve-chip"><b>'+_veEsc(c.duracion)+'</b></span>');
+      if(c.zona) cch.push('<span class="ve-chip">'+_veEsc(c.zona)+'</span>');
+      if(c.velocidad) cch.push('<span class="ve-chip"><b>'+_veEsc(c.velocidad)+'</b> km/h</span>');
+      if(c.inclinacion) cch.push('<span class="ve-chip">Incl '+_veEsc(c.inclinacion)+'</span>');
+      if(c.pausa) cch.push('<span class="ve-chip">Pausa <b>'+_veEsc(c.pausa)+'</b></span>');
+      if(c.rpe) cch.push('<span class="ve-chip">RPE '+_veEsc(c.rpe)+'</span>');
+      const keyC=st.semIdx+'_'+st.diaIdx+'_'+x.uid+'_efec_0'; const lgC=st.log[keyC]||{}; const doneC=lgC.done==='1';
+      const obsC=st.obs[x.uid]||'';
+      ex+='<div class="ve-exc"><div class="ve-top"><span class="ve-num" style="background:#7b5cd6;">'+etq+'</span><span class="ve-nom">🏃 '+_veEsc(ej.nombre||'Cardio')+'</span>'+vbtnC+'</div>'
+        +(cch.length?'<div class="ve-plan">'+cch.join('')+'</div>':'')
+        +(c.observaciones?'<div style="font-size:12px;color:#55607a;background:#f3effd;border:1px solid #e0d7f7;border-radius:8px;padding:8px 10px;margin:6px 0;line-height:1.5;">'+_veEsc(c.observaciones)+'</div>':'')
+        +'<div class="ve-real"><div class="ve-real-l">✓ Realizado</div><div class="ve-setrow'+(doneC?' ve-done':'')+'"><span class="ve-chk'+(doneC?' on':'')+'" onclick="_veTog(\''+keyC+'\')" title="Marcar cardio como hecho">'+(doneC?'✓':'')+'</span><span class="ve-sn">Hecho</span></div></div>'
+        +'<div class="ve-obst" onclick="_veTogObs(this)">📝 Observación ▾</div>'
+        +'<div class="ve-obsbox" style="display:'+(obsC?'block':'none')+';"><textarea placeholder="Cómo fue el cardio hoy…" onchange="_veObs(\''+x.uid+'\',this.value)">'+_veEsc(obsC)+'</textarea></div></div>';
+      return;
+    }
     const series=(ej.series&&ej.series.length)?ej.series:[];
     const s0=series[0]||(ej.ctrl||{});
     const nSer=series.length||parseInt(ej.ctrl&&ej.ctrl.series)||series.length;
@@ -25136,6 +25157,25 @@ function renderPlanHTML(p) {
 
   // ── Construye la tarjeta de un ejercicio (igual que el export) ────────────
   function cardEj(ej, letra) {
+    // ── Ejercicio de CARDIO dentro del bloque ──
+    if(ej.tipoEj==='cardio'){
+      const c=ej.cardio||{};
+      const esc=s=>String(s==null?'':s).replace(/</g,'&lt;').replace(/"/g,'&quot;');
+      const letraSpanC = letra?`<span style="font-size:12px;font-weight:800;color:#fff;background:#7b5cd6;border-radius:6px;padding:3px 8px;flex-shrink:0;">${letra}</span>`:'';
+      const rows=[['ACTIVIDAD',c.actividad],['DURACIÓN',c.duracion],['INTENSIDAD / ZONA FC',c.zona],['VELOCIDAD',c.velocidad?(c.velocidad+' km/h'):''],['INCLINACIÓN',c.inclinacion],['PAUSA',c.pausa],['RPE',c.rpe]].filter(r=>r[1]&&String(r[1]).trim());
+      const cells=rows.map(r=>`<div style="padding:8px 10px;border:1px solid #efe7fb;border-radius:7px;background:#faf8ff;"><div style="font-size:8px;font-weight:800;color:#7b5cd6;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;">${esc(r[0])}</div><div style="font-size:14px;font-weight:700;color:#2a2340;">${esc(r[1])}</div></div>`).join('');
+      const obsC=(c.observaciones&&String(c.observaciones).trim())?`<div style="margin-top:10px;font-size:12px;color:#55607a;background:#f3effd;border:1px solid #e0d7f7;border-radius:8px;padding:9px 11px;line-height:1.5;">${esc(c.observaciones)}</div>`:'';
+      const notaC=(ej.nota&&String(ej.nota).trim())?`<div style="margin-top:6px;font-size:11px;font-style:italic;color:#b45309;">📝 ${esc(ej.nota)}</div>`:'';
+      return `<div class="ej-card" data-nombre="${esc(ej.nombre||'Cardio')}" style="flex:1;min-width:0;background:#fff;border:2px solid #e7ddfb;border-left:4px solid #7b5cd6;border-radius:8px;overflow:hidden;">
+        <div class="ej-card-header" style="background:#f7f3ff;border-bottom:1px solid #eee;padding:10px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          ${letraSpanC}
+          <span class="ej-card-nombre" style="font-size:14px;font-weight:700;color:#111;flex:1;">🏃 ${esc(ej.nombre||'Cardio')}</span>
+          <span style="background:#efe7fb;color:#7b5cd6;font-size:9px;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:1px;">CARDIO</span>
+          <button class="ej-btn-hecho" onclick="marcHecho(this)" style="background:#e8f5e9;color:#2e7d32;border:1.5px solid #a5d6a7;border-radius:6px;padding:5px 11px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:0.5px;">✓ HECHO</button>
+        </div>
+        <div style="padding:12px 14px;"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;">${cells||'<div style="font-size:12px;color:#999;">Sin detalles cargados.</div>'}</div>${obsC}${notaC}</div>
+      </div>`;
+    }
     // Normalizar formato plano (sesión) y anidado (semana)
     const ctrlSeries = ej.ctrlSeries || (ej.ctrl && ej.ctrl.series) || '';
     const ctrlReps   = ej.ctrlReps   || (ej.ctrl && ej.ctrl.reps)   || '';
