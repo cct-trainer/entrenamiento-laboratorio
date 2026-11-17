@@ -10279,33 +10279,45 @@ async function _subirPortadas(alumnoId, imgs){
   }
   try{ localStorage.setItem(upKey, JSON.stringify(ya)); }catch(e){}
 }
+// Devuelve un CLON de los planes con las fotos (base64) reemplazadas por una referencia liviana,
+// y sube cada foto a la nube (por alumno). Así el navegador guarda solo texto corto, no imágenes pesadas.
+function _externalizarYSubir(data){
+  var clone;
+  try{ clone = JSON.parse(JSON.stringify(data||[])); }catch(e){ return null; }
+  try{
+    clone.forEach(function(p){
+      var imgs={};
+      var s=function(ses){
+        if(ses && ses.imagen && String(ses.imagen).indexOf('data:')===0){ var k=_imgPortadaKey(ses.imagen); imgs[k]=ses.imagen; ses.imagenRef=k; ses.imagen=''; }
+        if(ses && ses.poster && String(ses.poster).indexOf('data:')===0){ var kp=_imgPortadaKey(ses.poster); imgs[kp]=ses.poster; ses.posterRef=kp; ses.poster=''; }
+      };
+      (p.semanasArray||[]).forEach(function(w){ var d=(w&&w.dias)||{}; Object.keys(d).forEach(function(k){ (d[k]||[]).forEach(s); }); });
+      if(p.diasData){ Object.keys(p.diasData).forEach(function(k){ (p.diasData[k]||[]).forEach(s); }); }
+      if(p.alumnoId && Object.keys(imgs).length){ try{ _subirPortadas(p.alumnoId, imgs); }catch(e){} }
+    });
+  }catch(e){ return null; }
+  return clone;
+}
 function savePlanificaciones(data) {
+  // Guardamos en el navegador SOLO las referencias (las fotos pesadas van a la nube). Así no se llena el espacio.
+  var _toStore=null;
+  try{ _toStore=_externalizarYSubir(data); }catch(e){ _toStore=null; }
+  if(!_toStore) _toStore=data;
   try {
-    localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(data));
+    localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(_toStore));
   } catch(e) {
     var _q = e && (e.name==='QuotaExceededError' || e.code===22 || e.code===1014 || /quota|exceeded/i.test(String((e&&e.message)||(e&&e.name)||'')));
     if(_q){
       _liberarEspacioLocal();
       try {
-        localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(data));   // reintento tras liberar cachés
+        localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(_toStore));   // reintento tras liberar cachés
       } catch(e2){
-        // Sigue sin entrar → ofrecer quitar las fotos de portada ahí mismo
-        var _ok=false;
-        try{ _ok=(typeof confirm==='function') && confirm('El navegador se quedó sin espacio y no puedo guardar.\n\n¿Quito las FOTOS DE PORTADA de las sesiones para poder guardar ahora?\n(Solo la imagen decorativa; los ejercicios, series y cargas NO se tocan.)'); }catch(_e){}
-        if(_ok){
-          var _n=_stripFotosPlanes(data);
-          try{
-            localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(data));
-            if(typeof toast==='function') toast('Liberé espacio (quité '+_n+' foto'+(_n===1?'':'s')+' de portada) y guardé ✓');
-          } catch(e3){
-            try{ if(typeof currentAlumnoId!=='undefined' && currentAlumnoId && typeof publicarPortalAlumno==='function') publicarPortalAlumno(currentAlumnoId); }catch(_e){}
-            if(typeof toast==='function') toast('Aún sin espacio. Lo subí a la nube para no perderlo.','error');
-            throw e3;
-          }
-        } else {
+        // Última red: quitar cualquier foto que aún quedara y reintentar (sin molestar con preguntas)
+        try{ _stripFotosPlanes(_toStore); localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(_toStore)); if(typeof toast==='function') toast('Liberé espacio y guardé ✓'); }
+        catch(e3){
           try{ if(typeof currentAlumnoId!=='undefined' && currentAlumnoId && typeof publicarPortalAlumno==='function') publicarPortalAlumno(currentAlumnoId); }catch(_e){}
-          if(typeof toast==='function') toast('Lo subí a la nube. Cuando quieras liberar espacio, tocá "Liberar espacio" arriba.','error');
-          throw e2;
+          if(typeof toast==='function') toast('Lo subí a la nube para no perderlo.','error');
+          throw e3;
         }
       }
     } else { throw e; }
@@ -13980,6 +13992,7 @@ function renderPlanDiaEditor(diaIdx) {
   const _scz=document.getElementById('plan-ses-imgcat'); if(_scz) _scz.value=sesion.imagenCat||'';
   try{ _sesImgPrev(); }catch(e){}
   const _spo=document.getElementById('plan-ses-poster'); if(_spo) _spo.value=sesion.poster||''; try{ _sesPosterPrev(); }catch(e){}
+  try{ _resolverPortadasEditor(sesion); }catch(e){}
   const _set=document.getElementById('plan-ses-etiqueta'); if(_set) _set.value=sesion.etiqueta||'';
   const _sl=document.getElementById('plan-ses-lugar');  if(_sl) _sl.value=sesion.lugar||'';
   const _sd=document.getElementById('plan-ses-dif');    if(_sd) _sd.value=sesion.dificultad||'';
@@ -14052,6 +14065,22 @@ function _sesPosterPrev(){
   else { el.innerHTML=''; }
 }
 function _sesPosterQuitar(){ var c=document.getElementById('plan-ses-poster'); if(c) c.value=''; _sesPosterPrev(); }
+// Si la sesión tiene la foto como REFERENCIA (no base64, porque se guardó en la nube), la trae de vuelta para mostrarla.
+function _resolverPortadasEditor(sesion){
+  try{
+    if(!window._db || typeof currentAlumnoId==='undefined' || !currentAlumnoId || !sesion) return;
+    var _fill=function(ref, inputId, esPoster){
+      if(!ref) return;
+      window._db.collection('alumnos').doc(currentAlumnoId).collection('portadas').doc(ref).get().then(function(d){
+        try{
+          if(d && d.exists){ var img=(d.data()||{}).img; if(img){ sesion[esPoster?'poster':'imagen']=img; var el=document.getElementById(inputId); if(el) el.value=img; if(esPoster){ try{_sesPosterPrev();}catch(e){} } } }
+        }catch(e){}
+      }).catch(function(){});
+    };
+    if((!sesion.imagen || String(sesion.imagen).indexOf('data:')!==0) && sesion.imagenRef) _fill(sesion.imagenRef, 'plan-ses-imagen', false);
+    if((!sesion.poster || String(sesion.poster).indexOf('data:')!==0) && sesion.posterRef) _fill(sesion.posterRef, 'plan-ses-poster', true);
+  }catch(e){}
+}
 function _serieDurCoach(reps){
   const s=String(reps||'').toLowerCase(); let m;
   if((m=s.match(/(\d+)\s*seg/))) return parseInt(m[1]);
@@ -14200,6 +14229,7 @@ function _switchEditorTab(tabIdx, diaIdx) {
   const _scz=document.getElementById('plan-ses-imgcat'); if(_scz) _scz.value=sesion.imagenCat||'';
   try{ _sesImgPrev(); }catch(e){}
   const _spo=document.getElementById('plan-ses-poster'); if(_spo) _spo.value=sesion.poster||''; try{ _sesPosterPrev(); }catch(e){}
+  try{ _resolverPortadasEditor(sesion); }catch(e){}
   const _set=document.getElementById('plan-ses-etiqueta'); if(_set) _set.value=sesion.etiqueta||'';
   const _sl=document.getElementById('plan-ses-lugar');  if(_sl) _sl.value=sesion.lugar||'';
   const _sd=document.getElementById('plan-ses-dif');    if(_sd) _sd.value=sesion.dificultad||'';
@@ -14658,7 +14688,9 @@ function guardarEstadoDiaActual() {
     bloques, nombre: _nombreSesion,
     etiqueta: _g('plan-ses-etiqueta','etiqueta'),
     imagen: _g('plan-ses-imagen','imagen'),
+    imagenRef: _prevSes.imagenRef||'',
     poster: _g('plan-ses-poster','poster'),
+    posterRef: _prevSes.posterRef||'',
     imagenCat: _g('plan-ses-imgcat','imagenCat'),
     lugar: _g('plan-ses-lugar','lugar'),
     dificultad: _g('plan-ses-dif','dificultad'),
