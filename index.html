@@ -3401,6 +3401,7 @@ select.toolbox-input option:disabled { color: #888; }
 <!-- Firebase (compat v10) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 </head>
 <body>
 
@@ -3710,8 +3711,8 @@ function _osSearchLive(q){
   res.innerHTML=match.map(a=>{
     let p=null;try{p=(typeof _proximaSesionAlumno==='function')?_proximaSesionAlumno(a.id):null;}catch(e){}
     let prox='Sin sesión programada'; if(p){ const d=Math.round((p.date-hoy)/86400000); const c=d===0?'Hoy':d===1?'Mañana':(DOW[p.date.getDay()]+' '+p.date.getDate()); prox='Próxima: '+c; }
-    const av=a.foto?('<img src="'+esc(a.foto)+'">'):_osIniciales(a.nombre);
-    return '<div class="os-res">'
+    const _fa=_fotoDe(a); const av=_fa?('<img src="'+esc(_fa)+'">'):_osIniciales(a.nombre);
+  return '<div class="os-res">'
       +'<div class="av" onclick="_osAbrirAlumno(\''+a.id+'\')">'+av+'</div>'
       +'<div class="tx" onclick="_osAbrirAlumno(\''+a.id+'\')"><b>'+esc(a.nombre||'')+'</b><span>'+prox+'</span></div>'
       +'<button class="os-res-btn" onclick="_osTrabajar(\''+a.id+'\')">Trabajar →</button>'
@@ -3736,7 +3737,7 @@ function _osRenderWidgets(){
   const lbl=x=>{ if(x.est==='hoy')return'Sesión de hoy'; if(x.est==='man')return'Entrena mañana'; const d=x.p.date; return 'Próxima: '+DOW[d.getDay()]+' '+d.getDate(); };
   const tag=x=>{ if(x.est==='hoy')return'<span class="tag tag-hoy">HOY</span>'; if(x.est==='man')return'<span class="tag tag-prox">MAÑ</span>'; return '<span class="tag tag-prox">PRÓX</span>'; };
   const esc=s=>String(s==null?'':s).replace(/</g,'&lt;').replace(/'/g,'&#39;');
-  const items = lista.length ? lista.map(x=>{ const a=x.a; const av=a.foto?('<img src="'+esc(a.foto)+'">'):_osIniciales(a.nombre); return '<div class="os-ritem" style="cursor:pointer;" onclick="_osAbrirAlumno(\''+a.id+'\')"><div class="av">'+av+'</div><div class="tx"><b>'+esc(a.nombre||'')+'</b><span>'+lbl(x)+'</span></div>'+tag(x)+'</div>'; }).join('') : '<div style="font-size:12px;color:#7c93a9;padding:6px;">No hay sesiones próximas cargadas.</div>';
+  const items = lista.length ? lista.map(x=>{ const a=x.a; const _fa=_fotoDe(a); const av=_fa?('<img src="'+esc(_fa)+'">'):_osIniciales(a.nombre); return '<div class="os-ritem" style="cursor:pointer;" onclick="_osAbrirAlumno(\''+a.id+'\')"><div class="av">'+av+'</div><div class="tx"><b>'+esc(a.nombre||'')+'</b><span>'+lbl(x)+'</span></div>'+tag(x)+'</div>'; }).join('') : '<div style="font-size:12px;color:#7c93a9;padding:6px;">No hay sesiones próximas cargadas.</div>';
   const resumen = hoyN>0 ? (hoyN+' alumno'+(hoyN!==1?'s':'')+' entrena'+(hoyN!==1?'n':'')+' hoy') : (manN>0 ? (manN+' entrena'+(manN!==1?'n':'')+' mañana') : (als.length+' alumno'+(als.length!==1?'s':'')+' activo'+(als.length!==1?'s':'')));
   cont.innerHTML =
     '<div class="os-wg"><div class="cap">📁 TU DÍA</div><h3>'+resumen+'</h3><p>'+(als.length? ('Tenés '+als.length+' alumno'+(als.length!==1?'s':'')+' en total.'):'Cargá tu primer alumno para empezar.')+'</p></div>';
@@ -10215,7 +10216,16 @@ function getAlumnos() {
   catch(e) { return []; }
 }
 function saveAlumnos(data) {
-  localStorage.setItem(DB_ALUMNOS, JSON.stringify(data));
+  // En el navegador guardamos SIN las fotos de sesión (imagen/póster) que vienen duplicadas dentro del alumno.
+  // Las fotos siguen en la nube y en las planificaciones; acá solo evitamos llenar el espacio. La foto de perfil NO se toca.
+  var _toStore;
+  try{ var s=JSON.stringify(data); _toStore = (s.indexOf('data:image')>=0) ? _stripFotosTextoJSON(s) : s; }
+  catch(e){ _toStore = null; }
+  try {
+    localStorage.setItem(DB_ALUMNOS, _toStore!=null ? _toStore : JSON.stringify(data));
+  } catch(e){
+    try{ _liberarEspacioFuerte(); localStorage.setItem(DB_ALUMNOS, _stripFotosTextoJSON(JSON.stringify(data))); }catch(e2){}
+  }
   _autoSyncFirebase();
 }
 function getPlanificaciones() {
@@ -10234,7 +10244,10 @@ function _liberarEspacioLocal(){
 }
 // Quita las fotos de portada (base64) de un arreglo de planes (muta). No toca ejercicios ni series.
 function _stripFotosPlanes(plans){
-  var n=0; var s=function(ses){ if(ses && ses.imagen && String(ses.imagen).indexOf('data:')===0){ ses.imagen=''; n++; } };
+  var n=0; var s=function(ses){
+    if(ses && ses.imagen && String(ses.imagen).indexOf('data:')===0){ ses.imagen=''; n++; }
+    if(ses && ses.poster && String(ses.poster).indexOf('data:')===0){ ses.poster=''; n++; }
+  };
   (plans||[]).forEach(function(p){
     (p.semanasArray||[]).forEach(function(w){ var d=(w&&w.dias)||{}; Object.keys(d).forEach(function(k){ (d[k]||[]).forEach(s); }); });
     if(p.diasData){ Object.keys(p.diasData).forEach(function(k){ (p.diasData[k]||[]).forEach(s); }); }
@@ -10279,6 +10292,63 @@ async function _subirPortadas(alumnoId, imgs){
   }
   try{ localStorage.setItem(upKey, JSON.stringify(ya)); }catch(e){}
 }
+// ── FOTOS DE PERFIL EN LA NUBE ──────────────────────────────────────────────
+// Caché en memoria de las fotos de perfil ya resueltas (id → base64), para mostrarlas sin ir a la nube cada vez.
+window._fotoCache = window._fotoCache || {};
+// Devuelve la foto de un alumno para mostrar: la base64 si está, si no la del caché. Si no hay, '' (muestra inicial).
+function _fotoDe(a){
+  try{
+    if(a && a.foto && String(a.foto).indexOf('data:')===0) return a.foto;
+    if(a && a.id && window._fotoCache[a.id] && String(window._fotoCache[a.id]).indexOf('data:')===0) return window._fotoCache[a.id];
+    if(a && a.foto) return a.foto;   // por si fuera una URL/link
+  }catch(e){}
+  return '';
+}
+// Migra las fotos de perfil (base64) a la nube: sube cada una y RECIÉN AHÍ la saca del navegador. Nunca antes.
+async function _migrarFotosPerfil(){
+  if(!window._db) return;
+  try{
+    var alumnos=getAlumnos(); var cambio=false;
+    for(var i=0;i<alumnos.length;i++){
+      var a=alumnos[i];
+      if(a && a.id && a.foto && String(a.foto).indexOf('data:')===0){
+        var k=_imgPortadaKey(a.foto);
+        try{
+          await window._db.collection('alumnos').doc(a.id).collection('portadas').doc(k)
+            .set({ img:a.foto, updatedAt:new Date().toISOString() });
+          window._fotoCache[a.id]=a.foto;   // para mostrarla ya, sin ir a la nube
+          a.fotoRef=k; a.foto='';           // confirmada en la nube → fuera del navegador
+          cambio=true;
+        }catch(e){ /* no se pudo subir (p.ej. muy pesada): la dejamos como está, NO se pierde */ }
+      }
+    }
+    if(cambio){
+      try{ localStorage.setItem(DB_ALUMNOS, JSON.stringify(alumnos)); }
+      catch(e){ try{ _liberarEspacioFuerte(); localStorage.setItem(DB_ALUMNOS, JSON.stringify(alumnos)); }catch(e2){} }
+      try{ if(typeof renderAlumnosGrid==='function') renderAlumnosGrid(); }catch(e){}
+    }
+  }catch(e){ console.warn('migrar fotos perfil:',e); }
+}
+// Trae de la nube las fotos de perfil que quedaron como referencia (para mostrarlas) y refresca la grilla.
+function _resolverFotosPerfil(){
+  if(!window._db) return;
+  try{
+    var alumnos=getAlumnos();
+    alumnos.forEach(function(a){
+      if(!a || !a.id || !a.fotoRef) return;
+      if(window._fotoCache[a.id]) return;                                   // ya en caché o cargando
+      if(a.foto && String(a.foto).indexOf('data:')===0){ window._fotoCache[a.id]=a.foto; return; }
+      window._fotoCache[a.id]='__loading';
+      window._db.collection('alumnos').doc(a.id).collection('portadas').doc(a.fotoRef).get().then(function(d){
+        try{
+          var img=(d&&d.exists)?((d.data()||{}).img||''):'';
+          window._fotoCache[a.id]=img;
+          if(img){ try{ if(typeof renderAlumnosGrid==='function') renderAlumnosGrid(); }catch(e){} }
+        }catch(e){ window._fotoCache[a.id]=''; }
+      }).catch(function(){ window._fotoCache[a.id]=''; });
+    });
+  }catch(e){}
+}
 // Devuelve un CLON de los planes con las fotos (base64) reemplazadas por una referencia liviana,
 // y sube cada foto a la nube (por alumno). Así el navegador guarda solo texto corto, no imágenes pesadas.
 function _externalizarYSubir(data){
@@ -10298,31 +10368,77 @@ function _externalizarYSubir(data){
   }catch(e){ return null; }
   return clone;
 }
+// Saca las fotos base64 (data:) de cualquier texto JSON guardado (plantillas, etc.) sin tocar ejercicios/series.
+function _stripFotosTextoJSON(txt){ try{ return String(txt).replace(/"(imagen|poster)":"data:image[^"]*"/g,'"$1":""'); }catch(e){ return txt; } }
+// Limpieza FUERTE: borra basura temporal y quita las fotos pesadas de PLANTILLAS (y de cualquier blob que las tenga).
+function _liberarEspacioFuerte(){
+  var freed=0;
+  try{ freed+=(_liberarEspacioLocal()||0); }catch(e){}
+  // Recorre TODO lo guardado en el navegador y saca las fotos de sesión (portada/póster) de cualquier blob.
+  // No toca ejercicios, series, cargas ni la foto de perfil del alumno.
+  try{
+    var keys=[]; for(var i=0;i<localStorage.length;i++){ keys.push(localStorage.key(i)); }
+    keys.forEach(function(k){
+      try{
+        var v=localStorage.getItem(k); if(!v || v.indexOf('data:image')<0) return;
+        var nv=_stripFotosTextoJSON(v);
+        if(nv!==v){ localStorage.setItem(k, nv); freed++; }
+      }catch(e){}
+    });
+  }catch(e){}
+  return freed;
+}
 function savePlanificaciones(data) {
+  // La primera vez en la sesión, limpiamos a fondo (saca fotos de sesión de TODOS los blobs del navegador).
+  if(!window.__espacioLimpiado){ window.__espacioLimpiado=true; try{ _liberarEspacioFuerte(); }catch(e){} }
   // Guardamos en el navegador SOLO las referencias (las fotos pesadas van a la nube). Así no se llena el espacio.
   var _toStore=null;
   try{ _toStore=_externalizarYSubir(data); }catch(e){ _toStore=null; }
-  if(!_toStore) _toStore=data;
+  if(!_toStore){ try{ _toStore=JSON.parse(JSON.stringify(data)); _stripFotosPlanes(_toStore); }catch(e){ _toStore=data; } }
   try {
     localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(_toStore));
   } catch(e) {
     var _q = e && (e.name==='QuotaExceededError' || e.code===22 || e.code===1014 || /quota|exceeded/i.test(String((e&&e.message)||(e&&e.name)||'')));
     if(_q){
-      _liberarEspacioLocal();
+      _liberarEspacioFuerte();                       // limpieza fuerte (borra basura + fotos de plantillas)
+      try{ _stripFotosPlanes(_toStore); }catch(_e){} // y aseguramos planificaciones sin fotos
       try {
-        localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(_toStore));   // reintento tras liberar cachés
+        localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(_toStore));
+        if(typeof toast==='function') toast('Guardado ✓');
       } catch(e2){
-        // Última red: quitar cualquier foto que aún quedara y reintentar (sin molestar con preguntas)
-        try{ _stripFotosPlanes(_toStore); localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(_toStore)); if(typeof toast==='function') toast('Liberé espacio y guardé ✓'); }
-        catch(e3){
-          try{ if(typeof currentAlumnoId!=='undefined' && currentAlumnoId && typeof publicarPortalAlumno==='function') publicarPortalAlumno(currentAlumnoId); }catch(_e){}
-          if(typeof toast==='function') toast('Lo subí a la nube para no perderlo.','error');
-          throw e3;
+        // El navegador no tiene lugar → subimos a la nube las planificaciones EN MEMORIA (con la sesión recién armada).
+        if(window._db && typeof _bkGuardar==='function'){
+          (async function(){
+            try{
+              var _ts=new Date().toISOString();
+              var _n=await _bkGuardar('planificaciones', _toStore, _ts);
+              try{ await window._db.collection('backups').doc('main').set({ partes:{ planificaciones:_n }, updatedAt:_ts }, { merge:true }); }catch(_e){}
+              if(typeof toast==='function') toast('Guardado en la nube ✓');
+            }catch(_e){ console.warn('guardado directo a nube:',_e); if(typeof toast==='function') toast('No pude guardar. Liberá espacio del navegador y reintentá.','error'); }
+          })();
+        } else {
+          if(typeof toast==='function') toast('No pude guardar (sin conexión a la nube). Liberá espacio del navegador.','error');
         }
+        return;   // ya quedó a salvo en la nube; no cortamos con error
       }
     } else { throw e; }
   }
   _autoSyncFirebase();
+}
+// Limpieza automática de espacio al abrir la app (una sola vez por carga). Deja todo liviano sin que el coach haga nada.
+function _migrarEspacioUnaVez(){
+  try{
+    _liberarEspacioFuerte();
+    var raw=localStorage.getItem(DB_PLANIFICACIONES);
+    if(raw && raw.indexOf('data:')>=0){
+      var pl=null; try{ pl=JSON.parse(raw); }catch(e){ pl=null; }
+      if(pl){
+        var lite=null; try{ lite=_externalizarYSubir(pl); }catch(e){ lite=null; }
+        if(!lite){ try{ lite=JSON.parse(raw); _stripFotosPlanes(lite); }catch(e){ lite=null; } }
+        if(lite){ try{ localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(lite)); }catch(e){} }
+      }
+    }
+  }catch(e){ console.warn('migrar espacio:',e); }
 }
 // Mide cuánto ocupa el almacenamiento local (aprox, en MB)
 function _espacioInfo(){
@@ -11923,8 +12039,9 @@ function renderPlanSidebar(tipo) {
   }catch(e){ console.warn('planSidebar reuse:', e); }
   const a = currentAlumnoId ? getAlumnos().find(x => x.id === currentAlumnoId) : null;
   const edad = (a && calcularEdad) ? calcularEdad(a.nacimiento) : '';
-  const fotoHTML = (a?.foto)
-    ? `<img src="${a.foto}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #C9A84C;display:block;margin:0 auto 8px;">`
+  const _favC = _fotoDe(a);
+  const fotoHTML = _favC
+    ? `<img src="${_favC}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #C9A84C;display:block;margin:0 auto 8px;">`
     : `<div style="width:64px;height:64px;border-radius:50%;background:#243d6a;border:2px solid #C9A84C;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 8px;">👤</div>`;
 
   const estado = a?.estadoActual || {};
@@ -16094,8 +16211,9 @@ function _headerFuerzaHTML(titulo, a, extra, movil) {
   const edad = (a?.nacimiento && typeof calcularEdad === 'function') ? calcularEdad(a.nacimiento) : null;
   const infoLinea = [edad ? edad + ' años' : '', a?.nivel, a?.objetivo].filter(Boolean).join(' · ');
   const sz = movil ? 60 : 76;
-  const fotoEl = a?.foto
-    ? `<img src="${a.foto}" style="width:${sz}px;height:${sz}px;border-radius:50%;object-fit:cover;border:3px solid #C9A84C;display:block;flex-shrink:0;">`
+  const _favE = _fotoDe(a);
+  const fotoEl = _favE
+    ? `<img src="${_favE}" style="width:${sz}px;height:${sz}px;border-radius:50%;object-fit:cover;border:3px solid #C9A84C;display:block;flex-shrink:0;">`
     : (a ? `<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:#1e3a6a;border:3px solid #C9A84C;display:flex;align-items:center;justify-content:center;font-size:${movil?22:28}px;flex-shrink:0;color:#aaa;">👤</div>` : '');
 
   return `<div style="background:#0d0d1a;color:#fff;${movil?'':'border-radius:12px;margin-bottom:24px;'}overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,0.35);">
@@ -17087,7 +17205,7 @@ function openModalNuevoAlumno() {
 function openModalEditarAlumno(id) {
   const a = getAlumnos().find(x => x.id === id);
   if (!a) return;
-  editingAlumnoId = id; fotoDataUrl = a.foto || null;
+  editingAlumnoId = id; fotoDataUrl = _fotoDe(a) || a.foto || null;
   document.getElementById('modal-alumno-title').textContent = 'Editar alumno';
   document.getElementById('btn-eliminar-alumno').style.display = 'inline-block';
   ['nombre','nacimiento','sexo','telefono','email','objetivo','nivel','dias','inicio','lesiones','enfermedades','observaciones']
@@ -17098,7 +17216,7 @@ function openModalEditarAlumno(id) {
   const _pmE=document.getElementById('f-planmodo'); if(_pmE) _pmE.value = a.plan_modo || 'comun';
   const _pinE=document.getElementById('f-pin'); if(_pinE) _pinE.value = a.pin || '';
   if(typeof _agFichaFill==='function') _agFichaFill(a.agendaDias||[], a.agendaHoras||{});
-  document.getElementById('foto-preview').innerHTML = a.foto ? `<img src="${a.foto}">` : '👤';
+  document.getElementById('foto-preview').innerHTML = fotoDataUrl ? `<img src="${fotoDataUrl}">` : '👤';
   document.getElementById('foto-input').value = '';
   document.getElementById('modal-alumno').classList.add('open');
 }
@@ -17142,14 +17260,14 @@ function guardarAlumno() {
     alumnos.push(data);
   }
   try {
-    localStorage.setItem(DB_ALUMNOS, JSON.stringify(alumnos));
+    var _sA=JSON.stringify(alumnos);
+    localStorage.setItem(DB_ALUMNOS, _sA.indexOf('data:image')>=0 ? _stripFotosTextoJSON(_sA) : _sA);
   } catch(e) {
-    if (e.name === 'QuotaExceededError') {
-      toast('Storage lleno. Presioná "Limpiar caché" y volvé a intentar.', 'error');
-    } else {
-      toast('Error al guardar: ' + e.message, 'error');
+    try{ _liberarEspacioFuerte(); localStorage.setItem(DB_ALUMNOS, _stripFotosTextoJSON(JSON.stringify(alumnos))); }
+    catch(e2){
+      toast('Error al guardar: ' + (e2.message||e.message), 'error');
+      return;
     }
-    return;
   }
   const verificacion = JSON.parse(localStorage.getItem(DB_ALUMNOS) || '[]');
   const existe = editingAlumnoId
@@ -17319,7 +17437,7 @@ function renderAlumnosGrid() {
   const calSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="17" rx="3"></rect><path d="M3 9h18M8 2.5v4M16 2.5v4"></path></svg>';
   const _esc=s=>String(s==null?'':s).replace(/</g,'&lt;').replace(/'/g,'&#39;');
   function cardHTML(x){
-    const a=x.a; const av=a.foto?('<img src="'+a.foto+'">'):'👤';
+    const a=x.a; const _fa=_fotoDe(a); const av=_fa?('<img src="'+_fa+'">'):'👤';
     const nextInner = x.est==='sin'
       ? '<span class="ac-next-off">Sin sesión programada</span>'
       : '<span class="k">Próxima: </span><span class="v">'+_esc(x.proxTxt)+'</span>';
@@ -17612,12 +17730,13 @@ function openPerfilAlumno(id) {
 
   document.getElementById('perfil-nombre').textContent = a.nombre;
   document.getElementById('perfil-objetivo').textContent = [a.objetivo, a.nivel].filter(Boolean).join(' · ');
-  document.getElementById('perfil-avatar').innerHTML = a.foto ? `<img src="${a.foto}">` : '👤';
+  const _favP = _fotoDe(a);
+  document.getElementById('perfil-avatar').innerHTML = _favP ? `<img src="${_favP}">` : '👤';
 
   // Tarjeta visual
   const edad = calcularEdad(a.nacimiento);
-  const fotoHTML = a.foto
-    ? `<img src="${a.foto}" style="width:100%;height:100%;object-fit:cover;">`
+  const fotoHTML = _favP
+    ? `<img src="${_favP}" style="width:100%;height:100%;object-fit:cover;">`
     : `<span style="font-size:36px;">👤</span>`;
   const filas = [
     edad ? `<div style="font-size:13px;color:#555;margin-top:4px;"><span style="font-weight:600;color:#333;">Edad:</span> ${edad} años</div>` : '',
@@ -18857,8 +18976,9 @@ function renderSidebarAlumno(id) {
   if (!sb) return;
   const a = getAlumnos().find(x => x.id === id) || {};
   const edad = calcularEdad(a.nacimiento);
-  const fotoHTML = a.foto
-    ? `<img src="${a.foto}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #3A6EA5;display:block;margin:0 auto 10px;">`
+  const _favM = _fotoDe(a);
+  const fotoHTML = _favM
+    ? `<img src="${_favM}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #3A6EA5;display:block;margin:0 auto 10px;">`
     : `<div style="width:72px;height:72px;border-radius:50%;background:#222B3A;border:3px solid #3A6EA5;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 10px;">👤</div>`;
 
   // Last medicion
@@ -27725,6 +27845,10 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     try { initFirebase(); } catch(e) { console.warn('Firebase no disponible:', e); }
   }, 500);
+  // Limpieza automática de espacio (saca las fotos pesadas del navegador → nube). Deja todo liviano sin tocar nada.
+  setTimeout(() => { try { _migrarEspacioUnaVez(); } catch(e) { console.warn('migrar espacio init:', e); } }, 2500);
+  // Fotos de perfil → nube (sube y recién ahí libera el navegador) + traer las que ya estaban como referencia.
+  setTimeout(() => { try { _resolverFotosPerfil(); } catch(e){} try { _migrarFotosPerfil(); } catch(e) { console.warn('migrar fotos perfil init:', e); } }, 3200);
 });
 
 // ================================================
@@ -32109,7 +32233,7 @@ async function _abrirLoQueQuiere(id){
   const actBody=last
     ? '<div class="lqq-fecha" style="margin-bottom:6px;">Última: '+lfecha+'</div><div class="lqq-txt">'+((typeof _updResumenHTML==='function')?_updResumenHTML(last.resumen):esc(last.resumen||''))+'</div>'
     : '<div class="lqq-empty">Sin actualizaciones todavía. Pedile el link para que te mande la primera.</div>';
-  const av=al.foto?('<img src="'+esc(al.foto)+'" style="width:100%;height:100%;object-fit:cover;">'):'<span style="font-size:17px;">👤</span>';
+  const _favAl=_fotoDe(al); const av=_favAl?('<img src="'+esc(_favAl)+'" style="width:100%;height:100%;object-fit:cover;">'):'<span style="font-size:17px;">👤</span>';
   const nom=esc((al.nombre||'').split(' ')[0]||'el alumno');
   var ov=document.getElementById('lqq-ov'); if(ov) ov.remove();
   ov=document.createElement('div'); ov.id='lqq-ov';
