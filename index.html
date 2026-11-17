@@ -10216,14 +10216,14 @@ function getAlumnos() {
   catch(e) { return []; }
 }
 function saveAlumnos(data) {
-  // En el navegador guardamos SIN las fotos de sesión (imagen/póster) que vienen duplicadas dentro del alumno.
-  // Las fotos siguen en la nube y en las planificaciones; acá solo evitamos llenar el espacio. La foto de perfil NO se toca.
+  // SEGURIDAD: solo sacamos fotos del navegador si la nube las acepta. Si no, guardamos completo (no se pierde nada).
   var _toStore;
-  try{ var s=JSON.stringify(data); _toStore = (s.indexOf('data:image')>=0) ? _stripFotosTextoJSON(s) : s; }
+  try{ var s=JSON.stringify(data); _toStore = (window._nubeFotosOK===true && s.indexOf('data:image')>=0) ? _stripFotosTextoJSON(s) : s; }
   catch(e){ _toStore = null; }
   try {
     localStorage.setItem(DB_ALUMNOS, _toStore!=null ? _toStore : JSON.stringify(data));
   } catch(e){
+    // Solo como último recurso ante falta de espacio, y sin perder los datos del alumno (solo las fotos pesadas).
     try{ _liberarEspacioFuerte(); localStorage.setItem(DB_ALUMNOS, _stripFotosTextoJSON(JSON.stringify(data))); }catch(e2){}
   }
   _autoSyncFirebase();
@@ -10349,6 +10349,21 @@ function _resolverFotosPerfil(){
     });
   }catch(e){}
 }
+// Verifica UNA VEZ si la nube acepta guardar fotos (subcolección portadas). Hasta confirmarlo, NO se toca ninguna foto.
+window._nubeFotosOK = (typeof window._nubeFotosOK!=='undefined') ? window._nubeFotosOK : null;
+async function _verificarNubeFotos(){
+  try{
+    if(!window._db){ window._nubeFotosOK=false; return; }
+    var al=(typeof getAlumnos==='function')?getAlumnos():[];
+    if(!al.length){ window._nubeFotosOK=false; return; }
+    var id=al[0].id, k='__cap_test';
+    try{
+      await window._db.collection('alumnos').doc(id).collection('portadas').doc(k).set({ img:'ok', updatedAt:new Date().toISOString() });
+      window._nubeFotosOK=true;
+      try{ await window._db.collection('alumnos').doc(id).collection('portadas').doc(k).delete(); }catch(e){}
+    }catch(e){ window._nubeFotosOK=false; }   // permiso denegado / Storage apagado → no tocamos fotos
+  }catch(e){ window._nubeFotosOK=false; }
+}
 // Devuelve un CLON de los planes con las fotos (base64) reemplazadas por una referencia liviana,
 // y sube cada foto a la nube (por alumno). Así el navegador guarda solo texto corto, no imágenes pesadas.
 function _externalizarYSubir(data){
@@ -10389,12 +10404,13 @@ function _liberarEspacioFuerte(){
   return freed;
 }
 function savePlanificaciones(data) {
-  // La primera vez en la sesión, limpiamos a fondo (saca fotos de sesión de TODOS los blobs del navegador).
-  if(!window.__espacioLimpiado){ window.__espacioLimpiado=true; try{ _liberarEspacioFuerte(); }catch(e){} }
-  // Guardamos en el navegador SOLO las referencias (las fotos pesadas van a la nube). Así no se llena el espacio.
+  // SEGURIDAD: solo movemos/stripeamos fotos si la nube confirmó que las acepta. Si no, guardamos COMPLETO (nunca se pierde una foto).
   var _toStore=null;
-  try{ _toStore=_externalizarYSubir(data); }catch(e){ _toStore=null; }
-  if(!_toStore){ try{ _toStore=JSON.parse(JSON.stringify(data)); _stripFotosPlanes(_toStore); }catch(e){ _toStore=data; } }
+  if(window._nubeFotosOK===true){
+    if(!window.__espacioLimpiado){ window.__espacioLimpiado=true; try{ _liberarEspacioFuerte(); }catch(e){} }
+    try{ _toStore=_externalizarYSubir(data); }catch(e){ _toStore=null; }
+  }
+  if(!_toStore) _toStore=data;   // nube de fotos no disponible → guardamos tal cual (con las fotos), sin arriesgar
   try {
     localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(_toStore));
   } catch(e) {
@@ -27845,10 +27861,15 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     try { initFirebase(); } catch(e) { console.warn('Firebase no disponible:', e); }
   }, 500);
-  // Limpieza automática de espacio (saca las fotos pesadas del navegador → nube). Deja todo liviano sin tocar nada.
-  setTimeout(() => { try { _migrarEspacioUnaVez(); } catch(e) { console.warn('migrar espacio init:', e); } }, 2500);
-  // Fotos de perfil → nube (sube y recién ahí libera el navegador) + traer las que ya estaban como referencia.
-  setTimeout(() => { try { _resolverFotosPerfil(); } catch(e){} try { _migrarFotosPerfil(); } catch(e) { console.warn('migrar fotos perfil init:', e); } }, 3200);
+  // Primero verificamos si la nube acepta fotos. Solo si confirma, movemos las fotos (si no, no se toca NADA — las fotos se quedan a salvo).
+  setTimeout(async () => {
+    try { await _verificarNubeFotos(); } catch(e) { window._nubeFotosOK=false; }
+    try { _resolverFotosPerfil(); } catch(e){}   // resolver (traer fotos ya migradas) es seguro siempre
+    if(window._nubeFotosOK===true){
+      try { _migrarEspacioUnaVez(); } catch(e) { console.warn('migrar espacio init:', e); }
+      try { _migrarFotosPerfil(); } catch(e) { console.warn('migrar fotos perfil init:', e); }
+    }
+  }, 2500);
 });
 
 // ================================================
