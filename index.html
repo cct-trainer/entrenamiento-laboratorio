@@ -23425,7 +23425,7 @@ function addEjercicio(bloqueId) {
           placeholder="Escribí para buscar ejercicio..."
           autocomplete="off"
           oninput="onEjNombreInput(event,'${ejId}','${bloqueId}')"
-          onblur="setTimeout(()=>closeDropdown('${ejId}'),220)"
+          onblur="setTimeout(()=>{closeDropdown('${ejId}');_chkMovilidadNombre('${ejId}');},260)"
           onfocus="abrirDropdownCompleto('${ejId}','${bloqueId}')">
         <div class="autocomplete-dropdown" id="${ejId}-dropdown"></div>
       </div>
@@ -23455,6 +23455,7 @@ function addEjercicio(bloqueId) {
         <button type="button" class="ej-crono-btn" onclick="_cronoToggle(this)" style="border:none;background:#fff;color:#1a1a2e;font-size:11px;font-weight:700;padding:5px 9px;border-radius:5px;cursor:pointer;min-width:48px;font-variant-numeric:tabular-nums;">0:00</button>
         <button type="button" class="ej-crono-rst" onclick="_cronoReset(this)" title="Reiniciar" style="border:none;background:transparent;color:#888;font-size:13px;line-height:1;padding:4px 7px;border-radius:5px;cursor:pointer;">↺</button>
       </div>
+      <button type="button" onclick="_marcarMovilidad('${ejId}')" title="Marcar como ejercicio de movilidad (agrega la serie: 8 por lado / 10 reps)" style="border:1px solid #ddd6f5;background:#f4f0ff;color:#6b4fd6;border-radius:7px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap;">🧘 Movilidad</button>
       <button class="ej-btn-stat" onclick="_abrirStatsCoach('${ejId}')" title="Estadísticas del ejercicio (peso máximo)">📊</button>
       <button class="ej-btn-sep" onclick="separarEjercicio('${ejId}','${bloqueId}')" title="Separar este ejercicio en un bloque nuevo">⇱</button>
       <button class="ej-btn-del" onclick="eliminarEjercicio('${ejId}','${bloqueId}')">🗑</button>
@@ -24170,6 +24171,34 @@ function closeDropdown(ejId) {
   const d = document.getElementById(ejId+'-dropdown');
   if (d) d.classList.remove('open');
 }
+// Aplica la prescripción de MOVILIDAD: 1 serie efectiva · 8 por lado (unilateral) / 10 (bilateral). Solo si no hay series cargadas.
+function _autoMovilidad(ejId, unilateral){
+  try{
+    const tb = document.getElementById(ejId + '-efec-tbody');
+    if (tb && tb.querySelectorAll('tr').length === 0 && typeof _makeSerieRow==='function') {
+      tb.appendChild(_makeSerieRow(ejId, ejId + '-efec-tbody', 'Serie', 1, { tipo:'movi', reps: unilateral ? '8 por lado' : '10' }));
+      const bodyEl = document.getElementById(ejId + '-efec-body');
+      if (bodyEl && !bodyEl.classList.contains('open')) toggleSeriesSec(ejId, 'efec');
+      if(typeof toast==='function') toast('🧘 Movilidad aplicada');
+    }
+  }catch(e){}
+}
+// Botón manual: marca el ejercicio actual como de movilidad (usa el estado Bilateral/Unilateral elegido).
+function _marcarMovilidad(ejId){
+  var uni = (document.getElementById(ejId+'-uni')?.value === '1');
+  _autoMovilidad(ejId, uni);
+}
+// Si el nombre ESCRITO coincide con un ejercicio de MOVILIDAD de la biblioteca, aplica la prescripción (aunque no se haya elegido de la lista).
+function _chkMovilidadNombre(ejId){
+  try{
+    const inp = document.querySelector('#'+ejId+' .ej-nombre-input'); if(!inp) return;
+    const nombre = (inp.value||'').trim(); if(!nombre) return;
+    const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
+    const n = norm(nombre);
+    const ex = (typeof getEjerciciosCompletos==='function') ? getEjerciciosCompletos().find(e => e && norm(e.nombre)===n) : null;
+    if(ex && /movilidad/i.test(ex.cat||ex.tipoTrabajo||'')) _autoMovilidad(ejId, !!ex.unilateral);
+  }catch(e){}
+}
 // Nota automática de equipamiento (informativa, no editable) según el equipo del ejercicio
 function _setEquipoNote(ejId, equipo){
   const el = document.getElementById(ejId+'-equipo-note'); if(!el) return;
@@ -24690,14 +24719,7 @@ function seleccionarEjercicio(ejId, bloqueId, nombreOIdx) {
   setVideoEj(ejId, ex.video || '');
   // Auto-prescripción de MOVILIDAD: 1 serie efectiva · 8 reps por lado (unilateral) / 10 reps (bilateral)
   const _catEx = ex.cat || ex.tipoTrabajo || '';
-  if (/movilidad/i.test(_catEx)) {
-    const tb = document.getElementById(ejId + '-efec-tbody');
-    if (tb && tb.querySelectorAll('tr').length === 0) {
-      tb.appendChild(_makeSerieRow(ejId, ejId + '-efec-tbody', 'Serie', 1, { tipo: 'movi', reps: ex.unilateral ? '8 por lado' : '10' }));
-      const bodyEl = document.getElementById(ejId + '-efec-body');
-      if (bodyEl && !bodyEl.classList.contains('open')) toggleSeriesSec(ejId, 'efec');
-    }
-  }
+  if (/movilidad/i.test(_catEx)) _autoMovilidad(ejId, !!ex.unilateral);
   // Construir la ficha pero dejarla PLEGADA por defecto (ahorra espacio)
   mostrarFicha(ejId, ex);
   const fichaEl = document.getElementById(ejId+'-ficha');
