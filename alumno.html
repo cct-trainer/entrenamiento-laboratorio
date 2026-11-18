@@ -1108,8 +1108,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261118145710 por un timestamp en cada deploy
-const _APP_VERSION = '20261118145710';
+// deploy.bat reemplaza 20261118184859 por un timestamp en cada deploy
+const _APP_VERSION = '20261118184859';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
@@ -1510,7 +1510,7 @@ function render() {
     // La foto quedó en la nube como referencia → la traemos y la mostramos.
     avEl.textContent = nombre.charAt(0).toUpperCase();
     _db.collection('alumnos').doc(_alumnoId).collection('portadas').doc(fotoRef).get().then(function(dd){
-      try{ var img=(dd&&dd.exists)?((dd.data()||{}).img||''):''; if(img){ avEl.innerHTML='<img src="'+img+'" alt="'+nombre+'">'; if(_data.perfil) _data.perfil.foto=img; } }catch(e){}
+      try{ var img=(dd&&dd.exists)?((dd.data()||{}).img||''):''; if(img){ avEl.innerHTML='<img src="'+img+'" alt="'+nombre+'">'; if(_data.perfil) _data.perfil.foto=img; _ptFoto=img; if(typeof _mostrarPortada==='function') _mostrarPortada(nombre, img); } }catch(e){}
     }).catch(function(){});
   } else {
     avEl.textContent = nombre.charAt(0).toUpperCase();
