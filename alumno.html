@@ -11,14 +11,14 @@
 <meta property="og:site_name" content="Christian Cattaneo · Laboratorio de Entrenamiento">
 <meta property="og:title" content="Entrená conmigo · Christian Cattaneo">
 <meta property="og:description" content="Tu plan personalizado, tus cargas y tu progreso en un solo lugar. Entrenamiento basado en evidencia. Instalalo como app en tu celu.">
-<meta property="og:image" content="https://cct-trainer.github.io/entrenamiento-laboratorio/cc_portada.png">
-<meta property="og:image:width" content="512">
-<meta property="og:image:height" content="512">
+<meta property="og:image" content="https://cct-trainer.github.io/entrenamiento-laboratorio/cc_banner.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:url" content="https://cct-trainer.github.io/entrenamiento-laboratorio/alumno.html">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Entrená conmigo · Christian Cattaneo">
 <meta name="twitter:description" content="Tu plan personalizado, tus cargas y tu progreso en un solo lugar. Entrenamiento basado en evidencia.">
-<meta name="twitter:image" content="https://cct-trainer.github.io/entrenamiento-laboratorio/cc_portada.png">
+<meta name="twitter:image" content="https://cct-trainer.github.io/entrenamiento-laboratorio/cc_banner.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link rel="manifest" id="pwa-manifest">
 <meta name="theme-color" content="#8FB0D6" id="meta-theme-color">
@@ -1122,8 +1122,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261118233133 por un timestamp en cada deploy
-const _APP_VERSION = '20261118233133';
+// deploy.bat reemplaza 20261118235015 por un timestamp en cada deploy
+const _APP_VERSION = '20261118235015';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
