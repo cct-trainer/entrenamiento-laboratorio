@@ -5,6 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="google" content="notranslate">
 <title>Mi Portal — Christian Cattaneo</title>
+<!-- Vista previa al compartir el link (WhatsApp, Instagram, etc.) -->
+<meta name="description" content="Tu plan personalizado, tus cargas y tu progreso en un solo lugar. Entrenamiento basado en evidencia.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Christian Cattaneo · Laboratorio de Entrenamiento">
+<meta property="og:title" content="Entrená conmigo · Christian Cattaneo">
+<meta property="og:description" content="Tu plan personalizado, tus cargas y tu progreso en un solo lugar. Entrenamiento basado en evidencia. Instalalo como app en tu celu.">
+<meta property="og:image" content="https://cct-trainer.github.io/entrenamiento-laboratorio/cc_portada.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:url" content="https://cct-trainer.github.io/entrenamiento-laboratorio/alumno.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Entrená conmigo · Christian Cattaneo">
+<meta name="twitter:description" content="Tu plan personalizado, tus cargas y tu progreso en un solo lugar. Entrenamiento basado en evidencia.">
+<meta name="twitter:image" content="https://cct-trainer.github.io/entrenamiento-laboratorio/cc_portada.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link rel="manifest" id="pwa-manifest">
 <meta name="theme-color" content="#8FB0D6" id="meta-theme-color">
@@ -1108,8 +1122,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261118230346 por un timestamp en cada deploy
-const _APP_VERSION = '20261118230346';
+// deploy.bat reemplaza 20261118232913 por un timestamp en cada deploy
+const _APP_VERSION = '20261118232913';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
