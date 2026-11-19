@@ -3402,6 +3402,8 @@ select.toolbox-input option:disabled { color: #888; }
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<!-- LZString (compresión local, incluida para no depender de internet) -->
+<script>var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",e={};function t(r,o){if(!e[r]){e[r]={};for(var n=0;n<r.length;n++)e[r][r.charAt(n)]=n}return e[r][o]}var i={compressToBase64:function(r){if(null==r)return"";var n=i._compress(r,6,function(r){return o.charAt(r)});switch(n.length%4){default:case 0:return n;case 1:return n+"===";case 2:return n+"==";case 3:return n+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:i._decompress(r.length,32,function(n){return t(o,r.charAt(n))})},compressToUTF16:function(o){return null==o?"":i._compress(o,15,function(o){return r(o+32)})+" "},decompressFromUTF16:function(r){return null==r?"":""==r?null:i._decompress(r.length,16384,function(o){return r.charCodeAt(o)-32})},compressToUint8Array:function(r){for(var o=i.compress(r),n=new Uint8Array(2*o.length),e=0,t=o.length;e<t;e++){var s=o.charCodeAt(e);n[2*e]=s>>>8,n[2*e+1]=s%256}return n},decompressFromUint8Array:function(o){if(null==o)return i.decompress(o);for(var n=new Array(o.length/2),e=0,t=n.length;e<t;e++)n[e]=256*o[2*e]+o[2*e+1];var s=[];return n.forEach(function(o){s.push(r(o))}),i.decompress(s.join(""))},compressToEncodedURIComponent:function(r){return null==r?"":i._compress(r,6,function(r){return n.charAt(r)})},decompressFromEncodedURIComponent:function(r){return null==r?"":""==r?null:(r=r.replace(/ /g,"+"),i._decompress(r.length,32,function(o){return t(n,r.charAt(o))}))},compress:function(o){return i._compress(o,16,function(o){return r(o)})},_compress:function(r,o,n){if(null==r)return"";var e,t,i,s={},u={},a="",p="",c="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<r.length;i+=1)if(a=r.charAt(i),Object.prototype.hasOwnProperty.call(s,a)||(s[a]=f++,u[a]=!0),p=c+a,Object.prototype.hasOwnProperty.call(s,p))c=p;else{if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++),s[p]=f++,c=String(a)}if(""!==c){if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++)}for(t=2,e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;for(;;){if(m<<=1,v==o-1){d.push(n(m));break}v++}return d.join("")},decompress:function(r){return null==r?"":""==r?null:i._decompress(r.length,32768,function(o){return r.charCodeAt(o)})},_decompress:function(o,n,e){var t,i,s,u,a,p,c,l=[],f=4,h=4,d=3,m="",v=[],g={val:e(0),position:n,index:1};for(t=0;t<3;t+=1)l[t]=t;for(s=0,a=Math.pow(2,2),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 2:return""}for(l[3]=c,i=c,v.push(c);;){if(g.index>o)return"";for(s=0,a=Math.pow(2,d),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(c=s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 2:return v.join("")}if(0==f&&(f=Math.pow(2,d),d++),l[c])m=l[c];else{if(c!==h)return null;m=i+i.charAt(0)}v.push(m),l[h++]=i+m.charAt(0),i=m,0==--f&&(f=Math.pow(2,d),d++)}}};return i}();</script>
 </head>
 <body>
 
@@ -10215,6 +10217,8 @@ function getAlumnos() {
   try { return JSON.parse(localStorage.getItem(DB_ALUMNOS) || '[]'); }
   catch(e) { return []; }
 }
+// Alias: algunas funciones (copiloto embebido) llaman loadAlumnos(); apunta a getAlumnos() para no romper.
+function loadAlumnos() { return getAlumnos(); }
 function saveAlumnos(data) {
   // SEGURIDAD: solo sacamos fotos del navegador si la nube las acepta. Si no, guardamos completo (no se pierde nada).
   var _toStore;
@@ -10228,9 +10232,32 @@ function saveAlumnos(data) {
   }
   _autoSyncFirebase();
 }
+// ── Lectura/escritura de planificaciones con COMPRESIÓN (ahorra ~90% de espacio) ──
+// Marcador: el primer carácter \u0001 indica "comprimido". Si no está, es texto plano (compatibilidad total con lo ya guardado).
+function _planRead() {
+  try {
+    var raw = localStorage.getItem(DB_PLANIFICACIONES);
+    if (!raw) return [];
+    if (raw.charAt(0) === '\u0001') {
+      if (!window.LZString) return [];                 // sin librería no podemos descomprimir; el dato sigue intacto en el navegador y en la nube
+      var json = LZString.decompressFromUTF16(raw.slice(1));
+      return json ? JSON.parse(json) : [];
+    }
+    return JSON.parse(raw);                              // formato viejo (sin comprimir)
+  } catch(e) { return []; }
+}
+// Escribe los planes comprimidos. Devuelve true si guardó, false si no (p.ej. sin espacio aun comprimido).
+function _planWrite(arr) {
+  var json = (typeof arr === 'string') ? arr : JSON.stringify(arr);
+  if (window.LZString) {
+    try { localStorage.setItem(DB_PLANIFICACIONES, '\u0001' + LZString.compressToUTF16(json)); return true; }
+    catch(e) { try { _liberarEspacioFuerte(); localStorage.setItem(DB_PLANIFICACIONES, '\u0001' + LZString.compressToUTF16(json)); return true; } catch(e2) { return false; } }
+  }
+  // sin librería (muy raro): intentar texto plano
+  try { localStorage.setItem(DB_PLANIFICACIONES, json); return true; } catch(e) { return false; }
+}
 function getPlanificaciones() {
-  try { return JSON.parse(localStorage.getItem(DB_PLANIFICACIONES) || '[]'); }
-  catch(e) { return []; }
+  return _planRead();
 }
 function _liberarEspacioLocal(){
   try{
@@ -10411,33 +10438,22 @@ function savePlanificaciones(data) {
     try{ _toStore=_externalizarYSubir(data); }catch(e){ _toStore=null; }
   }
   if(!_toStore) _toStore=data;   // nube de fotos no disponible → guardamos tal cual (con las fotos), sin arriesgar
-  try {
-    localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(_toStore));
-  } catch(e) {
-    var _q = e && (e.name==='QuotaExceededError' || e.code===22 || e.code===1014 || /quota|exceeded/i.test(String((e&&e.message)||(e&&e.name)||'')));
-    if(_q){
-      _liberarEspacioFuerte();                       // limpieza fuerte (borra basura + fotos de plantillas)
-      try{ _stripFotosPlanes(_toStore); }catch(_e){} // y aseguramos planificaciones sin fotos
-      try {
-        localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(_toStore));
-        if(typeof toast==='function') toast('Guardado ✓');
-      } catch(e2){
-        // El navegador no tiene lugar → subimos a la nube las planificaciones EN MEMORIA (con la sesión recién armada).
-        if(window._db && typeof _bkGuardar==='function'){
-          (async function(){
-            try{
-              var _ts=new Date().toISOString();
-              var _n=await _bkGuardar('planificaciones', _toStore, _ts);
-              try{ await window._db.collection('backups').doc('main').set({ partes:{ planificaciones:_n }, updatedAt:_ts }, { merge:true }); }catch(_e){}
-              if(typeof toast==='function') toast('Guardado en la nube ✓');
-            }catch(_e){ console.warn('guardado directo a nube:',_e); if(typeof toast==='function') toast('No pude guardar. Liberá espacio del navegador y reintentá.','error'); }
-          })();
-        } else {
-          if(typeof toast==='function') toast('No pude guardar (sin conexión a la nube). Liberá espacio del navegador.','error');
-        }
-        return;   // ya quedó a salvo en la nube; no cortamos con error
-      }
-    } else { throw e; }
+  var _ok = _planWrite(_toStore);   // guarda COMPRIMIDO (~90% menos espacio); libera y reintenta solo si hiciera falta
+  if(!_ok){
+    // Aun comprimido no entró (caso muy raro) → subir a la nube las planificaciones EN MEMORIA, sin perder nada.
+    if(window._db && typeof _bkGuardar==='function'){
+      (async function(){
+        try{
+          var _ts=new Date().toISOString();
+          var _n=await _bkGuardar('planificaciones', _toStore, _ts);
+          try{ await window._db.collection('backups').doc('main').set({ partes:{ planificaciones:_n }, updatedAt:_ts }, { merge:true }); }catch(_e){}
+          if(typeof toast==='function') toast('Guardado en la nube ✓');
+        }catch(_e){ console.warn('guardado directo a nube:',_e); if(typeof toast==='function') toast('No pude guardar. Reintentá.','error'); }
+      })();
+    } else {
+      if(typeof toast==='function') toast('No pude guardar (sin conexión a la nube).','error');
+    }
+    return;
   }
   _autoSyncFirebase();
 }
@@ -10446,12 +10462,14 @@ function _migrarEspacioUnaVez(){
   try{
     _liberarEspacioFuerte();
     var raw=localStorage.getItem(DB_PLANIFICACIONES);
-    if(raw && raw.indexOf('data:')>=0){
-      var pl=null; try{ pl=JSON.parse(raw); }catch(e){ pl=null; }
-      if(pl){
+    if(!raw) return;
+    var yaComprimido = (raw.charAt(0)==='\u0001');
+    // Si está SIN comprimir, o todavía tiene fotos adentro → re-guardar comprimido y liviano (migración única).
+    if(!yaComprimido || raw.indexOf('data:')>=0){
+      var pl=_planRead();
+      if(pl && pl.length){
         var lite=null; try{ lite=_externalizarYSubir(pl); }catch(e){ lite=null; }
-        if(!lite){ try{ lite=JSON.parse(raw); _stripFotosPlanes(lite); }catch(e){ lite=null; } }
-        if(lite){ try{ localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(lite)); }catch(e){} }
+        _planWrite(lite||pl);
       }
     }
   }catch(e){ console.warn('migrar espacio:',e); }
@@ -10464,7 +10482,7 @@ function _espacioInfo(){
 }
 // Quita las fotos de portada (base64) de todas las sesiones guardadas. No toca ejercicios ni series.
 function _quitarFotosPortada(){
-  try{ var planes=getPlanificaciones(); var n=_stripFotosPlanes(planes); if(n){ try{ localStorage.setItem(DB_PLANIFICACIONES, JSON.stringify(planes)); }catch(e){} } return n; }
+  try{ var planes=getPlanificaciones(); var n=_stripFotosPlanes(planes); if(n){ try{ _planWrite(planes); }catch(e){} } return n; }
   catch(e){ return 0; }
 }
 function liberarEspacioUI(){
@@ -12508,16 +12526,33 @@ const _PMIC = {
 };
 // ── Copiar / Pegar sesión (portapapeles que persiste entre alumnos y meses) ──
 function _clipSesion(){ try{ return JSON.parse(localStorage.getItem('SOCC_CLIP_SESION')||'null'); }catch(e){ return null; } }
+// Clona una sesión SIN las fotos pesadas (para el portapapeles liviano; los ejercicios/series van completos)
+function _sesionLiteClip(dia){
+  try{
+    var c=JSON.parse(JSON.stringify(dia||[]));
+    c.forEach(function(ses){
+      if(!ses) return;
+      if(ses.imagen && String(ses.imagen).indexOf('data:')===0) ses.imagen='';
+      if(ses.poster && String(ses.poster).indexOf('data:')===0) ses.poster='';
+      (ses.bloques||[]).forEach(function(b){ (b.ejercicios||[]).forEach(function(e){
+        if(e){ if(e.imagen && String(e.imagen).indexOf('data:')===0) e.imagen=''; if(e.video && String(e.video).indexOf('data:')===0) e.video=''; }
+      }); });
+    });
+    return c;
+  }catch(e){ return dia; }
+}
 function copiarSesionDia(diaIdx, semIdx){
   try{ if(typeof guardarEstadoDiaActual==='function') guardarEstadoDiaActual(); }catch(e){}
   const dia = planSemanasArray[semIdx] && planSemanasArray[semIdx].dias && planSemanasArray[semIdx].dias[diaIdx];
   if(!dia || !dia.some(s=>s && s.bloques && s.bloques.length)){ toast('La sesión está vacía', 'error'); return; }
   try{
     const nomAl=(getAlumnos().find(a=>a.id===currentAlumnoId)||{}).nombre||'';
-    localStorage.setItem('SOCC_CLIP_SESION', JSON.stringify({ data: dia, at: Date.now(), from: nomAl }));
+    const payload=JSON.stringify({ data: _sesionLiteClip(dia), at: Date.now(), from: nomAl });
+    try{ localStorage.setItem('SOCC_CLIP_SESION', payload); }
+    catch(_q){ try{ _liberarEspacioFuerte(); }catch(_e){} localStorage.setItem('SOCC_CLIP_SESION', payload); }   // sin espacio → liberar y reintentar
     toast('📋 Sesión copiada — abrí otro día, alumno o mes y tocá Pegar');
-    renderPlanMes();
-  }catch(e){ toast('No se pudo copiar la sesión','error'); }
+    try{ renderPlanMes(); }catch(_r){ console.warn('render tras copiar:',_r); }
+  }catch(e){ console.error('copiarSesionDia:', e); toast('No se pudo copiar la sesión','error'); }
 }
 function pegarSesionDia(diaIdx, semIdx){
   const clip=_clipSesion();
@@ -16583,7 +16618,7 @@ function limpiarStorageEmergencia() {
   const sus = getSuscriptores();
   localStorage.clear();
   if (a.length)     localStorage.setItem(DB_ALUMNOS,           JSON.stringify(a));
-  if (p.length)     localStorage.setItem(DB_PLANIFICACIONES,   JSON.stringify(p));
+  if (p.length)     _planWrite(p);
   if (ej.length)    localStorage.setItem(DB_EJERCICIOS_CUSTOM, JSON.stringify(ej));
   if (obj.length)   localStorage.setItem(DB_OBJETIVOS,         JSON.stringify(obj));
   if (notas.length) localStorage.setItem(DB_NOTAS,             JSON.stringify(notas));
@@ -16642,7 +16677,7 @@ function importarBackupCompleto(input) {
       if (!confirm1) { input.value=''; return; }
 
       if (data.alumnos)          localStorage.setItem(DB_ALUMNOS,           JSON.stringify(data.alumnos));
-      if (data.planificaciones)  localStorage.setItem(DB_PLANIFICACIONES,   JSON.stringify(data.planificaciones));
+      if (data.planificaciones)  _planWrite(data.planificaciones);
       if (data.objetivos)        localStorage.setItem(DB_OBJETIVOS,         JSON.stringify(data.objetivos));
       if (data.ejerciciosCustom) localStorage.setItem(DB_EJERCICIOS_CUSTOM, JSON.stringify(data.ejerciciosCustom));
       if (data.notas)            localStorage.setItem(DB_NOTAS,             JSON.stringify(data.notas));
@@ -28439,7 +28474,7 @@ async function recuperarDesdePortales() {
     } catch(e){}
 
     localStorage.setItem('LAB_ALUMNOS', JSON.stringify(alumnos));
-    localStorage.setItem('LAB_PLANIFICACIONES', JSON.stringify(planificaciones));
+    _planWrite(planificaciones);
     localStorage.setItem('LAB_ANTROPOMETRIA', JSON.stringify(antropometria));
     _syncStatusIcon('✓', 'Recuperados ' + n + ' alumnos');
     toast('✅ Recuperados ' + n + ' alumnos desde la nube');
@@ -28987,7 +29022,7 @@ async function cargarDesdeFirestore() {
       // (Evita que una versión vieja de la nube borre los cambios recién guardados.)
       if (localAlumnos.length === 0 && remoteAlumnos.length > 0) {
         if (data.alumnos)         localStorage.setItem('LAB_ALUMNOS',         JSON.stringify(data.alumnos));
-        if (data.planificaciones) localStorage.setItem('LAB_PLANIFICACIONES', JSON.stringify(data.planificaciones));
+        if (data.planificaciones) _planWrite(data.planificaciones);
         if (data.objetivos)       localStorage.setItem('LAB_OBJETIVOS',       JSON.stringify(data.objetivos));
         if (data.antropometria)   localStorage.setItem('LAB_ANTROPOMETRIA',   JSON.stringify(data.antropometria));
         if (data.articulos)       localStorage.setItem('LAB_ARTICULOS',       JSON.stringify(data.articulos));
@@ -29019,7 +29054,7 @@ async function forzarSyncFirebase() {
     _syncStatusIcon('⏳', 'Guardando en la nube...');
     const ts = new Date().toISOString();
     const alumnos        = JSON.parse(localStorage.getItem('LAB_ALUMNOS')         || '[]');
-    const planificaciones= JSON.parse(localStorage.getItem('LAB_PLANIFICACIONES') || '[]');
+    const planificaciones= getPlanificaciones();
     const objetivos      = JSON.parse(localStorage.getItem('LAB_OBJETIVOS')       || '[]');
     const antropometria  = JSON.parse(localStorage.getItem('LAB_ANTROPOMETRIA')   || '[]');
     const articulos      = JSON.parse(localStorage.getItem('LAB_ARTICULOS')       || '[]');
@@ -29177,7 +29212,7 @@ async function publicarPortalAlumno(alumnoId){
   try{
     const alumnos=JSON.parse(localStorage.getItem('LAB_ALUMNOS')||'[]');
     const al=alumnos.find(a=>a&&a.id===alumnoId); if(!al) return;
-    const planificaciones=JSON.parse(localStorage.getItem('LAB_PLANIFICACIONES')||'[]');
+    const planificaciones=getPlanificaciones();
     const antropometria=JSON.parse(localStorage.getItem('LAB_ANTROPOMETRIA')||'[]');
     var planesAlumno=planificaciones.filter(p=>p && p.alumnoId===alumnoId);
     // Las fotos de portada (base64) se mueven a la subcolección 'portadas' (no se borran):
