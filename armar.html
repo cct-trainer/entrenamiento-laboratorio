@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="google" content="notranslate">
+<title>Armar sesión — Christian Cattaneo</title>
+<link rel="manifest" id="pwa-manifest">
+<meta name="theme-color" content="#0d1424">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Armar">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:title" content="Armar sesión · Christian Cattaneo">
+<meta property="og:description" content="Armá y cargá sesiones de entrenamiento desde el celular.">
+<meta property="og:image" content="https://cct-trainer.github.io/entrenamiento-laboratorio/cc_banner.png">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
+  :root{
+    --bg:#0b1120; --bg2:#0f1830; --card:#141f38; --card2:#1b2a4a;
+    --line:rgba(255,255,255,.08); --txt:#eaf1fb; --mut:#8ea3c4; --mut2:#64789c;
+    --blue:#3a7bd5; --blue2:#2f5f95; --gold:#C9A84C; --green:#22c55e; --red:#ef5a6b;
+  }
+  html,body{background:var(--bg);color:var(--txt);min-height:100vh;overscroll-behavior-y:none;}
+  body{padding-bottom:env(safe-area-inset-bottom);}
+  input,select,textarea,button{font-family:inherit;font-size:16px;color:var(--txt);}
+  .wrap{max-width:560px;margin:0 auto;}
+
+  /* Header */
+  .top{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,var(--bg2),rgba(15,24,48,.96));backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:calc(12px + env(safe-area-inset-top)) 16px 12px;display:flex;align-items:center;gap:12px;}
+  .top .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--blue),var(--blue2));display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#fff;flex-shrink:0;}
+  .top .tt{flex:1;min-width:0;}
+  .top .tt h1{font-size:16px;font-weight:800;letter-spacing:-.2px;}
+  .top .tt p{font-size:11.5px;color:var(--mut);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .top .back{background:var(--card);border:1px solid var(--line);border-radius:10px;width:40px;height:40px;font-size:18px;cursor:pointer;flex-shrink:0;}
+
+  .pad{padding:16px;}
+  .sb{position:relative;margin-bottom:14px;}
+  .sb input{width:100%;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 14px 14px 42px;outline:none;}
+  .sb .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--mut2);}
+
+  /* Alumno cards */
+  .al{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 14px;margin-bottom:11px;cursor:pointer;transition:.12s;}
+  .al:active{background:var(--card2);transform:scale(.995);}
+  .av{width:46px;height:46px;border-radius:50%;flex-shrink:0;overflow:hidden;background:linear-gradient(135deg,var(--blue2),#1b2a4a);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#cfe0f6;}
+  .av img{width:100%;height:100%;object-fit:cover;}
+  .al .nm{flex:1;min-width:0;}
+  .al .nm b{font-size:15.5px;font-weight:700;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .al .nm span{font-size:12px;color:var(--mut);}
+  .al .go{color:var(--mut2);font-size:20px;}
+
+  /* Builder */
+  .lbl{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--mut2);margin:4px 2px 8px;}
+  .daybar{display:flex;gap:7px;overflow-x:auto;padding:2px 0 4px;margin-bottom:16px;-webkit-overflow-scrolling:touch;}
+  .daybar::-webkit-scrollbar{display:none;}
+  .dchip{flex:0 0 auto;min-width:50px;text-align:center;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:10px 6px;font-size:13px;font-weight:700;color:var(--mut);cursor:pointer;}
+  .dchip.on{background:linear-gradient(135deg,var(--blue),var(--blue2));border-color:transparent;color:#fff;box-shadow:0 6px 16px -8px rgba(58,123,213,.7);}
+  .fld{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 14px;outline:none;margin-bottom:16px;}
+
+  .blk{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:13px;margin-bottom:14px;}
+  .blk-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .blk-b{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#9A7A28);color:#1a1405;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;flex-shrink:0;}
+  .blk-h input{flex:1;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px;outline:none;font-weight:600;}
+  .blk-del{background:none;border:none;color:var(--red);font-size:20px;cursor:pointer;padding:4px 6px;}
+
+  .ej{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:11px;margin-bottom:10px;}
+  .ej-top{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+  .ej-top input{flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:11px 12px;outline:none;font-weight:600;}
+  .ej-x{background:none;border:none;color:var(--mut2);font-size:17px;cursor:pointer;padding:2px 4px;}
+  .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px;}
+  .cell label{display:block;font-size:9.5px;font-weight:800;color:var(--mut2);text-transform:uppercase;letter-spacing:.4px;margin:0 0 3px 2px;text-align:center;}
+  .cell input{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:11px 4px;text-align:center;outline:none;font-weight:700;}
+  .ej-nota{width:100%;margin-top:8px;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;outline:none;font-size:14px;resize:none;color:var(--txt);}
+
+  .add{width:100%;background:transparent;border:1.5px dashed rgba(143,163,196,.4);border-radius:12px;padding:12px;color:var(--mut);font-weight:700;font-size:14px;cursor:pointer;}
+  .add.blk-add{border-color:rgba(58,123,213,.5);color:#8fb6ea;margin-bottom:20px;}
+  .add:active{background:rgba(255,255,255,.03);}
+
+  /* Save bar */
+  .savebar{position:sticky;bottom:0;background:linear-gradient(0deg,var(--bg) 60%,rgba(11,17,32,0));padding:12px 16px calc(14px + env(safe-area-inset-bottom));}
+  .save{width:100%;background:linear-gradient(135deg,var(--green),#12964e);color:#fff;border:none;border-radius:15px;padding:16px;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 10px 24px -8px rgba(34,197,94,.5);}
+  .save:disabled{opacity:.5;}
+
+  /* loading / toast / install */
+  #load{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:60;}
+  .sp{width:34px;height:34px;border:3px solid rgba(58,123,213,.25);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#0a2f1a;border:1px solid #1f7a44;color:#c9f5d9;padding:12px 18px;border-radius:12px;font-size:14px;font-weight:700;opacity:0;transition:.25s;z-index:70;box-shadow:0 12px 30px -10px rgba(0,0,0,.6);max-width:90%;text-align:center;}
+  .toast.err{background:#2f0a12;border-color:#7a1f2d;color:#f7c9d1;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .empty{text-align:center;color:var(--mut);padding:40px 20px;font-size:14px;}
+  .instbtn{position:fixed;right:14px;bottom:86px;z-index:50;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border:none;border-radius:22px;padding:11px 16px;font-size:13px;font-weight:800;box-shadow:0 10px 24px -8px rgba(20,50,90,.7);cursor:pointer;display:none;}
+</style>
+</head>
+<body>
+<div id="load"><div class="sp"></div><div style="color:var(--mut);font-size:13px;">Conectando…</div></div>
+
+<div class="wrap">
+  <div class="top">
+    <button class="back" id="backBtn" onclick="volver()" style="display:none;">‹</button>
+    <div class="logo">CC</div>
+    <div class="tt"><h1 id="title">Armar sesión</h1><p id="subtitle">Elegí un alumno</p></div>
+  </div>
+
+  <!-- PANTALLA 1: ALUMNOS -->
+  <div id="scr-alumnos" class="pad">
+    <div class="sb"><span class="ic">🔍</span><input id="buscar" placeholder="Buscar alumno…" oninput="renderAlumnos(this.value)"></div>
+    <div id="lista-alumnos"></div>
+  </div>
+
+  <!-- PANTALLA 2: BUILDER -->
+  <div id="scr-builder" style="display:none;">
+    <div class="pad">
+      <div class="lbl">¿Para qué día?</div>
+      <div class="daybar" id="daybar"></div>
+
+      <div class="lbl">Nombre de la sesión</div>
+      <input class="fld" id="sesNombre" placeholder="Ej: Fuerza tren inferior" value="">
+
+      <div class="lbl">Bloques y ejercicios</div>
+      <div id="bloques"></div>
+      <button class="add blk-add" onclick="addBloque()">＋ Agregar bloque</button>
+    </div>
+    <div class="savebar"><button class="save" id="saveBtn" onclick="guardar()">💾 Guardar y enviar al alumno</button></div>
+  </div>
+</div>
+
+<button class="instbtn" id="instbtn" onclick="instalar()">📲 Instalar app</button>
+<div class="toast" id="toast"></div>
+
+<script>
+const CFG = {
+  apiKey:'AIzaSyDkSgbqAJJRdlLwzcn-2vSMjVIUJbkVUGQ',
+  authDomain:'entrenamiento-laboratorio.firebaseapp.com',
+  projectId:'entrenamiento-laboratorio',
+  storageBucket:'entrenamiento-laboratorio.firebasestorage.app',
+  messagingSenderId:'399177627945',
+  appId:'1:399177627945:web:2b4fef0894480f70dc1f38'
+};
+const DOW = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const DOW_FULL = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+let _db=null, _alumnos=[], _al=null, _ses=null, _deferred=null;
+
+function _esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+function toast(m,err){ const t=document.getElementById('toast'); t.textContent=m; t.className='toast'+(err?' err':'')+' show'; clearTimeout(t._t); t._t=setTimeout(()=>t.className='toast'+(err?' err':''),2600); }
+
+// ── Init ─────────────────────────────────────────────
+async function init(){
+  _mkManifest();
+  if(typeof firebase==='undefined'){
+    document.getElementById('load').innerHTML='<div style="padding:30px;text-align:center;color:#f7c9d1;">No se pudo cargar la conexión.<br><small style="color:#8ea3c4;">Revisá tu internet y volvé a abrir la app.</small></div>';
+    return;
+  }
+  try{
+    if(!firebase.apps||!firebase.apps.length) firebase.initializeApp(CFG);
+    _db = firebase.firestore();
+    const snap = await _db.collection('alumnos').get();
+    _alumnos = snap.docs.map(d=>{ const x=d.data()||{}; const p=x.perfil||{}; return {
+      id:d.id, nombre:(p.nombre||x.nombre||'Alumno'), foto:(p.foto||''), fotoRef:(p.fotoRef||''), doc:x
+    };}).filter(a=>a.nombre && a.nombre!=='?' && !/^intake_|^upd_/.test(a.id)===false || true);
+    // ordenar por nombre
+    _alumnos.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+    renderAlumnos('');
+  }catch(e){
+    document.getElementById('load').innerHTML='<div style="padding:30px;text-align:center;color:#f7c9d1;">No pude conectar con la nube.<br><small style="color:#8ea3c4;">'+_esc(e.message||e)+'</small></div>';
+    return;
+  }
+  document.getElementById('load').style.display='none';
+}
+
+// ── Pantalla alumnos ─────────────────────────────────
+function _avatar(a){
+  if(a.foto && String(a.foto).indexOf('data:')===0) return '<img src="'+a.foto+'">';
+  if(a._fotoResuelta) return '<img src="'+a._fotoResuelta+'">';
+  return _esc(a.nombre.charAt(0).toUpperCase());
+}
+function renderAlumnos(q){
+  const cont=document.getElementById('lista-alumnos');
+  const ql=(q||'').trim().toLowerCase();
+  const list=_alumnos.filter(a=>!ql || a.nombre.toLowerCase().includes(ql));
+  if(!list.length){ cont.innerHTML='<div class="empty">No hay alumnos para mostrar.</div>'; return; }
+  cont.innerHTML=list.map(a=>'<div class="al" onclick="elegir(\''+a.id+'\')"><div class="av" id="av-'+a.id+'">'+_avatar(a)+'</div><div class="nm"><b>'+_esc(a.nombre)+'</b><span>Tocá para armarle la sesión</span></div><div class="go">›</div></div>').join('');
+  // resolver fotos por referencia (de la subcolección portadas)
+  list.forEach(a=>{
+    if(a._fotoResuelta || (a.foto&&a.foto.indexOf('data:')===0)) return;
+    if(a.fotoRef){ _db.collection('alumnos').doc(a.id).collection('portadas').doc(a.fotoRef).get().then(d=>{
+      try{ const img=(d&&d.exists)?((d.data()||{}).img||''):''; if(img){ a._fotoResuelta=img; const el=document.getElementById('av-'+a.id); if(el) el.innerHTML='<img src="'+img+'">'; } }catch(e){}
+    }).catch(()=>{}); }
+  });
+}
+
+// ── Elegir alumno → builder ──────────────────────────
+function elegir(id){
+  _al=_alumnos.find(a=>a.id===id); if(!_al) return;
+  const hoy=(new Date().getDay()+6)%7; // 0=Lun
+  _ses={ dia:hoy, nombre:'', bloques:[ _nuevoBloque() ] };
+  document.getElementById('scr-alumnos').style.display='none';
+  document.getElementById('scr-builder').style.display='block';
+  document.getElementById('backBtn').style.display='block';
+  document.getElementById('title').textContent=_al.nombre;
+  document.getElementById('subtitle').textContent='Armando la sesión';
+  document.getElementById('sesNombre').value='';
+  window.scrollTo(0,0);
+  renderDays(); renderBloques();
+}
+function volver(){
+  document.getElementById('scr-builder').style.display='none';
+  document.getElementById('scr-alumnos').style.display='block';
+  document.getElementById('backBtn').style.display='none';
+  document.getElementById('title').textContent='Armar sesión';
+  document.getElementById('subtitle').textContent='Elegí un alumno';
+  _al=null; _ses=null; window.scrollTo(0,0);
+}
+
+function _nuevoBloque(){ return { nombre:'', ejercicios:[ _nuevoEj() ] }; }
+function _nuevoEj(){ return { nombre:'', series:'', reps:'', kg:'', pausa:'', nota:'' }; }
+
+function renderDays(){
+  document.getElementById('daybar').innerHTML=DOW.map((d,i)=>'<div class="dchip'+(i===_ses.dia?' on':'')+'" onclick="setDia('+i+')">'+d+'</div>').join('');
+}
+function setDia(i){ _ses.dia=i; renderDays(); }
+
+function renderBloques(){
+  const cont=document.getElementById('bloques');
+  cont.innerHTML=_ses.bloques.map((b,bi)=>{
+    const letra='ABCDEFGHIJ'[bi]||String(bi+1);
+    const ejs=b.ejercicios.map((e,ei)=>_ejHTML(e,bi,ei)).join('');
+    return '<div class="blk">'
+      +'<div class="blk-h"><div class="blk-b">'+letra+'</div>'
+      +'<input placeholder="Nombre del bloque (opcional)" value="'+_esc(b.nombre)+'" oninput="setBlk('+bi+',this.value)">'
+      +(_ses.bloques.length>1?'<button class="blk-del" onclick="delBlk('+bi+')">🗑</button>':'')+'</div>'
+      +ejs
+      +'<button class="add" onclick="addEj('+bi+')">＋ Agregar ejercicio</button>'
+      +'</div>';
+  }).join('');
+}
+function _ejHTML(e,bi,ei){
+  return '<div class="ej">'
+    +'<div class="ej-top"><input placeholder="Ejercicio '+(ei+1)+'" value="'+_esc(e.nombre)+'" oninput="setEj('+bi+','+ei+',\'nombre\',this.value)">'
+    +'<button class="ej-x" onclick="delEj('+bi+','+ei+')">✕</button></div>'
+    +'<div class="grid4">'
+    +_cell('Series','series',e.series,bi,ei,'number')
+    +_cell('Reps','reps',e.reps,bi,ei,'text')
+    +_cell('Kg','kg',e.kg,bi,ei,'text')
+    +_cell('Pausa','pausa',e.pausa,bi,ei,'text')
+    +'</div>'
+    +'<textarea class="ej-nota" rows="1" placeholder="Nota (opcional)…" oninput="setEj('+bi+','+ei+',\'nota\',this.value)">'+_esc(e.nota)+'</textarea>'
+    +'</div>';
+}
+function _cell(lab,key,val,bi,ei,tp){
+  return '<div class="cell"><label>'+lab+'</label><input inputmode="'+(tp==='number'?'numeric':'text')+'" value="'+_esc(val)+'" oninput="setEj('+bi+','+ei+',\''+key+'\',this.value)"></div>';
+}
+function setBlk(bi,v){ _ses.bloques[bi].nombre=v; }
+function setEj(bi,ei,k,v){ _ses.bloques[bi].ejercicios[ei][k]=v; }
+function addBloque(){ _ses.bloques.push(_nuevoBloque()); renderBloques(); }
+function delBlk(bi){ _ses.bloques.splice(bi,1); if(!_ses.bloques.length)_ses.bloques.push(_nuevoBloque()); renderBloques(); }
+function addEj(bi){ _ses.bloques[bi].ejercicios.push(_nuevoEj()); renderBloques(); }
+function delEj(bi,ei){ _ses.bloques[bi].ejercicios.splice(ei,1); if(!_ses.bloques[bi].ejercicios.length)_ses.bloques[bi].ejercicios.push(_nuevoEj()); renderBloques(); }
+
+// ── Guardar: construir sesión compatible con la app del alumno y publicarla ──
+function _buildSesion(){
+  const nombre=document.getElementById('sesNombre').value.trim() || ('Entrenamiento '+DOW_FULL[_ses.dia]);
+  const bloques=_ses.bloques.map((b,bi)=>{
+    const ejercicios=b.ejercicios.filter(e=>e.nombre.trim()).map(e=>{
+      const n=Math.max(1, parseInt(e.series,10)||1);
+      const series=[];
+      for(let i=0;i<n;i++) series.push({ reps:e.reps||'', peso:e.kg||'', rir:'', pausa:e.pausa||'', tipo:'efec' });
+      return {
+        nombre:e.nombre.trim(),
+        ctrl:{ series:String(e.series||n), reps:e.reps||'', peso:e.kg||'', pausa:e.pausa||'', rir:'' },
+        series:series, seriesApro:[], dropset:[],
+        video:'', nota:e.nota||'', setup:''
+      };
+    });
+    return { nombre:(b.nombre.trim()|| ('Bloque '+('ABCDEFGHIJ'[bi]||(bi+1)))), tipo:'', serieTipo:'Serie Simple', serieDesc:'', porque:'', ejercicios:ejercicios };
+  }).filter(b=>b.ejercicios.length);
+  return { nombre:nombre, bloques:bloques };
+}
+function _mondayISO(){
+  const d=new Date(); const off=(d.getDay()+6)%7; d.setDate(d.getDate()-off);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+async function guardar(){
+  if(!_al||!_ses) return;
+  const ses=_buildSesion();
+  if(!ses.bloques.length){ toast('Agregá al menos un ejercicio con nombre',true); return; }
+  const btn=document.getElementById('saveBtn'); btn.disabled=true; btn.textContent='Guardando…';
+  try{
+    const ref=_db.collection('alumnos').doc(_al.id);
+    const snap=await ref.get();
+    const data=snap.exists?snap.data():{};
+    let planes=Array.isArray(data.planificaciones)?data.planificaciones:[];
+    // buscar/crear el plan "del celular"
+    let plan=planes.find(p=>p && p.id==='plan_celular');
+    if(!plan){
+      plan={ id:'plan_celular', alumnoId:_al.id, titulo:'Sesiones (celular)', tipoPlan:'fuerza', tipoPlanEstructura:'semanal',
+        nivel:'', objetivo:'', fecha:_mondayISO(), createdAt:new Date().toISOString(),
+        semanasArray:[{ semana:1, fechaInicio:_mondayISO(), dias:{} }], diasData:{} , oculto:false };
+      planes.push(plan);
+    }
+    if(!plan.semanasArray||!plan.semanasArray.length) plan.semanasArray=[{semana:1,fechaInicio:_mondayISO(),dias:{}}];
+    plan.semanasArray[0].fechaInicio=_mondayISO();
+    if(!plan.semanasArray[0].dias) plan.semanasArray[0].dias={};
+    plan.semanasArray[0].dias[String(_ses.dia)] = [ ses ];
+    plan.diasData = plan.semanasArray[0].dias;
+    await ref.set({ planificaciones:planes, updatedAt:new Date().toISOString() }, { merge:true });
+    btn.disabled=false; btn.textContent='💾 Guardar y enviar al alumno';
+    toast('✓ Sesión enviada a '+_al.nombre.split(' ')[0]+' ('+DOW_FULL[_ses.dia]+')');
+    // reset ligero: dejar lista para otra
+    _ses.bloques=[ _nuevoBloque() ]; document.getElementById('sesNombre').value=''; renderBloques(); window.scrollTo(0,0);
+  }catch(e){
+    btn.disabled=false; btn.textContent='💾 Guardar y enviar al alumno';
+    toast('No se pudo guardar: '+(e.message||e),true);
+  }
+}
+
+// ── PWA install ──────────────────────────────────────
+function _mkManifest(){
+  const m={ name:'Armar · Christian Cattaneo', short_name:'Armar', description:'Armá y cargá sesiones desde el celular',
+    start_url:location.pathname, scope:'/entrenamiento-laboratorio/', display:'standalone', orientation:'portrait',
+    background_color:'#0b1120', theme_color:'#0d1424',
+    icons:[{src:'icon-192.png',sizes:'192x192',type:'image/png'},{src:'icon-512.png',sizes:'512x512',type:'image/png',purpose:'any maskable'}] };
+  try{ document.getElementById('pwa-manifest').href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/json'})); }catch(e){}
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('armar-sw.js').catch(()=>{});
+}
+function _standalone(){ try{ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }catch(e){ return false; } }
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); _deferred=e; if(!_standalone()) document.getElementById('instbtn').style.display='block'; });
+window.addEventListener('appinstalled', ()=>{ document.getElementById('instbtn').style.display='none'; });
+function instalar(){
+  if(_deferred){ _deferred.prompt(); _deferred.userChoice.finally(()=>{ _deferred=null; document.getElementById('instbtn').style.display='none'; }); return; }
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  alert(ios ? 'Para instalar en iPhone:\n1) Abrí esta página en Safari.\n2) Tocá Compartir ↑.\n3) "Agregar a pantalla de inicio".'
+            : 'Abrí el menú del navegador (⋮) y tocá "Instalar app" / "Agregar a pantalla de inicio".');
+}
+document.addEventListener('DOMContentLoaded', ()=>{ const ios=/iphone|ipad|ipod/i.test(navigator.userAgent); if(ios && !_standalone()) setTimeout(()=>{ document.getElementById('instbtn').style.display='block'; },1200); });
+
+// Arranque robusto: espera a que la librería de conexión (firebase) termine de cargar.
+(function _boot(_t){
+  _t=_t||0;
+  if(typeof firebase!=='undefined'){ init(); return; }
+  if(_t>60){ init(); return; }  // ~9s → init mostrará el aviso de "sin conexión"
+  setTimeout(function(){ _boot(_t+1); }, 150);
+})();
+</script>
+</body>
+</html>

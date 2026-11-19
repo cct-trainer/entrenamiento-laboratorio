@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="google" content="notranslate">
 <title>Laboratorio de Entrenamiento</title>
+<!-- ── App instalable en el celular (PWA) ── -->
+<link rel="manifest" href="coach-full-manifest.json">
+<meta name="theme-color" content="#2f5f95">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mi Coach">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -36925,6 +36933,51 @@ function _fechaCort(f) {
     return '<div class="cpe-stub"><div class="ic">'+s.ic+'</div><div class="t">'+s.t+'</div>'
       +'<div class="cpe-muted">Esta pantalla se habilita en la <b>'+s.e+'</b>. La estructura y la navegación ya funcionan;<br>el plan se guarda como borrador desde ahora.</div></div>'+nav;
   }
+})();
+</script>
+<!-- ══ PWA: instalar el coach como app en el celular ══ -->
+<script>
+(function(){
+  // Service worker (siempre versión fresca). Solo en http/https, nunca en file://
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', function(){ navigator.serviceWorker.register('coach-sw-full.js').catch(function(){}); });
+  }
+  // ¿Ya está instalada / abierta como app?
+  function _standalone(){ try{ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }catch(e){ return false; } }
+  var _deferred=null;
+  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); _deferred=e; _mostrarBtn(); });
+  window.addEventListener('appinstalled', function(){ _ocultarBtn(); });
+
+  function _mkBtn(){
+    if(document.getElementById('coach-install-btn')) return document.getElementById('coach-install-btn');
+    var b=document.createElement('button');
+    b.id='coach-install-btn';
+    b.innerHTML='📲 Instalar app';
+    b.style.cssText='position:fixed;right:16px;bottom:16px;z-index:99999;background:linear-gradient(135deg,#2f5f95,#1f4d7a);color:#fff;border:none;border-radius:24px;padding:12px 18px;font-size:14px;font-weight:800;font-family:inherit;box-shadow:0 10px 24px -8px rgba(20,50,90,.6);cursor:pointer;';
+    b.onclick=_instalar;
+    document.body.appendChild(b);
+    return b;
+  }
+  function _mostrarBtn(){ if(_standalone()) return; _mkBtn().style.display='block'; }
+  function _ocultarBtn(){ var b=document.getElementById('coach-install-btn'); if(b) b.style.display='none'; }
+
+  function _instalar(){
+    // Android / escritorio con prompt nativo
+    if(_deferred){ _deferred.prompt(); _deferred.userChoice.finally(function(){ _deferred=null; _ocultarBtn(); }); return; }
+    // iPhone (Safari no dispara el prompt): mostrar instrucciones
+    var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    if(ios){
+      alert('Para instalar en iPhone:\n\n1) Abrí esta página en Safari.\n2) Tocá el botón Compartir (el cuadradito con la flecha ↑).\n3) Elegí "Agregar a pantalla de inicio".');
+    } else {
+      alert('Para instalar: abrí el menú del navegador (⋮) y tocá "Instalar app" o "Agregar a pantalla de inicio".');
+    }
+  }
+
+  // En iPhone no hay beforeinstallprompt: si no está instalada, igual ofrecer el botón.
+  document.addEventListener('DOMContentLoaded', function(){
+    var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    if(ios && !_standalone() && location.protocol.startsWith('http')) setTimeout(_mostrarBtn, 1500);
+  });
 })();
 </script>
 </body>
