@@ -631,9 +631,9 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
       <div class="pt-plan" id="pt-plan"></div>
     </div>
     <div class="pt-foot">
-      <button onclick="_abrirTutorial()" style="width:100%;background:rgba(58,110,165,.14);border:1px solid rgba(58,110,165,.45);color:#5b93cf;border-radius:14px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:11px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;"><span style="width:20px;height:20px;border-radius:50%;background:#3A6EA5;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;">?</span> Mirá cómo se usa la app en 1 minuto</button>
-      <button class="pt-enter" onclick="entrarApp()"><span data-i18n="entrar_app">Entrar a mi entrenamiento</span> <span>›</span></button>
+      <button class="pt-enter" onclick="entrarApp()"><span data-i18n="entrar_app">Entrar a mi espacio de entrenamiento</span> <span>›</span></button>
       <button id="pt-install-btn" onclick="_instalarApp()" style="display:none;width:100%;margin-top:11px;background:rgba(143,176,214,.12);border:1px solid rgba(143,176,214,.4);color:#9fb4d2;border-radius:14px;padding:12px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;align-items:center;justify-content:center;gap:8px;">↓ Agregar a mi celular</button>
+      <button onclick="_abrirTutorial()" style="width:100%;margin-top:11px;background:rgba(58,110,165,.14);border:1px solid rgba(58,110,165,.45);color:#5b93cf;border-radius:14px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;"><span style="width:20px;height:20px;border-radius:50%;background:#3A6EA5;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;">?</span> Mirá cómo se usa la app en 1 minuto</button>
       <button id="pt-coach-btn" onclick="_abrirModoEntrenador()" style="display:none;width:100%;margin-top:11px;background:transparent;border:1px solid rgba(143,176,214,.4);color:#9fb4d2;border-radius:14px;padding:12px;font-size:12.5px;font-weight:800;letter-spacing:.5px;cursor:pointer;font-family:inherit;display:none;align-items:center;justify-content:center;gap:8px;">Modo Entrenador</button>
       <div class="pt-date" id="pt-date"></div>
     </div>
@@ -888,7 +888,7 @@ const _I18N = {
     _dn: ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'],
     _ds: ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'],
     _locale: 'es-AR',
-    entrenador:'ENTRENADOR', hola:'Hola,', entrar_app:'Entrar a mi entrenamiento',
+    entrenador:'ENTRENADOR', hola:'Hola,', entrar_app:'Entrar a mi espacio de entrenamiento',
     idioma:'Idioma',
     que_entrenas:'¿Qué vas a entrenar hoy?',
     fuerza:'FUERZA', fuerza_sub:'Gimnasio · hipertrofia · fuerza',
@@ -930,7 +930,7 @@ const _I18N = {
     _dn: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
     _ds: ['MON','TUE','WED','THU','FRI','SAT','SUN'],
     _locale: 'en-US',
-    entrenador:'COACH', hola:'Hi,', entrar_app:'Start my training',
+    entrenador:'COACH', hola:'Hi,', entrar_app:'Enter my training space',
     idioma:'Language',
     que_entrenas:'What are you training today?',
     fuerza:'STRENGTH', fuerza_sub:'Gym · hypertrophy · strength',
@@ -1122,8 +1122,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261119140656 por un timestamp en cada deploy
-const _APP_VERSION = '20261119140656';
+// deploy.bat reemplaza 20261121154005 por un timestamp en cada deploy
+const _APP_VERSION = '20261121154005';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
