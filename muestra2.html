@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Muestra portada — Christian Cattaneo</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;}
+  html,body{min-height:100vh;background:#05080f;color:#fff;}
+  .phone{position:relative;max-width:440px;margin:0 auto;min-height:100vh;overflow:hidden;background:#070d18;}
+  .bg{position:absolute;inset:0;background:#0a1322 center/cover no-repeat;z-index:0;}
+  .bg::after{content:"";position:absolute;inset:0;background:
+     linear-gradient(180deg, rgba(6,11,22,.62) 0%, rgba(6,11,22,.5) 40%, rgba(6,11,22,.72) 72%, rgba(5,8,15,.92) 100%);}
+  .corner{position:absolute;width:82px;height:82px;background:linear-gradient(135deg,#e7c86a,#b88c2e 55%,#7c5c16);pointer-events:none;z-index:3;}
+  .c-tl{top:0;left:0;clip-path:polygon(0 0,100% 0,0 100%);}
+  .c-tr{top:0;right:0;clip-path:polygon(100% 0,100% 100%,0 0);opacity:.9;}
+  .c-bl{bottom:0;left:0;clip-path:polygon(0 100%,100% 100%,0 0);opacity:.9;}
+  .c-br{bottom:0;right:0;clip-path:polygon(100% 100%,0 100%,100% 0);}
+  .content{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:48px 30px;gap:0;}
+  .logo{width:74px;height:74px;object-fit:contain;filter:drop-shadow(0 4px 16px rgba(90,140,200,.45));margin-bottom:14px;}
+  .brand{font-size:24px;font-weight:800;letter-spacing:3px;color:#f4f8fd;}
+  .sep{display:flex;align-items:center;gap:11px;margin:8px 0 5px;}
+  .sep .ln{width:36px;height:1px;background:linear-gradient(90deg,transparent,#C9A84C);}
+  .sep .ln.r{background:linear-gradient(90deg,#C9A84C,transparent);}
+  .sep .rol{font-size:11px;font-weight:800;letter-spacing:4px;color:#dcb95c;}
+  .tag{font-size:10.5px;font-weight:600;letter-spacing:2.5px;color:#9fb3cd;text-transform:uppercase;}
+  .ring{margin-top:28px;width:120px;height:120px;border-radius:50%;padding:4px;background:conic-gradient(from 210deg,#e7c86a,#b88c2e,#e7c86a,#8a6a20,#e7c86a);box-shadow:0 10px 32px -8px rgba(201,168,76,.5);}
+  .ring .ph{width:100%;height:100%;border-radius:50%;overflow:hidden;background:radial-gradient(70% 70% at 50% 35%,#46617f,#22354a 70%,#16212f);display:flex;align-items:flex-end;justify-content:center;}
+  .ring .ph img{width:100%;height:100%;object-fit:cover;}
+  .ring .ph svg{width:86px;height:86px;opacity:.9;}
+  .hola{margin-top:18px;font-size:14px;color:#b3c2d6;font-weight:600;}
+  .name{font-size:30px;font-weight:900;color:#fff;letter-spacing:.5px;margin-top:2px;}
+  .lang{margin-top:16px;display:inline-flex;gap:4px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:22px;padding:4px;}
+  .lang span{font-size:12px;font-weight:800;letter-spacing:1px;padding:7px 17px;border-radius:18px;color:#a6b7cd;}
+  .lang span.on{background:linear-gradient(135deg,#3a7bd5,#2f5f95);color:#fff;box-shadow:0 4px 12px -4px rgba(58,123,213,.6);}
+  .chart{margin-top:24px;display:flex;align-items:flex-end;gap:4px;height:22px;}
+  .chart i{width:6px;border-radius:2px;background:linear-gradient(180deg,#e7c86a,#b88c2e);}
+  .motiv{margin-top:10px;font-size:14px;font-style:italic;color:#cbba86;font-weight:600;}
+  .cta{margin-top:22px;width:100%;max-width:290px;background:linear-gradient(135deg,#e7c86a,#c69a34 55%,#a97e24);color:#2a1f05;font-size:15px;font-weight:900;letter-spacing:1.2px;border:none;border-radius:14px;padding:17px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 12px 28px -10px rgba(201,168,76,.6);cursor:pointer;}
+  .tut{margin-top:14px;width:100%;max-width:310px;background:rgba(10,18,32,.72);border:1px solid rgba(143,176,214,.32);color:#c6d4e8;font-size:12.5px;font-weight:700;border-radius:26px;padding:13px 16px;display:flex;align-items:center;gap:11px;cursor:pointer;}
+  .tut .play{width:27px;height:27px;border-radius:50%;background:rgba(143,176,214,.16);border:1px solid rgba(143,176,214,.42);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#9fb4d2;}
+  .tut .tx{flex:1;text-align:left;}
+  .tut .ar{color:#8097b5;}
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="bg" id="bg"></div>
+    <div class="corner c-tl"></div><div class="corner c-tr"></div>
+    <div class="corner c-bl"></div><div class="corner c-br"></div>
+    <div class="content">
+      <img class="logo" src="cc_portada.png" alt="CC">
+      <div class="brand">CHRISTIAN CATTANEO</div>
+      <div class="sep"><span class="ln"></span><span class="rol">ENTRENADOR</span><span class="ln r"></span></div>
+      <div class="tag">Entrenamiento basado en la ciencia</div>
+      <div class="ring"><div class="ph" id="ph">
+        <svg viewBox="0 0 64 64" fill="#9fb8d4"><circle cx="32" cy="24" r="13"/><path d="M8 60c0-13 11-20 24-20s24 7 24 20z"/></svg>
+      </div></div>
+      <div class="hola">Hola,</div>
+      <div class="name">CAROLINA R</div>
+      <div class="lang"><span class="on">ES</span><span>EN</span></div>
+      <div class="chart"><i style="height:9px"></i><i style="height:14px"></i><i style="height:20px"></i></div>
+      <div class="motiv">El progreso te está esperando.</div>
+      <button class="cta">PLAN ACTIVO <span>›</span></button>
+      <div class="tut"><span class="play">▶</span><span class="tx">Mirá cómo se usa la app en 1 minuto</span><span class="ar">›</span></div>
+    </div>
+  </div>
+<script>
+(async function(){
+  try{
+    const CFG={apiKey:'AIzaSyDkSgbqAJJRdlLwzcn-2vSMjVIUJbkVUGQ',authDomain:'entrenamiento-laboratorio.firebaseapp.com',projectId:'entrenamiento-laboratorio',storageBucket:'entrenamiento-laboratorio.firebasestorage.app',messagingSenderId:'399177627945',appId:'1:399177627945:web:2b4fef0894480f70dc1f38'};
+    firebase.initializeApp(CFG);
+    const d=await firebase.firestore().collection('config').doc('portada').get();
+    const bg=(d.exists?d.data():{}).bgGym;
+    if(bg) document.getElementById('bg').style.backgroundImage='url('+bg+')';
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
