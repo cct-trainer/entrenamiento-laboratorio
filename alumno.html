@@ -627,8 +627,6 @@ html.light .scard table td { border-color: color-mix(in srgb, var(--gold) 15%, t
 
 <div id="portada">
   <div class="pt-bg" id="pt-bg"></div>
-  <div class="pt-corner tl"></div><div class="pt-corner tr"></div>
-  <div class="pt-corner bl"></div><div class="pt-corner br"></div>
   <div class="pt-inner">
     <div class="pt-brand">
       <img class="pt-logo" src="cc_portada.png" alt="Christian Cattaneo" onerror="this.src='https://cct-trainer.github.io/entrenamiento-laboratorio/cc_portada.png'">
@@ -1139,8 +1137,8 @@ let _liveData = {};  // { uid: {apro:[],efec:[],drop:[]} } — series modificada
 let _alumnoId='', _pesoEdits={};
 
 // ── AUTO-UPDATE: detecta versión nueva publicada y recarga sola ──────────────
-// deploy.bat reemplaza 20261121175632 por un timestamp en cada deploy
-const _APP_VERSION = '20261121175632';
+// deploy.bat reemplaza 20261123002039 por un timestamp en cada deploy
+const _APP_VERSION = '20261123002039';
 async function _checkVersion() {
   if (!location.protocol.startsWith('http')) return;
   if (sessionStorage.getItem('SOCC_VER_RELOADED')) return;
